@@ -1,0 +1,95 @@
+// In-memory repository backed by the seed data. Used for the static UI phase
+// and unit tests; the SQLite-backed localRepository replaces it as the real
+// source of truth in Phase 3.
+
+import { SEED_COLLECTIONS, SEED_ITEMS } from "../store/seed";
+import type { Collection, Item, TagCount, View } from "../store/types";
+import {
+  matchesView,
+  type ItemPatch,
+  type KnowledgeRepository,
+  type NewItem,
+} from "./repository";
+
+export class MemoryRepository implements KnowledgeRepository {
+  private items: Item[];
+  private collections: Collection[];
+  private seq = 0;
+
+  constructor(items: Item[] = SEED_ITEMS, collections: Collection[] = SEED_COLLECTIONS) {
+    // Clone so callers can't mutate the seed module's arrays.
+    this.items = items.map((i) => ({ ...i }));
+    this.collections = collections.map((c) => ({ ...c }));
+  }
+
+  private live(): Item[] {
+    return this.items.filter((i) => !i.deletedAt);
+  }
+
+  async listItems(view?: View): Promise<Item[]> {
+    const all = this.live();
+    const filtered = view ? all.filter((i) => matchesView(i, view)) : all;
+    // Newest first (createdAt desc) to match the prototype's ordering.
+    return filtered
+      .slice()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  async getItem(id: string): Promise<Item | null> {
+    return this.live().find((i) => i.id === id) ?? null;
+  }
+
+  async createItem(input: NewItem): Promise<Item> {
+    const now = new Date().toISOString();
+    const item: Item = {
+      ...input,
+      id: `i_${Date.now()}_${this.seq++}`,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+    };
+    this.items.unshift(item);
+    return { ...item };
+  }
+
+  async updateItem(id: string, patch: ItemPatch): Promise<Item> {
+    const item = this.items.find((i) => i.id === id);
+    if (!item) throw new Error(`Item not found: ${id}`);
+    Object.assign(item, patch, { updatedAt: new Date().toISOString() });
+    return { ...item };
+  }
+
+  async deleteItem(id: string): Promise<void> {
+    const item = this.items.find((i) => i.id === id);
+    if (item) item.deletedAt = new Date().toISOString();
+  }
+
+  async listCollections(): Promise<Collection[]> {
+    return this.collections.map((c) => ({ ...c }));
+  }
+
+  async listTags(): Promise<TagCount[]> {
+    const counts = new Map<string, number>();
+    for (const item of this.live()) {
+      for (const tag of item.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+    return [...counts.entries()].map(([name, count]) => ({ name, count }));
+  }
+
+  async search(query: string): Promise<Item[]> {
+    const q = query.trim().toLowerCase();
+    if (!q) return this.listItems();
+    return this.live().filter((i) => {
+      const haystack = [
+        i.title,
+        i.domain ?? "",
+        i.snippet ?? "",
+        i.summary ?? "",
+        i.tags.join(" "),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }
+}
