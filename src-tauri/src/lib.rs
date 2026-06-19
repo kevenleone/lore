@@ -15,6 +15,16 @@ pub fn run() {
             commands::toggle_capture,
             commands::hide_capture
         ])
+        .on_window_event(|window, event| {
+            // Closing the main window hides it (tray-app pattern) so it can be
+            // reopened from the tray; Quit in the tray menu is the real exit.
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "main" {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+        })
         .setup(|app| {
             #[cfg(desktop)]
             {

@@ -42,7 +42,7 @@ fn show_main(app: &AppHandle) {
 #[cfg(desktop)]
 pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     use tauri::menu::{MenuBuilder, MenuItem};
-    use tauri::tray::{MouseButton, TrayIconBuilder, TrayIconEvent};
+    use tauri::tray::TrayIconBuilder;
 
     let capture = MenuItem::with_id(app, "capture", "Quick Capture", true, Some("Alt+Space"))?;
     let open = MenuItem::with_id(app, "open", "Open Baloon", true, None::<&str>)?;
@@ -54,25 +54,17 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .item(&quit)
         .build()?;
 
+    // Left-click opens the menu (macOS-standard); the user picks an action.
     TrayIconBuilder::with_id("baloon-tray")
         .icon(tauri::include_image!("icons/32x32.png"))
         .tooltip("Baloon")
         .menu(&menu)
-        .show_menu_on_left_click(false)
+        .show_menu_on_left_click(true)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "capture" => toggle_capture_window(app),
             "open" => show_main(app),
             "quit" => app.exit(0),
             _ => {}
-        })
-        .on_tray_icon_event(|tray, event| {
-            if let TrayIconEvent::Click {
-                button: MouseButton::Left,
-                ..
-            } = event
-            {
-                toggle_capture_window(tray.app_handle());
-            }
         })
         .build(app)?;
     Ok(())
