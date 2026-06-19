@@ -102,7 +102,8 @@ export interface DetailFlags {
 /** Detail-pane section visibility — mirrors the prototype's `sc-if` gates. */
 export function detailFlags(item: Item, showAI: boolean, relatedCount: number): DetailFlags {
   return {
-    showPreview: item.type === "link" || item.type === "image",
+    // Only show a preview when we actually have an image to show.
+    showPreview: !!item.image,
     detIsCode: item.type === "code",
     detIsText: item.type === "note" || item.type === "task",
     showSummary: showAI && !!item.summary,

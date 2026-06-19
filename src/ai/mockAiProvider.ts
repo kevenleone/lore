@@ -31,9 +31,10 @@ export class MockAiProvider implements AiProvider {
     };
   }
 
-  async suggestTags(item: Item): Promise<string[]> {
-    const pool = ["design", "tools", "color", "research", "product"];
-    return pool.filter((t) => !item.tags.includes(t)).slice(0, 3);
+  async suggestTags(_item: Item): Promise<string[]> {
+    // The stub provider can't infer meaningful tags, so it suggests none.
+    // A real Claude-backed provider would return relevant tags here.
+    return [];
   }
 
   async chat(question: string, kb: Item[]): Promise<ChatResult> {

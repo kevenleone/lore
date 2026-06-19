@@ -25,6 +25,7 @@ export const SCHEMA_STATEMENTS = [
     summary       TEXT,
     points        TEXT,
     snippet       TEXT,
+    description   TEXT,
     image         TEXT,
     related       TEXT NOT NULL DEFAULT '[]',
     created_at    TEXT NOT NULL,
@@ -40,4 +41,7 @@ export const SCHEMA_STATEMENTS = [
 
 // Idempotent migrations for databases created before a column existed. Each is
 // run inside a try/catch (a "duplicate column" error means it's already there).
-export const MIGRATION_STATEMENTS = [`ALTER TABLE items ADD COLUMN image TEXT`];
+export const MIGRATION_STATEMENTS = [
+  `ALTER TABLE items ADD COLUMN image TEXT`,
+  `ALTER TABLE items ADD COLUMN description TEXT`,
+];

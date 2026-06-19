@@ -31,8 +31,9 @@ const SECTION_LABEL: React.CSSProperties = {
 export function Composer() {
   const [tab, setTab] = useState<ItemType>("link");
   const [value, setValue] = useState("");
-  const [accepted, setAccepted] = useState<string[]>(["design"]);
-  const [dismissed, setDismissed] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [addingTag, setAddingTag] = useState(false);
+  const [tagDraft, setTagDraft] = useState("");
   const [collections, setCollections] = useState<Collection[]>([]);
   const [collectionId, setCollectionId] = useState<string>("design");
   const [error, setError] = useState<string | null>(null);
@@ -73,17 +74,13 @@ export function Composer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const pool = ["design", "tools", "color", "research", "product"];
-  const suggested = pool.filter((t) => !accepted.includes(t) && !dismissed.includes(t)).slice(0, 3);
-
-  const accept = (t: string) => {
-    setAccepted((a) => [...a, t]);
-    setDismissed((d) => d.filter((x) => x !== t));
+  const addTag = (raw: string) => {
+    const t = raw.trim().replace(/^#/, "").toLowerCase();
+    setTagDraft("");
+    setAddingTag(false);
+    if (t && !tags.includes(t)) setTags((a) => [...a, t]);
   };
-  const remove = (t: string) => {
-    setAccepted((a) => a.filter((x) => x !== t));
-    setDismissed((d) => [...d, t]);
-  };
+  const removeTag = (t: string) => setTags((a) => a.filter((x) => x !== t));
 
   const canSave = useMemo(() => tab === "image" || value.trim().length > 0, [tab, value]);
 
@@ -99,11 +96,10 @@ export function Composer() {
 
   const doSave = async () => {
     const text = value.trim();
-    const tags = [...accepted];
     let item: NewItem = {
       type: tab,
       title: text,
-      tags,
+      tags: [...tags],
       flags: { inbox: true },
       related: [],
       collectionId,
@@ -115,7 +111,7 @@ export function Composer() {
         domain: host || undefined,
         title: meta?.title || host || text,
         snippet: text, // full URL, used by "Open"
-        summary: meta?.description,
+        description: meta?.description,
         image: meta?.image,
       };
     } else if (tab === "image") {
@@ -180,12 +176,8 @@ export function Composer() {
             </div>
             {meta && (
               <div style={{ border: "1px solid #ececef", borderRadius: 12, overflow: "hidden", marginTop: 12 }}>
-                {meta.image ? (
+                {meta.image && (
                   <img src={meta.image} alt="" style={{ width: "100%", height: 118, objectFit: "cover", display: "block" }} />
-                ) : (
-                  <div style={{ height: 118, background: "repeating-linear-gradient(45deg,#f6f6f8,#f6f6f8 10px,#efeff3 10px,#efeff3 20px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11.5, color: "#a7a7b0", letterSpacing: ".04em" }}>link preview</span>
-                  </div>
                 )}
                 <div style={{ padding: "12px 14px" }}>
                   <div style={{ fontSize: 14.5, fontWeight: 620 }}>{meta.title || hostOf(value)}</div>
@@ -252,17 +244,33 @@ export function Composer() {
         {/* tags */}
         <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
           <span style={SECTION_LABEL}>Tags</span>
-          {accepted.map((t) => (
-            <span key={t} onClick={() => remove(t)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, color: AC, background: "#f0f0fb", borderRadius: 6, padding: "3px 8px" }}>
+          {tags.map((t) => (
+            <span key={t} onClick={() => removeTag(t)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, color: AC, background: "#f0f0fb", borderRadius: 6, padding: "3px 8px" }}>
               #{t}
               <span style={{ opacity: 0.55 }}>×</span>
             </span>
           ))}
-          {suggested.map((t) => (
-            <span key={t} onClick={() => accept(t)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, color: "#8a8a95", background: "transparent", border: "1px dashed #d2d2dc", borderRadius: 6, padding: "2px 7px" }}>
-              + #{t}
+          {addingTag ? (
+            <input
+              autoFocus
+              value={tagDraft}
+              onChange={(e) => setTagDraft(e.target.value)}
+              onBlur={() => addTag(tagDraft)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") addTag(tagDraft);
+                if (e.key === "Escape") {
+                  setAddingTag(false);
+                  setTagDraft("");
+                }
+              }}
+              placeholder="tag"
+              style={{ fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, width: 70, color: AC, border: `1px solid ${AC}`, borderRadius: 6, padding: "2px 7px", outline: "none", background: "transparent" }}
+            />
+          ) : (
+            <span onClick={() => setAddingTag(true)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, color: "#8a8a95", background: "transparent", border: "1px dashed #d2d2dc", borderRadius: 6, padding: "2px 7px" }}>
+              + tag
             </span>
-          ))}
+          )}
         </div>
 
         {/* collection */}

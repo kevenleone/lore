@@ -37,7 +37,7 @@ function buildItem(text: string, type: ItemType, tags: string[], meta: LinkMetad
       domain: host || undefined,
       title: meta?.title || host || trimmed,
       snippet: trimmed, // full URL, used by "Open"
-      summary: meta?.description,
+      description: meta?.description,
       image: meta?.image,
     };
   }

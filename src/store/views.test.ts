@@ -91,8 +91,9 @@ describe("detailFlags", () => {
   const link = SEED_ITEMS.find((i) => i.type === "link")!;
   const code = SEED_ITEMS.find((i) => i.type === "code")!;
 
-  it("shows a preview for links and a code block for code", () => {
-    expect(detailFlags(link, true, 2).showPreview).toBe(true);
+  it("shows a preview only when there is an image; code blocks for code", () => {
+    expect(detailFlags(link, true, 2).showPreview).toBe(false);
+    expect(detailFlags({ ...link, image: "https://x/i.png" }, true, 2).showPreview).toBe(true);
     expect(detailFlags(code, true, 0).detIsCode).toBe(true);
   });
 

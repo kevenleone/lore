@@ -14,8 +14,12 @@ type Mode = "A" | "B";
 
 export function CaptureApp() {
   const [mode, setMode] = useState<Mode>("A");
+  // Bumped each time the window is shown so the form remounts fresh (no leftover
+  // text/state from the previous capture).
+  const [sessionKey, setSessionKey] = useState(0);
 
-  // Esc closes; clicking the backdrop closes; losing focus closes.
+  // Esc closes; clicking the backdrop closes; losing focus closes; gaining focus
+  // (i.e. being shown) resets the form.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") void hideCapture();
@@ -27,7 +31,8 @@ export function CaptureApp() {
       try {
         const { getCurrentWindow } = await import("@tauri-apps/api/window");
         unlisten = await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
-          if (!focused) void hideCapture();
+          if (focused) setSessionKey((k) => k + 1);
+          else void hideCapture();
         });
       } catch {
         // Outside Tauri.
@@ -69,7 +74,7 @@ export function CaptureApp() {
       </div>
 
       <div style={{ width: "100%", maxWidth: 560 }}>
-        {mode === "A" ? <CommandBar /> : <Composer />}
+        {mode === "A" ? <CommandBar key={sessionKey} /> : <Composer key={sessionKey} />}
       </div>
     </div>
   );

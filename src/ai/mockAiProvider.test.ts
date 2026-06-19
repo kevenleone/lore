@@ -38,9 +38,8 @@ describe("MockAiProvider.chat", () => {
 });
 
 describe("MockAiProvider.suggestTags", () => {
-  it("excludes tags the item already has", async () => {
-    const item = { ...SEED_ITEMS[0], tags: ["design"] };
-    const tags = await ai.suggestTags(item);
-    expect(tags).not.toContain("design");
+  it("suggests no tags (stub provider can't infer them)", async () => {
+    const tags = await ai.suggestTags(SEED_ITEMS[0]);
+    expect(tags).toEqual([]);
   });
 });

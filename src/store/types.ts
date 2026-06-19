@@ -27,9 +27,12 @@ export interface Item {
   collectionId?: string;
   tags: string[];
   flags: ItemFlags;
+  /** AI-generated summary (distinct from a link's own description). */
   summary?: string;
   points?: string[];
   snippet?: string;
+  /** A link's own description (e.g. OpenGraph/meta description). */
+  description?: string;
   /** Preview image URL (e.g. OpenGraph image for links). */
   image?: string;
   related: string[];
