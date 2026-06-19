@@ -5,6 +5,7 @@ import {
   detailFlags,
   filterByView,
   relatedItems,
+  sortItems,
   tagCounts,
   viewCounts,
   viewTitle,
@@ -43,6 +44,17 @@ describe("filterByView", () => {
 
   it("returns everything for the 'all' view", () => {
     expect(filterByView(SEED_ITEMS, { kind: "all", val: null })).toHaveLength(SEED_ITEMS.length);
+  });
+});
+
+describe("sortItems", () => {
+  it("sorts newest/oldest by createdAt and title alphabetically", () => {
+    const newest = sortItems(SEED_ITEMS, "newest");
+    const oldest = sortItems(SEED_ITEMS, "oldest");
+    expect(newest[0].id).toBe(oldest[oldest.length - 1].id);
+
+    const byTitle = sortItems(SEED_ITEMS, "title").map((i) => i.title);
+    expect(byTitle).toEqual([...byTitle].sort((a, b) => a.localeCompare(b)));
   });
 });
 

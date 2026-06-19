@@ -1,10 +1,11 @@
 // Middle pane: the filtered item list for the current view (further narrowed by
 // the ⌘K search box), with the selected row highlighted.
 
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "../../store/useStore";
 import { typeMeta } from "../../store/typeMeta";
-import type { Item } from "../../store/types";
-import { filterByView, viewTitle } from "../../store/views";
+import type { Item, SortOrder } from "../../store/types";
+import { SORT_LABELS, filterByView, viewTitle } from "../../store/views";
 import { formatRelative } from "../../lib/format";
 import { Icon } from "../common/Icon";
 import { Sort } from "../common/glyphs";
@@ -27,8 +28,21 @@ export function ListPane() {
   const selectedId = useStore((s) => s.selectedId);
   const selectItem = useStore((s) => s.selectItem);
   const search = useStore((s) => s.search).trim().toLowerCase();
+  const sort = useStore((s) => s.sort);
+  const setSort = useStore((s) => s.setSort);
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
 
-  let filtered = filterByView(items, view);
+  useEffect(() => {
+    if (!sortOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
+    };
+    window.addEventListener("mousedown", onDown);
+    return () => window.removeEventListener("mousedown", onDown);
+  }, [sortOpen]);
+
+  let filtered = filterByView(items, view, sort);
   if (search) filtered = filtered.filter((i) => matchesSearch(i, search));
 
   return (
@@ -65,9 +79,52 @@ export function ListPane() {
         >
           {filtered.length}
         </span>
-        <span style={{ marginLeft: "auto", color: "#b3b3bd", display: "flex", cursor: "pointer" }}>
-          <Sort />
-        </span>
+        <div ref={sortRef} style={{ marginLeft: "auto", position: "relative" }}>
+          <span
+            onClick={() => setSortOpen((o) => !o)}
+            title={`Sort: ${SORT_LABELS[sort]}`}
+            style={{ color: sortOpen ? "#1a1a1f" : "#b3b3bd", display: "flex", cursor: "pointer" }}
+          >
+            <Sort />
+          </span>
+          {sortOpen && (
+            <div
+              style={{
+                position: "absolute",
+                right: 0,
+                top: 26,
+                background: "#fff",
+                border: "1px solid #ececef",
+                borderRadius: 10,
+                boxShadow: "0 12px 30px -10px rgba(24,24,48,.3)",
+                padding: 5,
+                zIndex: 20,
+                minWidth: 150,
+              }}
+            >
+              {(Object.keys(SORT_LABELS) as SortOrder[]).map((key) => (
+                <div
+                  key={key}
+                  onClick={() => {
+                    setSort(key);
+                    setSortOpen(false);
+                  }}
+                  style={{
+                    padding: "7px 10px",
+                    borderRadius: 7,
+                    fontSize: 13,
+                    cursor: "pointer",
+                    color: key === sort ? "var(--ac, #5b5bd6)" : "#3b3b44",
+                    fontWeight: key === sort ? 600 : 400,
+                    background: key === sort ? "#f0f0fb" : "transparent",
+                  }}
+                >
+                  {SORT_LABELS[key]}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={{ flex: 1, overflow: "auto" }}>

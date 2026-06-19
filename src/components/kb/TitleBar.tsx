@@ -1,11 +1,11 @@
-// Top window bar: traffic lights, sidebar toggle, centered ⌘K search,
+// Top window bar: traffic lights, sidebar toggle, a window-centered ⌘K search,
 // AI-chat toggle, view/sort buttons, and the Capture button. Custom-drawn to
 // match the prototype; the window uses `decorations:false`, so the dots drive
 // the real window controls.
 
+import { useEffect, useRef } from "react";
 import { useStore } from "../../store/useStore";
-import { Search, SidebarToggle, ViewList, Sort, Plus } from "../common/glyphs";
-import { Sparkle } from "../common/glyphs";
+import { Search, SidebarToggle, ViewList, Sort, Plus, Sparkle } from "../common/glyphs";
 
 const AC = "var(--ac, #5b5bd6)";
 
@@ -36,11 +36,26 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
   const chatOpen = useStore((s) => s.chatOpen);
   const search = useStore((s) => s.search);
   const setSearch = useStore((s) => s.setSearch);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // ⌘K / Ctrl+K focuses the search box.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <div
       data-tauri-drag-region
       style={{
+        position: "relative",
         height: 46,
         display: "flex",
         alignItems: "center",
@@ -66,50 +81,56 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
         <SidebarToggle />
       </span>
 
-      <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
-        <label
+      <div style={{ flex: 1 }} />
+
+      {/* window-centered search */}
+      <label
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          transform: "translate(-50%, -50%)",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          width: "min(420px, 38vw)",
+          background: "#f1f1f3",
+          borderRadius: 9,
+          padding: "7px 11px",
+          color: search ? "#1a1a1f" : "#9a9aa5",
+          fontSize: 13,
+        }}
+      >
+        <Search />
+        <input
+          ref={inputRef}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search your knowledge…"
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            maxWidth: 420,
-            background: "#f1f1f3",
-            borderRadius: 9,
-            padding: "7px 11px",
-            color: search ? "#1a1a1f" : "#9a9aa5",
-            fontSize: 13,
+            flex: 1,
+            minWidth: 0,
+            border: "none",
+            outline: "none",
+            background: "transparent",
+            font: "inherit",
+            color: "#1a1a1f",
+          }}
+        />
+        <span
+          style={{
+            fontFamily: "ui-monospace,Menlo,monospace",
+            fontSize: 11,
+            color: "#a3a3ad",
+            background: "#fff",
+            border: "1px solid #e4e4e9",
+            borderRadius: 5,
+            padding: "1px 6px",
           }}
         >
-          <Search />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search your knowledge…"
-            style={{
-              flex: 1,
-              border: "none",
-              outline: "none",
-              background: "transparent",
-              font: "inherit",
-              color: "#1a1a1f",
-            }}
-          />
-          <span
-            style={{
-              fontFamily: "ui-monospace,Menlo,monospace",
-              fontSize: 11,
-              color: "#a3a3ad",
-              background: "#fff",
-              border: "1px solid #e4e4e9",
-              borderRadius: 5,
-              padding: "1px 6px",
-            }}
-          >
-            ⌘K
-          </span>
-        </label>
-      </div>
+          ⌘K
+        </span>
+      </label>
 
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <span

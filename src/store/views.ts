@@ -4,7 +4,7 @@
 // are trivially unit-testable.
 
 import { matchesView } from "../data/repository";
-import type { Collection, Item, TagCount, View } from "./types";
+import type { Collection, Item, SortOrder, TagCount, View } from "./types";
 
 export interface ViewCounts {
   all: number;
@@ -42,12 +42,30 @@ export function tagCounts(items: Item[], order: string[]): TagCount[] {
   return [...ordered, ...rest];
 }
 
-/** Filter to a view and sort newest-first (createdAt desc). */
-export function filterByView(items: Item[], view: View): Item[] {
-  return items
-    .filter((i) => matchesView(i, view))
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+/** Filter to a view and apply the given sort order (default: newest first). */
+export function filterByView(items: Item[], view: View, sort: SortOrder = "newest"): Item[] {
+  const filtered = items.filter((i) => matchesView(i, view));
+  return sortItems(filtered, sort);
 }
+
+export function sortItems(items: Item[], sort: SortOrder): Item[] {
+  const copy = items.slice();
+  switch (sort) {
+    case "oldest":
+      return copy.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    case "title":
+      return copy.sort((a, b) => a.title.localeCompare(b.title));
+    case "newest":
+    default:
+      return copy.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+}
+
+export const SORT_LABELS: Record<SortOrder, string> = {
+  newest: "Newest first",
+  oldest: "Oldest first",
+  title: "Title (A–Z)",
+};
 
 export function viewTitle(view: View, collections: Collection[]): string {
   switch (view.kind) {

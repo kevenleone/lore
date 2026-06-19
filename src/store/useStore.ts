@@ -14,6 +14,7 @@ import {
   type ChatMessage,
   type Collection,
   type Item,
+  type SortOrder,
   type View,
 } from "./types";
 
@@ -34,6 +35,7 @@ interface StoreState {
   aiAssist: boolean;
   search: string;
   sidebarVisible: boolean;
+  sort: SortOrder;
 
   // lifecycle
   hydrate: () => Promise<void>;
@@ -46,6 +48,7 @@ interface StoreState {
   setAiAssist: (on: boolean) => void;
   setSearch: (q: string) => void;
   toggleSidebar: () => void;
+  setSort: (sort: SortOrder) => void;
   sendChat: (question: string) => Promise<void>;
 
   // data actions
@@ -53,6 +56,9 @@ interface StoreState {
   createItem: (input: NewItem) => Promise<Item>;
   updateItem: (id: string, patch: ItemPatch) => Promise<void>;
   deleteItem: (id: string) => Promise<void>;
+  toggleStar: (id: string) => Promise<void>;
+  addTag: (id: string, tag: string) => Promise<void>;
+  removeTag: (id: string, tag: string) => Promise<void>;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -68,6 +74,7 @@ export const useStore = create<StoreState>((set, get) => ({
   aiAssist: true,
   search: "",
   sidebarVisible: true,
+  sort: "newest",
 
   async hydrate() {
     const repo = getRepository();
@@ -100,6 +107,9 @@ export const useStore = create<StoreState>((set, get) => ({
   },
   toggleSidebar() {
     set((s) => ({ sidebarVisible: !s.sidebarVisible }));
+  },
+  setSort(sort) {
+    set({ sort });
   },
 
   async sendChat(question) {
@@ -144,5 +154,24 @@ export const useStore = create<StoreState>((set, get) => ({
     if (get().selectedId === id) {
       set({ selectedId: get().items[0]?.id ?? null });
     }
+  },
+
+  async toggleStar(id) {
+    const item = get().items.find((i) => i.id === id);
+    if (!item) return;
+    await get().updateItem(id, { flags: { ...item.flags, starred: !item.flags.starred } });
+  },
+
+  async addTag(id, tag) {
+    const clean = tag.trim().replace(/^#/, "").toLowerCase();
+    const item = get().items.find((i) => i.id === id);
+    if (!clean || !item || item.tags.includes(clean)) return;
+    await get().updateItem(id, { tags: [...item.tags, clean] });
+  },
+
+  async removeTag(id, tag) {
+    const item = get().items.find((i) => i.id === id);
+    if (!item) return;
+    await get().updateItem(id, { tags: item.tags.filter((t) => t !== tag) });
   },
 }));

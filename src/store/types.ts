@@ -30,6 +30,8 @@ export interface Item {
   summary?: string;
   points?: string[];
   snippet?: string;
+  /** Preview image URL (e.g. OpenGraph image for links). */
+  image?: string;
   related: string[];
   /** ISO 8601. Display strings (`2m`, `Today, 14:30`) are derived at render. */
   createdAt: string;
@@ -79,3 +81,6 @@ export interface ChatMessage {
 export const ACCENTS = ["#5b5bd6", "#2f8f6b", "#c2622d", "#3a3a44"] as const;
 export type Accent = (typeof ACCENTS)[number];
 export const DEFAULT_ACCENT: Accent = "#5b5bd6";
+
+/** List sort order. */
+export type SortOrder = "newest" | "oldest" | "title";

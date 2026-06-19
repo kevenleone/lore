@@ -195,6 +195,17 @@ export function FileGlyph({ size = 20, sw = 1.7, style }: GlyphProps) {
   );
 }
 
+export function Trash({ size = 16, sw = 1.8, style }: GlyphProps) {
+  return (
+    <Stroke size={size} sw={sw} style={style}>
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6M14 11v6" />
+      <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+    </Stroke>
+  );
+}
+
 export function Calendar({ size = 13, sw = 1.8, style }: GlyphProps) {
   return (
     <Stroke size={size} sw={sw} style={style}>

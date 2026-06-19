@@ -25,6 +25,7 @@ export const SCHEMA_STATEMENTS = [
     summary       TEXT,
     points        TEXT,
     snippet       TEXT,
+    image         TEXT,
     related       TEXT NOT NULL DEFAULT '[]',
     created_at    TEXT NOT NULL,
     updated_at    TEXT NOT NULL,
@@ -36,3 +37,7 @@ export const SCHEMA_STATEMENTS = [
   `CREATE INDEX IF NOT EXISTS idx_items_collection ON items(collection_id)`,
   `CREATE INDEX IF NOT EXISTS idx_items_deleted    ON items(deleted_at)`,
 ];
+
+// Idempotent migrations for databases created before a column existed. Each is
+// run inside a try/catch (a "duplicate column" error means it's already there).
+export const MIGRATION_STATEMENTS = [`ALTER TABLE items ADD COLUMN image TEXT`];

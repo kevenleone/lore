@@ -16,7 +16,7 @@ import {
   type KnowledgeRepository,
   type NewItem,
 } from "./repository";
-import { DB_NAME, SCHEMA_STATEMENTS } from "./schema";
+import { DB_NAME, MIGRATION_STATEMENTS, SCHEMA_STATEMENTS } from "./schema";
 
 interface ItemRow {
   id: string;
@@ -29,6 +29,7 @@ interface ItemRow {
   summary: string | null;
   points: string | null;
   snippet: string | null;
+  image: string | null;
   related: string;
   created_at: string;
   updated_at: string;
@@ -47,6 +48,7 @@ function rowToItem(r: ItemRow): Item {
     summary: r.summary ?? undefined,
     points: r.points ? (JSON.parse(r.points) as string[]) : undefined,
     snippet: r.snippet ?? undefined,
+    image: r.image ?? undefined,
     related: JSON.parse(r.related) as string[],
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -67,6 +69,7 @@ function itemParams(i: Item): unknown[] {
     i.summary ?? null,
     i.points ? JSON.stringify(i.points) : null,
     i.snippet ?? null,
+    i.image ?? null,
     JSON.stringify(i.related),
     i.createdAt,
     i.updatedAt,
@@ -78,8 +81,8 @@ function itemParams(i: Item): unknown[] {
 // plain INSERT OR REPLACE is simplest and avoids ON CONFLICT/named-param quirks.
 const UPSERT_SQL = `
 INSERT OR REPLACE INTO items
-  (id, type, title, domain, collection_id, tags, flags, summary, points, snippet, related, created_at, updated_at, deleted_at, dirty, synced_at)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14, 1, NULL)
+  (id, type, title, domain, collection_id, tags, flags, summary, points, snippet, image, related, created_at, updated_at, deleted_at, dirty, synced_at)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15, 1, NULL)
 `;
 
 export class LocalRepository implements KnowledgeRepository {
@@ -97,6 +100,13 @@ export class LocalRepository implements KnowledgeRepository {
     const db = await Database.load(DB_NAME);
     for (const stmt of SCHEMA_STATEMENTS) {
       await db.execute(stmt);
+    }
+    for (const stmt of MIGRATION_STATEMENTS) {
+      try {
+        await db.execute(stmt);
+      } catch {
+        // Column already exists — migration is a no-op.
+      }
     }
     await this.seedIfEmpty(db);
     return db;

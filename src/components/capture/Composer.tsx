@@ -5,9 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import type { Collection, ItemType } from "../../store/types";
 import type { NewItem } from "../../data/repository";
 import { getRepository } from "../../data";
-import { captureAi, hideCapture, hostOf, saveCapture } from "../../lib/captureActions";
+import { hideCapture, hostOf, saveCapture } from "../../lib/captureActions";
+import { fetchLinkMetadata, type LinkMetadata } from "../../lib/linkMetadata";
 import { Icon } from "../common/Icon";
-import { ChevronDown, FileGlyph } from "../common/glyphs";
+import { ChevronDown, Check, FileGlyph, Globe } from "../common/glyphs";
 
 const AC = "var(--ac, #5b5bd6)";
 
@@ -35,6 +36,32 @@ export function Composer() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [collectionId, setCollectionId] = useState<string>("design");
   const [error, setError] = useState<string | null>(null);
+  const [meta, setMeta] = useState<LinkMetadata | null>(null);
+  const [fetching, setFetching] = useState(false);
+
+  // Fetch link metadata as the URL settles (link tab only).
+  useEffect(() => {
+    if (tab !== "link" || !value.trim()) {
+      setMeta(null);
+      return;
+    }
+    let cancelled = false;
+    const id = setTimeout(async () => {
+      setFetching(true);
+      try {
+        const m = await fetchLinkMetadata(value);
+        if (!cancelled) setMeta(m);
+      } catch {
+        if (!cancelled) setMeta(null);
+      } finally {
+        if (!cancelled) setFetching(false);
+      }
+    }, 450);
+    return () => {
+      cancelled = true;
+      clearTimeout(id);
+    };
+  }, [value, tab]);
 
   useEffect(() => {
     void getRepository()
@@ -83,9 +110,14 @@ export function Composer() {
     };
     if (tab === "link") {
       const host = hostOf(text);
-      item = { ...item, domain: host || undefined, title: host || text };
-      const s = await captureAi.summarize({ ...item, id: "", createdAt: "", updatedAt: "" });
-      item.summary = s.summary;
+      item = {
+        ...item,
+        domain: host || undefined,
+        title: meta?.title || host || text,
+        snippet: text, // full URL, used by "Open"
+        summary: meta?.description,
+        image: meta?.image,
+      };
     } else if (tab === "image") {
       item = { ...item, title: text || "Untitled image" };
     } else {
@@ -126,13 +158,50 @@ export function Composer() {
       <div style={{ padding: "15px 16px" }}>
         {/* per-type content */}
         {tab === "link" && (
-          <input
-            autoFocus
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="https://…"
-            style={{ width: "100%", display: "flex", border: "1px solid #e4e4ea", borderRadius: 10, padding: "10px 12px", fontSize: 14, color: "#1a1a1f", outline: "none", font: "inherit" }}
-          />
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 9, border: "1px solid #e4e4ea", borderRadius: 10, padding: "10px 12px", fontSize: 14, color: "#1a1a1f" }}>
+              <span style={{ color: "#a3a3ad", flex: "none", display: "flex" }}>
+                <Globe size={16} />
+              </span>
+              <input
+                autoFocus
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder="https://…"
+                style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", font: "inherit", color: "#1a1a1f" }}
+              />
+              {fetching && <span style={{ flex: "none", fontSize: 11, color: "#9a9aa5" }}>fetching…</span>}
+              {!fetching && meta && (
+                <span style={{ flex: "none", display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "#4d855f", background: "#e8f2ec", borderRadius: 6, padding: "2px 7px" }}>
+                  <Check size={12} sw={2.4} />
+                  fetched
+                </span>
+              )}
+            </div>
+            {meta && (
+              <div style={{ border: "1px solid #ececef", borderRadius: 12, overflow: "hidden", marginTop: 12 }}>
+                {meta.image ? (
+                  <img src={meta.image} alt="" style={{ width: "100%", height: 118, objectFit: "cover", display: "block" }} />
+                ) : (
+                  <div style={{ height: 118, background: "repeating-linear-gradient(45deg,#f6f6f8,#f6f6f8 10px,#efeff3 10px,#efeff3 20px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11.5, color: "#a7a7b0", letterSpacing: ".04em" }}>link preview</span>
+                  </div>
+                )}
+                <div style={{ padding: "12px 14px" }}>
+                  <div style={{ fontSize: 14.5, fontWeight: 620 }}>{meta.title || hostOf(value)}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "#9a9aa5", marginTop: 3 }}>
+                    <Globe size={12} />
+                    {hostOf(value)}
+                  </div>
+                  {meta.description && (
+                    <div style={{ marginTop: 10, fontSize: 13, lineHeight: 1.55, color: "#5a5a63", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                      {meta.description}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         )}
         {tab === "note" && (
           <textarea
