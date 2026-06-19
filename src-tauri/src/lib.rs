@@ -36,6 +36,8 @@ pub fn run() {
                 )?;
 
                 app.global_shortcut().register(alt_space)?;
+
+                commands::build_tray(app.handle())?;
             }
             Ok(())
         })

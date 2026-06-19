@@ -16,7 +16,7 @@ import {
   type KnowledgeRepository,
   type NewItem,
 } from "./repository";
-import { DB_NAME, SCHEMA_SQL } from "./schema";
+import { DB_NAME, SCHEMA_STATEMENTS } from "./schema";
 
 interface ItemRow {
   id: string;
@@ -74,14 +74,12 @@ function itemParams(i: Item): unknown[] {
   ];
 }
 
+// No placeholder reuse — createItem and updateItem both pass a full row, so a
+// plain INSERT OR REPLACE is simplest and avoids ON CONFLICT/named-param quirks.
 const UPSERT_SQL = `
-INSERT INTO items
+INSERT OR REPLACE INTO items
   (id, type, title, domain, collection_id, tags, flags, summary, points, snippet, related, created_at, updated_at, deleted_at, dirty, synced_at)
 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14, 1, NULL)
-ON CONFLICT(id) DO UPDATE SET
-  type=$2, title=$3, domain=$4, collection_id=$5, tags=$6, flags=$7,
-  summary=$8, points=$9, snippet=$10, related=$11, updated_at=$13,
-  deleted_at=$14, dirty=1, synced_at=NULL;
 `;
 
 export class LocalRepository implements KnowledgeRepository {
@@ -97,7 +95,9 @@ export class LocalRepository implements KnowledgeRepository {
   private async open(): Promise<Database> {
     const { default: Database } = await import("@tauri-apps/plugin-sql");
     const db = await Database.load(DB_NAME);
-    await db.execute(SCHEMA_SQL);
+    for (const stmt of SCHEMA_STATEMENTS) {
+      await db.execute(stmt);
+    }
     await this.seedIfEmpty(db);
     return db;
   }

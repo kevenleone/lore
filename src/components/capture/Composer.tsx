@@ -34,6 +34,7 @@ export function Composer() {
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [collectionId, setCollectionId] = useState<string>("design");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     void getRepository()
@@ -61,6 +62,15 @@ export function Composer() {
 
   const save = async () => {
     if (!canSave) return;
+    try {
+      setError(null);
+      await doSave();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const doSave = async () => {
     const text = value.trim();
     const tags = [...accepted];
     let item: NewItem = {
@@ -211,7 +221,9 @@ export function Composer() {
 
       {/* footer */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 16px", background: "#fafafa", borderTop: "1px solid #f0f0f2" }}>
-        <span style={{ fontSize: 12, color: "#9a9aa5" }}>⌥Space to toggle · drag files to attach</span>
+        <span style={{ fontSize: 12, color: error ? "#c0392b" : "#9a9aa5" }}>
+          {error ?? "⌥Space to toggle · drag files to attach"}
+        </span>
         <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span onClick={() => void hideCapture()} style={{ fontSize: 13, color: "#6b6b76", padding: "6px 12px", borderRadius: 8, cursor: "pointer" }}>
             Cancel

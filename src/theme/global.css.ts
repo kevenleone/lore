@@ -25,7 +25,9 @@ globalStyle("body", {
   textRendering: "optimizeLegibility",
   fontFamily: FONT_STACK,
   color: "#1a1a1f",
-  background: "#e7e5df",
+  // Transparent so the frameless capture window can float; the main window
+  // paints its own opaque background on the app root.
+  background: "transparent",
 });
 
 globalStyle("::-webkit-scrollbar", { width: 10, height: 10 });

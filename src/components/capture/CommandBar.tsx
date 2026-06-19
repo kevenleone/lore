@@ -42,6 +42,7 @@ export function CommandBar() {
   const [text, setText] = useState("");
   const [type, setType] = useState<ItemType>("note");
   const [tags, setTags] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   // Re-detect type + suggest tags as the input settles.
   useEffect(() => {
@@ -75,9 +76,14 @@ export function CommandBar() {
     return id ? id[0].toUpperCase() + id.slice(1) : "Inbox";
   }, [type]);
 
-  const save = () => {
+  const save = async () => {
     if (!text.trim()) return;
-    void saveCapture(buildItem(text, type, tags));
+    try {
+      setError(null);
+      await saveCapture(buildItem(text, type, tags));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   return (
@@ -92,7 +98,7 @@ export function CommandBar() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") save();
+            if (e.key === "Enter") void save();
             if (e.key === "Escape") void hideCapture();
           }}
           placeholder="Capture a link, note, task, or code…"
@@ -124,10 +130,14 @@ export function CommandBar() {
 
       {/* footer */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 18px", background: "#fafafa", borderTop: "1px solid #f0f0f2" }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: "#8a8a95" }}>
-          <Sparkle size={13} style={{ color: AC }} />
-          Filed to <strong style={{ color: "#5a5a63", fontWeight: 600 }}>{filedTo}</strong>
-        </span>
+        {error ? (
+          <span style={{ fontSize: 12, color: "#c0392b" }}>{error}</span>
+        ) : (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: "#8a8a95" }}>
+            <Sparkle size={13} style={{ color: AC }} />
+            Filed to <strong style={{ color: "#5a5a63", fontWeight: 600 }}>{filedTo}</strong>
+          </span>
+        )}
         <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <span onClick={() => void hideCapture()} style={{ fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, color: "#6b6b76", background: "#fff", border: "1px solid #e2e2e7", borderBottomWidth: 2, borderRadius: 6, padding: "2px 7px", cursor: "pointer" }}>
             esc

@@ -24,16 +24,19 @@
         "label": "capture",
         "url": "capture.html",
         "title": "Quick Capture",
-        "width": 620,
-        "height": 600,
+        "width": 640,
+        "height": 580,
         "resizable": false,
         "decorations": false,
+        "transparent": true,
+        "shadow": false,
         "alwaysOnTop": true,
         "skipTaskbar": true,
         "center": true,
         "visible": false
       }
     ],
+    "macOSPrivateApi": true,
     "security": {
       "csp": null
     }
