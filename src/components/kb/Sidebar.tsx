@@ -4,15 +4,11 @@
 import { useStore } from "../../store/useStore";
 import { SEED_TAG_ORDER } from "../../store/seed";
 import type { IconName, View } from "../../store/types";
-import {
-  collectionCount,
-  isViewActive,
-  tagCounts,
-  viewCounts,
-} from "../../store/views";
+import { isViewActive, tagCounts, viewCounts } from "../../store/views";
 import { Icon } from "../common/Icon";
 import { Message, Settings, Sparkle } from "../common/glyphs";
 import { hoverable } from "../../theme/util.css";
+import { CollectionsSection } from "./CollectionsSection";
 
 const AC = "var(--ac, #5b5bd6)";
 
@@ -50,7 +46,6 @@ const LIB_VIEWS: { kind: View["kind"]; label: string; icon: IconName; countKey: 
 
 export function Sidebar({ onCapture }: { onCapture: () => void }) {
   const items = useStore((s) => s.items);
-  const collections = useStore((s) => s.collections);
   const view = useStore((s) => s.view);
   const selectView = useStore((s) => s.selectView);
   const toggleChat = useStore((s) => s.toggleChat);
@@ -122,23 +117,8 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
         );
       })}
 
-      {/* Collections */}
-      <div style={SECTION_LABEL}>Collections</div>
-      {collections.map((c) => {
-        const active = isViewActive(view, "collection", c.id);
-        return (
-          <div
-            key={c.id}
-            className={active ? undefined : hoverable}
-            style={rowStyle(active)}
-            onClick={() => selectView("collection", c.id)}
-          >
-            <span style={{ width: 10, height: 10, borderRadius: 3, background: c.color, flex: "none" }} />
-            <span style={{ flex: 1 }}>{c.name}</span>
-            <span style={countStyle}>{collectionCount(items, c.id)}</span>
-          </div>
-        );
-      })}
+      {/* Collections (add / edit / remove) */}
+      <CollectionsSection />
 
       {/* Tags */}
       <div style={SECTION_LABEL}>Tags</div>

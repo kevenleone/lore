@@ -6,8 +6,10 @@ import { SEED_COLLECTIONS, SEED_ITEMS } from "../store/seed";
 import type { Collection, Item, TagCount, View } from "../store/types";
 import {
   matchesView,
+  type CollectionPatch,
   type ItemPatch,
   type KnowledgeRepository,
+  type NewCollection,
   type NewItem,
 } from "./repository";
 
@@ -66,6 +68,26 @@ export class MemoryRepository implements KnowledgeRepository {
 
   async listCollections(): Promise<Collection[]> {
     return this.collections.map((c) => ({ ...c }));
+  }
+
+  async createCollection(input: NewCollection): Promise<Collection> {
+    const collection: Collection = { ...input, id: `c_${Date.now()}_${this.seq++}` };
+    this.collections.push(collection);
+    return { ...collection };
+  }
+
+  async updateCollection(id: string, patch: CollectionPatch): Promise<Collection> {
+    const collection = this.collections.find((c) => c.id === id);
+    if (!collection) throw new Error(`Collection not found: ${id}`);
+    Object.assign(collection, patch);
+    return { ...collection };
+  }
+
+  async deleteCollection(id: string): Promise<void> {
+    this.collections = this.collections.filter((c) => c.id !== id);
+    for (const item of this.items) {
+      if (item.collectionId === id) item.collectionId = undefined;
+    }
   }
 
   async listTags(): Promise<TagCount[]> {

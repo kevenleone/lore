@@ -12,8 +12,10 @@ import { SEED_COLLECTIONS, SEED_ITEMS } from "../store/seed";
 import type { Collection, Item, ItemFlags, TagCount, View } from "../store/types";
 import {
   matchesView,
+  type CollectionPatch,
   type ItemPatch,
   type KnowledgeRepository,
+  type NewCollection,
   type NewItem,
 } from "./repository";
 import { DB_NAME, MIGRATION_STATEMENTS, SCHEMA_STATEMENTS } from "./schema";
@@ -190,6 +192,41 @@ export class LocalRepository implements KnowledgeRepository {
   async listCollections(): Promise<Collection[]> {
     const db = await this.db();
     return db.select<Collection[]>("SELECT id, name, color FROM collections");
+  }
+
+  async createCollection(input: NewCollection): Promise<Collection> {
+    const collection: Collection = { ...input, id: crypto.randomUUID() };
+    const db = await this.db();
+    await db.execute("INSERT INTO collections (id, name, color) VALUES ($1,$2,$3)", [
+      collection.id,
+      collection.name,
+      collection.color,
+    ]);
+    return collection;
+  }
+
+  async updateCollection(id: string, patch: CollectionPatch): Promise<Collection> {
+    const db = await this.db();
+    const rows = await db.select<Collection[]>("SELECT id, name, color FROM collections WHERE id = $1", [id]);
+    const existing = rows[0];
+    if (!existing) throw new Error(`Collection not found: ${id}`);
+    const updated: Collection = { ...existing, ...patch };
+    await db.execute("UPDATE collections SET name = $1, color = $2 WHERE id = $3", [
+      updated.name,
+      updated.color,
+      id,
+    ]);
+    return updated;
+  }
+
+  async deleteCollection(id: string): Promise<void> {
+    const db = await this.db();
+    await db.execute("DELETE FROM collections WHERE id = $1", [id]);
+    // Unfile items that referenced the removed collection.
+    await db.execute(
+      "UPDATE items SET collection_id = NULL, updated_at = $1, dirty = 1 WHERE collection_id = $2",
+      [new Date().toISOString(), id],
+    );
   }
 
   async listTags(): Promise<TagCount[]> {

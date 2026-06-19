@@ -195,6 +195,15 @@ export function FileGlyph({ size = 20, sw = 1.7, style }: GlyphProps) {
   );
 }
 
+export function Pencil({ size = 14, sw = 1.8, style }: GlyphProps) {
+  return (
+    <Stroke size={size} sw={sw} style={style}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </Stroke>
+  );
+}
+
 export function Trash({ size = 16, sw = 1.8, style }: GlyphProps) {
   return (
     <Stroke size={size} sw={sw} style={style}>

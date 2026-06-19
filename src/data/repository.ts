@@ -11,6 +11,8 @@ import type { Collection, Item, TagCount, View } from "../store/types";
 
 export type NewItem = Omit<Item, "id" | "createdAt" | "updatedAt" | "deletedAt">;
 export type ItemPatch = Partial<Omit<Item, "id" | "createdAt">>;
+export type NewCollection = Omit<Collection, "id">;
+export type CollectionPatch = Partial<Omit<Collection, "id">>;
 
 export interface KnowledgeRepository {
   listItems(view?: View): Promise<Item[]>;
@@ -20,6 +22,11 @@ export interface KnowledgeRepository {
   deleteItem(id: string): Promise<void>;
 
   listCollections(): Promise<Collection[]>;
+  createCollection(input: NewCollection): Promise<Collection>;
+  updateCollection(id: string, patch: CollectionPatch): Promise<Collection>;
+  /** Removes the collection and unfiles any items that referenced it. */
+  deleteCollection(id: string): Promise<void>;
+
   listTags(): Promise<TagCount[]>;
 
   /** ⌘K full-text search across titles, snippets, summaries, tags. */

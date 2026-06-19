@@ -4,7 +4,7 @@
 
 import { create } from "zustand";
 import { getRepository } from "../data";
-import type { ItemPatch, NewItem } from "../data/repository";
+import type { CollectionPatch, ItemPatch, NewCollection, NewItem } from "../data/repository";
 import { MockAiProvider } from "../ai/mockAiProvider";
 import type { AiProvider } from "../ai/aiProvider";
 import { SEED_CHAT } from "./seed";
@@ -59,6 +59,9 @@ interface StoreState {
   toggleStar: (id: string) => Promise<void>;
   addTag: (id: string, tag: string) => Promise<void>;
   removeTag: (id: string, tag: string) => Promise<void>;
+  createCollection: (input: NewCollection) => Promise<void>;
+  updateCollection: (id: string, patch: CollectionPatch) => Promise<void>;
+  deleteCollection: (id: string) => Promise<void>;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -173,5 +176,25 @@ export const useStore = create<StoreState>((set, get) => ({
     const item = get().items.find((i) => i.id === id);
     if (!item) return;
     await get().updateItem(id, { tags: item.tags.filter((t) => t !== tag) });
+  },
+
+  async createCollection(input) {
+    await getRepository().createCollection(input);
+    await get().refresh();
+  },
+
+  async updateCollection(id, patch) {
+    await getRepository().updateCollection(id, patch);
+    await get().refresh();
+  },
+
+  async deleteCollection(id) {
+    await getRepository().deleteCollection(id);
+    // If we were viewing the removed collection, fall back to All Items.
+    const v = get().view;
+    if (v.kind === "collection" && v.val === id) {
+      set({ view: { kind: "all", val: null } });
+    }
+    await get().refresh();
   },
 }));
