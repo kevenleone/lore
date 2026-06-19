@@ -1,7 +1,7 @@
 // Direction B — Composer. Pick a type, add structured content, accept/dismiss
 // AI tag suggestions, choose a collection, then save.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Collection, ItemType } from "../../store/types";
 import type { NewItem } from "../../data/repository";
 import { getRepository } from "../../data";
@@ -36,6 +36,7 @@ export function Composer() {
   const [tagDraft, setTagDraft] = useState("");
   const [collections, setCollections] = useState<Collection[]>([]);
   const [collectionId, setCollectionId] = useState<string>("design");
+  const [collOpen, setCollOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [meta, setMeta] = useState<LinkMetadata | null>(null);
   const [fetching, setFetching] = useState(false);
@@ -81,6 +82,19 @@ export function Composer() {
     if (t && !tags.includes(t)) setTags((a) => [...a, t]);
   };
   const removeTag = (t: string) => setTags((a) => a.filter((x) => x !== t));
+
+  const activeCollection = collections.find((c) => c.id === collectionId) ?? null;
+  const collRef = useRef<HTMLDivElement>(null);
+
+  // Close the collection dropdown when clicking elsewhere.
+  useEffect(() => {
+    if (!collOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (collRef.current && !collRef.current.contains(e.target as Node)) setCollOpen(false);
+    };
+    window.addEventListener("mousedown", onDown);
+    return () => window.removeEventListener("mousedown", onDown);
+  }, [collOpen]);
 
   const canSave = useMemo(() => tab === "image" || value.trim().length > 0, [tab, value]);
 
@@ -273,26 +287,53 @@ export function Composer() {
           )}
         </div>
 
-        {/* collection */}
+        {/* collection — custom dropdown (a native <select> would steal focus and
+            dismiss the capture window) */}
         <div style={{ marginTop: 11, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={SECTION_LABEL}>Collection</span>
-          <label style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, color: "#3b3b44", background: "#f4f4f6", borderRadius: 8, padding: "5px 10px", cursor: "pointer" }}>
-            <span style={{ width: 9, height: 9, borderRadius: "50%", background: collections.find((c) => c.id === collectionId)?.color ?? "#82a896" }} />
-            <select
-              value={collectionId}
-              onChange={(e) => setCollectionId(e.target.value)}
-              style={{ border: "none", outline: "none", background: "transparent", font: "inherit", color: "#3b3b44", cursor: "pointer", appearance: "none" }}
+          <div ref={collRef} style={{ position: "relative" }}>
+            <span
+              onClick={() => setCollOpen((o) => !o)}
+              style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, color: "#3b3b44", background: "#f4f4f6", borderRadius: 8, padding: "5px 10px", cursor: "pointer" }}
             >
-              {collections.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <span style={{ color: "#a3a3ad", display: "flex" }}>
-              <ChevronDown />
+              <span style={{ width: 9, height: 9, borderRadius: "50%", background: activeCollection?.color ?? "#c4c4cc" }} />
+              {activeCollection?.name ?? "Unfiled"}
+              <span style={{ color: "#a3a3ad", display: "flex" }}>
+                <ChevronDown />
+              </span>
             </span>
-          </label>
+            {collOpen && (
+              <div style={{ position: "absolute", left: 0, top: 32, zIndex: 30, background: "#fff", border: "1px solid #ececef", borderRadius: 10, boxShadow: "0 14px 34px -10px rgba(24,24,48,.32)", padding: 5, minWidth: 180, maxHeight: 220, overflow: "auto" }}>
+                {collections.length === 0 && (
+                  <div style={{ padding: "7px 10px", fontSize: 12.5, color: "#9a9aa5" }}>No collections yet</div>
+                )}
+                {collections.map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => {
+                      setCollectionId(c.id);
+                      setCollOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "7px 10px",
+                      borderRadius: 7,
+                      cursor: "pointer",
+                      fontSize: 13,
+                      color: c.id === collectionId ? AC : "#3b3b44",
+                      fontWeight: c.id === collectionId ? 600 : 400,
+                      background: c.id === collectionId ? "#f0f0fb" : "transparent",
+                    }}
+                  >
+                    <span style={{ width: 9, height: 9, borderRadius: "50%", background: c.color, flex: "none" }} />
+                    {c.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
