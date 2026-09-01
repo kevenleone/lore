@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Compiled sidecar binaries — rebuilt by `pnpm build:sidecar`, ~65 MB each.
+src-tauri/binaries/

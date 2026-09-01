@@ -1,3 +1,6 @@
+packages:
+  - "sidecar"
+
 # esbuild's install script links its platform-native binary. Vite (and so
 # `pnpm dev` / `pnpm build`) cannot run without it.
 allowBuilds:

@@ -9,6 +9,13 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
   plugins: [react(), vanillaExtractPlugin()],
 
+  // The sidecar is a Bun package with its own `bun test` suite (`pnpm
+  // test:sidecar`); vitest must not try to load `bun:test` from it.
+  test: {
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    exclude: ["sidecar/**", "node_modules/**", "dist/**"],
+  },
+
   // Two HTML entry points: the main KB window and the quick-capture window.
   build: {
     rollupOptions: {

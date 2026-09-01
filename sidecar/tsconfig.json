@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext"],
+    "types": ["bun"],
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Domain types are shared with the renderer by path, not by package: the
+       imports are type-only and erased at build, so there is no runtime
+       dependency from the sidecar back into the app. */
+    "paths": {
+      "@lore/types": ["../src/store/types.ts"]
+    }
+  },
+  "include": ["src", "test", "scripts"]
+}
