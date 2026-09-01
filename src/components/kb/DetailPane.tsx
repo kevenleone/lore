@@ -28,6 +28,7 @@ export function DetailPane() {
   const items = useStore((s) => s.items);
   const collections = useStore((s) => s.collections);
   const selectedId = useStore((s) => s.selectedId);
+  const detail = useStore((s) => s.detail);
   // The AI sections need both the pane toggle and the Capture & AI setting.
   const aiAssist = useStore((s) => s.aiAssist && s.prefs.switches.autoSum);
   const toggleStar = useStore((s) => s.toggleStar);
@@ -36,7 +37,10 @@ export function DetailPane() {
   const addTag = useStore((s) => s.addTag);
   const removeTag = useStore((s) => s.removeTag);
 
-  const sel = items.find((i) => i.id === selectedId) ?? items[0];
+  // The list row paints everything but the body instantly; `detail` carries the
+  // body and lands a tick later, so prefer it once it matches the selection.
+  const listItem = items.find((i) => i.id === selectedId) ?? items[0];
+  const sel = detail && detail.id === listItem?.id ? detail : listItem;
 
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
@@ -67,11 +71,14 @@ export function DetailPane() {
   const coll = collectionFor(sel, collections);
   const related = relatedItems(sel, items);
   const flags = detailFlags(sel, aiAssist, related.length);
-  const linkUrl = sel.type === "link" ? sel.snippet || (sel.domain ? `https://${sel.domain}` : "") : "";
+  const linkUrl = sel.type === "link" ? sel.url || (sel.domain ? `https://${sel.domain}` : "") : "";
 
-  // The editable body targets `snippet` for note/task/code, `description` for links.
-  const bodyField: "snippet" | "description" | null = flags.detIsCode || flags.detIsText ? "snippet" : sel.type === "link" ? "description" : null;
-  const bodyValue = bodyField === "snippet" ? sel.snippet : bodyField === "description" ? sel.description : undefined;
+  // note/task/code edit the item's own content; a link's editable text stays its
+  // `description`. Links do get a real `body` in the vault, but exposing an
+  // editor for it is a separate change — this keeps today's behaviour exactly.
+  const bodyField: "body" | "description" | null =
+    flags.detIsCode || flags.detIsText ? "body" : sel.type === "link" ? "description" : null;
+  const bodyValue = bodyField === "body" ? sel.body : bodyField === "description" ? sel.description : undefined;
 
   const commitTitle = () => {
     const next = titleDraft.trim();
@@ -86,7 +93,7 @@ export function DetailPane() {
   const commitBody = () => {
     setEditingBody(false);
     if (bodyDraft === (bodyValue ?? "")) return;
-    if (bodyField === "snippet") void updateItem(sel.id, { snippet: bodyDraft });
+    if (bodyField === "body") void updateItem(sel.id, { body: bodyDraft });
     else if (bodyField === "description") void updateItem(sel.id, { description: bodyDraft });
   };
 
@@ -192,7 +199,7 @@ export function DetailPane() {
         <img src={sel.image} alt={sel.title} style={{ width: "100%", height: 204, objectFit: "cover", borderRadius: 13, border: "1px solid var(--border, #ececef)", margin: "20px 0 4px", display: "block" }} />
       )}
 
-      {/* body: code / note-task snippet / link description — editable */}
+      {/* body: code / note-task content / link description — editable */}
       {bodyField && editingBody ? (
         <textarea
           autoFocus
@@ -208,14 +215,14 @@ export function DetailPane() {
         />
       ) : flags.detIsCode ? (
         <pre title="Click to edit" onClick={startBody} style={{ margin: "20px 0 4px", fontFamily: "ui-monospace,SFMono-Regular,Menlo,monospace", fontSize: 13, lineHeight: 1.7, color: "var(--text2, #6b6b76)", background: "var(--surface3, #f1f1f3)", border: "1px solid var(--border, #ececef)", borderRadius: 11, padding: 16, whiteSpace: "pre", overflow: "auto", cursor: "text" }}>
-          {sel.snippet}
+          {sel.body}
         </pre>
       ) : flags.detIsText ? (
         <p title="Click to edit" onClick={startBody} style={{ margin: "18px 0 4px", fontSize: 15, lineHeight: 1.65, color: "var(--text2, #6b6b76)", cursor: "text" }}>
-          {sel.snippet}
+          {sel.body}
         </p>
       ) : sel.type === "link" ? (
-        <p title="Click to edit" onClick={startBody} style={{ margin: "18px 0 4px", fontSize: 14.5, lineHeight: 1.6, color: sel.description ? "#3b3b44" : "#b3b3bd", cursor: "text" }}>
+        <p title="Click to edit" onClick={startBody} style={{ margin: "18px 0 4px", fontSize: 14.5, lineHeight: 1.6, color: sel.description ? "var(--text2, #3b3b44)" : "var(--faint, #b3b3bd)", cursor: "text" }}>
           {sel.description || "Add a description…"}
         </p>
       ) : null}

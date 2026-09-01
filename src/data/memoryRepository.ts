@@ -4,8 +4,9 @@
 
 import { SEED_COLLECTIONS, SEED_ITEMS } from "../store/seed";
 import type { Collection, Item, TagCount, View } from "../store/types";
+import { matchesView } from "../store/views";
+import { withDerived, withoutBody } from "./derive";
 import {
-  matchesView,
   type CollectionPatch,
   type ItemPatch,
   type KnowledgeRepository,
@@ -25,16 +26,20 @@ export class MemoryRepository implements KnowledgeRepository {
   }
 
   private live(): Item[] {
-    return this.items.filter((i) => !i.deletedAt);
+    // `snippet` / `domain` are derived, never stored — same rule as every
+    // other repository, so tests exercise the real shape.
+    return this.items.filter((i) => !i.deletedAt).map(withDerived);
   }
 
   async listItems(view?: View): Promise<Item[]> {
     const all = this.live();
     const filtered = view ? all.filter((i) => matchesView(i, view)) : all;
     // Newest first (createdAt desc) to match the prototype's ordering.
+    // Bodies are fetched per item by getItem — see derive.withoutBody.
     return filtered
       .slice()
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map(withoutBody);
   }
 
   async getItem(id: string): Promise<Item | null> {
@@ -51,14 +56,14 @@ export class MemoryRepository implements KnowledgeRepository {
       deletedAt: null,
     };
     this.items.unshift(item);
-    return { ...item };
+    return withDerived(item);
   }
 
   async updateItem(id: string, patch: ItemPatch): Promise<Item> {
     const item = this.items.find((i) => i.id === id);
     if (!item) throw new Error(`Item not found: ${id}`);
     Object.assign(item, patch, { updatedAt: new Date().toISOString() });
-    return { ...item };
+    return withDerived(item);
   }
 
   async deleteItem(id: string): Promise<void> {
@@ -105,7 +110,8 @@ export class MemoryRepository implements KnowledgeRepository {
       const haystack = [
         i.title,
         i.domain ?? "",
-        i.snippet ?? "",
+        i.body ?? "",
+        i.url ?? "",
         i.summary ?? "",
         i.tags.join(" "),
       ]

@@ -32,6 +32,7 @@ export const SEED_ITEMS: Item[] = [
     type: "link",
     title: "How Linear builds product",
     domain: "linear.app",
+    url: "https://linear.app/blog/how-linear-builds-product",
     collectionId: "reading",
     tags: ["product", "research"],
     flags: { inbox: true },
@@ -51,6 +52,7 @@ export const SEED_ITEMS: Item[] = [
     type: "link",
     title: "Building a Second Brain",
     domain: "fortelabs.com",
+    url: "https://fortelabs.com/blog/basboverview/",
     collectionId: "reading",
     tags: ["productivity", "pkm"],
     flags: { inbox: true },
@@ -72,7 +74,7 @@ export const SEED_ITEMS: Item[] = [
     collectionId: "work",
     tags: ["work", "research"],
     flags: { today: true },
-    snippet:
+    body:
       "Priorities locked: capture latency, AI tagging accuracy, then the mobile share sheet. Graph view deferred to Q4.",
     summary:
       "Decisions from the roadmap sync: ship the mobile share sheet first, invest in AI tagging accuracy, and defer the graph view.",
@@ -92,7 +94,7 @@ export const SEED_ITEMS: Item[] = [
     collectionId: "work",
     tags: ["work"],
     flags: { today: true, inbox: true },
-    snippet:
+    body:
       "Review and approve the new onboarding microcopy with Maya before Friday’s build.",
     summary:
       "A reminder to review and sign off on the new onboarding microcopy with Maya this week.",
@@ -106,7 +108,7 @@ export const SEED_ITEMS: Item[] = [
     title: "useDebounce — React hook",
     tags: ["tools"],
     flags: {},
-    snippet:
+    body:
       "export function useDebounce(value, ms = 300) {\n  const [v, setV] = useState(value);\n  useEffect(() => {\n    const id = setTimeout(() => setV(value), ms);\n    return () => clearTimeout(id);\n  }, [value, ms]);\n  return v;\n}",
     summary:
       "A tiny hook that debounces a fast-changing value — handy for search inputs and live filters.",
@@ -119,6 +121,7 @@ export const SEED_ITEMS: Item[] = [
     type: "link",
     title: "OKLCH Color Picker",
     domain: "oklch.com",
+    url: "https://oklch.com/",
     collectionId: "design",
     tags: ["design", "tools"],
     flags: { starred: true },
@@ -150,6 +153,7 @@ export const SEED_ITEMS: Item[] = [
     type: "link",
     title: "The Design of Everyday Things",
     domain: "nngroup.com",
+    url: "https://www.nngroup.com/books/design-everyday-things-revised/",
     collectionId: "design",
     tags: ["design", "research"],
     flags: { starred: true },
@@ -170,7 +174,7 @@ export const SEED_ITEMS: Item[] = [
     collectionId: "recipes",
     tags: ["food"],
     flags: {},
-    snippet: "Stock + miso, soft egg, scallions, chili oil. Under 20 minutes.",
+    body: "Stock + miso, soft egg, scallions, chili oil. Under 20 minutes.",
     summary:
       "A quick miso ramen for busy weeknights — ready in under twenty minutes.",
     related: [],

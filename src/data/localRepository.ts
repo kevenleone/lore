@@ -10,15 +10,21 @@
 import type Database from "@tauri-apps/plugin-sql";
 import { SEED_COLLECTIONS, SEED_ITEMS } from "../store/seed";
 import type { Collection, Item, ItemFlags, TagCount, View } from "../store/types";
+import { matchesView } from "../store/views";
 import {
-  matchesView,
   type CollectionPatch,
   type ItemPatch,
   type KnowledgeRepository,
   type NewCollection,
   type NewItem,
 } from "./repository";
-import { DB_NAME, MIGRATION_STATEMENTS, SCHEMA_STATEMENTS } from "./schema";
+import { withDerived, withoutBody } from "./derive";
+import {
+  BACKFILL_STATEMENTS,
+  DB_NAME,
+  MIGRATION_STATEMENTS,
+  SCHEMA_STATEMENTS,
+} from "./schema";
 
 interface ItemRow {
   id: string;
@@ -30,7 +36,8 @@ interface ItemRow {
   flags: string;
   summary: string | null;
   points: string | null;
-  snippet: string | null;
+  url: string | null;
+  body: string | null;
   description: string | null;
   image: string | null;
   related: string;
@@ -40,7 +47,7 @@ interface ItemRow {
 }
 
 function rowToItem(r: ItemRow): Item {
-  return {
+  return withDerived({
     id: r.id,
     type: r.type as Item["type"],
     title: r.title,
@@ -50,14 +57,15 @@ function rowToItem(r: ItemRow): Item {
     flags: JSON.parse(r.flags) as ItemFlags,
     summary: r.summary ?? undefined,
     points: r.points ? (JSON.parse(r.points) as string[]) : undefined,
-    snippet: r.snippet ?? undefined,
+    url: r.url ?? undefined,
+    body: r.body ?? undefined,
     description: r.description ?? undefined,
     image: r.image ?? undefined,
     related: JSON.parse(r.related) as string[],
     createdAt: r.created_at,
     updatedAt: r.updated_at,
     deletedAt: r.deleted_at,
-  };
+  });
 }
 
 /** Column values, in INSERT/UPSERT order, for an item. */
@@ -72,7 +80,8 @@ function itemParams(i: Item): unknown[] {
     JSON.stringify(i.flags),
     i.summary ?? null,
     i.points ? JSON.stringify(i.points) : null,
-    i.snippet ?? null,
+    i.url ?? null,
+    i.body ?? null,
     i.description ?? null,
     i.image ?? null,
     JSON.stringify(i.related),
@@ -86,12 +95,23 @@ function itemParams(i: Item): unknown[] {
 // plain INSERT OR REPLACE is simplest and avoids ON CONFLICT/named-param quirks.
 const UPSERT_SQL = `
 INSERT OR REPLACE INTO items
-  (id, type, title, domain, collection_id, tags, flags, summary, points, snippet, description, image, related, created_at, updated_at, deleted_at, dirty, synced_at)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16, 1, NULL)
+  (id, type, title, domain, collection_id, tags, flags, summary, points, url, body, description, image, related, created_at, updated_at, deleted_at, dirty, synced_at)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17, 1, NULL)
 `;
 
 export class LocalRepository implements KnowledgeRepository {
   private dbPromise: Promise<Database> | null = null;
+
+  /** Drops the memoised connection so a later open starts clean. */
+  async dispose(): Promise<void> {
+    const pending = this.dbPromise;
+    this.dbPromise = null;
+    try {
+      await (await pending)?.close();
+    } catch {
+      // Already closed, or never opened — nothing to release.
+    }
+  }
 
   private async db(): Promise<Database> {
     if (!this.dbPromise) {
@@ -112,6 +132,10 @@ export class LocalRepository implements KnowledgeRepository {
       } catch {
         // Column already exists — migration is a no-op.
       }
+    }
+    // Split the legacy overloaded `snippet` column into url/body. Idempotent.
+    for (const stmt of BACKFILL_STATEMENTS) {
+      await db.execute(stmt);
     }
     await this.seedIfEmpty(db);
     return db;
@@ -142,7 +166,9 @@ export class LocalRepository implements KnowledgeRepository {
 
   async listItems(view?: View): Promise<Item[]> {
     const all = await this.allLive();
-    return view ? all.filter((i) => matchesView(i, view)) : all;
+    const filtered = view ? all.filter((i) => matchesView(i, view)) : all;
+    // Bodies are fetched per item by getItem — see derive.withoutBody.
+    return filtered.map(withoutBody);
   }
 
   async getItem(id: string): Promise<Item | null> {
@@ -242,7 +268,7 @@ export class LocalRepository implements KnowledgeRepository {
     const all = await this.allLive();
     if (!q) return all;
     return all.filter((i) => {
-      const hay = [i.title, i.domain ?? "", i.snippet ?? "", i.summary ?? "", i.tags.join(" ")]
+      const hay = [i.title, i.domain ?? "", i.body ?? "", i.url ?? "", i.summary ?? "", i.tags.join(" ")]
         .join(" ")
         .toLowerCase();
       return hay.includes(q);

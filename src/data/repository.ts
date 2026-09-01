@@ -2,10 +2,13 @@
 // KnowledgeRepository, so the app is agnostic to where data lives:
 //   - memoryRepository  — seed-backed, for the static UI phase and tests
 //   - localRepository   — SQLite via @tauri-apps/plugin-sql (source of truth)
-//   - convexRepository  — optional remote sync (deferred)
+//   - vaultRepository   — the Markdown vault, via the Bun sidecar
 //
-// Keeping this interface narrow is what makes "offline-first now, Convex later"
-// a config swap rather than a rewrite.
+// Keeping this interface narrow is what makes swapping the backing store a
+// config change rather than a rewrite.
+//
+// `matchesView` used to live here; it moved to store/views.ts so the data layer
+// no longer imports from the store and vice versa.
 
 import type { Collection, Item, TagCount, View } from "../store/types";
 
@@ -32,26 +35,12 @@ export interface KnowledgeRepository {
   /** ⌘K full-text search across titles, snippets, summaries, tags. */
   search(query: string): Promise<Item[]>;
 
-  /** Optional reactive hook (Convex provides this); returns an unsubscribe. */
+  /**
+   * Optional reactive hook — implemented by the vault store's file watcher;
+   * returns an unsubscribe.
+   */
   subscribe?(cb: () => void): () => void;
-}
 
-/** Apply a view filter to an item list (shared by every repository impl). */
-export function matchesView(item: Item, view: View): boolean {
-  switch (view.kind) {
-    case "all":
-      return true;
-    case "inbox":
-      return !!item.flags.inbox;
-    case "today":
-      return !!item.flags.today;
-    case "starred":
-      return !!item.flags.starred;
-    case "collection":
-      return item.collectionId === view.val;
-    case "tag":
-      return !!view.val && item.tags.includes(view.val);
-    default:
-      return true;
-  }
+  /** Releases connections/streams so a workspace switch can rebuild cleanly. */
+  dispose?(): void | Promise<void>;
 }

@@ -32,6 +32,12 @@ const persisted = loadPersisted();
 interface StoreState {
   // data
   items: Item[];
+  /**
+   * The selected item, with its `body` — `listItems()` omits bodies, so the
+   * detail pane reads through here and falls back to the list row until it
+   * arrives (no spinner, no layout shift).
+   */
+  detail: Item | null;
   collections: Collection[];
   chat: ChatMessage[];
   hydrated: boolean;
@@ -57,6 +63,7 @@ interface StoreState {
 
   // lifecycle
   hydrate: () => Promise<void>;
+  loadDetail: (id: string) => Promise<void>;
 
   // ui actions
   selectView: (kind: View["kind"], val?: string | null) => void;
@@ -103,6 +110,7 @@ function persist(s: Pick<StoreState, "prefs" | "auth" | "onboarded">): void {
 
 export const useStore = create<StoreState>((set, get) => ({
   items: [],
+  detail: null,
   collections: [],
   chat: SEED_CHAT,
   hydrated: false,
@@ -132,13 +140,21 @@ export const useStore = create<StoreState>((set, get) => ({
     const selectedId =
       items.find((i) => i.id === get().selectedId)?.id ?? items[0]?.id ?? null;
     set({ items, collections, selectedId, hydrated: true });
+    if (selectedId) void get().loadDetail(selectedId);
+  },
+
+  async loadDetail(id) {
+    const item = await getRepository().getItem(id);
+    // Ignore a response that lost the race to a newer selection.
+    if (get().selectedId === id) set({ detail: item });
   },
 
   selectView(kind, val = null) {
     set({ view: { kind, val }, chatOpen: false });
   },
   selectItem(id) {
-    set({ selectedId: id, chatOpen: false });
+    set({ selectedId: id, chatOpen: false, detail: null });
+    void get().loadDetail(id);
   },
   toggleChat() {
     set((s) => ({ chatOpen: !s.chatOpen }));
@@ -245,6 +261,9 @@ export const useStore = create<StoreState>((set, get) => ({
       repo.listCollections(),
     ]);
     set({ items, collections });
+    // Re-read the body: a mutation may have changed it.
+    const id = get().selectedId;
+    if (id) void get().loadDetail(id);
   },
 
   async createItem(input) {
@@ -263,7 +282,9 @@ export const useStore = create<StoreState>((set, get) => ({
     await getRepository().deleteItem(id);
     await get().refresh();
     if (get().selectedId === id) {
-      set({ selectedId: get().items[0]?.id ?? null });
+      const next = get().items[0]?.id ?? null;
+      set({ selectedId: next, detail: null });
+      if (next) void get().loadDetail(next);
     }
   },
 

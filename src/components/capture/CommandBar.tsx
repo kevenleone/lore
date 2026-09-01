@@ -36,13 +36,13 @@ function buildItem(text: string, type: ItemType, tags: string[], meta: LinkMetad
       ...base,
       domain: host || undefined,
       title: meta?.title || host || trimmed,
-      snippet: trimmed, // full URL, used by "Open"
+      url: trimmed,
       description: meta?.description,
       image: meta?.image,
     };
   }
   if (type === "code" || type === "note" || type === "task") {
-    return { ...base, title: trimmed.split("\n")[0].slice(0, 80), snippet: trimmed };
+    return { ...base, title: trimmed.split("\n")[0].slice(0, 80), body: trimmed };
   }
   return base;
 }

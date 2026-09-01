@@ -3,8 +3,31 @@
 // detail-pane visibility booleans from a plain item/collection list, so they
 // are trivially unit-testable.
 
-import { matchesView } from "../data/repository";
 import type { Collection, Item, SortOrder, TagCount, View } from "./types";
+
+/**
+ * Apply a view filter to an item list. Shared by the selectors below and by
+ * every repository implementation — it lives here rather than in the data layer
+ * so the two do not import each other.
+ */
+export function matchesView(item: Item, view: View): boolean {
+  switch (view.kind) {
+    case "all":
+      return true;
+    case "inbox":
+      return !!item.flags.inbox;
+    case "today":
+      return !!item.flags.today;
+    case "starred":
+      return !!item.flags.starred;
+    case "collection":
+      return item.collectionId === view.val;
+    case "tag":
+      return !!view.val && item.tags.includes(view.val);
+    default:
+      return true;
+  }
+}
 
 export interface ViewCounts {
   all: number;

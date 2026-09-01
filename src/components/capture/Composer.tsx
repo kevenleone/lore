@@ -124,14 +124,14 @@ export function Composer() {
         ...item,
         domain: host || undefined,
         title: meta?.title || host || text,
-        snippet: text, // full URL, used by "Open"
+        url: text,
         description: meta?.description,
         image: meta?.image,
       };
     } else if (tab === "image") {
       item = { ...item, title: text || "Untitled image" };
     } else {
-      item = { ...item, title: text.split("\n")[0].slice(0, 80), snippet: text };
+      item = { ...item, title: text.split("\n")[0].slice(0, 80), body: text };
     }
     await saveCapture(item);
   };

@@ -1,7 +1,10 @@
-// SQLite schema for the local (source-of-truth) store. JSON-encoded columns
-// keep the shape close to the Item type; the `dirty` / `synced_at` / `deleted_at`
-// columns are the groundwork for optional Convex sync later (last-writer-wins
-// outbox + tombstones).
+// SQLite schema for the local store. JSON-encoded columns keep the shape close
+// to the Item type.
+//
+// `snippet` is legacy: it used to hold a note's body AND a link's URL. Those are
+// now the separate `body` and `url` columns, and `snippet` is derived on read
+// (see data/derive.ts). BACKFILL_STATEMENTS moves old rows across; the column
+// stays so a downgrade still finds its data.
 
 export const DB_NAME = "sqlite:lore.db";
 
@@ -25,6 +28,8 @@ export const SCHEMA_STATEMENTS = [
     summary       TEXT,
     points        TEXT,
     snippet       TEXT,
+    url           TEXT,
+    body          TEXT,
     description   TEXT,
     image         TEXT,
     related       TEXT NOT NULL DEFAULT '[]',
@@ -44,4 +49,13 @@ export const SCHEMA_STATEMENTS = [
 export const MIGRATION_STATEMENTS = [
   `ALTER TABLE items ADD COLUMN image TEXT`,
   `ALTER TABLE items ADD COLUMN description TEXT`,
+  `ALTER TABLE items ADD COLUMN url TEXT`,
+  `ALTER TABLE items ADD COLUMN body TEXT`,
+];
+
+// One-time split of the overloaded `snippet` column. Guarded by `IS NULL` on the
+// destination so it is idempotent and never clobbers a real edit.
+export const BACKFILL_STATEMENTS = [
+  `UPDATE items SET url  = snippet WHERE type =  'link' AND url  IS NULL AND snippet IS NOT NULL`,
+  `UPDATE items SET body = snippet WHERE type <> 'link' AND body IS NULL AND snippet IS NOT NULL`,
 ];

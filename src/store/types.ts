@@ -30,6 +30,21 @@ export interface Item {
   /** AI-generated summary (distinct from a link's own description). */
   summary?: string;
   points?: string[];
+  /**
+   * Where a link points. Links only — this used to share `snippet` with note
+   * bodies, which is why `snippet` is now derived rather than stored.
+   */
+  url?: string;
+  /**
+   * The item's own content: the note/task/code text, or the user's notes on a
+   * link. In the Markdown vault this is everything below the frontmatter.
+   */
+  body?: string;
+  /**
+   * Derived one-line preview for the list pane — `body`'s first line, or a
+   * link's `description`/`url`. Computed on read by every repository and never
+   * persisted; see `deriveSnippet`.
+   */
   snippet?: string;
   /** A link's own description (e.g. OpenGraph/meta description). */
   description?: string;
