@@ -17,8 +17,8 @@ export function AiSummaryCard({
     <div
       style={{
         marginTop: 20,
-        background: "#f8f8ff",
-        border: "1px solid #ececfb",
+        background: "var(--ac-tint, #eeeef2)",
+        border: "1px solid var(--ac-border, #dedee5)",
         borderRadius: 13,
         padding: "17px 18px",
       }}
@@ -27,13 +27,13 @@ export function AiSummaryCard({
         <span style={{ color: AC, display: "flex" }}>
           <Sparkle size={15} />
         </span>
-        <span style={{ fontSize: 13, fontWeight: 680, color: "#16161a" }}>AI Summary</span>
+        <span style={{ fontSize: 13, fontWeight: 680, color: "var(--text, #1a1a1f)" }}>AI Summary</span>
         <span
           style={{
             fontSize: 10.5,
-            color: "#a3a3ad",
-            background: "#fff",
-            border: "1px solid #ececfb",
+            color: "var(--faint, #a8a8b0)",
+            background: "var(--surface, #fff)",
+            border: "1px solid var(--ac-border, #dedee5)",
             borderRadius: 5,
             padding: "1px 6px",
             marginLeft: 2,
@@ -42,7 +42,7 @@ export function AiSummaryCard({
           auto-generated
         </span>
       </div>
-      <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.6, color: "#3b3b44" }}>{summary}</p>
+      <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.6, color: "var(--text2, #6b6b76)" }}>{summary}</p>
       {showPoints && (
         <div style={{ marginTop: 13, display: "flex", flexDirection: "column", gap: 7 }}>
           {points.map((p, i) => (
@@ -54,7 +54,7 @@ export function AiSummaryCard({
                 alignItems: "flex-start",
                 fontSize: 13.5,
                 lineHeight: 1.5,
-                color: "#4a4a52",
+                color: "var(--text2, #6b6b76)",
               }}
             >
               <span style={{ width: 5, height: 5, borderRadius: "50%", background: AC, flex: "none", marginTop: 7 }} />

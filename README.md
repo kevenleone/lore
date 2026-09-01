@@ -1,11 +1,11 @@
-# Baloon
+# Lore
 
 An **offline-first** personal knowledge base with global-hotkey quick capture.
 Built with **Tauri 2 + React 19 + TypeScript**. Press **⌥Space** anywhere to
-capture a link, note, task, or code snippet; Baloon files it into a local
+capture a link, note, task, or code snippet; Lore files it into a local
 library you can browse, search, and ask questions about.
 
-> UI recreated pixel-for-pixel from the `Balloon.dc.html` Claude Design
+> UI recreated pixel-for-pixel from the `Lore.dc.html` Claude Design
 > prototype.
 
 ## Run
@@ -54,13 +54,28 @@ backend is needed for local use; if multi-device sync is ever wanted, Convex
 
 **AI is pluggable** (`src/ai/aiProvider.ts`). The deterministic
 `MockAiProvider` powers summaries, tag suggestions, type detection, and the
-"Ask Balloon" chat with zero network/keys. A real Claude-backed provider can
+"Ask Lore" chat with zero network/keys. A real Claude-backed provider can
 replace it behind the same interface (route calls through a Rust command so the
 API key never reaches the renderer).
 
-**Styling** uses inline styles referencing the `--ac` accent CSS variable
-(themeable, 4 accents) plus vanilla-extract for global resets and `:hover`
-states — mirroring the prototype's `--ac` model.
+**First launch** shows `Onboarding` (`components/onboarding/`), the
+`Lore Onboarding.dc.html` sheet: sign in with Apple / Google / an email link, or
+start a local vault. The chosen lane is recorded as `auth.mode` and, with every
+preference, persisted by `store/persisted.ts` (localStorage for now — swap that
+module when there is a backend). Identity providers and mail delivery are stubs.
+
+**Settings is a modal sheet** (`components/settings/`) over the KB window, with
+the design's ten panes in a left rail. Accent, appearance, list density, text
+size, AI location and the full switch set write through the store and persist;
+panes that need a backend (devices, billing, calendar accounts) render the
+design's copy against placeholder figures.
+
+**Styling** uses inline styles referencing semantic CSS variables — `--ac` for
+the accent (5 options) and the `--surface` / `--text` / `--border` token set in
+`theme/tokens.ts` — plus vanilla-extract for global resets and `:hover` states.
+`App.tsx` writes the Light or Dark token set onto the app root, so Look & Feel →
+Appearance (including Auto, which follows the OS) repaints the whole app. A too-
+dark accent is lifted on the dark ground exactly as the design specifies.
 
 ## Layout
 
@@ -70,22 +85,34 @@ src/
   capture.tsx              Quick Capture window entry
   components/
     common/{Icon,glyphs}    SVG icon sets
+    common/LoreMark          logo mark + serif wordmark font
     kb/                      TitleBar, Sidebar, ListPane, DetailPane,
-                             AiSummaryCard, RelatedCards, AskBalloonChat
+                             AiSummaryCard, RelatedCards, AskLoreChat
     capture/                 CaptureApp, CommandBar (A), Composer (B)
+    onboarding/              first-launch sheet (sign in / local vault / magic link)
+    settings/                modal sheet, ten panes, shared controls
   data/                      repository seam + memory/local impls + schema
-  store/                     types, seed, typeMeta, views (selectors), useStore
+  store/                     types, seed, typeMeta, views (selectors), useStore,
+                             persisted (prefs + auth)
   ai/                        AiProvider + MockAiProvider
   lib/                       format, capture helpers
-  theme/                     global + util styles
+  theme/                     global + util styles, light/dark tokens
 src-tauri/
   src/{lib.rs, commands.rs}  plugins, ⌥Space shortcut, capture window control
   tauri.conf.json            window + bundle config
   capabilities/default.json  permission grants
+  icons/app-icon.svg         Dock icon master — regenerate the rasters with
+                             `pnpm tauri icon src-tauri/icons/app-icon.svg -o src-tauri/icons`
+  icons/tray-icon.svg        menu-bar master (monochrome template, auto-inverts)
 ```
 
 ## Status
 
 Phases 1–5 complete: scaffold, full KB UI on seed data, SQLite persistence,
 quick-capture window + hotkey (both directions), and AI stubs with unit tests.
-Deferred / optional: real Claude AI provider, and Convex remote sync.
+Phase 6 covers the Lore rebrand, the onboarding sheet, the settings modal, and
+light/dark theming.
+
+Deferred: real Claude AI provider, Convex remote sync, real auth and mail
+delivery behind onboarding, and the Focus and Calendar surfaces — the designs
+treat those as windows of their own, so only their preference panes are built.

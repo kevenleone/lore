@@ -15,7 +15,7 @@ export function RelatedCards({ related }: { related: Item[] }) {
   return (
     <div style={{ marginTop: 22 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 11 }}>
-        <span style={{ fontSize: 11, fontWeight: 680, letterSpacing: ".06em", textTransform: "uppercase", color: "#a8a8b0" }}>
+        <span style={{ fontSize: 11, fontWeight: 680, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--faint, #a8a8b0)" }}>
           Related
         </span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: AC }}>
@@ -35,7 +35,7 @@ export function RelatedCards({ related }: { related: Item[] }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 11,
-                border: "1px solid #ececef",
+                border: "1px solid var(--border, #ececef)",
                 borderRadius: 11,
                 padding: "11px 13px",
                 cursor: "pointer",
@@ -57,12 +57,12 @@ export function RelatedCards({ related }: { related: Item[] }) {
                 <Icon name={r.type} />
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 600, color: "#1a1a1f", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text, #1a1a1f)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {r.title}
                 </div>
-                <div style={{ fontSize: 12, color: "#9a9aa5" }}>{r.domain || meta.label}</div>
+                <div style={{ fontSize: 12, color: "var(--text3, #9a9aa5)" }}>{r.domain || meta.label}</div>
               </div>
-              <span style={{ color: "#c4c4cc", flex: "none", display: "flex" }}>
+              <span style={{ color: "var(--faint, #a8a8b0)", flex: "none", display: "flex" }}>
                 <ChevronRight />
               </span>
             </div>

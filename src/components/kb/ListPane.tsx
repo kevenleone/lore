@@ -9,6 +9,7 @@ import { SORT_LABELS, filterByView, viewTitle } from "../../store/views";
 import { formatRelative } from "../../lib/format";
 import { Icon } from "../common/Icon";
 import { Sort } from "../common/glyphs";
+import { listRow, tagRow, tagRowCompact } from "./ListPane.css";
 
 const AC = "var(--ac, #5b5bd6)";
 
@@ -27,6 +28,7 @@ export function ListPane() {
   const view = useStore((s) => s.view);
   const selectedId = useStore((s) => s.selectedId);
   const selectItem = useStore((s) => s.selectItem);
+  const density = useStore((s) => s.prefs.density);
   const search = useStore((s) => s.search).trim().toLowerCase();
   const sort = useStore((s) => s.sort);
   const setSort = useStore((s) => s.setSort);
@@ -42,6 +44,10 @@ export function ListPane() {
     return () => window.removeEventListener("mousedown", onDown);
   }, [sortOpen]);
 
+  // "List density" (Settings → Look & Feel): Compact also hides the tag row
+  // until the row is hovered, exactly as the setting's description promises.
+  const rowPadding = { Compact: "7px 14px", Cozy: "11px 14px", Roomy: "16px 14px" }[density];
+
   let filtered = filterByView(items, view, sort);
   if (search) filtered = filtered.filter((i) => matchesSearch(i, search));
 
@@ -50,7 +56,7 @@ export function ListPane() {
       style={{
         width: 438,
         flex: "none",
-        borderRight: "1px solid #ececef",
+        borderRight: "1px solid var(--border, #ececef)",
         display: "flex",
         flexDirection: "column",
         minWidth: 0,
@@ -59,7 +65,7 @@ export function ListPane() {
       <div
         style={{
           padding: "14px 16px",
-          borderBottom: "1px solid #ececef",
+          borderBottom: "1px solid var(--border, #ececef)",
           display: "flex",
           alignItems: "center",
           gap: 10,
@@ -70,8 +76,8 @@ export function ListPane() {
         <span
           style={{
             fontSize: 12,
-            color: "#a3a3ad",
-            background: "#f2f2f4",
+            color: "var(--faint, #a8a8b0)",
+            background: "var(--surface3, #f1f1f3)",
             borderRadius: 20,
             padding: "1px 8px",
             fontVariantNumeric: "tabular-nums",
@@ -93,8 +99,8 @@ export function ListPane() {
                 position: "absolute",
                 right: 0,
                 top: 26,
-                background: "#fff",
-                border: "1px solid #ececef",
+                background: "var(--surface, #fff)",
+                border: "1px solid var(--border, #ececef)",
                 borderRadius: 10,
                 boxShadow: "0 12px 30px -10px rgba(24,24,48,.3)",
                 padding: 5,
@@ -134,15 +140,16 @@ export function ListPane() {
           return (
             <div
               key={item.id}
+              className={listRow}
               onClick={() => selectItem(item.id)}
               style={{
                 display: "flex",
                 gap: 12,
-                padding: "11px 14px",
-                borderBottom: "1px solid #f4f4f5",
+                padding: rowPadding,
+                borderBottom: "1px solid var(--border, #ececef)",
                 cursor: "pointer",
                 alignItems: "flex-start",
-                ...(selected ? { background: "#f5f5fd", boxShadow: `inset 2px 0 0 ${AC}` } : {}),
+                ...(selected ? { background: "var(--ac-tint, #eeeef2)", boxShadow: `inset 2px 0 0 ${AC}` } : {}),
               }}
             >
               <span
@@ -166,7 +173,7 @@ export function ListPane() {
                   style={{
                     fontSize: 13.5,
                     fontWeight: 600,
-                    color: "#1a1a1f",
+                    color: "var(--text, #1a1a1f)",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -177,7 +184,7 @@ export function ListPane() {
                 <div
                   style={{
                     fontSize: 12,
-                    color: "#9a9aa5",
+                    color: "var(--text3, #9a9aa5)",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -186,15 +193,15 @@ export function ListPane() {
                 >
                   {subtitle(item)}
                 </div>
-                <div style={{ display: "flex", gap: 5, marginTop: 6, flexWrap: "wrap" }}>
+                <div className={density === "Compact" ? tagRowCompact : tagRow}>
                   {item.tags.map((tag) => (
                     <span
                       key={tag}
                       style={{
                         fontFamily: "ui-monospace,Menlo,monospace",
                         fontSize: 10,
-                        color: "#8a8a95",
-                        background: "#f3f3f6",
+                        color: "var(--text3, #9a9aa5)",
+                        background: "var(--surface3, #f1f1f3)",
                         borderRadius: 5,
                         padding: "1px 5px",
                       }}
@@ -204,7 +211,7 @@ export function ListPane() {
                   ))}
                 </div>
               </div>
-              <span style={{ fontSize: 11, color: "#b3b3bd", whiteSpace: "nowrap", flex: "none", marginTop: 1 }}>
+              <span style={{ fontSize: 11, color: "var(--faint, #a8a8b0)", whiteSpace: "nowrap", flex: "none", marginTop: 1 }}>
                 {formatRelative(item.createdAt)}
               </span>
             </div>

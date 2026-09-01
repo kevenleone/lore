@@ -1,0 +1,20 @@
+<!--
+  Lore menu-bar icon — `Lore Identity.dc.html` § 02: "Monochrome template, 18px.
+  Auto-inverts."
+
+  Drawn in solid black on transparency so macOS can treat it as a template image
+  (see `icon_as_template(true)` in commands.rs) and invert it for light and dark
+  menu bars. The mark is scaled to fill the square's height, since its own
+  silhouette is much taller than it is wide.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <g transform="translate(0.26, 0.5) scale(0.969)">
+    <path d="M7.5 2.75 h11.1 L25 9.1 V29.25 H7.5 Z"
+          fill="none" stroke="#000000" stroke-width="2.4"
+          stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M18.4 2.9 V9.4 H24.9"
+          fill="none" stroke="#000000" stroke-width="2.2"
+          stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="16.2" cy="19.6" r="3.5" fill="#000000"/>
+  </g>
+</svg>

@@ -24,7 +24,7 @@ globalStyle("body", {
   WebkitFontSmoothing: "antialiased",
   textRendering: "optimizeLegibility",
   fontFamily: FONT_STACK,
-  color: "#1a1a1f",
+  color: "var(--text, #1a1a1f)",
   // Transparent so the frameless capture window can float; the main window
   // paints its own opaque background on the app root.
   background: "transparent",

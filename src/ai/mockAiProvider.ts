@@ -1,5 +1,5 @@
 // Deterministic, offline Ai provider. Exercises the full AI UI (summaries,
-// suggested tags, Ask Balloon with Sources chips) without any API key or
+// suggested tags, Ask Lore with Sources chips) without any API key or
 // network. A real claudeAiProvider drops in behind the same interface later.
 
 import type { Item, ItemType } from "../store/types";

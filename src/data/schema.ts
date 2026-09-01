@@ -3,7 +3,7 @@
 // columns are the groundwork for optional Convex sync later (last-writer-wins
 // outbox + tombstones).
 
-export const DB_NAME = "sqlite:baloon.db";
+export const DB_NAME = "sqlite:lore.db";
 
 // One statement per array entry — tauri-plugin-sql runs `execute` as a single
 // prepared statement, so a multi-statement string would silently run only the

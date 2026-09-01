@@ -77,7 +77,7 @@ export function CollectionsSection() {
   // A plain render function (not a nested component) so the input keeps focus
   // across keystrokes.
   const renderEditor = (key: string) => (
-    <div key={key} style={{ ...ROW_BASE, flexDirection: "column", alignItems: "stretch", gap: 8, padding: "8px 9px", background: "#f4f4f6", cursor: "default" }}>
+    <div key={key} style={{ ...ROW_BASE, flexDirection: "column", alignItems: "stretch", gap: 8, padding: "8px 9px", background: "var(--sel, #f4f4f6)", cursor: "default" }}>
       <input
         ref={nameRef}
         value={draftName}
@@ -87,7 +87,7 @@ export function CollectionsSection() {
           if (e.key === "Escape") cancel();
         }}
         placeholder="Collection name"
-        style={{ border: "1px solid #e0e0e8", borderRadius: 7, padding: "6px 9px", fontSize: 13.5, outline: "none", font: "inherit", background: "#fff" }}
+        style={{ border: "1px solid var(--border, #e4e4ea)", borderRadius: 7, padding: "6px 9px", fontSize: 13.5, outline: "none", font: "inherit", background: "var(--surface, #fff)" }}
       />
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
         {COLLECTION_COLORS.map((c) => (
@@ -106,7 +106,7 @@ export function CollectionsSection() {
         ))}
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 6 }}>
-        <span onClick={cancel} style={{ fontSize: 12.5, color: "#6b6b76", padding: "4px 10px", borderRadius: 7, cursor: "pointer" }}>
+        <span onClick={cancel} style={{ fontSize: 12.5, color: "var(--text2, #6b6b76)", padding: "4px 10px", borderRadius: 7, cursor: "pointer" }}>
           Cancel
         </span>
         <span onClick={() => void save()} style={{ fontSize: 12.5, fontWeight: 600, color: "#fff", background: AC, padding: "4px 12px", borderRadius: 7, cursor: "pointer" }}>
@@ -119,13 +119,13 @@ export function CollectionsSection() {
   return (
     <>
       <div style={{ display: "flex", alignItems: "center", padding: "15px 9px 5px" }}>
-        <span style={{ fontSize: 11, fontWeight: 680, letterSpacing: ".06em", textTransform: "uppercase", color: "#a8a8b0" }}>
+        <span style={{ fontSize: 11, fontWeight: 680, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--faint, #a8a8b0)" }}>
           Collections
         </span>
         <span
           onClick={startAdd}
           title="New collection"
-          style={{ marginLeft: "auto", display: "flex", color: "#a8a8b0", cursor: "pointer" }}
+          style={{ marginLeft: "auto", display: "flex", color: "var(--faint, #a8a8b0)", cursor: "pointer" }}
         >
           <Plus size={13} sw={2} />
         </span>
@@ -138,7 +138,7 @@ export function CollectionsSection() {
           return (
             <div key={c.id} style={{ ...ROW_BASE, background: "#fbecec", cursor: "default" }}>
               <span style={{ flex: 1, fontSize: 12.5, color: "#a23b30" }}>Delete “{c.name}”?</span>
-              <span onClick={() => setConfirmId(null)} title="Cancel" style={{ display: "flex", color: "#8a8a95", cursor: "pointer" }}>
+              <span onClick={() => setConfirmId(null)} title="Cancel" style={{ display: "flex", color: "var(--text3, #9a9aa5)", cursor: "pointer" }}>
                 <Close size={14} />
               </span>
               <span
@@ -164,7 +164,7 @@ export function CollectionsSection() {
             onMouseEnter={() => setHoveredId(c.id)}
             onMouseLeave={() => setHoveredId((h) => (h === c.id ? null : h))}
             onClick={() => selectView("collection", c.id)}
-            style={{ ...ROW_BASE, ...(active ? { background: "#f0f0fb", color: AC, fontWeight: 590 } : { color: "#3b3b44" }) }}
+            style={{ ...ROW_BASE, ...(active ? { background: "var(--ac-tint, #eeeef2)", color: AC, fontWeight: 590 } : { color: "var(--text2, #6b6b76)" }) }}
           >
             <span style={{ width: 10, height: 10, borderRadius: 3, background: c.color, flex: "none" }} />
             <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</span>
@@ -176,7 +176,7 @@ export function CollectionsSection() {
                     startEdit(c.id, c.name, c.color);
                   }}
                   title="Edit"
-                  style={{ display: "flex", color: "#8a8a95", cursor: "pointer" }}
+                  style={{ display: "flex", color: "var(--text3, #9a9aa5)", cursor: "pointer" }}
                 >
                   <Pencil size={13} />
                 </span>

@@ -1,4 +1,4 @@
-// Baloon — Tauri entry point.
+// Lore — Tauri entry point.
 // Plugins back the offline-first store (sql), link-metadata fetching (http),
 // opening external links (opener), and the ⌥Space quick-capture global shortcut
 // (global-shortcut, desktop only).

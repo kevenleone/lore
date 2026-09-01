@@ -1,5 +1,5 @@
 // Left sidebar: Quick Capture, Library views (with counts), Collections, Tags,
-// and the footer (Ask Balloon + Settings).
+// and the footer (Ask Lore + Settings).
 
 import { useStore } from "../../store/useStore";
 import { SEED_TAG_ORDER } from "../../store/seed";
@@ -24,8 +24,8 @@ const ROW_BASE = {
 
 function rowStyle(active: boolean): React.CSSProperties {
   return active
-    ? { ...ROW_BASE, background: "#f0f0fb", color: AC, fontWeight: 590 }
-    : { ...ROW_BASE, color: "#3b3b44" };
+    ? { ...ROW_BASE, background: "var(--ac-tint, #eeeef2)", color: AC, fontWeight: 590 }
+    : { ...ROW_BASE, color: "var(--text2, #6b6b76)" };
 }
 
 const SECTION_LABEL: React.CSSProperties = {
@@ -33,7 +33,7 @@ const SECTION_LABEL: React.CSSProperties = {
   fontWeight: 680,
   letterSpacing: ".06em",
   textTransform: "uppercase",
-  color: "#a8a8b0",
+  color: "var(--faint, #a8a8b0)",
   padding: "15px 9px 5px",
 };
 
@@ -49,6 +49,8 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
   const view = useStore((s) => s.view);
   const selectView = useStore((s) => s.selectView);
   const toggleChat = useStore((s) => s.toggleChat);
+  const openSettings = useStore((s) => s.openSettings);
+  const showCounts = useStore((s) => s.prefs.switches.counts);
 
   const counts = viewCounts(items);
   const tags = tagCounts(items, SEED_TAG_ORDER);
@@ -64,8 +66,8 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
       style={{
         width: 248,
         flex: "none",
-        background: "#fafafa",
-        borderRight: "1px solid #ececef",
+        background: "var(--surface2, #fafafa)",
+        borderRight: "1px solid var(--border, #ececef)",
         display: "flex",
         flexDirection: "column",
         padding: 10,
@@ -80,9 +82,9 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
           display: "flex",
           alignItems: "center",
           gap: 9,
-          background: "#f0f0fb",
+          background: "var(--ac-tint, #eeeef2)",
           color: AC,
-          border: "1px solid #e4e4f7",
+          border: "1px solid var(--ac-border, #dedee5)",
           borderRadius: 9,
           padding: "9px 11px",
           fontWeight: 590,
@@ -112,7 +114,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
               <Icon name={v.icon} />
             </span>
             <span style={{ flex: 1 }}>{v.label}</span>
-            <span style={countStyle}>{counts[v.countKey]}</span>
+            {showCounts && <span style={countStyle}>{counts[v.countKey]}</span>}
           </div>
         );
       })}
@@ -135,7 +137,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
               <Icon name="hash" />
             </span>
             <span style={{ flex: 1 }}>{t.name}</span>
-            <span style={countStyle}>{t.count}</span>
+            {showCounts && <span style={countStyle}>{t.count}</span>}
           </div>
         );
       })}
@@ -143,16 +145,16 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
       <div style={{ flex: 1, minHeight: 16 }} />
 
       {/* Footer */}
-      <div className={hoverable} onClick={toggleChat} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 9px", borderRadius: 7, cursor: "pointer", color: "#3b3b44" }}>
+      <div className={hoverable} onClick={toggleChat} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 9px", borderRadius: 7, cursor: "pointer", color: "var(--text2, #6b6b76)" }}>
         <span style={{ color: AC, display: "flex", flex: "none" }}>
           <Message />
         </span>
-        Ask Balloon
-        <span style={{ marginLeft: "auto", fontSize: 11, background: "#eeeefb", color: AC, borderRadius: 5, padding: "1px 6px", fontWeight: 600 }}>
+        Ask Lore
+        <span style={{ marginLeft: "auto", fontSize: 11, background: "var(--ac-tint, #eeeef2)", color: AC, borderRadius: 5, padding: "1px 6px", fontWeight: 600 }}>
           AI
         </span>
       </div>
-      <div className={hoverable} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 9px", borderRadius: 7, cursor: "pointer", color: "#6b6b76" }}>
+      <div className={hoverable} onClick={() => openSettings()} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 9px", borderRadius: 7, cursor: "pointer", color: "var(--text2, #6b6b76)" }}>
         <span style={{ display: "flex", flex: "none" }}>
           <Settings />
         </span>

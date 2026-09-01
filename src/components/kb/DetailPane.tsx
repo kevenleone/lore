@@ -28,7 +28,8 @@ export function DetailPane() {
   const items = useStore((s) => s.items);
   const collections = useStore((s) => s.collections);
   const selectedId = useStore((s) => s.selectedId);
-  const aiAssist = useStore((s) => s.aiAssist);
+  // The AI sections need both the pane toggle and the Capture & AI setting.
+  const aiAssist = useStore((s) => s.aiAssist && s.prefs.switches.autoSum);
   const toggleStar = useStore((s) => s.toggleStar);
   const deleteItem = useStore((s) => s.deleteItem);
   const updateItem = useStore((s) => s.updateItem);
@@ -59,7 +60,7 @@ export function DetailPane() {
   }, [addingTag]);
 
   if (!sel) {
-    return <div style={{ flex: 1, background: "#fff" }} />;
+    return <div style={{ flex: 1, background: "var(--surface, #fff)" }} />;
   }
 
   const meta = typeMeta(sel.type);
@@ -106,8 +107,8 @@ export function DetailPane() {
     resize: "vertical",
     minHeight: 120,
     ...(mono
-      ? { fontFamily: "ui-monospace,SFMono-Regular,Menlo,monospace", fontSize: 13, lineHeight: 1.7, color: "#2a2a32", background: "#f7f7f8" }
-      : { font: "inherit", fontSize: 15, lineHeight: 1.65, color: "#3b3b44" }),
+      ? { fontFamily: "ui-monospace,SFMono-Regular,Menlo,monospace", fontSize: 13, lineHeight: 1.7, color: "var(--text2, #6b6b76)", background: "var(--surface3, #f1f1f3)" }
+      : { font: "inherit", fontSize: 15, lineHeight: 1.65, color: "var(--text2, #6b6b76)" }),
   });
 
   return (
@@ -118,14 +119,14 @@ export function DetailPane() {
           <Icon name={sel.type} size={13} /> {meta.label}
         </span>
         {sel.domain && (
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "#9a9aa5" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "var(--text3, #9a9aa5)" }}>
             <Globe />
             {sel.domain}
           </span>
         )}
         <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
           {linkUrl && (
-            <span onClick={() => void openExternal(linkUrl)} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#6b6b76", border: "1px solid #e4e4ea", borderRadius: 8, padding: "5px 11px", cursor: "pointer" }}>
+            <span onClick={() => void openExternal(linkUrl)} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--text2, #6b6b76)", border: "1px solid var(--border, #e4e4ea)", borderRadius: 8, padding: "5px 11px", cursor: "pointer" }}>
               <External />
               Open
             </span>
@@ -133,17 +134,17 @@ export function DetailPane() {
           <button type="button" title={sel.flags.starred ? "Remove flag" : "Flag"} onClick={() => void toggleStar(sel.id)} style={{ display: "inline-flex", color: sel.flags.starred ? AC : "#c4c4cc", cursor: "pointer", background: "none", border: "none", padding: 4 }}>
             <StarOutline style={sel.flags.starred ? { fill: AC } : undefined} />
           </button>
-          <button type="button" title="Delete" onClick={() => setConfirmDelete(true)} style={{ display: "inline-flex", color: "#c4c4cc", cursor: "pointer", background: "none", border: "none", padding: 4 }}>
+          <button type="button" title="Delete" onClick={() => setConfirmDelete(true)} style={{ display: "inline-flex", color: "var(--faint, #a8a8b0)", cursor: "pointer", background: "none", border: "none", padding: 4 }}>
             <Trash />
           </button>
         </span>
 
         {confirmDelete && (
-          <div style={{ position: "absolute", right: 0, top: 36, zIndex: 30, background: "#fff", border: "1px solid #ececef", borderRadius: 12, boxShadow: "0 16px 40px -12px rgba(24,24,48,.35)", padding: 16, width: 260 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#16161a" }}>Delete this item?</div>
-            <div style={{ fontSize: 12.5, color: "#9a9aa5", marginTop: 4 }}>This removes “{sel.title}” from your knowledge base.</div>
+          <div style={{ position: "absolute", right: 0, top: 36, zIndex: 30, background: "var(--surface, #fff)", border: "1px solid var(--border, #ececef)", borderRadius: 12, boxShadow: "0 16px 40px -12px rgba(24,24,48,.35)", padding: 16, width: 260 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text, #1a1a1f)" }}>Delete this item?</div>
+            <div style={{ fontSize: 12.5, color: "var(--text3, #9a9aa5)", marginTop: 4 }}>This removes “{sel.title}” from your knowledge base.</div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
-              <span onClick={() => setConfirmDelete(false)} style={{ fontSize: 13, color: "#6b6b76", padding: "6px 12px", borderRadius: 8, cursor: "pointer" }}>
+              <span onClick={() => setConfirmDelete(false)} style={{ fontSize: 13, color: "var(--text2, #6b6b76)", padding: "6px 12px", borderRadius: 8, cursor: "pointer" }}>
                 Cancel
               </span>
               <span
@@ -171,15 +172,15 @@ export function DetailPane() {
             if (e.key === "Enter") commitTitle();
             if (e.key === "Escape") setEditingTitle(false);
           }}
-          style={{ width: "100%", margin: "14px 0 0", fontSize: 23, fontWeight: 700, lineHeight: 1.25, letterSpacing: "-.015em", color: "#16161a", border: "none", borderBottom: `2px solid ${AC}`, outline: "none", font: "inherit", fontFamily: "inherit", background: "transparent" }}
+          style={{ width: "100%", margin: "14px 0 0", fontSize: 23, fontWeight: 700, lineHeight: 1.25, letterSpacing: "-.015em", color: "var(--text, #1a1a1f)", border: "none", borderBottom: `2px solid ${AC}`, outline: "none", font: "inherit", fontFamily: "inherit", background: "transparent" }}
         />
       ) : (
-        <h1 title="Click to edit" onClick={() => { setTitleDraft(sel.title); setEditingTitle(true); }} style={{ margin: "14px 0 0", fontSize: 23, fontWeight: 700, lineHeight: 1.25, letterSpacing: "-.015em", color: "#16161a", cursor: "text" }}>
+        <h1 title="Click to edit" onClick={() => { setTitleDraft(sel.title); setEditingTitle(true); }} style={{ margin: "14px 0 0", fontSize: 23, fontWeight: 700, lineHeight: 1.25, letterSpacing: "-.015em", color: "var(--text, #1a1a1f)", cursor: "text" }}>
           {sel.title}
         </h1>
       )}
 
-      <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 9, fontSize: 12.5, color: "#9a9aa5" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 9, fontSize: 12.5, color: "var(--text3, #9a9aa5)" }}>
         <span style={{ width: 9, height: 9, borderRadius: "50%", background: coll?.color ?? "#c4c4cc" }} />
         {coll?.name ?? "Unfiled"}
         <span style={{ opacity: 0.5 }}>·</span>
@@ -188,7 +189,7 @@ export function DetailPane() {
 
       {/* image preview — only when there is an image */}
       {flags.showPreview && sel.image && (
-        <img src={sel.image} alt={sel.title} style={{ width: "100%", height: 204, objectFit: "cover", borderRadius: 13, border: "1px solid #ececef", margin: "20px 0 4px", display: "block" }} />
+        <img src={sel.image} alt={sel.title} style={{ width: "100%", height: 204, objectFit: "cover", borderRadius: 13, border: "1px solid var(--border, #ececef)", margin: "20px 0 4px", display: "block" }} />
       )}
 
       {/* body: code / note-task snippet / link description — editable */}
@@ -206,11 +207,11 @@ export function DetailPane() {
           style={bodyTextareaStyle(flags.detIsCode)}
         />
       ) : flags.detIsCode ? (
-        <pre title="Click to edit" onClick={startBody} style={{ margin: "20px 0 4px", fontFamily: "ui-monospace,SFMono-Regular,Menlo,monospace", fontSize: 13, lineHeight: 1.7, color: "#2a2a32", background: "#f7f7f8", border: "1px solid #ececef", borderRadius: 11, padding: 16, whiteSpace: "pre", overflow: "auto", cursor: "text" }}>
+        <pre title="Click to edit" onClick={startBody} style={{ margin: "20px 0 4px", fontFamily: "ui-monospace,SFMono-Regular,Menlo,monospace", fontSize: 13, lineHeight: 1.7, color: "var(--text2, #6b6b76)", background: "var(--surface3, #f1f1f3)", border: "1px solid var(--border, #ececef)", borderRadius: 11, padding: 16, whiteSpace: "pre", overflow: "auto", cursor: "text" }}>
           {sel.snippet}
         </pre>
       ) : flags.detIsText ? (
-        <p title="Click to edit" onClick={startBody} style={{ margin: "18px 0 4px", fontSize: 15, lineHeight: 1.65, color: "#3b3b44", cursor: "text" }}>
+        <p title="Click to edit" onClick={startBody} style={{ margin: "18px 0 4px", fontSize: 15, lineHeight: 1.65, color: "var(--text2, #6b6b76)", cursor: "text" }}>
           {sel.snippet}
         </p>
       ) : sel.type === "link" ? (
@@ -225,12 +226,12 @@ export function DetailPane() {
 
       {/* tags */}
       <div style={{ marginTop: 20 }}>
-        <div style={{ fontSize: 11, fontWeight: 680, letterSpacing: ".06em", textTransform: "uppercase", color: "#a8a8b0", marginBottom: 9 }}>
+        <div style={{ fontSize: 11, fontWeight: 680, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--faint, #a8a8b0)", marginBottom: 9 }}>
           Tags
         </div>
         <div style={{ display: "flex", gap: 7, flexWrap: "wrap", alignItems: "center" }}>
           {sel.tags.map((tag) => (
-            <span key={tag} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "ui-monospace,Menlo,monospace", fontSize: 12, color: AC, background: "#f0f0fb", borderRadius: 7, padding: "4px 9px" }}>
+            <span key={tag} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "ui-monospace,Menlo,monospace", fontSize: 12, color: AC, background: "var(--ac-tint, #eeeef2)", borderRadius: 7, padding: "4px 9px" }}>
               #{tag}
               <span onClick={() => void removeTag(sel.id, tag)} title="Remove tag" style={{ cursor: "pointer", opacity: 0.55, fontSize: 13, lineHeight: 1 }}>
                 ×
@@ -251,7 +252,7 @@ export function DetailPane() {
               style={{ fontFamily: "ui-monospace,Menlo,monospace", fontSize: 12, width: 80, color: AC, border: `1px solid ${AC}`, borderRadius: 7, padding: "3px 8px", outline: "none", background: "transparent" }}
             />
           ) : (
-            <span onClick={() => setAddingTag(true)} style={{ fontFamily: "ui-monospace,Menlo,monospace", fontSize: 12, color: "#a3a3ad", border: "1px dashed #d2d2dc", borderRadius: 7, padding: "3px 9px", cursor: "pointer" }}>
+            <span onClick={() => setAddingTag(true)} style={{ fontFamily: "ui-monospace,Menlo,monospace", fontSize: 12, color: "var(--faint, #a8a8b0)", border: "1px dashed var(--dash, #d2d2dc)", borderRadius: 7, padding: "3px 9px", cursor: "pointer" }}>
               + add
             </span>
           )}

@@ -33,7 +33,7 @@ function Stroke({
   );
 }
 
-/** Filled four-point sparkle — Baloon's AI accent mark. */
+/** Filled four-point sparkle — Lore's AI accent mark. */
 export function Sparkle({ size = 16, style }: GlyphProps) {
   return (
     <svg

@@ -113,7 +113,7 @@ export function CommandBar() {
   const showPreview = type === "link" && (fetching || !!meta);
 
   return (
-    <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 30px 72px -20px rgba(24,24,48,.42), 0 6px 16px rgba(0,0,0,.07)", border: "1px solid rgba(0,0,0,.05)", overflow: "hidden" }}>
+    <div style={{ background: "var(--surface, #fff)", borderRadius: 16, boxShadow: "0 30px 72px -20px rgba(24,24,48,.42), 0 6px 16px rgba(0,0,0,.07)", border: "1px solid rgba(0,0,0,.05)", overflow: "hidden" }}>
       {/* input row */}
       <div style={{ display: "flex", alignItems: "center", gap: 13, padding: "17px 18px" }}>
         <span style={{ width: 25, height: 25, borderRadius: 7, background: meta_.bg, color: meta_.fg, display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
@@ -128,7 +128,7 @@ export function CommandBar() {
             if (e.key === "Escape") void hideCapture();
           }}
           placeholder="Capture a link, note, task, or code…"
-          style={{ flex: 1, minWidth: 0, fontSize: 15.5, color: "#1a1a1f", border: "none", outline: "none", background: "transparent", font: "inherit" }}
+          style={{ flex: 1, minWidth: 0, fontSize: 15.5, color: "var(--text, #1a1a1f)", border: "none", outline: "none", background: "transparent", font: "inherit" }}
         />
         <span style={{ flex: "none", fontSize: 11, fontWeight: 600, color: meta_.fg, background: meta_.bg, borderRadius: 6, padding: "3px 8px", display: "inline-flex", alignItems: "center", gap: 5 }}>
           <Icon name={type} size={12} />
@@ -139,9 +139,9 @@ export function CommandBar() {
       {/* link preview */}
       {showPreview && (
         <>
-          <div style={{ height: 1, background: "#f0f0f2" }} />
+          <div style={{ height: 1, background: "var(--hover, #f0f0f2)" }} />
           <div style={{ padding: "14px 18px", display: "flex", gap: 13, alignItems: "flex-start" }}>
-            <div style={{ width: 46, height: 46, borderRadius: 9, flex: "none", overflow: "hidden", background: "repeating-linear-gradient(45deg,#f3f3f6,#f3f3f6 6px,#ededf1 6px,#ededf1 12px)", display: "flex", alignItems: "center", justifyContent: "center", color: "#b3b3bd" }}>
+            <div style={{ width: 46, height: 46, borderRadius: 9, flex: "none", overflow: "hidden", background: "repeating-linear-gradient(45deg,var(--surface3,#f3f3f6),var(--surface3,#f3f3f6) 6px,var(--border-soft,#ededf1) 6px,var(--border-soft,#ededf1) 12px)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--faint, #a8a8b0)" }}>
               {meta?.image ? (
                 <img src={meta.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
@@ -149,12 +149,12 @@ export function CommandBar() {
               )}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14.5, fontWeight: 620, color: "#1a1a1f", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ fontSize: 14.5, fontWeight: 620, color: "var(--text, #1a1a1f)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {fetching && !meta ? "Fetching…" : meta?.title || hostOf(text)}
               </div>
-              <div style={{ fontSize: 12.5, color: "#9a9aa5", marginTop: 2 }}>{hostOf(text)}</div>
+              <div style={{ fontSize: 12.5, color: "var(--text3, #9a9aa5)", marginTop: 2 }}>{hostOf(text)}</div>
               {meta?.description && (
-                <div style={{ marginTop: 9, fontSize: 13, lineHeight: 1.5, color: "#5a5a63", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                <div style={{ marginTop: 9, fontSize: 13, lineHeight: 1.5, color: "var(--text2, #6b6b76)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                   {meta.description}
                 </div>
               )}
@@ -166,14 +166,14 @@ export function CommandBar() {
       {/* AI tags */}
       {tags.length > 0 && (
         <>
-          <div style={{ height: 1, background: "#f0f0f2" }} />
+          <div style={{ height: 1, background: "var(--hover, #f0f0f2)" }} />
           <div style={{ padding: "12px 18px", display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: ".05em", textTransform: "uppercase", color: "#b3b3bd", display: "inline-flex", alignItems: "center", gap: 4 }}>
+            <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: ".05em", textTransform: "uppercase", color: "var(--faint, #a8a8b0)", display: "inline-flex", alignItems: "center", gap: 4 }}>
               <Sparkle size={11} style={{ color: AC }} />
               AI tags
             </span>
             {tags.map((t) => (
-              <span key={t} style={{ fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, color: AC, background: "#f0f0fb", borderRadius: 6, padding: "2px 7px" }}>
+              <span key={t} style={{ fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, color: AC, background: "var(--ac-tint, #eeeef2)", borderRadius: 6, padding: "2px 7px" }}>
                 #{t}
               </span>
             ))}
@@ -182,17 +182,17 @@ export function CommandBar() {
       )}
 
       {/* footer */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 18px", background: "#fafafa", borderTop: "1px solid #f0f0f2" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 18px", background: "var(--surface2, #fafafa)", borderTop: "1px solid var(--border-soft, #f0f0f2)" }}>
         {error ? (
           <span style={{ fontSize: 12, color: "#c0392b" }}>{error}</span>
         ) : (
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: "#8a8a95" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: "var(--text3, #9a9aa5)" }}>
             <Sparkle size={13} style={{ color: AC }} />
-            Filed to <strong style={{ color: "#5a5a63", fontWeight: 600 }}>{filedTo}</strong>
+            Filed to <strong style={{ color: "var(--text2, #6b6b76)", fontWeight: 600 }}>{filedTo}</strong>
           </span>
         )}
         <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          <span onClick={() => void hideCapture()} style={{ fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, color: "#6b6b76", background: "#fff", border: "1px solid #e2e2e7", borderBottomWidth: 2, borderRadius: 6, padding: "2px 7px", cursor: "pointer" }}>
+          <span onClick={() => void hideCapture()} style={{ fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, color: "var(--text2, #6b6b76)", background: "var(--surface, #fff)", border: "1px solid var(--kbd-border, #e2e2e7)", borderBottomWidth: 2, borderRadius: 6, padding: "2px 7px", cursor: "pointer" }}>
             esc
           </span>
           <span onClick={() => void save()} style={{ fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, color: "#fff", background: AC, border: "1px solid rgba(0,0,0,.12)", borderBottomWidth: 2, borderRadius: 6, padding: "2px 8px", cursor: "pointer" }}>

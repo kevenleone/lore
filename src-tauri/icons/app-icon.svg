@@ -1,0 +1,46 @@
+<!--
+  Lore app / Dock icon — `Lore Identity.dc.html` § 02: "Squircle, indigo field,
+  paper-white mark. macOS 1024px master."
+
+  The squircle is inset to Apple's 824/1024 icon grid so Lore sits at the same
+  optical size as every other Dock icon, with corner radius 0.225 x its side and
+  the mark at 0.56 x its side, per the identity's `squircle()` helper.
+
+  This file is the master: regenerate every raster with
+      pnpm tauri icon src-tauri/icons/app-icon.svg -o src-tauri/icons
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <!-- linear-gradient(160deg, #33364a, #393A4A 62%, #0b0c14) over the tile -->
+    <linearGradient id="field" gradientUnits="userSpaceOnUse"
+                    x1="330.6" y1="15.7" x2="693.4" y2="1008.3">
+      <stop offset="0" stop-color="#33364a"/>
+      <stop offset="0.62" stop-color="#393A4A"/>
+      <stop offset="1" stop-color="#0b0c14"/>
+    </linearGradient>
+    <!-- The identity's `inset 0 1px 0 rgba(255,255,255,.18)` top highlight. -->
+    <linearGradient id="sheen" gradientUnits="objectBoundingBox" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <g>
+    <rect x="100" y="100" width="824" height="824" rx="185.4" ry="185.4" fill="url(#field)"/>
+    <rect x="100" y="100" width="824" height="824" rx="185.4" ry="185.4" fill="url(#sheen)"/>
+
+    <!--
+      The mark, 461.44 wide on its 32-unit grid: scale 461.44/32 = 14.42,
+      centred on the tile at (512, 512).
+    -->
+    <g transform="translate(281.28, 281.28) scale(14.42)">
+      <path d="M7.5 2.75 h11.1 L25 9.1 V29.25 H7.5 Z"
+            fill="none" stroke="#ffffff" stroke-width="2.4"
+            stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M18.4 2.9 V9.4 H24.9"
+            fill="none" stroke="#ffffff" stroke-width="2.2"
+            stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="16.2" cy="19.6" r="3.5" fill="#ffffff"/>
+    </g>
+  </g>
+</svg>

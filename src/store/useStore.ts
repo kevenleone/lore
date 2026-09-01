@@ -8,17 +8,26 @@ import type { CollectionPatch, ItemPatch, NewCollection, NewItem } from "../data
 import { MockAiProvider } from "../ai/mockAiProvider";
 import type { AiProvider } from "../ai/aiProvider";
 import { SEED_CHAT } from "./seed";
+import { loadPersisted, savePersisted } from "./persisted";
+import type { Appearance } from "../theme/tokens";
 import {
-  DEFAULT_ACCENT,
   type Accent,
+  type Auth,
   type ChatMessage,
   type Collection,
+  type Durations,
   type Item,
+  type OnboardingStep,
+  type Prefs,
+  type SettingsPane,
   type SortOrder,
+  type Switches,
   type View,
 } from "./types";
 
 const ai: AiProvider = new MockAiProvider();
+
+const persisted = loadPersisted();
 
 interface StoreState {
   // data
@@ -31,11 +40,20 @@ interface StoreState {
   view: View;
   selectedId: string | null;
   chatOpen: boolean;
-  accent: Accent;
   aiAssist: boolean;
   search: string;
   sidebarVisible: boolean;
   sort: SortOrder;
+
+  // onboarding + preferences (persisted)
+  prefs: Prefs;
+  auth: Auth;
+  onboarded: boolean;
+  onboardingStep: OnboardingStep;
+
+  // settings sheet
+  settingsOpen: boolean;
+  settingsPane: SettingsPane;
 
   // lifecycle
   hydrate: () => Promise<void>;
@@ -44,12 +62,27 @@ interface StoreState {
   selectView: (kind: View["kind"], val?: string | null) => void;
   selectItem: (id: string) => void;
   toggleChat: () => void;
-  setAccent: (accent: Accent) => void;
   setAiAssist: (on: boolean) => void;
   setSearch: (q: string) => void;
   toggleSidebar: () => void;
   setSort: (sort: SortOrder) => void;
   sendChat: (question: string) => Promise<void>;
+
+  // onboarding actions
+  setOnboardingStep: (step: OnboardingStep) => void;
+  requestMagicLink: (email: string) => void;
+  finishOnboarding: (mode: "account" | "anonymous", email?: string) => void;
+
+  // settings actions
+  openSettings: (pane?: SettingsPane) => void;
+  closeSettings: () => void;
+  setSettingsPane: (pane: SettingsPane) => void;
+  setAccent: (accent: Accent) => void;
+  setAppearance: (appearance: Appearance) => void;
+  setPref: <K extends keyof Prefs>(key: K, value: Prefs[K]) => void;
+  toggleSwitch: (key: keyof Switches) => void;
+  bumpDuration: (key: keyof Durations, delta: number) => void;
+  signOut: () => void;
 
   // data actions
   refresh: () => Promise<void>;
@@ -64,6 +97,10 @@ interface StoreState {
   deleteCollection: (id: string) => Promise<void>;
 }
 
+function persist(s: Pick<StoreState, "prefs" | "auth" | "onboarded">): void {
+  savePersisted({ prefs: s.prefs, auth: s.auth, onboarded: s.onboarded });
+}
+
 export const useStore = create<StoreState>((set, get) => ({
   items: [],
   collections: [],
@@ -73,11 +110,18 @@ export const useStore = create<StoreState>((set, get) => ({
   view: { kind: "all", val: null },
   selectedId: "i1",
   chatOpen: false,
-  accent: DEFAULT_ACCENT,
   aiAssist: true,
   search: "",
   sidebarVisible: true,
   sort: "newest",
+
+  prefs: persisted.prefs,
+  auth: persisted.auth,
+  onboarded: persisted.onboarded,
+  onboardingStep: "signin",
+
+  settingsOpen: false,
+  settingsPane: "general",
 
   async hydrate() {
     const repo = getRepository();
@@ -99,9 +143,6 @@ export const useStore = create<StoreState>((set, get) => ({
   toggleChat() {
     set((s) => ({ chatOpen: !s.chatOpen }));
   },
-  setAccent(accent) {
-    set({ accent });
-  },
   setAiAssist(on) {
     set({ aiAssist: on });
   },
@@ -113,6 +154,73 @@ export const useStore = create<StoreState>((set, get) => ({
   },
   setSort(sort) {
     set({ sort });
+  },
+
+  /* ---------------- onboarding ---------------- */
+
+  setOnboardingStep(step) {
+    set({ onboardingStep: step });
+  },
+
+  requestMagicLink(email) {
+    // No mail is sent yet — the waiting card is the whole behaviour for now.
+    set((s) => ({ onboardingStep: "magic", auth: { ...s.auth, email } }));
+  },
+
+  finishOnboarding(mode, email) {
+    const auth: Auth =
+      mode === "account"
+        ? { mode, email: email ?? get().auth.email, name: get().auth.name }
+        : { mode, email: null, name: null };
+    set({ auth, onboarded: true });
+    persist(get());
+  },
+
+  /* ---------------- settings ---------------- */
+
+  openSettings(pane) {
+    set({ settingsOpen: true, ...(pane ? { settingsPane: pane } : {}) });
+  },
+  closeSettings() {
+    set({ settingsOpen: false });
+  },
+  setSettingsPane(pane) {
+    set({ settingsPane: pane });
+  },
+
+  setAccent(accent) {
+    get().setPref("accent", accent);
+  },
+  setAppearance(appearance) {
+    get().setPref("appearance", appearance);
+  },
+
+  setPref(key, value) {
+    set((s) => ({ prefs: { ...s.prefs, [key]: value } }));
+    persist(get());
+  },
+
+  toggleSwitch(key) {
+    set((s) => ({
+      prefs: { ...s.prefs, switches: { ...s.prefs.switches, [key]: !s.prefs.switches[key] } },
+    }));
+    persist(get());
+  },
+
+  bumpDuration(key, delta) {
+    set((s) => ({
+      prefs: {
+        ...s.prefs,
+        durations: { ...s.prefs.durations, [key]: Math.max(1, s.prefs.durations[key] + delta) },
+      },
+    }));
+    persist(get());
+  },
+
+  signOut() {
+    // Drops the account but keeps the local vault and every preference.
+    set({ auth: { mode: "anonymous", email: null, name: null } });
+    persist(get());
   },
 
   async sendChat(question) {

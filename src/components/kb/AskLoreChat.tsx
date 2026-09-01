@@ -1,4 +1,4 @@
-// Detail-pane chat: "Ask Balloon" — answers grounded in the knowledge base,
+// Detail-pane chat: "Ask Lore" — answers grounded in the knowledge base,
 // citing Sources chips that jump to the referenced item.
 
 import { useState } from "react";
@@ -10,7 +10,7 @@ import { hoverChip } from "../../theme/util.css";
 
 const AC = "var(--ac, #5b5bd6)";
 
-export function AskBalloonChat() {
+export function AskLoreChat() {
   const messages = useStore((s) => s.chat);
   const items = useStore((s) => s.items);
   const toggleChat = useStore((s) => s.toggleChat);
@@ -28,15 +28,15 @@ export function AskBalloonChat() {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* header */}
-      <div style={{ padding: "15px 20px", borderBottom: "1px solid #ececef", display: "flex", alignItems: "center", gap: 11, flex: "none" }}>
-        <span style={{ width: 28, height: 28, borderRadius: 8, background: "#f0f0fb", color: AC, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ padding: "15px 20px", borderBottom: "1px solid var(--border, #ececef)", display: "flex", alignItems: "center", gap: 11, flex: "none" }}>
+        <span style={{ width: 28, height: 28, borderRadius: 8, background: "var(--ac-tint, #eeeef2)", color: AC, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Sparkle />
         </span>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 680 }}>Ask Balloon</div>
-          <div style={{ fontSize: 12, color: "#9a9aa5" }}>Answers grounded in your knowledge base</div>
+          <div style={{ fontSize: 14, fontWeight: 680 }}>Ask Lore</div>
+          <div style={{ fontSize: 12, color: "var(--text3, #9a9aa5)" }}>Answers grounded in your knowledge base</div>
         </div>
-        <span onClick={toggleChat} style={{ color: "#a3a3ad", cursor: "pointer", display: "flex" }}>
+        <span onClick={toggleChat} style={{ color: "var(--faint, #a8a8b0)", cursor: "pointer", display: "flex" }}>
           <Close />
         </span>
       </div>
@@ -62,12 +62,12 @@ export function AskBalloonChat() {
             </div>
           ) : (
             <div key={m.id} style={{ alignSelf: "flex-start", maxWidth: "88%" }}>
-              <div style={{ background: "#f4f4f6", color: "#1f1f26", fontSize: 14, lineHeight: 1.55, padding: "12px 16px", borderRadius: "15px 15px 15px 4px" }}>
+              <div style={{ background: "var(--sel, #f4f4f6)", color: "var(--text, #1a1a1f)", fontSize: 14, lineHeight: 1.55, padding: "12px 16px", borderRadius: "15px 15px 15px 4px" }}>
                 {m.text}
               </div>
               {m.sources && m.sources.length > 0 && (
                 <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 9, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: ".05em", textTransform: "uppercase", color: "#b3b3bd" }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: ".05em", textTransform: "uppercase", color: "var(--faint, #a8a8b0)" }}>
                     Sources
                   </span>
                   {m.sources.map((src) => {
@@ -84,9 +84,9 @@ export function AskBalloonChat() {
                           alignItems: "center",
                           gap: 6,
                           fontSize: 12,
-                          color: "#3b3b44",
-                          background: "#fff",
-                          border: "1px solid #e6e6ea",
+                          color: "var(--text2, #6b6b76)",
+                          background: "var(--surface, #fff)",
+                          border: "1px solid var(--border, #e4e4ea)",
                           borderRadius: 8,
                           padding: "4px 9px",
                           cursor: "pointer",
@@ -107,7 +107,7 @@ export function AskBalloonChat() {
       </div>
 
       {/* input */}
-      <div style={{ padding: "14px 20px", borderTop: "1px solid #ececef", display: "flex", alignItems: "center", gap: 10, flex: "none" }}>
+      <div style={{ padding: "14px 20px", borderTop: "1px solid var(--border, #ececef)", display: "flex", alignItems: "center", gap: 10, flex: "none" }}>
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -117,11 +117,11 @@ export function AskBalloonChat() {
           placeholder="Ask about anything you've saved…"
           style={{
             flex: 1,
-            background: "#f1f1f3",
+            background: "var(--surface3, #f1f1f3)",
             borderRadius: 11,
             padding: "11px 14px",
             fontSize: 13.5,
-            color: "#1a1a1f",
+            color: "var(--text, #1a1a1f)",
             border: "none",
             outline: "none",
           }}

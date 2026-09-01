@@ -1,5 +1,5 @@
 // Seed knowledge base — items i1–i9 and collections, ported verbatim from the
-// Claude Design prototype (Balloon.dc.html lines 426–488).
+// Claude Design prototype (Lore.dc.html lines 426–488).
 //
 // The prototype used literal display strings ("2m", "Today, 14:30"); the README
 // says to derive those at runtime. So each item carries a real `createdAt` ISO
@@ -179,7 +179,7 @@ export const SEED_ITEMS: Item[] = [
   },
 ];
 
-/** Canned Ask Balloon conversation from the prototype's `messages`. */
+/** Canned Ask Lore conversation from the prototype's `messages`. */
 export const SEED_CHAT = [
   {
     id: "m1",

@@ -1,26 +1,51 @@
 // Main knowledge-base window: title bar over a three-pane body (sidebar · list ·
-// detail/chat). The selected accent is published as the `--ac` CSS variable so
-// every component can reference `var(--ac)` exactly as the prototype did.
+// detail/chat). The selected accent is published as the `--ac` CSS variable and
+// the Light/Dark token set is written alongside it, so every component can
+// reference `var(--ac)` / `var(--surface)` exactly as the prototypes did.
+//
+// Before any of that is reachable, `Lore Onboarding` covers the window until
+// the user has either signed in or chosen a local vault.
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useStore } from "./store/useStore";
 import { openCaptureWindow } from "./lib/capture";
+import { applyTokens, effectiveTheme, resolveAccent } from "./theme/tokens";
 import { TitleBar } from "./components/kb/TitleBar";
 import { Sidebar } from "./components/kb/Sidebar";
 import { ListPane } from "./components/kb/ListPane";
 import { DetailPane } from "./components/kb/DetailPane";
-import { AskBalloonChat } from "./components/kb/AskBalloonChat";
+import { AskLoreChat } from "./components/kb/AskLoreChat";
+import { Onboarding } from "./components/onboarding/Onboarding";
+import { SettingsModal } from "./components/settings/SettingsModal";
 
 export default function App() {
   const hydrate = useStore((s) => s.hydrate);
   const refresh = useStore((s) => s.refresh);
-  const accent = useStore((s) => s.accent);
+  const appearance = useStore((s) => s.prefs.appearance);
+  const accent = useStore((s) => s.prefs.accent);
+  const textSize = useStore((s) => s.prefs.textSize);
   const sidebarVisible = useStore((s) => s.sidebarVisible);
   const chatOpen = useStore((s) => s.chatOpen);
+  const onboarded = useStore((s) => s.onboarded);
+  const settingsOpen = useStore((s) => s.settingsOpen);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
+
+  // Paint the token set for the effective theme, and repaint when the OS
+  // switches while Appearance is on Auto.
+  useEffect(() => {
+    const paint = () => {
+      if (rootRef.current) applyTokens(rootRef.current, effectiveTheme(appearance));
+    };
+    paint();
+    if (appearance !== "auto" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    mq.addEventListener("change", paint);
+    return () => mq.removeEventListener("change", paint);
+  }, [appearance]);
 
   // Refresh when the Quick Capture window saves a new item.
   useEffect(() => {
@@ -36,16 +61,23 @@ export default function App() {
     return () => unlisten?.();
   }, [refresh]);
 
+  const theme = effectiveTheme(appearance);
+
   return (
     <div
+      ref={rootRef}
       style={{
-        // `--ac` drives every accent reference in the tree.
-        ["--ac" as string]: accent,
+        // `--ac` drives every accent reference in the tree; the design lifts it
+        // when it would be too dark to read on the dark ground.
+        ["--ac" as string]: resolveAccent(accent, theme),
+        // "Text size" scales the whole tree; every size in the UI is in px, so
+        // the zoom is applied here rather than through rem units.
+        zoom: textSize,
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        background: "#fff",
-        color: "#1a1a1f",
+        background: "var(--surface, #fff)",
+        color: "var(--text, #1a1a1f)",
         overflow: "hidden",
       }}
     >
@@ -53,10 +85,21 @@ export default function App() {
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
         {sidebarVisible && <Sidebar onCapture={openCaptureWindow} />}
         <ListPane />
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", background: "#fff" }}>
-          {chatOpen ? <AskBalloonChat /> : <DetailPane />}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            background: "var(--surface, #fff)",
+          }}
+        >
+          {chatOpen ? <AskLoreChat /> : <DetailPane />}
         </div>
       </div>
+
+      {settingsOpen && <SettingsModal />}
+      {!onboarded && <Onboarding />}
     </div>
   );
 }

@@ -13,7 +13,7 @@ export async function fetchLinkMetadata(url: string): Promise<LinkMetadata> {
   if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
 
   const { fetch } = await import("@tauri-apps/plugin-http");
-  const res = await fetch(target, { method: "GET", headers: { "User-Agent": "BaloonBot/1.0" } });
+  const res = await fetch(target, { method: "GET", headers: { "User-Agent": "LoreBot/1.0" } });
   const html = await res.text();
   const doc = new DOMParser().parseFromString(html, "text/html");
 

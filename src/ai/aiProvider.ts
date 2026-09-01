@@ -1,5 +1,5 @@
 // The AI seam. All AI features (type detection, summaries, tag suggestions,
-// Ask Balloon chat) go through this interface, so a real Claude-backed provider
+// Ask Lore chat) go through this interface, so a real Claude-backed provider
 // can replace the deterministic mock with no UI changes.
 
 import type { ChatSource, Item, ItemType } from "../store/types";

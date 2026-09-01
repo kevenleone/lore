@@ -37,7 +37,7 @@ fn show_main(app: &AppHandle) {
     }
 }
 
-/// System-tray icon with a menu: Quick Capture · Open Baloon · Quit.
+/// System-tray icon with a menu: Quick Capture · Open Lore · Quit.
 /// Left-clicking the tray icon toggles the capture window.
 #[cfg(desktop)]
 pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
@@ -45,8 +45,8 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     use tauri::tray::TrayIconBuilder;
 
     let capture = MenuItem::with_id(app, "capture", "Quick Capture", true, Some("Alt+Space"))?;
-    let open = MenuItem::with_id(app, "open", "Open Baloon", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Quit Baloon", true, Some("Cmd+Q"))?;
+    let open = MenuItem::with_id(app, "open", "Open Lore", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quit Lore", true, Some("Cmd+Q"))?;
     let menu = MenuBuilder::new(app)
         .item(&capture)
         .item(&open)
@@ -55,9 +55,10 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .build()?;
 
     // Left-click opens the menu (macOS-standard); the user picks an action.
-    TrayIconBuilder::with_id("baloon-tray")
-        .icon(tauri::include_image!("icons/32x32.png"))
-        .tooltip("Baloon")
+    let tray = TrayIconBuilder::with_id("lore-tray")
+        // The retina master; macOS scales it down for the 1x menu bar.
+        .icon(tauri::include_image!("icons/tray@2x.png"))
+        .tooltip("Lore")
         .menu(&menu)
         .show_menu_on_left_click(true)
         .on_menu_event(|app, event| match event.id.as_ref() {
@@ -67,5 +68,13 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
             _ => {}
         })
         .build(app)?;
+
+    // The mark ships as a monochrome template so the menu bar inverts it for
+    // light and dark appearances, per the identity's menu-bar spec.
+    #[cfg(target_os = "macos")]
+    tray.set_icon_as_template(true)?;
+    #[cfg(not(target_os = "macos"))]
+    let _ = &tray;
+
     Ok(())
 }

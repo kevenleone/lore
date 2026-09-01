@@ -61,7 +61,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
         alignItems: "center",
         gap: 14,
         padding: "0 14px",
-        borderBottom: "1px solid #ececef",
+        borderBottom: "1px solid var(--border, #ececef)",
         background: "rgba(252,252,253,.86)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
@@ -76,7 +76,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
 
       <span
         onClick={toggleSidebar}
-        style={{ color: "#a3a3ad", display: "flex", marginLeft: 4, cursor: "pointer" }}
+        style={{ color: "var(--faint, #a8a8b0)", display: "flex", marginLeft: 4, cursor: "pointer" }}
       >
         <SidebarToggle />
       </span>
@@ -94,7 +94,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
           alignItems: "center",
           gap: 8,
           width: "min(420px, 38vw)",
-          background: "#f1f1f3",
+          background: "var(--surface3, #f1f1f3)",
           borderRadius: 9,
           padding: "7px 11px",
           color: search ? "#1a1a1f" : "#9a9aa5",
@@ -114,16 +114,16 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
             outline: "none",
             background: "transparent",
             font: "inherit",
-            color: "#1a1a1f",
+            color: "var(--text, #1a1a1f)",
           }}
         />
         <span
           style={{
             fontFamily: "ui-monospace,Menlo,monospace",
             fontSize: 11,
-            color: "#a3a3ad",
-            background: "#fff",
-            border: "1px solid #e4e4e9",
+            color: "var(--faint, #a8a8b0)",
+            background: "var(--surface, #fff)",
+            border: "1px solid var(--border, #e4e4ea)",
             borderRadius: 5,
             padding: "1px 6px",
           }}
@@ -143,7 +143,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            ...(chatOpen ? { background: "#f0f0fb", color: AC } : { color: "#6b6b76" }),
+            ...(chatOpen ? { background: "var(--ac-tint, #eeeef2)", color: AC } : { color: "var(--text2, #6b6b76)" }),
           }}
         >
           <Sparkle />
@@ -200,7 +200,7 @@ function ChromeButton({ children }: { children: React.ReactNode }) {
         alignItems: "center",
         justifyContent: "center",
         cursor: "pointer",
-        color: "#6b6b76",
+        color: "var(--text2, #6b6b76)",
       }}
     >
       {children}

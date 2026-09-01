@@ -3,8 +3,9 @@
 // losing focus dismisses it. Hosts both capture directions (A command bar,
 // B composer) behind a small toggle.
 
-import { useEffect, useState } from "react";
-import { DEFAULT_ACCENT } from "../../store/types";
+import { useEffect, useRef, useState } from "react";
+import { loadPersisted } from "../../store/persisted";
+import { applyTokens, effectiveTheme, resolveAccent } from "../../theme/tokens";
 import { hideCapture } from "../../lib/captureActions";
 import { CommandBar } from "./CommandBar";
 import { Composer } from "./Composer";
@@ -14,6 +15,10 @@ type Mode = "A" | "B";
 
 export function CaptureApp() {
   const [mode, setMode] = useState<Mode>("A");
+  const rootRef = useRef<HTMLDivElement>(null);
+  // This window has its own JS context, so it reads the shared preferences
+  // straight from storage rather than through the knowledge-base store.
+  const [prefs, setPrefs] = useState(() => loadPersisted().prefs);
   // Bumped each time the window is shown so the form remounts fresh (no leftover
   // text/state from the previous capture).
   const [sessionKey, setSessionKey] = useState(0);
@@ -45,13 +50,25 @@ export function CaptureApp() {
     };
   }, []);
 
+  // Re-read preferences whenever the panel is shown, so a change made in
+  // Settings is reflected the next time ⌥Space opens it.
+  useEffect(() => {
+    setPrefs(loadPersisted().prefs);
+  }, [sessionKey]);
+
+  const theme = effectiveTheme(prefs.appearance);
+  useEffect(() => {
+    if (rootRef.current) applyTokens(rootRef.current, theme);
+  }, [theme]);
+
   return (
     <div
+      ref={rootRef}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) void hideCapture();
       }}
       style={{
-        ["--ac" as string]: DEFAULT_ACCENT,
+        ["--ac" as string]: resolveAccent(prefs.accent, theme),
         height: "100%",
         boxSizing: "border-box",
         padding: "26px 28px",

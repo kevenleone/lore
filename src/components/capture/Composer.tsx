@@ -25,7 +25,7 @@ const SECTION_LABEL: React.CSSProperties = {
   fontWeight: 600,
   letterSpacing: ".05em",
   textTransform: "uppercase",
-  color: "#b3b3bd",
+  color: "var(--faint, #a8a8b0)",
 };
 
 export function Composer() {
@@ -137,9 +137,9 @@ export function Composer() {
   };
 
   return (
-    <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 30px 72px -20px rgba(24,24,48,.42), 0 6px 16px rgba(0,0,0,.07)", border: "1px solid rgba(0,0,0,.05)", overflow: "hidden" }}>
+    <div style={{ background: "var(--surface, #fff)", borderRadius: 16, boxShadow: "0 30px 72px -20px rgba(24,24,48,.42), 0 6px 16px rgba(0,0,0,.07)", border: "1px solid rgba(0,0,0,.05)", overflow: "hidden" }}>
       {/* type tabs */}
-      <div style={{ display: "flex", gap: 5, padding: "9px 11px", borderBottom: "1px solid #f0f0f2", overflow: "hidden" }}>
+      <div style={{ display: "flex", gap: 5, padding: "9px 11px", borderBottom: "1px solid var(--border-soft, #f0f0f2)", overflow: "hidden" }}>
         {TABS.map((t) => {
           const active = tab === t.type;
           return (
@@ -155,7 +155,7 @@ export function Composer() {
                 cursor: "pointer",
                 fontSize: 13,
                 whiteSpace: "nowrap",
-                ...(active ? { background: "#f0f0fb", color: AC, fontWeight: 590 } : { color: "#6b6b76" }),
+                ...(active ? { background: "var(--ac-tint, #eeeef2)", color: AC, fontWeight: 590 } : { color: "var(--text2, #6b6b76)" }),
               }}
             >
               <Icon name={t.type} size={15} />
@@ -169,8 +169,8 @@ export function Composer() {
         {/* per-type content */}
         {tab === "link" && (
           <>
-            <div style={{ display: "flex", alignItems: "center", gap: 9, border: "1px solid #e4e4ea", borderRadius: 10, padding: "10px 12px", fontSize: 14, color: "#1a1a1f" }}>
-              <span style={{ color: "#a3a3ad", flex: "none", display: "flex" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 9, border: "1px solid var(--border, #e4e4ea)", borderRadius: 10, padding: "10px 12px", fontSize: 14, color: "var(--text, #1a1a1f)" }}>
+              <span style={{ color: "var(--faint, #a8a8b0)", flex: "none", display: "flex" }}>
                 <Globe size={16} />
               </span>
               <input
@@ -178,9 +178,9 @@ export function Composer() {
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 placeholder="https://…"
-                style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", font: "inherit", color: "#1a1a1f" }}
+                style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", font: "inherit", color: "var(--text, #1a1a1f)" }}
               />
-              {fetching && <span style={{ flex: "none", fontSize: 11, color: "#9a9aa5" }}>fetching…</span>}
+              {fetching && <span style={{ flex: "none", fontSize: 11, color: "var(--text3, #9a9aa5)" }}>fetching…</span>}
               {!fetching && meta && (
                 <span style={{ flex: "none", display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "#4d855f", background: "#e8f2ec", borderRadius: 6, padding: "2px 7px" }}>
                   <Check size={12} sw={2.4} />
@@ -189,18 +189,18 @@ export function Composer() {
               )}
             </div>
             {meta && (
-              <div style={{ border: "1px solid #ececef", borderRadius: 12, overflow: "hidden", marginTop: 12 }}>
+              <div style={{ border: "1px solid var(--border, #ececef)", borderRadius: 12, overflow: "hidden", marginTop: 12 }}>
                 {meta.image && (
                   <img src={meta.image} alt="" style={{ width: "100%", height: 118, objectFit: "cover", display: "block" }} />
                 )}
                 <div style={{ padding: "12px 14px" }}>
                   <div style={{ fontSize: 14.5, fontWeight: 620 }}>{meta.title || hostOf(value)}</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "#9a9aa5", marginTop: 3 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "var(--text3, #9a9aa5)", marginTop: 3 }}>
                     <Globe size={12} />
                     {hostOf(value)}
                   </div>
                   {meta.description && (
-                    <div style={{ marginTop: 10, fontSize: 13, lineHeight: 1.55, color: "#5a5a63", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    <div style={{ marginTop: 10, fontSize: 13, lineHeight: 1.55, color: "var(--text2, #6b6b76)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                       {meta.description}
                     </div>
                   )}
@@ -215,18 +215,18 @@ export function Composer() {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder="Write a note…"
-            style={{ width: "100%", border: "1px solid #e4e4ea", borderRadius: 12, padding: "13px 14px", minHeight: 150, fontSize: 14.5, lineHeight: 1.6, color: "#1a1a1f", outline: "none", font: "inherit", resize: "vertical" }}
+            style={{ width: "100%", border: "1px solid var(--border, #e4e4ea)", borderRadius: 12, padding: "13px 14px", minHeight: 150, fontSize: 14.5, lineHeight: 1.6, color: "var(--text, #1a1a1f)", outline: "none", font: "inherit", resize: "vertical" }}
           />
         )}
         {tab === "task" && (
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 11, border: "1px solid #e4e4ea", borderRadius: 12, padding: 14 }}>
-            <span style={{ width: 20, height: 20, borderRadius: 6, border: "2px solid #cfcfd8", flex: "none", marginTop: 1 }} />
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 11, border: "1px solid var(--border, #e4e4ea)", borderRadius: 12, padding: 14 }}>
+            <span style={{ width: 20, height: 20, borderRadius: 6, border: "2px solid var(--border, #e4e4ea)", flex: "none", marginTop: 1 }} />
             <input
               autoFocus
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder="What needs doing?"
-              style={{ flex: 1, fontSize: 15, color: "#1a1a1f", border: "none", outline: "none", background: "transparent", font: "inherit" }}
+              style={{ flex: 1, fontSize: 15, color: "var(--text, #1a1a1f)", border: "none", outline: "none", background: "transparent", font: "inherit" }}
             />
           </div>
         )}
@@ -236,21 +236,21 @@ export function Composer() {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder="Paste a snippet…"
-            style={{ width: "100%", border: "1px solid #e4e4ea", borderRadius: 12, padding: 14, minHeight: 150, fontFamily: "ui-monospace,SFMono-Regular,Menlo,monospace", fontSize: 12.5, lineHeight: 1.7, color: "#2a2a32", background: "#fafafb", outline: "none", resize: "vertical" }}
+            style={{ width: "100%", border: "1px solid var(--border, #e4e4ea)", borderRadius: 12, padding: 14, minHeight: 150, fontFamily: "ui-monospace,SFMono-Regular,Menlo,monospace", fontSize: 12.5, lineHeight: 1.7, color: "var(--text2, #6b6b76)", background: "var(--surface2, #fafafa)", outline: "none", resize: "vertical" }}
           />
         )}
         {tab === "image" && (
-          <div style={{ border: "1.5px dashed #d2d2dc", borderRadius: 12, padding: 34, display: "flex", flexDirection: "column", alignItems: "center", gap: 9, textAlign: "center" }}>
+          <div style={{ border: "1.5px dashed var(--dash, #d2d2dc)", borderRadius: 12, padding: 34, display: "flex", flexDirection: "column", alignItems: "center", gap: 9, textAlign: "center" }}>
             <span style={{ width: 44, height: 44, borderRadius: 11, background: "#f7ecef", color: "#a86b7c", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <FileGlyph />
             </span>
-            <div style={{ fontSize: 14, fontWeight: 560, color: "#3b3b44" }}>Drag files &amp; images here</div>
-            <div style={{ fontSize: 12.5, color: "#9a9aa5" }}>or click to browse — PNG, PDF, screenshots</div>
+            <div style={{ fontSize: 14, fontWeight: 560, color: "var(--text2, #6b6b76)" }}>Drag files &amp; images here</div>
+            <div style={{ fontSize: 12.5, color: "var(--text3, #9a9aa5)" }}>or click to browse — PNG, PDF, screenshots</div>
             <input
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder="Title (optional)"
-              style={{ marginTop: 8, width: "70%", textAlign: "center", border: "1px solid #ececef", borderRadius: 8, padding: "6px 10px", fontSize: 13, outline: "none", font: "inherit" }}
+              style={{ marginTop: 8, width: "70%", textAlign: "center", border: "1px solid var(--border, #ececef)", borderRadius: 8, padding: "6px 10px", fontSize: 13, outline: "none", font: "inherit" }}
             />
           </div>
         )}
@@ -259,7 +259,7 @@ export function Composer() {
         <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
           <span style={SECTION_LABEL}>Tags</span>
           {tags.map((t) => (
-            <span key={t} onClick={() => removeTag(t)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, color: AC, background: "#f0f0fb", borderRadius: 6, padding: "3px 8px" }}>
+            <span key={t} onClick={() => removeTag(t)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, color: AC, background: "var(--ac-tint, #eeeef2)", borderRadius: 6, padding: "3px 8px" }}>
               #{t}
               <span style={{ opacity: 0.55 }}>×</span>
             </span>
@@ -281,7 +281,7 @@ export function Composer() {
               style={{ fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, width: 70, color: AC, border: `1px solid ${AC}`, borderRadius: 6, padding: "2px 7px", outline: "none", background: "transparent" }}
             />
           ) : (
-            <span onClick={() => setAddingTag(true)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, color: "#8a8a95", background: "transparent", border: "1px dashed #d2d2dc", borderRadius: 6, padding: "2px 7px" }}>
+            <span onClick={() => setAddingTag(true)} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "ui-monospace,Menlo,monospace", fontSize: 11, color: "var(--text3, #9a9aa5)", background: "transparent", border: "1px dashed var(--dash, #d2d2dc)", borderRadius: 6, padding: "2px 7px" }}>
               + tag
             </span>
           )}
@@ -294,18 +294,18 @@ export function Composer() {
           <div ref={collRef} style={{ position: "relative" }}>
             <span
               onClick={() => setCollOpen((o) => !o)}
-              style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, color: "#3b3b44", background: "#f4f4f6", borderRadius: 8, padding: "5px 10px", cursor: "pointer" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, color: "var(--text2, #6b6b76)", background: "var(--sel, #f4f4f6)", borderRadius: 8, padding: "5px 10px", cursor: "pointer" }}
             >
               <span style={{ width: 9, height: 9, borderRadius: "50%", background: activeCollection?.color ?? "#c4c4cc" }} />
               {activeCollection?.name ?? "Unfiled"}
-              <span style={{ color: "#a3a3ad", display: "flex" }}>
+              <span style={{ color: "var(--faint, #a8a8b0)", display: "flex" }}>
                 <ChevronDown />
               </span>
             </span>
             {collOpen && (
-              <div style={{ position: "absolute", left: 0, top: 32, zIndex: 30, background: "#fff", border: "1px solid #ececef", borderRadius: 10, boxShadow: "0 14px 34px -10px rgba(24,24,48,.32)", padding: 5, minWidth: 180, maxHeight: 220, overflow: "auto" }}>
+              <div style={{ position: "absolute", left: 0, top: 32, zIndex: 30, background: "var(--surface, #fff)", border: "1px solid var(--border, #ececef)", borderRadius: 10, boxShadow: "0 14px 34px -10px rgba(24,24,48,.32)", padding: 5, minWidth: 180, maxHeight: 220, overflow: "auto" }}>
                 {collections.length === 0 && (
-                  <div style={{ padding: "7px 10px", fontSize: 12.5, color: "#9a9aa5" }}>No collections yet</div>
+                  <div style={{ padding: "7px 10px", fontSize: 12.5, color: "var(--text3, #9a9aa5)" }}>No collections yet</div>
                 )}
                 {collections.map((c) => (
                   <div
@@ -338,12 +338,12 @@ export function Composer() {
       </div>
 
       {/* footer */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 16px", background: "#fafafa", borderTop: "1px solid #f0f0f2" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 16px", background: "var(--surface2, #fafafa)", borderTop: "1px solid var(--border-soft, #f0f0f2)" }}>
         <span style={{ fontSize: 12, color: error ? "#c0392b" : "#9a9aa5" }}>
           {error ?? "⌥Space to toggle · drag files to attach"}
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span onClick={() => void hideCapture()} style={{ fontSize: 13, color: "#6b6b76", padding: "6px 12px", borderRadius: 8, cursor: "pointer" }}>
+          <span onClick={() => void hideCapture()} style={{ fontSize: 13, color: "var(--text2, #6b6b76)", padding: "6px 12px", borderRadius: 8, cursor: "pointer" }}>
             Cancel
           </span>
           <span

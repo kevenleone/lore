@@ -1,4 +1,4 @@
-// Pure selectors ported from the prototype's `renderVals` (Balloon.dc.html
+// Pure selectors ported from the prototype's `renderVals` (Lore.dc.html
 // lines 490–562). They derive counts, titles, filtered lists, and the
 // detail-pane visibility booleans from a plain item/collection list, so they
 // are trivially unit-testable.
