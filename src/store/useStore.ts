@@ -11,6 +11,12 @@ import { SEED_CHAT } from "./seed";
 import { loadPersisted, savePersisted } from "./persisted";
 import { ensureWorkspaceOpen, setWorkspace } from "../data";
 import { migrateSqlite } from "../data/migrateSqlite";
+import {
+  broadcastWorkspaceChange,
+  pickWorkspaceFolder,
+  rememberWorkspace,
+} from "../lib/workspace";
+import type { WorkspaceRef } from "./persisted";
 import type { Appearance } from "../theme/tokens";
 import {
   type Accent,
@@ -83,6 +89,11 @@ interface StoreState {
 
   // vault
   workspacePath: string | null;
+  recentWorkspaces: WorkspaceRef[];
+  /** Set when a vault cannot be opened — an unmounted drive, a deleted folder. */
+  workspaceError: string | null;
+  openWorkspacePicker: () => Promise<void>;
+  switchWorkspace: (path: string | null) => Promise<void>;
   /** Set once by a migration so the UI can say what happened. */
   migrationNotice: string | null;
   dismissMigrationNotice: () => void;
@@ -131,13 +142,16 @@ interface StoreState {
 }
 
 function persist(
-  s: Pick<StoreState, "prefs" | "auth" | "onboarded" | "workspacePath"> & { migratedAt?: string | null },
+  s: Pick<StoreState, "prefs" | "auth" | "onboarded" | "workspacePath" | "recentWorkspaces"> & {
+    migratedAt?: string | null;
+  },
 ): void {
   savePersisted({
     prefs: s.prefs,
     auth: s.auth,
     onboarded: s.onboarded,
     workspacePath: s.workspacePath,
+    recentWorkspaces: s.recentWorkspaces,
     migratedAt: s.migratedAt ?? persisted.migratedAt,
   });
 }
@@ -166,6 +180,8 @@ export const useStore = create<StoreState>((set, get) => ({
   settingsPane: "general",
 
   workspacePath: persisted.workspacePath,
+  recentWorkspaces: persisted.recentWorkspaces,
+  workspaceError: null,
   migrationNotice: null,
 
   async hydrate() {
@@ -220,6 +236,52 @@ export const useStore = create<StoreState>((set, get) => ({
 
   dismissMigrationNotice() {
     set({ migrationNotice: null });
+  },
+
+  async openWorkspacePicker() {
+    const path = await pickWorkspaceFolder();
+    if (path) await get().switchWorkspace(path);
+  },
+
+  /**
+   * Points Lore at another vault. `null` means the default one.
+   *
+   * Everything derived from the old vault is cleared before re-hydrating, so a
+   * stale selection or search cannot leak across — the ids do not even mean the
+   * same thing in a different folder.
+   */
+  async switchWorkspace(path) {
+    const previous = get().workspacePath;
+    if (path === previous) return;
+
+    set({
+      workspacePath: path,
+      workspaceError: null,
+      hydrated: false,
+      items: [],
+      collections: [],
+      detail: null,
+      selectedId: null,
+      search: "",
+      view: { kind: "all", val: null },
+      chatOpen: false,
+    });
+
+    try {
+      await get().hydrate();
+    } catch (e) {
+      // Roll back rather than leave the app pointed at a vault it cannot read.
+      set({
+        workspacePath: previous,
+        workspaceError: e instanceof Error ? e.message : String(e),
+      });
+      await get().hydrate();
+      return;
+    }
+
+    if (path) set({ recentWorkspaces: rememberWorkspace(get().recentWorkspaces, path) });
+    persist(get());
+    await broadcastWorkspaceChange(path);
   },
 
   selectView(kind, val = null) {

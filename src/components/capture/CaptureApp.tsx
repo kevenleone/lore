@@ -5,6 +5,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { loadPersisted } from "../../store/persisted";
+import { setWorkspace } from "../../data";
+import { onWorkspaceChanged } from "../../lib/workspace";
 import { applyTokens, effectiveTheme, resolveAccent } from "../../theme/tokens";
 import { hideCapture } from "../../lib/captureActions";
 import { CommandBar } from "./CommandBar";
@@ -55,6 +57,18 @@ export function CaptureApp() {
   useEffect(() => {
     setPrefs(loadPersisted().prefs);
   }, [sessionKey]);
+
+  // This window holds its own repository in its own webview. Without following
+  // the main window's workspace, the next capture would be written into the
+  // vault the user just navigated away from.
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    void setWorkspace(loadPersisted().workspacePath);
+    void onWorkspaceChanged((path) => void setWorkspace(path)).then((fn) => {
+      unlisten = fn;
+    });
+    return () => unlisten?.();
+  }, []);
 
   const theme = effectiveTheme(prefs.appearance);
   useEffect(() => {

@@ -1,4 +1,5 @@
-// Left sidebar: Quick Capture, Library views (with counts), Collections, Tags,
+// Left sidebar: the workspace switcher, Quick Capture, Library views (with
+// counts), Collections, Tags,
 // and the footer (Ask Lore + Settings).
 
 import { useStore } from "../../store/useStore";
@@ -9,6 +10,7 @@ import { Icon } from "../common/Icon";
 import { Message, Settings, Sparkle } from "../common/glyphs";
 import { hoverable } from "../../theme/util.css";
 import { CollectionsSection } from "./CollectionsSection";
+import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
 const AC = "var(--ac, #5b5bd6)";
 
@@ -75,6 +77,9 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
         fontSize: 13.5,
       }}
     >
+      {/* Which vault this window is showing — scopes everything below it. */}
+      <WorkspaceSwitcher />
+
       {/* Quick Capture */}
       <div
         onClick={onCapture}

@@ -5,6 +5,8 @@
 //
 // `shell` is registered for Rust's use only — the webview is granted no
 // `shell:` permission, so nothing in the renderer can start a process.
+// `dialog` is granted to the webview, but only `dialog:allow-open`: picking a
+// folder is the one filesystem decision the user makes directly.
 
 mod commands;
 mod sidecar;
@@ -18,6 +20,7 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(sidecar::SidecarState::default())
         .invoke_handler(tauri::generate_handler![
             commands::toggle_capture,

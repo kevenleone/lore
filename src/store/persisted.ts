@@ -7,6 +7,13 @@ import { DEFAULT_PREFS, DEFAULT_SWITCHES, type Auth, type Prefs } from "./types"
 
 const KEY = "lore.prefs.v1";
 
+/** A vault the user has opened before. */
+export interface WorkspaceRef {
+  path: string;
+  name: string;
+  lastOpenedAt: string;
+}
+
 export interface Persisted {
   prefs: Prefs;
   auth: Auth;
@@ -14,6 +21,8 @@ export interface Persisted {
   onboarded: boolean;
   /** Vault folder in use; null means the default one beside the app's data. */
   workspacePath: string | null;
+  /** Most-recently-opened vaults, for the switcher. */
+  recentWorkspaces: WorkspaceRef[];
   /** When the legacy SQLite store was imported. Guards the one-shot migration. */
   migratedAt: string | null;
 }
@@ -23,6 +32,7 @@ export const DEFAULT_PERSISTED: Persisted = {
   auth: { mode: null, email: null, name: null },
   onboarded: false,
   workspacePath: null,
+  recentWorkspaces: [],
   migratedAt: null,
 };
 
@@ -36,6 +46,7 @@ export function loadPersisted(): Persisted {
     return {
       onboarded: saved.onboarded ?? false,
       workspacePath: saved.workspacePath ?? null,
+      recentWorkspaces: saved.recentWorkspaces ?? [],
       migratedAt: saved.migratedAt ?? null,
       auth: { ...DEFAULT_PERSISTED.auth, ...saved.auth },
       prefs: {
