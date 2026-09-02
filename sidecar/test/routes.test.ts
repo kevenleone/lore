@@ -179,3 +179,101 @@ describe("events", () => {
     await reader.cancel();
   });
 });
+
+describe("migration", () => {
+  beforeEach(openVault);
+
+  it("writes the legacy library into folders and rewrites related links", async () => {
+    const res = await call("POST", "/migrate/sqlite", {
+      collections: [{ id: "Reading List", name: "Reading List", color: "#8a92b8" }],
+      items: [
+        {
+          id: "i1", type: "link", title: "How Linear builds product",
+          url: "https://linear.app", collectionId: "Reading List",
+          tags: ["product"], flags: { inbox: true }, related: ["i2"],
+          createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z",
+        },
+        {
+          id: "i2", type: "note", title: "Second brain", body: "Notes here.",
+          tags: [], flags: {}, related: ["i1"],
+          createdAt: "2026-01-02T00:00:00.000Z", updatedAt: "2026-01-02T00:00:00.000Z",
+        },
+      ],
+    });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ items: 2, collections: 1 });
+
+    const items = (await call("GET", "/items")).body as Item[];
+    const linear = items.find((i) => i.title === "How Linear builds product")!;
+    const brain = items.find((i) => i.title === "Second brain")!;
+
+    // Collections became folders.
+    expect(linear.collectionId).toBe("Reading List");
+    expect(brain.collectionId).toBeUndefined();
+
+    // The old opaque ids were rewritten to the new ones, both ways.
+    expect(linear.related).toEqual([brain.id]);
+    expect(brain.related).toEqual([linear.id]);
+    expect(linear.id).not.toBe("i1");
+
+    // On disk they are wikilinks, not ids.
+    const raw = await Bun.file(join(root, "Reading List/how-linear-builds-product.md")).text();
+    expect(raw).toContain("[[second-brain]]");
+    expect(raw).not.toContain("i2");
+  });
+
+  it("preserves the url/body split the legacy schema conflated", async () => {
+    await call("POST", "/migrate/sqlite", {
+      items: [
+        { id: "l", type: "link", title: "L", url: "https://x.test", tags: [], flags: {}, related: [],
+          createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z" },
+        { id: "n", type: "note", title: "N", body: "note body", tags: [], flags: {}, related: [],
+          createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z" },
+      ],
+    });
+    const items = (await call("GET", "/items")).body as Item[];
+    const link = items.find((i) => i.title === "L")!;
+    expect((await call("GET", `/items/${link.id}`)).body.url).toBe("https://x.test");
+    const note = items.find((i) => i.title === "N")!;
+    expect((await call("GET", `/items/${note.id}`)).body.body).toBe("note body");
+  });
+});
+
+describe("migration fidelity", () => {
+  beforeEach(openVault);
+
+  it("preserves the original timestamps", async () => {
+    // Flattening these to "now" would destroy sort order and every relative
+    // date in a migrated library.
+    await call("POST", "/migrate/sqlite", {
+      items: [
+        { id: "old", type: "note", title: "Old", tags: [], flags: {}, related: [],
+          createdAt: "2026-01-05T10:00:00.000Z", updatedAt: "2026-02-01T11:00:00.000Z" },
+      ],
+    });
+    const item = ((await call("GET", "/items")).body as Item[])[0];
+    expect(item.createdAt).toBe("2026-01-05T10:00:00.000Z");
+    expect(item.updatedAt).toBe("2026-02-01T11:00:00.000Z");
+  });
+
+  it("does not restamp updatedAt when re-linking related items", async () => {
+    await call("POST", "/migrate/sqlite", {
+      items: [
+        { id: "a", type: "note", title: "A", tags: [], flags: {}, related: ["b"],
+          createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z" },
+        { id: "b", type: "note", title: "B", tags: [], flags: {}, related: [],
+          createdAt: "2026-01-02T00:00:00.000Z", updatedAt: "2026-01-02T00:00:00.000Z" },
+      ],
+    });
+    const items = (await call("GET", "/items")).body as Item[];
+    const a = items.find((i) => i.title === "A")!;
+    expect(a.updatedAt).toBe("2026-01-01T00:00:00.000Z");
+    expect(a.related).toHaveLength(1);
+  });
+
+  it("still stamps a normal capture with now", async () => {
+    const before = Date.now();
+    const created = (await call("POST", "/items", newItem({ title: "Fresh" }))).body as Item;
+    expect(new Date(created.createdAt).getTime()).toBeGreaterThanOrEqual(before - 1000);
+  });
+});

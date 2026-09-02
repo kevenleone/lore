@@ -12,12 +12,18 @@ export interface Persisted {
   auth: Auth;
   /** True once the user has finished `Lore Onboarding` either way. */
   onboarded: boolean;
+  /** Vault folder in use; null means the default one beside the app's data. */
+  workspacePath: string | null;
+  /** When the legacy SQLite store was imported. Guards the one-shot migration. */
+  migratedAt: string | null;
 }
 
 export const DEFAULT_PERSISTED: Persisted = {
   prefs: DEFAULT_PREFS,
   auth: { mode: null, email: null, name: null },
   onboarded: false,
+  workspacePath: null,
+  migratedAt: null,
 };
 
 export function loadPersisted(): Persisted {
@@ -29,6 +35,8 @@ export function loadPersisted(): Persisted {
     // its default instead of coming back undefined.
     return {
       onboarded: saved.onboarded ?? false,
+      workspacePath: saved.workspacePath ?? null,
+      migratedAt: saved.migratedAt ?? null,
       auth: { ...DEFAULT_PERSISTED.auth, ...saved.auth },
       prefs: {
         ...DEFAULT_PREFS,

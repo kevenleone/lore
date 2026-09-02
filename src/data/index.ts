@@ -1,11 +1,12 @@
 // Single place that decides which repository backs the app:
-//   - inside Tauri  → LocalRepository (SQLite, the source of truth)
+//   - inside Tauri  → VaultRepository (Markdown files, via the data engine)
 //   - elsewhere     → MemoryRepository (Vite browser preview, unit tests)
-// The Markdown vault (via the Bun sidecar) slots in here later without touching
-// the UI.
+//
+// LocalRepository (SQLite) is no longer selected. It stays in the tree only so
+// the one-shot migration can still read a legacy `lore.db`; see migrateSqlite.
 
-import { LocalRepository } from "./localRepository";
 import { MemoryRepository } from "./memoryRepository";
+import { VaultRepository } from "./vaultRepository";
 import type { KnowledgeRepository } from "./repository";
 
 function isTauri(): boolean {
@@ -13,21 +14,39 @@ function isTauri(): boolean {
 }
 
 let instance: KnowledgeRepository | null = null;
+let workspacePath: string | null = null;
 
 export function getRepository(): KnowledgeRepository {
   if (!instance) {
-    instance = isTauri() ? new LocalRepository() : new MemoryRepository();
+    instance = isTauri() ? new VaultRepository(workspacePath) : new MemoryRepository();
   }
   return instance;
 }
 
 /**
+ * Points the app at a different vault. The next `getRepository()` builds a
+ * repository for it; the caller is responsible for re-hydrating the store.
+ */
+export async function setWorkspace(path: string | null): Promise<void> {
+  workspacePath = path;
+  await resetRepository();
+}
+
+/**
+ * Makes sure the backing store is ready before anything writes to it directly.
+ * Only the SQLite import needs this; every normal call opens lazily on its own.
+ */
+export async function ensureWorkspaceOpen(): Promise<void> {
+  const repo = getRepository();
+  if (repo instanceof VaultRepository) await repo.ensureOpen();
+}
+
+/**
  * Tears the singleton down so the next `getRepository()` builds a fresh one.
  *
- * Nothing calls this yet — it exists because opening a different workspace has
- * to abandon the current store completely (its connection, and later its
- * file-watcher subscription). Without it the module-level cache would hand back
- * a repository still pointing at the previous vault.
+ * Opening a different workspace has to abandon the current store completely —
+ * its connection and its file-watcher subscription — or the module-level cache
+ * would hand back a repository still pointing at the previous vault.
  */
 export async function resetRepository(): Promise<void> {
   const current = instance;

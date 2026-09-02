@@ -206,3 +206,22 @@ fn restart(app: &AppHandle, attempt: u32) {
         }
     });
 }
+
+/// Renames the legacy SQLite store after a successful migration.
+///
+/// Deliberately a rename and not a delete: for a user mid-upgrade this file is
+/// the only copy of their library, and the migration is new code.
+#[tauri::command]
+pub fn backup_legacy_db(app: AppHandle) -> Result<String, String> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("no app data dir: {e}"))?;
+    let from = dir.join("lore.db");
+    if !from.exists() {
+        return Ok(String::new());
+    }
+    let to = dir.join("lore.db.premigration");
+    std::fs::rename(&from, &to).map_err(|e| format!("could not set the old store aside: {e}"))?;
+    Ok(to.to_string_lossy().into_owned())
+}

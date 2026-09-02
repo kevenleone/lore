@@ -23,7 +23,8 @@ pub fn run() {
             commands::toggle_capture,
             commands::hide_capture,
             sidecar::sidecar_endpoint,
-            sidecar::default_vault_path
+            sidecar::default_vault_path,
+            sidecar::backup_legacy_db
         ])
         .on_window_event(|window, event| {
             // Closing the main window hides it (tray-app pattern) so it can be

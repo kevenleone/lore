@@ -33,7 +33,9 @@ export class Workspace {
     this.store = await VaultStore.open(root);
     this.watcher = watchVault(
       root,
-      (paths) => this.emit(paths),
+      // Reindex before telling anyone: a subscriber refreshes immediately on
+      // this signal, and would otherwise re-read a still-stale index.
+      (paths) => void this.onFilesChanged(paths),
       (rel) => this.wasSelfWrite(rel),
     );
     return { path: root, itemCount: this.store.listItems().length };
@@ -55,6 +57,16 @@ export class Workspace {
 
   /** Announce a change the sidecar made itself, so the UI stays in step. */
   notify(paths: string[] = []): void {
+    this.emit(paths);
+  }
+
+  private async onFilesChanged(paths: string[]): Promise<void> {
+    try {
+      await this.current.reconcile();
+    } catch {
+      // The workspace may have closed mid-event; the next open reconciles.
+      return;
+    }
     this.emit(paths);
   }
 

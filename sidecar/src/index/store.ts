@@ -280,22 +280,47 @@ export class VaultStore {
 
   /* ---------------- writes ---------------- */
 
-  async createItem(input: Omit<Item, "id" | "createdAt" | "updatedAt">): Promise<Item> {
+  /**
+   * `createdAt`/`updatedAt` are honoured when supplied. A normal capture omits
+   * them and gets "now", but an import carries the original timestamps — and
+   * flattening those would destroy sort order and every relative date in a
+   * migrated library.
+   */
+  async createItem(
+    input: Omit<Item, "id" | "createdAt" | "updatedAt"> & { createdAt?: string; updatedAt?: string },
+  ): Promise<Item> {
     const id = newId();
     const now = new Date().toISOString();
-    const item: Item = { ...input, id, createdAt: now, updatedAt: now };
+    const item: Item = {
+      ...input,
+      id,
+      createdAt: input.createdAt ?? now,
+      updatedAt: input.updatedAt ?? input.createdAt ?? now,
+    };
     const stem = uniqueStem(item.title, id, this.takenStems(item.collectionId));
     const path = joinPath(item.collectionId, stem);
     await this.writeItem(path, item, []);
     return this.getItem(id)!;
   }
 
-  async updateItem(id: string, patch: Partial<Item>): Promise<Item | null> {
+  async updateItem(
+    id: string,
+    patch: Partial<Item>,
+    opts: { touch?: boolean } = {},
+  ): Promise<Item | null> {
     const row = this.db.query<FileRow, [string]>("SELECT * FROM files WHERE id = ?").get(id);
     if (!row) return null;
 
     const current = rowToItem(row, true);
-    const next: Item = { ...current, ...patch, id, updatedAt: new Date().toISOString() };
+    // An import re-links related items after writing them; that is bookkeeping,
+    // not an edit, so it must not restamp the item.
+    const touch = opts.touch ?? true;
+    const next: Item = {
+      ...current,
+      ...patch,
+      id,
+      updatedAt: touch ? new Date().toISOString() : current.updatedAt,
+    };
     const unresolved = JSON.parse(row.unresolved) as string[];
     const extra = JSON.parse(row.extra) as Record<string, unknown>;
 

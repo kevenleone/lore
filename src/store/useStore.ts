@@ -9,6 +9,8 @@ import { MockAiProvider } from "../ai/mockAiProvider";
 import type { AiProvider } from "../ai/aiProvider";
 import { SEED_CHAT } from "./seed";
 import { loadPersisted, savePersisted } from "./persisted";
+import { ensureWorkspaceOpen, setWorkspace } from "../data";
+import { migrateSqlite } from "../data/migrateSqlite";
 import type { Appearance } from "../theme/tokens";
 import {
   type Accent,
@@ -28,6 +30,24 @@ import {
 const ai: AiProvider = new MockAiProvider();
 
 const persisted = loadPersisted();
+
+/** Live-update subscription, torn down on re-hydrate and workspace switches. */
+let unsubscribeVault: (() => void) | null = null;
+
+/**
+ * Coalesces bursts of file-change events. A `git pull` touching 200 files would
+ * otherwise trigger 200 full re-lists.
+ */
+function scheduleRefresh(get: () => StoreState): () => void {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  return () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      void get().refresh();
+    }, 100);
+  };
+}
 
 interface StoreState {
   // data
@@ -60,6 +80,12 @@ interface StoreState {
   // settings sheet
   settingsOpen: boolean;
   settingsPane: SettingsPane;
+
+  // vault
+  workspacePath: string | null;
+  /** Set once by a migration so the UI can say what happened. */
+  migrationNotice: string | null;
+  dismissMigrationNotice: () => void;
 
   // lifecycle
   hydrate: () => Promise<void>;
@@ -104,8 +130,16 @@ interface StoreState {
   deleteCollection: (id: string) => Promise<void>;
 }
 
-function persist(s: Pick<StoreState, "prefs" | "auth" | "onboarded">): void {
-  savePersisted({ prefs: s.prefs, auth: s.auth, onboarded: s.onboarded });
+function persist(
+  s: Pick<StoreState, "prefs" | "auth" | "onboarded" | "workspacePath"> & { migratedAt?: string | null },
+): void {
+  savePersisted({
+    prefs: s.prefs,
+    auth: s.auth,
+    onboarded: s.onboarded,
+    workspacePath: s.workspacePath,
+    migratedAt: s.migratedAt ?? persisted.migratedAt,
+  });
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -131,22 +165,61 @@ export const useStore = create<StoreState>((set, get) => ({
   settingsOpen: false,
   settingsPane: "general",
 
+  workspacePath: persisted.workspacePath,
+  migrationNotice: null,
+
   async hydrate() {
+    await setWorkspace(get().workspacePath);
+
     const repo = getRepository();
-    const [items, collections] = await Promise.all([
-      repo.listItems(),
-      repo.listCollections(),
-    ]);
+    let [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
+
+    // Import a legacy SQLite library when the vault is empty.
+    //
+    // The condition is the vault's actual state, not a "have I migrated yet"
+    // flag. A flag can be set by an attempt that then failed, and the cost of
+    // getting that wrong is someone's whole library stranded in a database the
+    // app no longer reads. An empty vault means there is nothing to duplicate
+    // or overwrite, so importing is always safe — and always right.
+    if (items.length === 0) {
+      try {
+        // The import writes straight to the engine, so the vault has to be
+        // open first or it is refused and quietly imports nothing.
+        await ensureWorkspaceOpen();
+        const result = await migrateSqlite();
+        if (result) {
+          set({
+            migrationNotice: `Moved ${result.items} item${result.items === 1 ? "" : "s"} into your vault.`,
+          });
+          [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
+        }
+        persisted.migratedAt = new Date().toISOString();
+        persist({ ...get(), migratedAt: persisted.migratedAt });
+      } catch (e) {
+        // A failed import must not block the app. The old database is renamed
+        // only on success, so the next launch simply tries again.
+        console.error("lore: could not import the previous library", e);
+      }
+    }
+
     const selectedId =
       items.find((i) => i.id === get().selectedId)?.id ?? items[0]?.id ?? null;
     set({ items, collections, selectedId, hydrated: true });
     if (selectedId) void get().loadDetail(selectedId);
+
+    // Edits made outside Lore — a git pull, Obsidian, vim — arrive here.
+    unsubscribeVault?.();
+    unsubscribeVault = repo.subscribe?.(scheduleRefresh(get)) ?? null;
   },
 
   async loadDetail(id) {
     const item = await getRepository().getItem(id);
     // Ignore a response that lost the race to a newer selection.
     if (get().selectedId === id) set({ detail: item });
+  },
+
+  dismissMigrationNotice() {
+    set({ migrationNotice: null });
   },
 
   selectView(kind, val = null) {

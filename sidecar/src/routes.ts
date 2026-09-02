@@ -36,6 +36,44 @@ export function routes(workspace: Workspace) {
 
       .post("/workspace/reindex", () => workspace.reconcile())
 
+      /**
+       * One-shot import from the legacy SQLite store. Collections are created
+       * first so every item lands in a folder that already exists, and related
+       * ids are rewritten to wikilinks once every file has a filename.
+       */
+      .post("/migrate/sqlite", async ({ body }) => {
+        const { collections = [], items = [] } = body as {
+          collections?: { id: string; name: string; color: string }[];
+          items?: Item[];
+        };
+        const store = workspace.current;
+
+        for (const c of collections) {
+          await store.createCollection(c.name, c.color);
+        }
+
+        // Pass 1: write every item, remembering the id it was given.
+        const idMap = new Map<string, string>();
+        for (const item of items) {
+          const created = await store.createItem({ ...item, related: [] });
+          idMap.set(item.id, created.id);
+        }
+
+        // Pass 2: now that every file exists, related ids resolve to filenames.
+        for (const item of items) {
+          if (!item.related?.length) continue;
+          const id = idMap.get(item.id);
+          if (!id) continue;
+          const related = item.related
+            .map((old) => idMap.get(old))
+            .filter((x): x is string => !!x);
+          if (related.length) await store.updateItem(id, { related }, { touch: false });
+        }
+
+        workspace.notify();
+        return { items: idMap.size, collections: collections.length };
+      })
+
       /* ---------------- items ---------------- */
 
       // Deliberately no ?view= — filtering stays client-side via matchesView, so
