@@ -207,21 +207,26 @@ fn restart(app: &AppHandle, attempt: u32) {
     });
 }
 
-/// Renames the legacy SQLite store after a successful migration.
+/// Renames a legacy SQLite store after a successful import.
 ///
-/// Deliberately a rename and not a delete: for a user mid-upgrade this file is
-/// the only copy of their library, and the migration is new code.
+/// Deliberately a rename and not a delete: for a user mid-upgrade that file is
+/// the only copy of their library. It has already earned its keep once.
 #[tauri::command]
-pub fn backup_legacy_db(app: AppHandle) -> Result<String, String> {
+pub fn backup_legacy_db(app: AppHandle, file: String) -> Result<String, String> {
+    // The renderer supplies the name, so refuse anything that is not a plain
+    // filename — this must never be able to move a file outside app data.
+    if file.is_empty() || file.contains('/') || file.contains('\\') || file.contains("..") {
+        return Err(format!("not a legacy store name: {file}"));
+    }
     let dir = app
         .path()
         .app_data_dir()
         .map_err(|e| format!("no app data dir: {e}"))?;
-    let from = dir.join("lore.db");
+    let from = dir.join(&file);
     if !from.exists() {
         return Ok(String::new());
     }
-    let to = dir.join("lore.db.premigration");
+    let to = dir.join(format!("{file}.premigration"));
     std::fs::rename(&from, &to).map_err(|e| format!("could not set the old store aside: {e}"))?;
     Ok(to.to_string_lossy().into_owned())
 }

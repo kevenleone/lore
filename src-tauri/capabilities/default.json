@@ -20,17 +20,6 @@
     "sql:default",
     "sql:allow-execute",
     "global-shortcut:default",
-    "dialog:allow-open",
-    {
-      "identifier": "http:default",
-      "allow": [
-        {
-          "url": "http://**"
-        },
-        {
-          "url": "https://**"
-        }
-      ]
-    }
+    "dialog:allow-open"
   ]
 }

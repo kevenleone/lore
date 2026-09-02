@@ -5,8 +5,21 @@
 // mid-upgrade that file is the only copy of their library.
 
 import type { Collection, Item } from "../store/types";
-import { DB_NAME } from "./schema";
 import { request } from "./sidecarClient";
+
+/**
+ * Stores to import from.
+ *
+ * Only `lore.db`. `baloon.db` predates the rename and is deliberately left
+ * alone: renaming the database started a fresh, re-seeded `lore.db`, so a user
+ * who upgraded through it has the same nine sample items in both. Importing
+ * both would silently duplicate every one of them, and there is no way to tell
+ * a re-seeded sample from a real capture that happens to share its title.
+ *
+ * The old file is never touched, so anything genuinely in it can still be
+ * recovered by hand.
+ */
+const LEGACY_DBS = ["lore.db"] as const;
 
 /** Shape of a legacy row, before the url/body split. */
 interface LegacyItemRow {
@@ -38,7 +51,8 @@ interface LegacyCollectionRow {
 export interface MigrationResult {
   items: number;
   collections: number;
-  backupPath: string;
+  /** Which stores were imported, for the notice. */
+  sources: string[];
 }
 
 const json = <T,>(raw: string | null, fallback: T): T => {
@@ -80,24 +94,43 @@ export function legacyRowToItem(r: LegacyItemRow, collectionName: (id: string) =
   };
 }
 
+interface LegacyDb {
+  select<T>(query: string): Promise<T>;
+  close(): Promise<boolean>;
+}
+
 /**
- * Reads the legacy database and writes it into the open vault.
+ * Imports every legacy store into the open vault.
  *
- * Returns null when there is nothing to do — no database, or one with no live
- * rows — so the caller can treat "first run" and "already migrated" alike.
+ * Returns null when there was nothing anywhere, so the caller can treat "clean
+ * install" and "already imported" alike. Each store is renamed only after its
+ * own import succeeds, so a failure part-way leaves the rest recoverable.
  */
 export async function migrateSqlite(): Promise<MigrationResult | null> {
-  interface LegacyDb {
-    select<T>(query: string): Promise<T>;
-    close(): Promise<boolean>;
+  let items = 0;
+  let collections = 0;
+  const sources: string[] = [];
+
+  for (const file of LEGACY_DBS) {
+    const imported = await migrateOne(file);
+    if (!imported) continue;
+    items += imported.items;
+    collections += imported.collections;
+    sources.push(file);
   }
 
+  return sources.length ? { items, collections, sources } : null;
+}
+
+async function migrateOne(
+  file: string,
+): Promise<{ items: number; collections: number } | null> {
   let db: LegacyDb;
   try {
     const { default: Database } = await import("@tauri-apps/plugin-sql");
-    db = (await Database.load(DB_NAME)) as unknown as LegacyDb;
+    db = (await Database.load(`sqlite:${file}`)) as unknown as LegacyDb;
   } catch {
-    // No legacy database — a clean install.
+    // Not present — nothing to import from this one.
     return null;
   }
 
@@ -122,8 +155,12 @@ export async function migrateSqlite(): Promise<MigrationResult | null> {
       body: JSON.stringify({ collections, items }),
     });
 
-    const backupPath = await backupLegacyDb();
-    return { items: items.length, collections: collections.length, backupPath };
+    await backupLegacyDb(file);
+    return { items: items.length, collections: collections.length };
+  } catch {
+    // Leave this store untouched and let the others through; the next launch
+    // finds the vault still short and tries again.
+    return null;
   } finally {
     await db.close().catch(() => {});
   }
@@ -131,9 +168,9 @@ export async function migrateSqlite(): Promise<MigrationResult | null> {
 
 /**
  * Renames the legacy file rather than deleting it. If anything about this
- * migration turns out to be wrong, that database is the only way back.
+ * import turns out to be wrong, that database is the only way back.
  */
-async function backupLegacyDb(): Promise<string> {
+async function backupLegacyDb(file: string): Promise<string> {
   const { invoke } = await import("@tauri-apps/api/core");
-  return invoke<string>("backup_legacy_db");
+  return invoke<string>("backup_legacy_db", { file });
 }

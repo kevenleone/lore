@@ -1,6 +1,10 @@
-// Fetch a URL and extract useful metadata (title, description, image) from its
-// OpenGraph / standard meta tags. Uses the Tauri HTTP plugin so the request goes
-// through Rust and bypasses browser CORS. No-op-safe outside Tauri.
+// Link previews for the capture window.
+//
+// The fetch and the parsing live in the data engine now: server-side there is
+// no CORS, which is the only reason this ever needed the Tauri HTTP plugin.
+// Moving it let the app drop that plugin and its `http://**` grant.
+
+import { request } from "../data/sidecarClient";
 
 export interface LinkMetadata {
   title?: string;
@@ -9,41 +13,13 @@ export interface LinkMetadata {
 }
 
 export async function fetchLinkMetadata(url: string): Promise<LinkMetadata> {
-  let target = url.trim();
-  if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
-
-  const { fetch } = await import("@tauri-apps/plugin-http");
-  const res = await fetch(target, { method: "GET", headers: { "User-Agent": "LoreBot/1.0" } });
-  const html = await res.text();
-  const doc = new DOMParser().parseFromString(html, "text/html");
-
-  const meta = (selector: string): string | undefined => {
-    const el = doc.querySelector(selector);
-    const content = el?.getAttribute("content")?.trim();
-    return content || undefined;
-  };
-
-  const title =
-    meta('meta[property="og:title"]') ??
-    meta('meta[name="twitter:title"]') ??
-    doc.querySelector("title")?.textContent?.trim() ??
-    undefined;
-
-  const description =
-    meta('meta[property="og:description"]') ??
-    meta('meta[name="twitter:description"]') ??
-    meta('meta[name="description"]');
-
-  let image =
-    meta('meta[property="og:image"]') ?? meta('meta[name="twitter:image"]');
-  // Resolve protocol-relative / relative image URLs against the page.
-  if (image && !/^https?:\/\//i.test(image)) {
-    try {
-      image = new URL(image, target).href;
-    } catch {
-      image = undefined;
-    }
+  try {
+    return await request<LinkMetadata>("/link-metadata", {
+      method: "POST",
+      body: JSON.stringify({ url }),
+    });
+  } catch {
+    // A preview is a nicety — a failure must never block a capture.
+    return {};
   }
-
-  return { title, description, image };
 }

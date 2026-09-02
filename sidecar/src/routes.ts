@@ -5,6 +5,7 @@ import { Elysia } from "elysia";
 import type { Item } from "@lore/types";
 import { Workspace, WorkspaceNotOpen } from "./workspace";
 import { hashColor } from "./vault";
+import { fetchLinkMetadata } from "./linkMetadata";
 
 type NewItemBody = Omit<Item, "id" | "createdAt" | "updatedAt">;
 
@@ -149,6 +150,22 @@ export function routes(workspace: Workspace) {
         workspace.notify();
         set.status = 204;
         return "";
+      })
+
+      /**
+       * Reads a page's OpenGraph tags for the capture window.
+       *
+       * Deliberately not behind the workspace guard: the capture window asks
+       * for a preview while the user is still typing, which can happen before
+       * any vault is open.
+       */
+      .post("/link-metadata", async ({ body, set }) => {
+        const { url } = body as { url?: string };
+        if (!url) {
+          set.status = 400;
+          return { error: "url_required" };
+        }
+        return fetchLinkMetadata(url);
       })
 
       /* ---------------- derived reads ---------------- */

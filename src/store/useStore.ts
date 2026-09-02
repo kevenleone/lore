@@ -47,6 +47,16 @@ let unsubscribeVault: (() => void) | null = null;
  */
 const MIN_INDEXED_QUERY = 3;
 
+/**
+ * In-flight hydrate, so concurrent callers share one run.
+ *
+ * Without this, two hydrates racing each other both see an empty vault and both
+ * start the legacy import — which duplicates the entire library. React's
+ * StrictMode double-mounts in development, so this is not a rare interleaving:
+ * it happens on every launch.
+ */
+let hydrating: Promise<void> | null = null;
+
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 let searchSeq = 0;
 
@@ -206,6 +216,57 @@ function persist(
   });
 }
 
+
+/** The real hydrate. Only ever entered through the single-flight guard above. */
+async function hydrateOnce(
+  get: () => StoreState,
+  set: (partial: Partial<StoreState>) => void,
+): Promise<void> {
+  await setWorkspace(get().workspacePath);
+
+  const repo = getRepository();
+  let [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
+
+  // Import a legacy SQLite library when the vault is empty.
+  //
+  // The condition is the vault's actual state, not a "have I migrated yet"
+  // flag. A flag can be set by an attempt that then failed, and the cost of
+  // getting that wrong is someone's whole library stranded in a database the
+  // app no longer reads. An empty vault means there is nothing to duplicate
+  // or overwrite, so importing is always safe — and always right.
+  if (items.length === 0) {
+    try {
+      // The import writes straight to the engine, so the vault has to be
+      // open first or it is refused and quietly imports nothing.
+      await ensureWorkspaceOpen();
+      const result = await migrateSqlite();
+      if (result) {
+        const from = result.sources.join(" and ");
+        set({
+          migrationNotice:
+            `Moved ${result.items} item${result.items === 1 ? "" : "s"} from ${from} into your vault.`,
+        });
+        [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
+      }
+      persisted.migratedAt = new Date().toISOString();
+      persist({ ...get(), migratedAt: persisted.migratedAt });
+    } catch (e) {
+      // A failed import must not block the app. The old database is renamed
+      // only on success, so the next launch simply tries again.
+      console.error("lore: could not import the previous library", e);
+    }
+  }
+
+  const selectedId =
+    items.find((i) => i.id === get().selectedId)?.id ?? items[0]?.id ?? null;
+  set({ items, collections, selectedId, hydrated: true });
+  if (selectedId) void get().loadDetail(selectedId);
+
+  // Edits made outside Lore — a git pull, Obsidian, vim — arrive here.
+  unsubscribeVault?.();
+  unsubscribeVault = repo.subscribe?.(scheduleRefresh(get)) ?? null;
+}
+
 export const useStore = create<StoreState>((set, get) => ({
   items: [],
   detail: null,
@@ -237,47 +298,15 @@ export const useStore = create<StoreState>((set, get) => ({
   migrationNotice: null,
 
   async hydrate() {
-    await setWorkspace(get().workspacePath);
-
-    const repo = getRepository();
-    let [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
-
-    // Import a legacy SQLite library when the vault is empty.
-    //
-    // The condition is the vault's actual state, not a "have I migrated yet"
-    // flag. A flag can be set by an attempt that then failed, and the cost of
-    // getting that wrong is someone's whole library stranded in a database the
-    // app no longer reads. An empty vault means there is nothing to duplicate
-    // or overwrite, so importing is always safe — and always right.
-    if (items.length === 0) {
+    if (hydrating) return hydrating;
+    hydrating = (async () => {
       try {
-        // The import writes straight to the engine, so the vault has to be
-        // open first or it is refused and quietly imports nothing.
-        await ensureWorkspaceOpen();
-        const result = await migrateSqlite();
-        if (result) {
-          set({
-            migrationNotice: `Moved ${result.items} item${result.items === 1 ? "" : "s"} into your vault.`,
-          });
-          [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
-        }
-        persisted.migratedAt = new Date().toISOString();
-        persist({ ...get(), migratedAt: persisted.migratedAt });
-      } catch (e) {
-        // A failed import must not block the app. The old database is renamed
-        // only on success, so the next launch simply tries again.
-        console.error("lore: could not import the previous library", e);
+        await hydrateOnce(get, set);
+      } finally {
+        hydrating = null;
       }
-    }
-
-    const selectedId =
-      items.find((i) => i.id === get().selectedId)?.id ?? items[0]?.id ?? null;
-    set({ items, collections, selectedId, hydrated: true });
-    if (selectedId) void get().loadDetail(selectedId);
-
-    // Edits made outside Lore — a git pull, Obsidian, vim — arrive here.
-    unsubscribeVault?.();
-    unsubscribeVault = repo.subscribe?.(scheduleRefresh(get)) ?? null;
+    })();
+    return hydrating;
   },
 
   async loadDetail(id) {
