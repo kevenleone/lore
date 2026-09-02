@@ -139,6 +139,9 @@ export interface Auth {
  * Settings
  * ------------------------------------------------------------------ */
 
+/** Light/dark/system preference. `theme/tokens.ts` resolves `auto` at runtime. */
+export type Appearance = "light" | "dark" | "auto";
+
 export type Density = "Cozy" | "Compact" | "Roomy";
 export type NotificationStyle = "Banner" | "Alert";
 export type AiMode = "cloud" | "local";
@@ -222,7 +225,7 @@ export interface Durations {
  * repository can take it over when there is a backend to hold it.
  */
 export interface Prefs {
-  appearance: import("../theme/tokens").Appearance;
+  appearance: Appearance;
   accent: Accent;
   density: Density;
   textSize: number;

@@ -3,7 +3,8 @@
 // hard-coded hex, so the Look & Feel pane's Light / Dark / Auto switch repaints
 // the whole app. `--ac` (accent) is set separately in App.tsx.
 
-export type Appearance = "light" | "dark" | "auto";
+export type { Appearance } from "../store/types";
+import type { Appearance } from "../store/types";
 
 export const LIGHT_TOKENS: Record<string, string> = {
   "--canvas": "#e7e5df",

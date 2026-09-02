@@ -3,9 +3,17 @@
 
 import { createApp } from "./app";
 import { handshakeLine, loadConfig, watchParent } from "./config";
+import { Workspace } from "./workspace";
 
 const config = loadConfig();
-const app = createApp(config);
+const workspace = new Workspace();
+const app = createApp(config, workspace);
+
+// The host may already know which vault to open; otherwise the renderer calls
+// POST /workspace/open once it has resolved the path.
+if (config.vault) {
+  await workspace.open(config.vault);
+}
 
 // Bind 127.0.0.1 explicitly — never 0.0.0.0, which would expose the vault to
 // the local network.
@@ -24,6 +32,7 @@ watchParent(config.parentPid);
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => {
+    void workspace.close();
     void app.stop();
     process.exit(0);
   });

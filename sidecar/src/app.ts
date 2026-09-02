@@ -6,6 +6,8 @@
 
 import { Elysia } from "elysia";
 import type { Config } from "./config";
+import { routes } from "./routes";
+import { Workspace } from "./workspace";
 
 /**
  * Origins allowed to call the sidecar. The webview runs on `tauri://localhost`;
@@ -46,7 +48,7 @@ function isAuthorized(request: Request, url: URL, token: string): boolean {
   return false;
 }
 
-export function createApp(config: Config) {
+export function createApp(config: Config, workspace = new Workspace()) {
   return (
     new Elysia()
       .onRequest(({ request, set }) => {
@@ -84,7 +86,10 @@ export function createApp(config: Config) {
         ok: true,
         pid: process.pid,
         dev: config.dev,
+        workspace: workspace.path,
       }))
+
+      .use(routes(workspace))
   );
 }
 

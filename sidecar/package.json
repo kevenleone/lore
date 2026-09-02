@@ -11,7 +11,8 @@
     "build": "bun scripts/build.ts"
   },
   "dependencies": {
-    "elysia": "^1.1.0"
+    "elysia": "^1.1.0",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/bun": "^1.1.0",
