@@ -114,6 +114,29 @@ export class Vault {
       .sort((a, b) => a.localeCompare(b));
   }
 
+  /**
+   * Per-vault settings. Committed alongside the notes, so a vault carries its
+   * own sidebar tag order rather than inheriting the app's sample one.
+   */
+  async readWorkspaceFile(): Promise<{ tagOrder: string[] }> {
+    try {
+      const parsed = JSON.parse(await this.readText(WORKSPACE_FILE)) as { tagOrder?: unknown };
+      const tagOrder = Array.isArray(parsed.tagOrder)
+        ? parsed.tagOrder.filter((t): t is string => typeof t === "string")
+        : [];
+      return { tagOrder };
+    } catch {
+      return { tagOrder: [] };
+    }
+  }
+
+  async writeWorkspaceFile(tagOrder: readonly string[]): Promise<void> {
+    await this.writeText(
+      WORKSPACE_FILE,
+      `${JSON.stringify({ version: 1, tagOrder }, null, 2)}\n`,
+    );
+  }
+
   async readCollectionsFile(): Promise<Record<string, { color?: string; order?: number }>> {
     try {
       const raw = await this.readText(COLLECTIONS_FILE);

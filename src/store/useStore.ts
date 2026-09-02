@@ -7,7 +7,7 @@ import { getRepository } from "../data";
 import type { CollectionPatch, ItemPatch, NewCollection, NewItem } from "../data/repository";
 import { MockAiProvider } from "../ai/mockAiProvider";
 import type { AiProvider } from "../ai/aiProvider";
-import { SEED_CHAT } from "./seed";
+import { SEED_CHAT, SEED_COLLECTIONS, SEED_ITEMS } from "./seed";
 import { loadPersisted, savePersisted } from "./persisted";
 import { ensureWorkspaceOpen, setWorkspace } from "../data";
 import { migrateSqlite } from "../data/migrateSqlite";
@@ -148,6 +148,8 @@ interface StoreState {
   settingsPane: SettingsPane;
 
   // vault
+  /** Sidebar tag order for the open vault; empty falls back to the seed order. */
+  tagOrder: string[];
   workspacePath: string | null;
   recentWorkspaces: WorkspaceRef[];
   /** Set when a vault cannot be opened — an unmounted drive, a deleted folder. */
@@ -196,6 +198,7 @@ interface StoreState {
   toggleStar: (id: string) => Promise<void>;
   addTag: (id: string, tag: string) => Promise<void>;
   removeTag: (id: string, tag: string) => Promise<void>;
+  renameItemFile: (id: string, stem: string) => Promise<void>;
   createCollection: (input: NewCollection) => Promise<void>;
   updateCollection: (id: string, patch: CollectionPatch) => Promise<void>;
   deleteCollection: (id: string) => Promise<void>;
@@ -216,6 +219,42 @@ function persist(
   });
 }
 
+
+/**
+ * Writes the sample library into an empty default vault.
+ *
+ * Reuses the same seed the browser preview and the unit tests run on, so there
+ * is one definition of what a new Lore looks like.
+ */
+async function seedDefaultVault(): Promise<void> {
+  const repo = getRepository();
+  for (const c of SEED_COLLECTIONS) {
+    await repo.createCollection({ name: c.name, color: c.color });
+  }
+  // Seed ids are internal, so related links are resolved by title afterwards.
+  const idByTitle = new Map<string, string>();
+  for (const item of SEED_ITEMS) {
+    const { id, createdAt, updatedAt, related, collectionId, ...rest } = item;
+    const created = await repo.createItem({
+      ...rest,
+      related: [],
+      collectionId: SEED_COLLECTIONS.find((c) => c.id === collectionId)?.name,
+      createdAt,
+      updatedAt,
+    } as unknown as NewItem);
+    idByTitle.set(item.title, created.id);
+    void id;
+    void related;
+  }
+  for (const item of SEED_ITEMS) {
+    const newId = idByTitle.get(item.title);
+    const related = item.related
+      .map((old) => SEED_ITEMS.find((i) => i.id === old)?.title)
+      .map((title) => (title ? idByTitle.get(title) : undefined))
+      .filter((x): x is string => !!x);
+    if (newId && related.length) await repo.updateItem(newId, { related });
+  }
+}
 
 /** The real hydrate. Only ever entered through the single-flight guard above. */
 async function hydrateOnce(
@@ -257,9 +296,28 @@ async function hydrateOnce(
     }
   }
 
+  // A brand-new default vault gets the sample library, so a first launch is
+  // something to look at rather than an empty window. Only the default vault:
+  // writing sample notes into a folder someone chose themselves is hostile.
+  if (items.length === 0 && get().workspacePath === null) {
+    try {
+      await seedDefaultVault();
+      [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
+    } catch (e) {
+      console.error("lore: could not seed the vault", e);
+    }
+  }
+
+  // A vault can carry its own tag order in .lore/workspace.json.
+  let tagOrder: string[] = [];
+  const withTagOrder = repo as { tagOrder?: () => Promise<string[]> };
+  if (withTagOrder.tagOrder) {
+    tagOrder = await withTagOrder.tagOrder().catch(() => []);
+  }
+
   const selectedId =
     items.find((i) => i.id === get().selectedId)?.id ?? items[0]?.id ?? null;
-  set({ items, collections, selectedId, hydrated: true });
+  set({ items, collections, tagOrder, selectedId, hydrated: true });
   if (selectedId) void get().loadDetail(selectedId);
 
   // Edits made outside Lore — a git pull, Obsidian, vim — arrive here.
@@ -292,6 +350,7 @@ export const useStore = create<StoreState>((set, get) => ({
   settingsOpen: false,
   settingsPane: "general",
 
+  tagOrder: [],
   workspacePath: persisted.workspacePath,
   recentWorkspaces: persisted.recentWorkspaces,
   workspaceError: null,
@@ -523,6 +582,13 @@ export const useStore = create<StoreState>((set, get) => ({
     const item = get().items.find((i) => i.id === id);
     if (!item) return;
     await get().updateItem(id, { tags: item.tags.filter((t) => t !== tag) });
+  },
+
+  async renameItemFile(id, stem) {
+    const repo = getRepository();
+    if (!repo.renameItem) return;
+    await repo.renameItem(id, stem);
+    await get().refresh();
   },
 
   async createCollection(input) {

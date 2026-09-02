@@ -15,13 +15,16 @@ import {
 } from "../vault";
 import { parseFile, serializeFile, toItem } from "../markdown";
 import { newId, uniqueStem } from "../slug";
-import { resolveRelated, serializeRelated, type Resolver } from "../links";
+import { resolveRelated, rewriteRelated, serializeRelated, type Resolver } from "../links";
 import { deriveDomain, deriveSnippet } from "@lore/derive";
 
 /** A row's Item, rehydrated with the body and the derived fields. */
 function rowToItem(row: FileRow, withBody: boolean): Item {
   const base = JSON.parse(row.json) as Item;
   const item: Item = { ...base, collectionId: collectionOf(row.path) || undefined };
+  // The file is the item, so its path is worth surfacing: the UI shows it and
+  // renames it, and it is the only stable way to point a person at the note.
+  item.path = row.path;
   if (withBody) item.body = row.body || undefined;
   return {
     ...item,
@@ -33,8 +36,28 @@ function rowToItem(row: FileRow, withBody: boolean): Item {
 export class VaultStore {
   private db: Database;
 
+  /**
+   * Told about every path this process writes, so the watcher can ignore the
+   * event its own write is about to produce. Set by the Workspace that owns it.
+   */
+  onWrite: ((relPath: string, text: string | null) => void) | null = null;
+
   private constructor(readonly vault: Vault, db: Database) {
     this.db = db;
+  }
+
+  /** Records a write and performs it, so the two can never drift apart. */
+  private async writeFile(relPath: string, text: string): Promise<void> {
+    this.onWrite?.(relPath, text);
+    await this.vault.writeText(relPath, text);
+  }
+
+  private async moveFile(fromRel: string, toRel: string): Promise<void> {
+    // A move has no new content of its own; the destination keeps whatever the
+    // source held, so both sides are marked without a hash.
+    this.onWrite?.(fromRel, null);
+    this.onWrite?.(toRel, null);
+    await this.vault.move(fromRel, toRel);
   }
 
   static async open(root: string): Promise<VaultStore> {
@@ -329,7 +352,7 @@ export class VaultStore {
     let path = row.path;
     if ((targetCollection || "") !== (current.collectionId || "")) {
       path = joinPath(targetCollection || undefined, row.stem);
-      await this.vault.move(row.path, path);
+      await this.moveFile(row.path, path);
       this.db.run("DELETE FROM files WHERE path = ?", [row.path]);
     }
 
@@ -341,9 +364,58 @@ export class VaultStore {
   async deleteItem(id: string): Promise<boolean> {
     const row = this.db.query<FileRow, [string]>("SELECT * FROM files WHERE id = ?").get(id);
     if (!row) return false;
-    await this.vault.move(row.path, `${TRASH_DIR}/${Date.now()}-${row.stem}.md`);
+    await this.moveFile(row.path, `${TRASH_DIR}/${Date.now()}-${row.stem}.md`);
     this.forget(row.path);
     return true;
+  }
+
+  /**
+   * Renames a file, rewriting every wikilink that pointed at it.
+   *
+   * Only done on request — retitling deliberately leaves the filename alone,
+   * because a rename churns git history and touches every file that links here.
+   *
+   * The inbound rewrites happen *before* the move, so a crash part-way leaves
+   * links pointing at a file that still exists rather than at nothing.
+   */
+  async renameItem(id: string, requestedStem: string): Promise<Item | null> {
+    const row = this.db.query<FileRow, [string]>("SELECT * FROM files WHERE id = ?").get(id);
+    if (!row) return null;
+
+    const collection = collectionOf(row.path);
+    const taken = this.takenStems(collection || undefined);
+    taken.delete(row.stem);
+    const stem = uniqueStem(requestedStem, id, taken);
+    if (stem === row.stem) return this.getItem(id);
+
+    // Who points here? This is the only consumer of the links table.
+    const inbound = this.db
+      .query<{ src_id: string }, [string]>("SELECT DISTINCT src_id FROM links WHERE target_id = ?")
+      .all(id)
+      .map((r) => r.src_id)
+      .filter((src) => src !== id);
+
+    for (const srcId of inbound) {
+      const src = this.db.query<FileRow, [string]>("SELECT * FROM files WHERE id = ?").get(srcId);
+      if (!src) continue;
+      const raw = await this.vault.readText(src.path);
+      const parsed = parseFile(raw);
+      const related = Array.isArray(parsed.data.related) ? (parsed.data.related as string[]) : [];
+      const rewritten = rewriteRelated(related, row.stem, stem);
+      if (rewritten.join("\u0000") === related.join("\u0000")) continue;
+
+      const item = rowToItem(src, true);
+      await this.writeFile(
+        src.path,
+        serializeFile(item, rewritten, JSON.parse(src.extra) as Record<string, unknown>),
+      );
+    }
+
+    const nextPath = joinPath(collection || undefined, stem);
+    await this.moveFile(row.path, nextPath);
+    this.db.run("DELETE FROM files WHERE path = ?", [row.path]);
+    await this.reconcile();
+    return this.getItem(id);
   }
 
   private takenStems(collectionId: string | undefined): Set<string> {
@@ -363,7 +435,7 @@ export class VaultStore {
   ): Promise<void> {
     const related = serializeRelated(item.related, unresolved, this.resolver());
     const text = serializeFile(item, related, extra);
-    await this.vault.writeText(path, text);
+    await this.writeFile(path, text);
     const st = await stat(this.vault.path(path));
     this.indexOne(path, text, Math.floor(st.mtimeMs), st.size, hashContent(text), item.id);
   }
@@ -384,7 +456,7 @@ export class VaultStore {
 
     const nextId = patch.name ?? current.id;
     if (nextId !== id) {
-      await this.vault.move(id, nextId);
+      await this.moveFile(id, nextId);
       // Every child's path changed; the reconcile pass picks them up.
       this.db.run("DELETE FROM files WHERE path LIKE ?", [`${id}/%`]);
     }
@@ -402,7 +474,7 @@ export class VaultStore {
     for (const row of rows) {
       const stems = this.takenStems(undefined);
       const stem = stems.has(row.stem) ? uniqueStem(row.stem, row.id, stems) : row.stem;
-      await this.vault.move(row.path, `${stem}.md`);
+      await this.moveFile(row.path, `${stem}.md`);
       this.db.run("DELETE FROM files WHERE path = ?", [row.path]);
     }
     // rmdir refuses a non-empty directory, which is the behaviour we want:

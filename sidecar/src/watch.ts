@@ -22,16 +22,11 @@ export interface Watcher {
 /**
  * Calls `onChange` after the vault settles.
  *
- * `suppress` is how a write made by the sidecar itself avoids a pointless
- * round-trip: the store records the path it just wrote, the event that follows
- * matches, and it is dropped rather than telling the UI to refresh for a change
- * it already knows about.
+ * Deciding which of those paths are the sidecar's own writes happens in the
+ * Workspace, not here: it needs to read the file to compare hashes, which this
+ * synchronous callback cannot do.
  */
-export function watchVault(
-  root: string,
-  onChange: (paths: string[]) => void,
-  suppress: (relPath: string) => boolean = () => false,
-): Watcher {
+export function watchVault(root: string, onChange: (paths: string[]) => void): Watcher {
   let timer: ReturnType<typeof setTimeout> | null = null;
   let pending = new Set<string>();
   let watcher: FSWatcher | null = null;
@@ -47,7 +42,7 @@ export function watchVault(
     watcher = watch(root, { recursive: true }, (_event, filename) => {
       if (!filename) return;
       const rel = filename.toString().replace(/\\/g, "/");
-      if (isNoise(rel) || suppress(rel)) return;
+      if (isNoise(rel)) return;
       pending.add(rel);
       if (timer) clearTimeout(timer);
       timer = setTimeout(flush, DEBOUNCE_MS);

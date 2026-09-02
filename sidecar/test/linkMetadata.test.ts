@@ -11,7 +11,7 @@ afterEach(() => {
 
 function serve(html: string, init: ResponseInit = {}) {
   globalThis.fetch = (async () =>
-    new Response(html, { headers: { "content-type": "text/html" }, ...init })) as typeof fetch;
+    new Response(html, { headers: { "content-type": "text/html" }, ...init })) as unknown as typeof fetch;
 }
 
 describe("normalizeUrl", () => {
@@ -78,7 +78,7 @@ describe("fetchLinkMetadata", () => {
   it("returns nothing when the request fails, so a capture is never blocked", async () => {
     globalThis.fetch = (async () => {
       throw new Error("network down");
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
     expect(await fetchLinkMetadata("https://example.test")).toEqual({});
   });
 

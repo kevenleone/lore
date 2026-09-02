@@ -51,6 +51,12 @@ export interface Item {
   /** Preview image URL (e.g. OpenGraph image for links). */
   image?: string;
   related: string[];
+  /**
+   * Vault-relative file path, supplied by the store that owns the file. Read
+   * only — renaming goes through `renameItem`, since it has to rewrite every
+   * wikilink pointing here.
+   */
+  path?: string;
   /** ISO 8601. Display strings (`2m`, `Today, 14:30`) are derived at render. */
   createdAt: string;
   updatedAt: string;

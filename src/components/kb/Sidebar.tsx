@@ -53,9 +53,11 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
   const toggleChat = useStore((s) => s.toggleChat);
   const openSettings = useStore((s) => s.openSettings);
   const showCounts = useStore((s) => s.prefs.switches.counts);
+  const vaultTagOrder = useStore((s) => s.tagOrder);
 
   const counts = viewCounts(items);
-  const tags = tagCounts(items, SEED_TAG_ORDER);
+  // The open vault's own order when it has one, else the sample order.
+  const tags = tagCounts(items, vaultTagOrder.length ? vaultTagOrder : SEED_TAG_ORDER);
 
   const countStyle: React.CSSProperties = {
     fontSize: 12,

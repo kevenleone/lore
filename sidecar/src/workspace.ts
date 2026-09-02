@@ -4,6 +4,7 @@
 
 import type { Item } from "@lore/types";
 import { VaultStore } from "./index/store";
+import { hashContent } from "./index/db";
 import { watchVault, type Watcher } from "./watch";
 
 type Subscriber = (paths: string[]) => void;
@@ -12,8 +13,13 @@ export class Workspace {
   private store: VaultStore | null = null;
   private watcher: Watcher | null = null;
   private subscribers = new Set<Subscriber>();
-  /** Paths this process just wrote, so the watcher can ignore its own echo. */
-  private selfWrites = new Map<string, number>();
+  /**
+   * Content this process last wrote to each path, so the watcher can recognise
+   * its own echo. Keyed by hash rather than by time because a single write
+   * produces several filesystem events on macOS — a one-shot mark is consumed
+   * by the first and the rest leak through.
+   */
+  private selfWrites = new Map<string, { hash: string; at: number }>();
 
   get current(): VaultStore {
     if (!this.store) throw new WorkspaceNotOpen();
@@ -31,13 +37,10 @@ export class Workspace {
   async open(root: string): Promise<{ path: string; itemCount: number }> {
     await this.close();
     this.store = await VaultStore.open(root);
-    this.watcher = watchVault(
-      root,
-      // Reindex before telling anyone: a subscriber refreshes immediately on
-      // this signal, and would otherwise re-read a still-stale index.
-      (paths) => void this.onFilesChanged(paths),
-      (rel) => this.wasSelfWrite(rel),
-    );
+    // Without this the watcher fires on every save Lore makes, so each edit
+    // costs a needless reconcile and a refresh round-trip back to the UI.
+    this.store.onWrite = (rel, text) => this.markSelfWrite(rel, text);
+    this.watcher = watchVault(root, (paths) => void this.onFilesChanged(paths));
     return { path: root, itemCount: this.store.listItems().length };
   }
 
@@ -61,33 +64,61 @@ export class Workspace {
   }
 
   private async onFilesChanged(paths: string[]): Promise<void> {
+    if (!this.store) return;
+    const external: string[] = [];
+    for (const path of paths) {
+      if (!(await this.wasSelfWrite(path))) external.push(path);
+    }
+    // Everything in this batch was our own doing, and indexOne already recorded
+    // it — reindexing and refreshing the UI would be pure waste.
+    if (external.length === 0) return;
+
     try {
       await this.current.reconcile();
     } catch {
       // The workspace may have closed mid-event; the next open reconciles.
       return;
     }
-    this.emit(paths);
+    this.emit(external);
   }
 
   private emit(paths: string[]): void {
     for (const fn of this.subscribers) fn(paths);
   }
 
-  /**
-   * Marks a path as written by us. The watcher event arrives a moment later and
-   * is dropped; the mark expires so an external edit to the same file soon
-   * after is still noticed.
-   */
-  markSelfWrite(relPath: string): void {
-    this.selfWrites.set(relPath, Date.now());
+  /** Records what we wrote, so the events it produces can be recognised. */
+  private markSelfWrite(relPath: string, text: string | null): void {
+    if (text === null) {
+      // A move: there is no content to compare, so fall back to a short window.
+      this.selfWrites.set(relPath, { hash: "", at: Date.now() });
+      return;
+    }
+    this.selfWrites.set(relPath, { hash: hashContent(text), at: Date.now() });
   }
 
-  private wasSelfWrite(relPath: string): boolean {
-    const at = this.selfWrites.get(relPath);
-    if (at === undefined) return false;
-    this.selfWrites.delete(relPath);
-    return Date.now() - at < 2000;
+  /**
+   * True when the file on disk still holds exactly what we wrote.
+   *
+   * Comparing content rather than counting events is what makes this correct in
+   * both directions: several events for one write are all recognised, and an
+   * edit by someone else lands with a different hash and gets through even if
+   * it arrives moments after ours.
+   */
+  private async wasSelfWrite(relPath: string): Promise<boolean> {
+    const mark = this.selfWrites.get(relPath);
+    if (!mark) return false;
+    if (Date.now() - mark.at > 5000) {
+      this.selfWrites.delete(relPath);
+      return false;
+    }
+    // A move leaves nothing to compare against.
+    if (!mark.hash) return true;
+    try {
+      return hashContent(await this.current.vault.readText(relPath)) === mark.hash;
+    } catch {
+      // Gone — a delete is a real change.
+      return false;
+    }
   }
 
   /** Re-reads from disk and tells subscribers. */

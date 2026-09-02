@@ -15,6 +15,7 @@ import { Sidebar } from "./components/kb/Sidebar";
 import { ListPane } from "./components/kb/ListPane";
 import { DetailPane } from "./components/kb/DetailPane";
 import { AskLoreChat } from "./components/kb/AskLoreChat";
+import { Notice } from "./components/kb/Notice";
 import { Onboarding } from "./components/onboarding/Onboarding";
 import { SettingsModal } from "./components/settings/SettingsModal";
 
@@ -82,6 +83,7 @@ export default function App() {
       }}
     >
       <TitleBar onCapture={openCaptureWindow} />
+      <Notice />
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
         {sidebarVisible && <Sidebar onCapture={openCaptureWindow} />}
         <ListPane />

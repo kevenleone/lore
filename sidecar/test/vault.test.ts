@@ -483,3 +483,63 @@ describe("search reaches what the list pane cannot", () => {
     expect(s.search("shared word")).toHaveLength(1);
   });
 });
+
+describe("rename", () => {
+  it("renames the file and rewrites every inbound wikilink", async () => {
+    // This is the only consumer of the links table — before this existed, the
+    // table was written on every index and never read.
+    const s = await open();
+    const target = await s.createItem(baseItem({ title: "Original" }));
+    const linker = await s.createItem(baseItem({ title: "Points at it", related: [target.id] }));
+
+    expect(await readFile(join(root, "points-at-it.md"), "utf8")).toContain("[[original]]");
+
+    await s.renameItem(target.id, "Renamed thing");
+
+    expect(await Bun.file(join(root, "renamed-thing.md")).exists()).toBe(true);
+    expect(await Bun.file(join(root, "original.md")).exists()).toBe(false);
+
+    // The link followed, so nothing dangles.
+    const raw = await readFile(join(root, "points-at-it.md"), "utf8");
+    expect(raw).toContain("[[renamed-thing]]");
+    expect(raw).not.toContain("[[original]]");
+    expect(s.getItem(linker.id)!.related).toEqual([target.id]);
+  });
+
+  it("keeps the id, so the item is the same item", async () => {
+    const s = await open();
+    const item = await s.createItem(baseItem({ title: "Before", body: "kept" }));
+    const after = await s.renameItem(item.id, "After");
+    expect(after!.id).toBe(item.id);
+    expect(after!.body).toBe("kept");
+  });
+
+  it("suffixes rather than overwriting an existing file", async () => {
+    const s = await open();
+    await s.createItem(baseItem({ title: "Taken" }));
+    const other = await s.createItem(baseItem({ title: "Other" }));
+
+    await s.renameItem(other.id, "Taken");
+
+    expect(await Bun.file(join(root, "taken.md")).exists()).toBe(true);
+    expect(await Bun.file(join(root, "taken-2.md")).exists()).toBe(true);
+    expect(s.listItems()).toHaveLength(2);
+  });
+
+  it("stays inside its collection folder", async () => {
+    const s = await open();
+    await s.createCollection("Work", "#8a92b8");
+    const item = await s.createItem(baseItem({ title: "Filed", collectionId: "Work" }));
+    await s.renameItem(item.id, "Refiled");
+    expect(await Bun.file(join(root, "Work/refiled.md")).exists()).toBe(true);
+    expect(s.getItem(item.id)!.collectionId).toBe("Work");
+  });
+
+  it("is a no-op when the name does not change", async () => {
+    const s = await open();
+    const item = await s.createItem(baseItem({ title: "Same" }));
+    const after = await s.renameItem(item.id, "Same");
+    expect(after!.id).toBe(item.id);
+    expect(await Bun.file(join(root, "same.md")).exists()).toBe(true);
+  });
+});

@@ -19,6 +19,7 @@ interface WorkspaceInfo {
   path: string | null;
   open: boolean;
   itemCount: number;
+  tagOrder?: string[];
 }
 
 export class VaultRepository implements KnowledgeRepository {
@@ -149,6 +150,21 @@ export class VaultRepository implements KnowledgeRepository {
   async deleteCollection(id: string): Promise<void> {
     await this.call(() =>
       request<void>(`/collections/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    );
+  }
+
+  /** The sidebar tag order this vault carries, if it has one. */
+  async tagOrder(): Promise<string[]> {
+    const info = await this.call(() => request<WorkspaceInfo>("/workspace"));
+    return info.tagOrder ?? [];
+  }
+
+  async renameItem(id: string, stem: string): Promise<Item> {
+    return this.call(() =>
+      request<Item>(`/items/${encodeURIComponent(id)}/rename`, {
+        method: "POST",
+        body: JSON.stringify({ stem }),
+      }),
     );
   }
 

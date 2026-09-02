@@ -29,6 +29,7 @@ export function DetailPane() {
   const collections = useStore((s) => s.collections);
   const selectedId = useStore((s) => s.selectedId);
   const detail = useStore((s) => s.detail);
+  const renameItemFile = useStore((s) => s.renameItemFile);
   // The AI sections need both the pane toggle and the Capture & AI setting.
   const aiAssist = useStore((s) => s.aiAssist && s.prefs.switches.autoSum);
   const toggleStar = useStore((s) => s.toggleStar);
@@ -43,6 +44,8 @@ export function DetailPane() {
   const sel = detail && detail.id === listItem?.id ? detail : listItem;
 
   const [editingTitle, setEditingTitle] = useState(false);
+  const [editingFilename, setEditingFilename] = useState(false);
+  const [filenameDraft, setFilenameDraft] = useState("");
   const [titleDraft, setTitleDraft] = useState("");
   const [editingBody, setEditingBody] = useState(false);
   const [bodyDraft, setBodyDraft] = useState("");
@@ -71,6 +74,7 @@ export function DetailPane() {
   const coll = collectionFor(sel, collections);
   const related = relatedItems(sel, items);
   const flags = detailFlags(sel, aiAssist, related.length);
+  const fileStem = (sel.path ?? "").split("/").pop()?.replace(/\.md$/, "") ?? "";
   const linkUrl = sel.type === "link" ? sel.url || (sel.domain ? `https://${sel.domain}` : "") : "";
 
   // note/task/code edit the item's own content; a link's editable text stays its
@@ -95,6 +99,14 @@ export function DetailPane() {
     if (bodyDraft === (bodyValue ?? "")) return;
     if (bodyField === "body") void updateItem(sel.id, { body: bodyDraft });
     else if (bodyField === "description") void updateItem(sel.id, { description: bodyDraft });
+  };
+
+  const commitFilename = () => {
+    const next = filenameDraft.trim();
+    setEditingFilename(false);
+    // Unlike a retitle, this moves the file and rewrites every inbound link,
+    // so it only runs when the name actually changed.
+    if (next && next !== fileStem) void renameItemFile(sel.id, next);
   };
 
   const commitTag = () => {
@@ -192,6 +204,49 @@ export function DetailPane() {
         {coll?.name ?? "Unfiled"}
         <span style={{ opacity: 0.5 }}>·</span>
         Saved {formatSavedDate(sel.createdAt)}
+        {sel.path && (
+          <>
+            <span style={{ opacity: 0.5 }}>·</span>
+            {editingFilename ? (
+              <input
+                autoFocus
+                value={filenameDraft}
+                onChange={(e) => setFilenameDraft(e.target.value)}
+                onBlur={commitFilename}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitFilename();
+                  if (e.key === "Escape") setEditingFilename(false);
+                }}
+                style={{
+                  font: "inherit",
+                  fontFamily: "ui-monospace,Menlo,monospace",
+                  fontSize: 12,
+                  color: "var(--text, #1a1a1f)",
+                  background: "transparent",
+                  border: "none",
+                  borderBottom: `1.5px solid ${AC}`,
+                  outline: "none",
+                  minWidth: 120,
+                }}
+              />
+            ) : (
+              <span
+                title="Click to rename the file. Renaming rewrites links that point here."
+                onClick={() => {
+                  setFilenameDraft(fileStem);
+                  setEditingFilename(true);
+                }}
+                style={{
+                  fontFamily: "ui-monospace,Menlo,monospace",
+                  fontSize: 12,
+                  cursor: "text",
+                }}
+              >
+                {fileStem}.md
+              </span>
+            )}
+          </>
+        )}
       </div>
 
       {/* image preview — only when there is an image */}

@@ -32,6 +32,13 @@ export interface KnowledgeRepository {
 
   listTags(): Promise<TagCount[]>;
 
+  /**
+   * Renames the file behind an item. Separate from `updateItem` because a
+   * retitle deliberately leaves the filename alone — a rename rewrites every
+   * inbound link and churns history, so it only happens when asked for.
+   */
+  renameItem?(id: string, stem: string): Promise<Item>;
+
   /** ⌘K full-text search across titles, snippets, summaries, tags. */
   search(query: string): Promise<Item[]>;
 

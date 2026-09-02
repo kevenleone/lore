@@ -23,11 +23,16 @@ export function routes(workspace: Workspace) {
 
       /* ---------------- workspace ---------------- */
 
-      .get("/workspace", () => ({
-        path: workspace.path,
-        open: workspace.isOpen,
-        itemCount: workspace.isOpen ? workspace.current.listItems().length : 0,
-      }))
+      .get("/workspace", async () => {
+        if (!workspace.isOpen) return { path: null, open: false, itemCount: 0, tagOrder: [] };
+        const { tagOrder } = await workspace.current.vault.readWorkspaceFile();
+        return {
+          path: workspace.path,
+          open: true,
+          itemCount: workspace.current.listItems().length,
+          tagOrder,
+        };
+      })
 
       .post("/workspace/open", ({ body }) => {
         const { path } = body as { path?: string };
@@ -118,6 +123,25 @@ export function routes(workspace: Workspace) {
         return "";
       })
 
+      /**
+       * Renames the file behind an item, rewriting inbound wikilinks.
+       * Separate from PATCH because retitling deliberately does not rename.
+       */
+      .post("/items/:id/rename", async ({ params, body, set }) => {
+        const { stem } = body as { stem?: string };
+        if (!stem?.trim()) {
+          set.status = 400;
+          return { error: "stem_required" };
+        }
+        const item = await workspace.current.renameItem(params.id, stem);
+        if (!item) {
+          set.status = 404;
+          return { error: "not_found" };
+        }
+        workspace.notify();
+        return item;
+      })
+
       /* ---------------- collections ---------------- */
 
       .get("/collections", () => workspace.current.listCollections())
@@ -171,6 +195,13 @@ export function routes(workspace: Workspace) {
       /* ---------------- derived reads ---------------- */
 
       .get("/tags", () => workspace.current.listTags())
+
+      /** Persists the sidebar's tag order into the vault itself. */
+      .post("/tags/order", async ({ body }) => {
+        const { tagOrder } = body as { tagOrder?: string[] };
+        await workspace.current.vault.writeWorkspaceFile(tagOrder ?? []);
+        return { ok: true };
+      })
 
       .get("/search", ({ query }) => workspace.current.search(String(query.q ?? "")))
 
