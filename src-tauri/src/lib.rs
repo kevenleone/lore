@@ -1,19 +1,29 @@
 // Lore — Tauri entry point.
 // Plugins back the offline-first store (sql), link-metadata fetching (http),
-// opening external links (opener), and the ⌥Space quick-capture global shortcut
-// (global-shortcut, desktop only).
+// opening external links (opener), the ⌥Space quick-capture global shortcut
+// (global-shortcut, desktop only), and spawning the Bun data engine (shell).
+//
+// `shell` is registered for Rust's use only — the webview is granted no
+// `shell:` permission, so nothing in the renderer can start a process.
 
 mod commands;
+mod sidecar;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    use tauri::Manager;
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_sql::Builder::default().build())
+        .plugin(tauri_plugin_shell::init())
+        .manage(sidecar::SidecarState::default())
         .invoke_handler(tauri::generate_handler![
             commands::toggle_capture,
-            commands::hide_capture
+            commands::hide_capture,
+            sidecar::sidecar_endpoint,
+            sidecar::default_vault_path
         ])
         .on_window_event(|window, event| {
             // Closing the main window hides it (tray-app pattern) so it can be
@@ -26,6 +36,13 @@ pub fn run() {
             }
         })
         .setup(|app| {
+            // Start the data engine before anything asks for it. A failure here
+            // must not stop the app booting — the UI reports the engine as
+            // unavailable rather than showing a blank window.
+            if let Err(e) = sidecar::start(app.handle()) {
+                eprintln!("lore: data engine unavailable: {e}");
+            }
+
             #[cfg(desktop)]
             {
                 use tauri_plugin_global_shortcut::{
@@ -51,6 +68,13 @@ pub fn run() {
             }
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            // Tauri does not reap child processes, so without this quitting Lore
+            // would leave the engine running and holding the vault.
+            if let tauri::RunEvent::Exit = event {
+                app.state::<sidecar::SidecarState>().shutdown();
+            }
+        });
 }
