@@ -433,3 +433,53 @@ describe("store: search and tags", () => {
     ]);
   });
 });
+
+describe("search reaches what the list pane cannot", () => {
+  it("finds a word past the first line, which the preview never shows", async () => {
+    // The derived snippet is only the body's first line, and listItems omits
+    // the body entirely — so the client-side filter cannot reach this word.
+    const s = await open();
+    await s.createItem(
+      baseItem({
+        title: "Meeting notes",
+        body: "Agenda\n\nWe agreed to defer the antialiasing work.",
+      }),
+    );
+    await s.createItem(baseItem({ title: "Other", body: "Unrelated." }));
+
+    const listed = s.listItems().find((i) => i.title === "Meeting notes")!;
+    expect(listed.body).toBeUndefined();
+    expect(listed.snippet).toBe("Agenda");
+
+    expect(s.search("antialiasing").map((i) => i.title)).toEqual(["Meeting notes"]);
+  });
+
+  it("finds a word beyond the derived preview's cut-off", async () => {
+    const s = await open();
+    const long = `${"filler ".repeat(60)}needle`;
+    await s.createItem(baseItem({ title: "Long note", body: long }));
+
+    const listed = s.listItems()[0];
+    expect(listed.snippet!.length).toBeLessThanOrEqual(200);
+    expect(listed.snippet).not.toContain("needle");
+
+    expect(s.search("needle")).toHaveLength(1);
+  });
+
+  it("matches a link by its url and description", async () => {
+    const s = await open();
+    await s.createItem(
+      baseItem({ type: "link", title: "Opaque", url: "https://oklch.com", description: "Perceptual color" }),
+    );
+    expect(s.search("oklch")).toHaveLength(1);
+    expect(s.search("perceptual")).toHaveLength(1);
+  });
+
+  it("requires every term, so more words narrow the result", async () => {
+    const s = await open();
+    await s.createItem(baseItem({ title: "Alpha", body: "shared word here" }));
+    await s.createItem(baseItem({ title: "Beta", body: "shared other" }));
+    expect(s.search("shared")).toHaveLength(2);
+    expect(s.search("shared word")).toHaveLength(1);
+  });
+});

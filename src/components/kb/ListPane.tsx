@@ -17,6 +17,10 @@ function subtitle(item: Item): string {
   return item.domain || item.snippet || typeMeta(item.type).label;
 }
 
+/**
+ * Fallback for queries too short to send to the index. It can only see what
+ * `listItems()` returns — titles, tags and the derived preview — never bodies.
+ */
 function matchesSearch(item: Item, q: string): boolean {
   const hay = `${item.title} ${item.domain ?? ""} ${item.snippet ?? ""} ${item.summary ?? ""} ${item.tags.join(" ")}`.toLowerCase();
   return hay.includes(q);
@@ -30,6 +34,8 @@ export function ListPane() {
   const selectItem = useStore((s) => s.selectItem);
   const density = useStore((s) => s.prefs.density);
   const search = useStore((s) => s.search).trim().toLowerCase();
+  const searchResults = useStore((s) => s.searchResults);
+  const searching = useStore((s) => s.searching);
   const sort = useStore((s) => s.sort);
   const setSort = useStore((s) => s.setSort);
   const [sortOpen, setSortOpen] = useState(false);
@@ -49,7 +55,14 @@ export function ListPane() {
   const rowPadding = { Compact: "7px 14px", Cozy: "11px 14px", Roomy: "16px 14px" }[density];
 
   let filtered = filterByView(items, view, sort);
-  if (search) filtered = filtered.filter((i) => matchesSearch(i, search));
+  if (search) {
+    // The index searches full bodies; the client-side filter is the fallback
+    // for queries too short to be worth a round-trip.
+    const hits = searchResults && new Set(searchResults);
+    filtered = hits
+      ? filtered.filter((i) => hits.has(i.id))
+      : filtered.filter((i) => matchesSearch(i, search));
+  }
 
   return (
     <div
@@ -134,6 +147,26 @@ export function ListPane() {
       </div>
 
       <div style={{ flex: 1, overflow: "auto" }}>
+        {filtered.length === 0 && (
+          <div
+            style={{
+              padding: "28px 20px",
+              textAlign: "center",
+              fontSize: 13,
+              lineHeight: 1.6,
+              color: "var(--text3, #9a9aa5)",
+            }}
+          >
+            {search ? (
+              <>
+                Nothing matches <strong style={{ color: "var(--text2, #6b6b76)" }}>{search}</strong>
+                {searching && " yet…"}
+              </>
+            ) : (
+              "Nothing here yet."
+            )}
+          </div>
+        )}
         {filtered.map((item) => {
           const meta = typeMeta(item.type);
           const selected = item.id === selectedId;

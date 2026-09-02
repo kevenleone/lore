@@ -41,6 +41,50 @@ const persisted = loadPersisted();
 let unsubscribeVault: (() => void) | null = null;
 
 /**
+ * Shortest query worth sending to the index. Below this the client-side filter
+ * over already-loaded titles is faster than a round-trip, and a one-character
+ * prefix matches nearly everything anyway.
+ */
+const MIN_INDEXED_QUERY = 3;
+
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+let searchSeq = 0;
+
+/**
+ * Runs the query against the index, debounced.
+ *
+ * This is what lets search reach note bodies: `listItems()` deliberately omits
+ * them, so the client-side filter can only ever see titles, tags and the short
+ * derived preview. The index has the full text.
+ */
+function runSearch(get: () => StoreState, raw: string): void {
+  if (searchTimer) clearTimeout(searchTimer);
+  const q = raw.trim();
+
+  if (q.length < MIN_INDEXED_QUERY) {
+    useStore.setState({ searchResults: null, searching: false });
+    return;
+  }
+
+  useStore.setState({ searching: true });
+  searchTimer = setTimeout(() => {
+    searchTimer = null;
+    const seq = ++searchSeq;
+    void getRepository()
+      .search(q)
+      .then((hits) => {
+        // Drop a response that lost the race to a newer keystroke.
+        if (seq !== searchSeq || get().search.trim() !== q) return;
+        useStore.setState({ searchResults: hits.map((h) => h.id), searching: false });
+      })
+      .catch(() => {
+        // Fall back to the client-side filter rather than showing nothing.
+        if (seq === searchSeq) useStore.setState({ searchResults: null, searching: false });
+      });
+  }, 150);
+}
+
+/**
  * Coalesces bursts of file-change events. A `git pull` touching 200 files would
  * otherwise trigger 200 full re-lists.
  */
@@ -74,6 +118,12 @@ interface StoreState {
   chatOpen: boolean;
   aiAssist: boolean;
   search: string;
+  /**
+   * Ids the index matched, or null when the query is too short to run one and
+   * the client-side filter is doing the work instead.
+   */
+  searchResults: string[] | null;
+  searching: boolean;
   sidebarVisible: boolean;
   sort: SortOrder;
 
@@ -168,6 +218,8 @@ export const useStore = create<StoreState>((set, get) => ({
   chatOpen: false,
   aiAssist: true,
   search: "",
+  searchResults: null,
+  searching: false,
   sidebarVisible: true,
   sort: "newest",
 
@@ -263,6 +315,7 @@ export const useStore = create<StoreState>((set, get) => ({
       detail: null,
       selectedId: null,
       search: "",
+      searchResults: null,
       view: { kind: "all", val: null },
       chatOpen: false,
     });
@@ -299,6 +352,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
   setSearch(q) {
     set({ search: q });
+    runSearch(get, q);
   },
   toggleSidebar() {
     set((s) => ({ sidebarVisible: !s.sidebarVisible }));
