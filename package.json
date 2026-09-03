@@ -9,6 +9,10 @@
     "dev": "vite",
     "dev:all": "concurrently -n vite,sidecar -c cyan,magenta \"pnpm dev\" \"pnpm dev:sidecar\"",
     "dev:sidecar": "pnpm --filter @lore/sidecar dev",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run && pnpm test:sidecar",
@@ -25,6 +29,7 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tauri-apps/cli": "^2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
@@ -32,7 +37,15 @@
     "@vanilla-extract/vite-plugin": "^5.0.0",
     "@vitejs/plugin-react": "^4.6.0",
     "concurrently": "^9.1.0",
+    "eslint": "^9.25.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsonc": "^3.1.2",
+    "eslint-plugin-perfectionist": "^5.9.0",
+    "eslint-plugin-prettier": "^5.5.5",
+    "prettier": "^3.8.3",
+    "prettier-plugin-sort-json": "^4.2.0",
     "typescript": "~5.8.3",
+    "typescript-eslint": "^8.59.1",
     "vite": "^7.0.4",
     "vitest": "^3.0.5"
   }

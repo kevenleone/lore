@@ -144,6 +144,9 @@ export function serializeFile(
   relatedLinks: readonly string[],
   extra: Record<string, unknown> = {},
 ): string {
+  // Key order here is the on-disk frontmatter order; sorting it would rewrite
+  // every file in the vault the next time it is saved.
+  // eslint-disable-next-line perfectionist/sort-objects
   const fm: Record<string, unknown> = {
     id: item.id,
     type: item.type,

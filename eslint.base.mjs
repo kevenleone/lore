@@ -1,0 +1,25 @@
+import js from '@eslint/js';
+import jsonc from 'eslint-plugin-jsonc';
+import perfectionist from 'eslint-plugin-perfectionist';
+import prettierRecommended from 'eslint-plugin-prettier/recommended';
+import ts from 'typescript-eslint';
+
+export const baseConfig = ts.config(
+    js.configs.recommended,
+    ...ts.configs.recommended,
+    perfectionist.configs['recommended-alphabetical'],
+    prettierRecommended,
+    {
+        rules: {
+            'prettier/prettier': 'warn',
+        },
+    },
+    ...jsonc.configs['flat/recommended-with-json'],
+    {
+        files: ['**/*.json'],
+        rules: {
+            'jsonc/no-comments': 'off',
+            'jsonc/sort-keys': 'error',
+        },
+    },
+);

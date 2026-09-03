@@ -1,0 +1,10 @@
+*.lock
+bun.lock
+pnpm-lock.yaml
+build
+coverage
+dist
+node_modules
+src-tauri/binaries
+src-tauri/gen
+src-tauri/target
