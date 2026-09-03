@@ -74,33 +74,49 @@ export default function App() {
                 ['--ac' as string]: resolveAccent(accent, theme),
                 background: 'var(--surface, #fff)',
                 color: 'var(--text, #1a1a1f)',
-                display: 'flex',
-                flexDirection: 'column',
                 height: '100%',
                 overflow: 'hidden',
-                // "Text size" scales the whole tree; every size in the UI is in px, so
-                // the zoom is applied here rather than through rem units.
-                zoom: textSize,
+                // Anchors the overlays below, which are deliberately outside the
+                // zoomed subtree.
+                position: 'relative',
             }}
         >
-            <TitleBar onCapture={openCaptureWindow} />
-            <Notice />
-            <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-                {sidebarVisible && <Sidebar onCapture={openCaptureWindow} />}
-                <ListPane />
-                <div
-                    style={{
-                        background: 'var(--surface, #fff)',
-                        display: 'flex',
-                        flex: 1,
-                        flexDirection: 'column',
-                        minWidth: 0,
-                    }}
-                >
-                    {chatOpen ? <AskLoreChat /> : <DetailPane />}
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                    // "Text size" scales the whole tree; every size in the UI is in px,
+                    // so the zoom is applied here rather than through rem units.
+                    zoom: textSize,
+                }}
+            >
+                <TitleBar onCapture={openCaptureWindow} />
+                <Notice />
+                <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+                    {sidebarVisible && <Sidebar onCapture={openCaptureWindow} />}
+                    <ListPane />
+                    <div
+                        style={{
+                            background: 'var(--surface, #fff)',
+                            display: 'flex',
+                            flex: 1,
+                            flexDirection: 'column',
+                            minWidth: 0,
+                        }}
+                    >
+                        {chatOpen ? <AskLoreChat /> : <DetailPane />}
+                    </div>
                 </div>
             </div>
 
+            {/*
+             * Overlays sit outside the zoomed subtree on purpose. They size against
+             * the window (`calc(100% - 64px)`), so under zoom they would grow past
+             * the viewport and clip; and the Text size slider lives in Settings —
+             * inside the zoom, every drag step rescales the slider under the pointer,
+             * which breaks the native drag and slams the value to one end.
+             */}
             {settingsOpen && <SettingsModal />}
             {!onboarded && <Onboarding />}
         </div>
