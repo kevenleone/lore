@@ -1,5 +1,6 @@
-// Per-type visual metadata (badge background, foreground, label) — verbatim
-// from the prototype's `typeMeta`.
+// Per-type visual metadata (badge background, foreground, label). The colours
+// resolve through the theme token set so the badges follow Light / Dark; the
+// values themselves live in `theme/tokens.ts`.
 
 import type { ItemType } from './types';
 
@@ -10,11 +11,11 @@ export interface TypeMeta {
 }
 
 export const TYPE_META: Record<ItemType, TypeMeta> = {
-    code: { bg: '#eef0f3', fg: '#5b6472', label: 'Code' },
-    image: { bg: '#f7ecef', fg: '#a86b7c', label: 'Image' },
-    link: { bg: '#ecedfb', fg: '#5b5bd6', label: 'Link' },
-    note: { bg: '#f6f1e8', fg: '#9e7b46', label: 'Note' },
-    task: { bg: '#e8f2ec', fg: '#4d855f', label: 'Task' },
+    code: { bg: 'var(--type-code-bg)', fg: 'var(--type-code-fg)', label: 'Code' },
+    image: { bg: 'var(--type-image-bg)', fg: 'var(--type-image-fg)', label: 'Image' },
+    link: { bg: 'var(--type-link-bg)', fg: 'var(--type-link-fg)', label: 'Link' },
+    note: { bg: 'var(--type-note-bg)', fg: 'var(--type-note-fg)', label: 'Note' },
+    task: { bg: 'var(--type-task-bg)', fg: 'var(--type-task-fg)', label: 'Task' },
 };
 
 export function typeMeta(t: ItemType): TypeMeta {

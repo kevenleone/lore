@@ -31,13 +31,13 @@ globalStyle('body', {
 
 globalStyle('::-webkit-scrollbar', { height: 10, width: 10 });
 globalStyle('::-webkit-scrollbar-thumb', {
-    background: 'rgba(0,0,0,.16)',
+    background: 'var(--scrollbar, rgba(0,0,0,.16))',
     backgroundClip: 'padding-box',
     border: '2px solid transparent',
     borderRadius: 8,
 });
 globalStyle('::-webkit-scrollbar-thumb:hover', {
-    background: 'rgba(0,0,0,.28)',
+    background: 'var(--scrollbar-hover, rgba(0,0,0,.28))',
     backgroundClip: 'padding-box',
 });
 globalStyle('::-webkit-scrollbar-track', { background: 'transparent' });

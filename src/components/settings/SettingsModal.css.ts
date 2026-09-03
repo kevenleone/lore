@@ -26,9 +26,10 @@ export const scrim = style({
 export const sheet = style({
     animation: `${sheetIn} .16s cubic-bezier(.2,.8,.3,1)`,
     background: 'var(--surface, #fff)',
-    border: '1px solid rgba(0,0,0,.06)',
+    border: '1px solid var(--border, #ececef)',
     borderRadius: 16,
-    boxShadow: '0 40px 90px -24px rgba(16,16,32,.5), 0 8px 20px rgba(0,0,0,.09)',
+    boxShadow:
+        'var(--sheet-shadow, 0 40px 90px -24px rgba(16,16,32,.5), 0 8px 20px rgba(0,0,0,.09))',
     color: 'var(--text, #1a1a1f)',
     display: 'flex',
     height: 'min(700px, calc(100% - 64px))',

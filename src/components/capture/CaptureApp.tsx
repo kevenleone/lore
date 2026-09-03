@@ -99,8 +99,8 @@ export function CaptureApp() {
             <div
                 style={{
                     backdropFilter: 'blur(20px)',
-                    background: 'rgba(255,255,255,.82)',
-                    border: '1px solid rgba(0,0,0,.05)',
+                    background: 'var(--surface-glass, rgba(255,255,255,.82))',
+                    border: '1px solid var(--border, #ececef)',
                     borderRadius: 9,
                     boxShadow: '0 6px 18px -6px rgba(24,24,48,.35)',
                     display: 'flex',
@@ -139,7 +139,7 @@ function Toggle({
             style={{
                 background: active ? AC : 'transparent',
                 borderRadius: 7,
-                color: active ? '#fff' : '#6b6b76',
+                color: active ? '#fff' : 'var(--text2, #6b6b76)',
                 cursor: 'pointer',
                 fontSize: 12,
                 fontWeight: active ? 600 : 500,

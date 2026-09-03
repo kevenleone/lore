@@ -410,7 +410,7 @@ export function LookPane() {
                             <span
                                 style={{
                                     background: a.swatch,
-                                    border: '1px solid rgba(0,0,0,.07)',
+                                    border: '1px solid var(--swatch-border, rgba(0,0,0,.07))',
                                     borderRadius: 8,
                                     height: 52,
                                 }}

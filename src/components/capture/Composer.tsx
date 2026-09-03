@@ -141,9 +141,9 @@ export function Composer() {
         <div
             style={{
                 background: 'var(--surface, #fff)',
-                border: '1px solid rgba(0,0,0,.05)',
+                border: '1px solid var(--border, #ececef)',
                 borderRadius: 16,
-                boxShadow: '0 30px 72px -20px rgba(24,24,48,.42), 0 6px 16px rgba(0,0,0,.07)',
+                boxShadow: 'var(--float-shadow)',
                 overflow: 'hidden',
             }}
         >
