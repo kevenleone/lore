@@ -1,21 +1,21 @@
 {
-  "name": "@lore/sidecar",
-  "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "scripts": {
-    "dev": "bun --watch src/index.ts",
-    "start": "bun src/index.ts",
-    "test": "bun test",
-    "typecheck": "tsc --noEmit",
-    "build": "bun scripts/build.ts"
-  },
-  "dependencies": {
-    "elysia": "^1.1.0",
-    "yaml": "^2.9.0"
-  },
-  "devDependencies": {
-    "@types/bun": "^1.1.0",
-    "typescript": "~5.8.3"
-  }
+    "dependencies": {
+        "elysia": "^1.1.0",
+        "yaml": "^2.9.0"
+    },
+    "devDependencies": {
+        "@types/bun": "^1.1.0",
+        "typescript": "~5.8.3"
+    },
+    "name": "@lore/sidecar",
+    "private": true,
+    "scripts": {
+        "build": "bun scripts/build.ts",
+        "dev": "bun --watch src/index.ts",
+        "start": "bun src/index.ts",
+        "test": "bun test",
+        "typecheck": "tsc --noEmit"
+    },
+    "type": "module",
+    "version": "0.1.0"
 }

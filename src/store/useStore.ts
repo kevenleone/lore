@@ -2,36 +2,34 @@
 // active KnowledgeRepository and refreshed after mutations. Selectors in
 // views.ts derive everything the components render from `items`/`collections`.
 
-import { create } from "zustand";
-import { getRepository } from "../data";
-import type { CollectionPatch, ItemPatch, NewCollection, NewItem } from "../data/repository";
-import { MockAiProvider } from "../ai/mockAiProvider";
-import type { AiProvider } from "../ai/aiProvider";
-import { SEED_CHAT, SEED_COLLECTIONS, SEED_ITEMS } from "./seed";
-import { loadPersisted, savePersisted } from "./persisted";
-import { ensureWorkspaceOpen, setWorkspace } from "../data";
-import { migrateSqlite } from "../data/migrateSqlite";
+import { create } from 'zustand';
+
+import type { AiProvider } from '../ai/aiProvider';
+import type { CollectionPatch, ItemPatch, NewCollection, NewItem } from '../data/repository';
+import type { Appearance } from '../theme/tokens';
+import type { WorkspaceRef } from './persisted';
+
+import { MockAiProvider } from '../ai/mockAiProvider';
+import { getRepository } from '../data';
+import { ensureWorkspaceOpen, setWorkspace } from '../data';
+import { migrateSqlite } from '../data/migrateSqlite';
+import { broadcastWorkspaceChange, pickWorkspaceFolder, rememberWorkspace } from '../lib/workspace';
+import { loadPersisted, savePersisted } from './persisted';
+import { SEED_CHAT, SEED_COLLECTIONS, SEED_ITEMS } from './seed';
 import {
-  broadcastWorkspaceChange,
-  pickWorkspaceFolder,
-  rememberWorkspace,
-} from "../lib/workspace";
-import type { WorkspaceRef } from "./persisted";
-import type { Appearance } from "../theme/tokens";
-import {
-  type Accent,
-  type Auth,
-  type ChatMessage,
-  type Collection,
-  type Durations,
-  type Item,
-  type OnboardingStep,
-  type Prefs,
-  type SettingsPane,
-  type SortOrder,
-  type Switches,
-  type View,
-} from "./types";
+    type Accent,
+    type Auth,
+    type ChatMessage,
+    type Collection,
+    type Durations,
+    type Item,
+    type OnboardingStep,
+    type Prefs,
+    type SettingsPane,
+    type SortOrder,
+    type Switches,
+    type View,
+} from './types';
 
 const ai: AiProvider = new MockAiProvider();
 
@@ -55,10 +53,190 @@ const MIN_INDEXED_QUERY = 3;
  * StrictMode double-mounts in development, so this is not a rare interleaving:
  * it happens on every launch.
  */
-let hydrating: Promise<void> | null = null;
+let hydrating: null | Promise<void> = null;
 
-let searchTimer: ReturnType<typeof setTimeout> | null = null;
+let searchTimer: null | ReturnType<typeof setTimeout> = null;
 let searchSeq = 0;
+
+interface StoreState {
+    addTag: (id: string, tag: string) => Promise<void>;
+    aiAssist: boolean;
+    auth: Auth;
+    bumpDuration: (key: keyof Durations, delta: number) => void;
+    chat: ChatMessage[];
+
+    chatOpen: boolean;
+    closeSettings: () => void;
+    collections: Collection[];
+    createCollection: (input: NewCollection) => Promise<void>;
+    createItem: (input: NewItem) => Promise<Item>;
+    deleteCollection: (id: string) => Promise<void>;
+    deleteItem: (id: string) => Promise<void>;
+    /**
+     * The selected item, with its `body` — `listItems()` omits bodies, so the
+     * detail pane reads through here and falls back to the list row until it
+     * arrives (no spinner, no layout shift).
+     */
+    detail: Item | null;
+    dismissMigrationNotice: () => void;
+
+    finishOnboarding: (mode: 'account' | 'anonymous', email?: string) => void;
+    // lifecycle
+    hydrate: () => Promise<void>;
+    hydrated: boolean;
+    // data
+    items: Item[];
+
+    loadDetail: (id: string) => Promise<void>;
+    /** Set once by a migration so the UI can say what happened. */
+    migrationNotice: null | string;
+
+    onboarded: boolean;
+    onboardingStep: OnboardingStep;
+    // settings actions
+    openSettings: (pane?: SettingsPane) => void;
+    openWorkspacePicker: () => Promise<void>;
+    // onboarding + preferences (persisted)
+    prefs: Prefs;
+    recentWorkspaces: WorkspaceRef[];
+    // data actions
+    refresh: () => Promise<void>;
+    removeTag: (id: string, tag: string) => Promise<void>;
+
+    renameItemFile: (id: string, stem: string) => Promise<void>;
+    requestMagicLink: (email: string) => void;
+
+    search: string;
+    searching: boolean;
+    /**
+     * Ids the index matched, or null when the query is too short to run one and
+     * the client-side filter is doing the work instead.
+     */
+    searchResults: null | string[];
+    selectedId: null | string;
+    selectItem: (id: string) => void;
+    // ui actions
+    selectView: (kind: View['kind'], val?: null | string) => void;
+    sendChat: (question: string) => Promise<void>;
+    setAccent: (accent: Accent) => void;
+
+    setAiAssist: (on: boolean) => void;
+    setAppearance: (appearance: Appearance) => void;
+    // onboarding actions
+    setOnboardingStep: (step: OnboardingStep) => void;
+
+    setPref: <K extends keyof Prefs>(key: K, value: Prefs[K]) => void;
+    setSearch: (q: string) => void;
+    setSettingsPane: (pane: SettingsPane) => void;
+    setSort: (sort: SortOrder) => void;
+    // settings sheet
+    settingsOpen: boolean;
+    settingsPane: SettingsPane;
+    sidebarVisible: boolean;
+    signOut: () => void;
+    sort: SortOrder;
+
+    switchWorkspace: (path: null | string) => Promise<void>;
+    // vault
+    /** Sidebar tag order for the open vault; empty falls back to the seed order. */
+    tagOrder: string[];
+    toggleChat: () => void;
+    toggleSidebar: () => void;
+    toggleStar: (id: string) => Promise<void>;
+    toggleSwitch: (key: keyof Switches) => void;
+    updateCollection: (id: string, patch: CollectionPatch) => Promise<void>;
+    updateItem: (id: string, patch: ItemPatch) => Promise<void>;
+    // ui
+    view: View;
+    /** Set when a vault cannot be opened — an unmounted drive, a deleted folder. */
+    workspaceError: null | string;
+    workspacePath: null | string;
+}
+
+/** The real hydrate. Only ever entered through the single-flight guard above. */
+async function hydrateOnce(
+    get: () => StoreState,
+    set: (partial: Partial<StoreState>) => void,
+): Promise<void> {
+    await setWorkspace(get().workspacePath);
+
+    const repo = getRepository();
+    let [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
+
+    // Import a legacy SQLite library when the vault is empty.
+    //
+    // The condition is the vault's actual state, not a "have I migrated yet"
+    // flag. A flag can be set by an attempt that then failed, and the cost of
+    // getting that wrong is someone's whole library stranded in a database the
+    // app no longer reads. An empty vault means there is nothing to duplicate
+    // or overwrite, so importing is always safe — and always right.
+    if (items.length === 0) {
+        try {
+            // The import writes straight to the engine, so the vault has to be
+            // open first or it is refused and quietly imports nothing.
+            await ensureWorkspaceOpen();
+            const result = await migrateSqlite();
+            if (result) {
+                const from = result.sources.join(' and ');
+                set({
+                    migrationNotice: `Moved ${result.items} item${result.items === 1 ? '' : 's'} from ${from} into your vault.`,
+                });
+                [items, collections] = await Promise.all([
+                    repo.listItems(),
+                    repo.listCollections(),
+                ]);
+            }
+            persisted.migratedAt = new Date().toISOString();
+            persist({ ...get(), migratedAt: persisted.migratedAt });
+        } catch (e) {
+            // A failed import must not block the app. The old database is renamed
+            // only on success, so the next launch simply tries again.
+            console.error('lore: could not import the previous library', e);
+        }
+    }
+
+    // A brand-new default vault gets the sample library, so a first launch is
+    // something to look at rather than an empty window. Only the default vault:
+    // writing sample notes into a folder someone chose themselves is hostile.
+    if (items.length === 0 && get().workspacePath === null) {
+        try {
+            await seedDefaultVault();
+            [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
+        } catch (e) {
+            console.error('lore: could not seed the vault', e);
+        }
+    }
+
+    // A vault can carry its own tag order in .lore/workspace.json.
+    let tagOrder: string[] = [];
+    const withTagOrder = repo as { tagOrder?: () => Promise<string[]> };
+    if (withTagOrder.tagOrder) {
+        tagOrder = await withTagOrder.tagOrder().catch(() => []);
+    }
+
+    const selectedId = items.find((i) => i.id === get().selectedId)?.id ?? items[0]?.id ?? null;
+    set({ collections, hydrated: true, items, selectedId, tagOrder });
+    if (selectedId) void get().loadDetail(selectedId);
+
+    // Edits made outside Lore — a git pull, Obsidian, vim — arrive here.
+    unsubscribeVault?.();
+    unsubscribeVault = repo.subscribe?.(scheduleRefresh(get)) ?? null;
+}
+
+function persist(
+    s: {
+        migratedAt?: null | string;
+    } & Pick<StoreState, 'auth' | 'onboarded' | 'prefs' | 'recentWorkspaces' | 'workspacePath'>,
+): void {
+    savePersisted({
+        auth: s.auth,
+        migratedAt: s.migratedAt ?? persisted.migratedAt,
+        onboarded: s.onboarded,
+        prefs: s.prefs,
+        recentWorkspaces: s.recentWorkspaces,
+        workspacePath: s.workspacePath,
+    });
+}
 
 /**
  * Runs the query against the index, debounced.
@@ -68,30 +246,30 @@ let searchSeq = 0;
  * derived preview. The index has the full text.
  */
 function runSearch(get: () => StoreState, raw: string): void {
-  if (searchTimer) clearTimeout(searchTimer);
-  const q = raw.trim();
+    if (searchTimer) clearTimeout(searchTimer);
+    const q = raw.trim();
 
-  if (q.length < MIN_INDEXED_QUERY) {
-    useStore.setState({ searchResults: null, searching: false });
-    return;
-  }
+    if (q.length < MIN_INDEXED_QUERY) {
+        useStore.setState({ searching: false, searchResults: null });
+        return;
+    }
 
-  useStore.setState({ searching: true });
-  searchTimer = setTimeout(() => {
-    searchTimer = null;
-    const seq = ++searchSeq;
-    void getRepository()
-      .search(q)
-      .then((hits) => {
-        // Drop a response that lost the race to a newer keystroke.
-        if (seq !== searchSeq || get().search.trim() !== q) return;
-        useStore.setState({ searchResults: hits.map((h) => h.id), searching: false });
-      })
-      .catch(() => {
-        // Fall back to the client-side filter rather than showing nothing.
-        if (seq === searchSeq) useStore.setState({ searchResults: null, searching: false });
-      });
-  }, 150);
+    useStore.setState({ searching: true });
+    searchTimer = setTimeout(() => {
+        searchTimer = null;
+        const seq = ++searchSeq;
+        void getRepository()
+            .search(q)
+            .then((hits) => {
+                // Drop a response that lost the race to a newer keystroke.
+                if (seq !== searchSeq || get().search.trim() !== q) return;
+                useStore.setState({ searching: false, searchResults: hits.map((h) => h.id) });
+            })
+            .catch(() => {
+                // Fall back to the client-side filter rather than showing nothing.
+                if (seq === searchSeq) useStore.setState({ searching: false, searchResults: null });
+            });
+    }, 150);
 }
 
 /**
@@ -99,126 +277,15 @@ function runSearch(get: () => StoreState, raw: string): void {
  * otherwise trigger 200 full re-lists.
  */
 function scheduleRefresh(get: () => StoreState): () => void {
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  return () => {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => {
-      timer = null;
-      void get().refresh();
-    }, 100);
-  };
+    let timer: null | ReturnType<typeof setTimeout> = null;
+    return () => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+            timer = null;
+            void get().refresh();
+        }, 100);
+    };
 }
-
-interface StoreState {
-  // data
-  items: Item[];
-  /**
-   * The selected item, with its `body` — `listItems()` omits bodies, so the
-   * detail pane reads through here and falls back to the list row until it
-   * arrives (no spinner, no layout shift).
-   */
-  detail: Item | null;
-  collections: Collection[];
-  chat: ChatMessage[];
-  hydrated: boolean;
-
-  // ui
-  view: View;
-  selectedId: string | null;
-  chatOpen: boolean;
-  aiAssist: boolean;
-  search: string;
-  /**
-   * Ids the index matched, or null when the query is too short to run one and
-   * the client-side filter is doing the work instead.
-   */
-  searchResults: string[] | null;
-  searching: boolean;
-  sidebarVisible: boolean;
-  sort: SortOrder;
-
-  // onboarding + preferences (persisted)
-  prefs: Prefs;
-  auth: Auth;
-  onboarded: boolean;
-  onboardingStep: OnboardingStep;
-
-  // settings sheet
-  settingsOpen: boolean;
-  settingsPane: SettingsPane;
-
-  // vault
-  /** Sidebar tag order for the open vault; empty falls back to the seed order. */
-  tagOrder: string[];
-  workspacePath: string | null;
-  recentWorkspaces: WorkspaceRef[];
-  /** Set when a vault cannot be opened — an unmounted drive, a deleted folder. */
-  workspaceError: string | null;
-  openWorkspacePicker: () => Promise<void>;
-  switchWorkspace: (path: string | null) => Promise<void>;
-  /** Set once by a migration so the UI can say what happened. */
-  migrationNotice: string | null;
-  dismissMigrationNotice: () => void;
-
-  // lifecycle
-  hydrate: () => Promise<void>;
-  loadDetail: (id: string) => Promise<void>;
-
-  // ui actions
-  selectView: (kind: View["kind"], val?: string | null) => void;
-  selectItem: (id: string) => void;
-  toggleChat: () => void;
-  setAiAssist: (on: boolean) => void;
-  setSearch: (q: string) => void;
-  toggleSidebar: () => void;
-  setSort: (sort: SortOrder) => void;
-  sendChat: (question: string) => Promise<void>;
-
-  // onboarding actions
-  setOnboardingStep: (step: OnboardingStep) => void;
-  requestMagicLink: (email: string) => void;
-  finishOnboarding: (mode: "account" | "anonymous", email?: string) => void;
-
-  // settings actions
-  openSettings: (pane?: SettingsPane) => void;
-  closeSettings: () => void;
-  setSettingsPane: (pane: SettingsPane) => void;
-  setAccent: (accent: Accent) => void;
-  setAppearance: (appearance: Appearance) => void;
-  setPref: <K extends keyof Prefs>(key: K, value: Prefs[K]) => void;
-  toggleSwitch: (key: keyof Switches) => void;
-  bumpDuration: (key: keyof Durations, delta: number) => void;
-  signOut: () => void;
-
-  // data actions
-  refresh: () => Promise<void>;
-  createItem: (input: NewItem) => Promise<Item>;
-  updateItem: (id: string, patch: ItemPatch) => Promise<void>;
-  deleteItem: (id: string) => Promise<void>;
-  toggleStar: (id: string) => Promise<void>;
-  addTag: (id: string, tag: string) => Promise<void>;
-  removeTag: (id: string, tag: string) => Promise<void>;
-  renameItemFile: (id: string, stem: string) => Promise<void>;
-  createCollection: (input: NewCollection) => Promise<void>;
-  updateCollection: (id: string, patch: CollectionPatch) => Promise<void>;
-  deleteCollection: (id: string) => Promise<void>;
-}
-
-function persist(
-  s: Pick<StoreState, "prefs" | "auth" | "onboarded" | "workspacePath" | "recentWorkspaces"> & {
-    migratedAt?: string | null;
-  },
-): void {
-  savePersisted({
-    prefs: s.prefs,
-    auth: s.auth,
-    onboarded: s.onboarded,
-    workspacePath: s.workspacePath,
-    recentWorkspaces: s.recentWorkspaces,
-    migratedAt: s.migratedAt ?? persisted.migratedAt,
-  });
-}
-
 
 /**
  * Writes the sample library into an empty default vault.
@@ -227,387 +294,318 @@ function persist(
  * is one definition of what a new Lore looks like.
  */
 async function seedDefaultVault(): Promise<void> {
-  const repo = getRepository();
-  for (const c of SEED_COLLECTIONS) {
-    await repo.createCollection({ name: c.name, color: c.color });
-  }
-  // Seed ids are internal, so related links are resolved by title afterwards.
-  const idByTitle = new Map<string, string>();
-  for (const item of SEED_ITEMS) {
-    const { id, createdAt, updatedAt, related, collectionId, ...rest } = item;
-    const created = await repo.createItem({
-      ...rest,
-      related: [],
-      collectionId: SEED_COLLECTIONS.find((c) => c.id === collectionId)?.name,
-      createdAt,
-      updatedAt,
-    } as unknown as NewItem);
-    idByTitle.set(item.title, created.id);
-    void id;
-    void related;
-  }
-  for (const item of SEED_ITEMS) {
-    const newId = idByTitle.get(item.title);
-    const related = item.related
-      .map((old) => SEED_ITEMS.find((i) => i.id === old)?.title)
-      .map((title) => (title ? idByTitle.get(title) : undefined))
-      .filter((x): x is string => !!x);
-    if (newId && related.length) await repo.updateItem(newId, { related });
-  }
-}
-
-/** The real hydrate. Only ever entered through the single-flight guard above. */
-async function hydrateOnce(
-  get: () => StoreState,
-  set: (partial: Partial<StoreState>) => void,
-): Promise<void> {
-  await setWorkspace(get().workspacePath);
-
-  const repo = getRepository();
-  let [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
-
-  // Import a legacy SQLite library when the vault is empty.
-  //
-  // The condition is the vault's actual state, not a "have I migrated yet"
-  // flag. A flag can be set by an attempt that then failed, and the cost of
-  // getting that wrong is someone's whole library stranded in a database the
-  // app no longer reads. An empty vault means there is nothing to duplicate
-  // or overwrite, so importing is always safe — and always right.
-  if (items.length === 0) {
-    try {
-      // The import writes straight to the engine, so the vault has to be
-      // open first or it is refused and quietly imports nothing.
-      await ensureWorkspaceOpen();
-      const result = await migrateSqlite();
-      if (result) {
-        const from = result.sources.join(" and ");
-        set({
-          migrationNotice:
-            `Moved ${result.items} item${result.items === 1 ? "" : "s"} from ${from} into your vault.`,
-        });
-        [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
-      }
-      persisted.migratedAt = new Date().toISOString();
-      persist({ ...get(), migratedAt: persisted.migratedAt });
-    } catch (e) {
-      // A failed import must not block the app. The old database is renamed
-      // only on success, so the next launch simply tries again.
-      console.error("lore: could not import the previous library", e);
+    const repo = getRepository();
+    for (const c of SEED_COLLECTIONS) {
+        await repo.createCollection({ color: c.color, name: c.name });
     }
-  }
-
-  // A brand-new default vault gets the sample library, so a first launch is
-  // something to look at rather than an empty window. Only the default vault:
-  // writing sample notes into a folder someone chose themselves is hostile.
-  if (items.length === 0 && get().workspacePath === null) {
-    try {
-      await seedDefaultVault();
-      [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
-    } catch (e) {
-      console.error("lore: could not seed the vault", e);
+    // Seed ids are internal, so related links are resolved by title afterwards.
+    const idByTitle = new Map<string, string>();
+    for (const item of SEED_ITEMS) {
+        const { collectionId, createdAt, id, related, updatedAt, ...rest } = item;
+        const created = await repo.createItem({
+            ...rest,
+            collectionId: SEED_COLLECTIONS.find((c) => c.id === collectionId)?.name,
+            createdAt,
+            related: [],
+            updatedAt,
+        } as unknown as NewItem);
+        idByTitle.set(item.title, created.id);
+        void id;
+        void related;
     }
-  }
-
-  // A vault can carry its own tag order in .lore/workspace.json.
-  let tagOrder: string[] = [];
-  const withTagOrder = repo as { tagOrder?: () => Promise<string[]> };
-  if (withTagOrder.tagOrder) {
-    tagOrder = await withTagOrder.tagOrder().catch(() => []);
-  }
-
-  const selectedId =
-    items.find((i) => i.id === get().selectedId)?.id ?? items[0]?.id ?? null;
-  set({ items, collections, tagOrder, selectedId, hydrated: true });
-  if (selectedId) void get().loadDetail(selectedId);
-
-  // Edits made outside Lore — a git pull, Obsidian, vim — arrive here.
-  unsubscribeVault?.();
-  unsubscribeVault = repo.subscribe?.(scheduleRefresh(get)) ?? null;
+    for (const item of SEED_ITEMS) {
+        const newId = idByTitle.get(item.title);
+        const related = item.related
+            .map((old) => SEED_ITEMS.find((i) => i.id === old)?.title)
+            .map((title) => (title ? idByTitle.get(title) : undefined))
+            .filter((x): x is string => !!x);
+        if (newId && related.length) await repo.updateItem(newId, { related });
+    }
 }
 
 export const useStore = create<StoreState>((set, get) => ({
-  items: [],
-  detail: null,
-  collections: [],
-  chat: SEED_CHAT,
-  hydrated: false,
+    async addTag(id, tag) {
+        const clean = tag.trim().replace(/^#/, '').toLowerCase();
+        const item = get().items.find((i) => i.id === id);
+        if (!clean || !item || item.tags.includes(clean)) return;
+        await get().updateItem(id, { tags: [...item.tags, clean] });
+    },
+    aiAssist: true,
+    auth: persisted.auth,
+    bumpDuration(key, delta) {
+        set((s) => ({
+            prefs: {
+                ...s.prefs,
+                durations: {
+                    ...s.prefs.durations,
+                    [key]: Math.max(1, s.prefs.durations[key] + delta),
+                },
+            },
+        }));
+        persist(get());
+    },
+    chat: SEED_CHAT,
 
-  view: { kind: "all", val: null },
-  selectedId: "i1",
-  chatOpen: false,
-  aiAssist: true,
-  search: "",
-  searchResults: null,
-  searching: false,
-  sidebarVisible: true,
-  sort: "newest",
+    chatOpen: false,
+    closeSettings() {
+        set({ settingsOpen: false });
+    },
+    collections: [],
+    async createCollection(input) {
+        await getRepository().createCollection(input);
+        await get().refresh();
+    },
+    async createItem(input) {
+        const item = await getRepository().createItem(input);
+        await get().refresh();
+        set({ selectedId: item.id });
+        return item;
+    },
+    async deleteCollection(id) {
+        await getRepository().deleteCollection(id);
+        // If we were viewing the removed collection, fall back to All Items.
+        const v = get().view;
+        if (v.kind === 'collection' && v.val === id) {
+            set({ view: { kind: 'all', val: null } });
+        }
+        await get().refresh();
+    },
+    async deleteItem(id) {
+        await getRepository().deleteItem(id);
+        await get().refresh();
+        if (get().selectedId === id) {
+            const next = get().items[0]?.id ?? null;
+            set({ detail: null, selectedId: next });
+            if (next) void get().loadDetail(next);
+        }
+    },
+    detail: null,
+    dismissMigrationNotice() {
+        set({ migrationNotice: null });
+    },
 
-  prefs: persisted.prefs,
-  auth: persisted.auth,
-  onboarded: persisted.onboarded,
-  onboardingStep: "signin",
+    finishOnboarding(mode, email) {
+        const auth: Auth =
+            mode === 'account'
+                ? { email: email ?? get().auth.email, mode, name: get().auth.name }
+                : { email: null, mode, name: null };
+        set({ auth, onboarded: true });
+        persist(get());
+    },
+    async hydrate() {
+        if (hydrating) return hydrating;
+        hydrating = (async () => {
+            try {
+                await hydrateOnce(get, set);
+            } finally {
+                hydrating = null;
+            }
+        })();
+        return hydrating;
+    },
+    hydrated: false,
+    items: [],
 
-  settingsOpen: false,
-  settingsPane: "general",
+    async loadDetail(id) {
+        const item = await getRepository().getItem(id);
+        // Ignore a response that lost the race to a newer selection.
+        if (get().selectedId === id) set({ detail: item });
+    },
+    migrationNotice: null,
 
-  tagOrder: [],
-  workspacePath: persisted.workspacePath,
-  recentWorkspaces: persisted.recentWorkspaces,
-  workspaceError: null,
-  migrationNotice: null,
+    onboarded: persisted.onboarded,
+    onboardingStep: 'signin',
+    openSettings(pane) {
+        set({ settingsOpen: true, ...(pane ? { settingsPane: pane } : {}) });
+    },
+    async openWorkspacePicker() {
+        const path = await pickWorkspaceFolder();
+        if (path) await get().switchWorkspace(path);
+    },
+    prefs: persisted.prefs,
 
-  async hydrate() {
-    if (hydrating) return hydrating;
-    hydrating = (async () => {
-      try {
-        await hydrateOnce(get, set);
-      } finally {
-        hydrating = null;
-      }
-    })();
-    return hydrating;
-  },
+    recentWorkspaces: persisted.recentWorkspaces,
 
-  async loadDetail(id) {
-    const item = await getRepository().getItem(id);
-    // Ignore a response that lost the race to a newer selection.
-    if (get().selectedId === id) set({ detail: item });
-  },
+    async refresh() {
+        const repo = getRepository();
+        const [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
+        set({ collections, items });
+        // Re-read the body: a mutation may have changed it.
+        const id = get().selectedId;
+        if (id) void get().loadDetail(id);
+    },
 
-  dismissMigrationNotice() {
-    set({ migrationNotice: null });
-  },
+    async removeTag(id, tag) {
+        const item = get().items.find((i) => i.id === id);
+        if (!item) return;
+        await get().updateItem(id, { tags: item.tags.filter((t) => t !== tag) });
+    },
 
-  async openWorkspacePicker() {
-    const path = await pickWorkspaceFolder();
-    if (path) await get().switchWorkspace(path);
-  },
+    async renameItemFile(id, stem) {
+        const repo = getRepository();
+        if (!repo.renameItem) return;
+        await repo.renameItem(id, stem);
+        await get().refresh();
+    },
 
-  /**
-   * Points Lore at another vault. `null` means the default one.
-   *
-   * Everything derived from the old vault is cleared before re-hydrating, so a
-   * stale selection or search cannot leak across — the ids do not even mean the
-   * same thing in a different folder.
-   */
-  async switchWorkspace(path) {
-    const previous = get().workspacePath;
-    if (path === previous) return;
+    requestMagicLink(email) {
+        // No mail is sent yet — the waiting card is the whole behaviour for now.
+        set((s) => ({ auth: { ...s.auth, email }, onboardingStep: 'magic' }));
+    },
 
-    set({
-      workspacePath: path,
-      workspaceError: null,
-      hydrated: false,
-      items: [],
-      collections: [],
-      detail: null,
-      selectedId: null,
-      search: "",
-      searchResults: null,
-      view: { kind: "all", val: null },
-      chatOpen: false,
-    });
+    search: '',
+    searching: false,
+    searchResults: null,
+    selectedId: 'i1',
+    selectItem(id) {
+        set({ chatOpen: false, detail: null, selectedId: id });
+        void get().loadDetail(id);
+    },
+    selectView(kind, val = null) {
+        set({ chatOpen: false, view: { kind, val } });
+    },
+    async sendChat(question) {
+        const text = question.trim();
+        if (!text) return;
+        const userMsg: ChatMessage = { id: `u_${Date.now()}`, role: 'user', text };
+        set((s) => ({ chat: [...s.chat, userMsg] }));
+        const result = await ai.chat(text, get().items);
+        const aiMsg: ChatMessage = {
+            id: `a_${Date.now()}`,
+            role: 'ai',
+            sources: result.sources,
+            text: result.text,
+        };
+        set((s) => ({ chat: [...s.chat, aiMsg] }));
+    },
 
-    try {
-      await get().hydrate();
-    } catch (e) {
-      // Roll back rather than leave the app pointed at a vault it cannot read.
-      set({
-        workspacePath: previous,
-        workspaceError: e instanceof Error ? e.message : String(e),
-      });
-      await get().hydrate();
-      return;
-    }
+    /* ---------------- onboarding ---------------- */
 
-    if (path) set({ recentWorkspaces: rememberWorkspace(get().recentWorkspaces, path) });
-    persist(get());
-    await broadcastWorkspaceChange(path);
-  },
+    setAccent(accent) {
+        get().setPref('accent', accent);
+    },
 
-  selectView(kind, val = null) {
-    set({ view: { kind, val }, chatOpen: false });
-  },
-  selectItem(id) {
-    set({ selectedId: id, chatOpen: false, detail: null });
-    void get().loadDetail(id);
-  },
-  toggleChat() {
-    set((s) => ({ chatOpen: !s.chatOpen }));
-  },
-  setAiAssist(on) {
-    set({ aiAssist: on });
-  },
-  setSearch(q) {
-    set({ search: q });
-    runSearch(get, q);
-  },
-  toggleSidebar() {
-    set((s) => ({ sidebarVisible: !s.sidebarVisible }));
-  },
-  setSort(sort) {
-    set({ sort });
-  },
+    setAiAssist(on) {
+        set({ aiAssist: on });
+    },
 
-  /* ---------------- onboarding ---------------- */
+    setAppearance(appearance) {
+        get().setPref('appearance', appearance);
+    },
 
-  setOnboardingStep(step) {
-    set({ onboardingStep: step });
-  },
+    /* ---------------- settings ---------------- */
 
-  requestMagicLink(email) {
-    // No mail is sent yet — the waiting card is the whole behaviour for now.
-    set((s) => ({ onboardingStep: "magic", auth: { ...s.auth, email } }));
-  },
+    setOnboardingStep(step) {
+        set({ onboardingStep: step });
+    },
+    setPref(key, value) {
+        set((s) => ({ prefs: { ...s.prefs, [key]: value } }));
+        persist(get());
+    },
+    setSearch(q) {
+        set({ search: q });
+        runSearch(get, q);
+    },
 
-  finishOnboarding(mode, email) {
-    const auth: Auth =
-      mode === "account"
-        ? { mode, email: email ?? get().auth.email, name: get().auth.name }
-        : { mode, email: null, name: null };
-    set({ auth, onboarded: true });
-    persist(get());
-  },
+    setSettingsPane(pane) {
+        set({ settingsPane: pane });
+    },
+    setSort(sort) {
+        set({ sort });
+    },
 
-  /* ---------------- settings ---------------- */
+    settingsOpen: false,
 
-  openSettings(pane) {
-    set({ settingsOpen: true, ...(pane ? { settingsPane: pane } : {}) });
-  },
-  closeSettings() {
-    set({ settingsOpen: false });
-  },
-  setSettingsPane(pane) {
-    set({ settingsPane: pane });
-  },
+    settingsPane: 'general',
 
-  setAccent(accent) {
-    get().setPref("accent", accent);
-  },
-  setAppearance(appearance) {
-    get().setPref("appearance", appearance);
-  },
+    sidebarVisible: true,
 
-  setPref(key, value) {
-    set((s) => ({ prefs: { ...s.prefs, [key]: value } }));
-    persist(get());
-  },
+    signOut() {
+        // Drops the account but keeps the local vault and every preference.
+        set({ auth: { email: null, mode: 'anonymous', name: null } });
+        persist(get());
+    },
 
-  toggleSwitch(key) {
-    set((s) => ({
-      prefs: { ...s.prefs, switches: { ...s.prefs.switches, [key]: !s.prefs.switches[key] } },
-    }));
-    persist(get());
-  },
+    sort: 'newest',
 
-  bumpDuration(key, delta) {
-    set((s) => ({
-      prefs: {
-        ...s.prefs,
-        durations: { ...s.prefs.durations, [key]: Math.max(1, s.prefs.durations[key] + delta) },
-      },
-    }));
-    persist(get());
-  },
+    /**
+     * Points Lore at another vault. `null` means the default one.
+     *
+     * Everything derived from the old vault is cleared before re-hydrating, so a
+     * stale selection or search cannot leak across — the ids do not even mean the
+     * same thing in a different folder.
+     */
+    async switchWorkspace(path) {
+        const previous = get().workspacePath;
+        if (path === previous) return;
 
-  signOut() {
-    // Drops the account but keeps the local vault and every preference.
-    set({ auth: { mode: "anonymous", email: null, name: null } });
-    persist(get());
-  },
+        set({
+            chatOpen: false,
+            collections: [],
+            detail: null,
+            hydrated: false,
+            items: [],
+            search: '',
+            searchResults: null,
+            selectedId: null,
+            view: { kind: 'all', val: null },
+            workspaceError: null,
+            workspacePath: path,
+        });
 
-  async sendChat(question) {
-    const text = question.trim();
-    if (!text) return;
-    const userMsg: ChatMessage = { id: `u_${Date.now()}`, role: "user", text };
-    set((s) => ({ chat: [...s.chat, userMsg] }));
-    const result = await ai.chat(text, get().items);
-    const aiMsg: ChatMessage = {
-      id: `a_${Date.now()}`,
-      role: "ai",
-      text: result.text,
-      sources: result.sources,
-    };
-    set((s) => ({ chat: [...s.chat, aiMsg] }));
-  },
+        try {
+            await get().hydrate();
+        } catch (e) {
+            // Roll back rather than leave the app pointed at a vault it cannot read.
+            set({
+                workspaceError: e instanceof Error ? e.message : String(e),
+                workspacePath: previous,
+            });
+            await get().hydrate();
+            return;
+        }
 
-  async refresh() {
-    const repo = getRepository();
-    const [items, collections] = await Promise.all([
-      repo.listItems(),
-      repo.listCollections(),
-    ]);
-    set({ items, collections });
-    // Re-read the body: a mutation may have changed it.
-    const id = get().selectedId;
-    if (id) void get().loadDetail(id);
-  },
+        if (path) set({ recentWorkspaces: rememberWorkspace(get().recentWorkspaces, path) });
+        persist(get());
+        await broadcastWorkspaceChange(path);
+    },
 
-  async createItem(input) {
-    const item = await getRepository().createItem(input);
-    await get().refresh();
-    set({ selectedId: item.id });
-    return item;
-  },
+    tagOrder: [],
 
-  async updateItem(id, patch) {
-    await getRepository().updateItem(id, patch);
-    await get().refresh();
-  },
+    toggleChat() {
+        set((s) => ({ chatOpen: !s.chatOpen }));
+    },
 
-  async deleteItem(id) {
-    await getRepository().deleteItem(id);
-    await get().refresh();
-    if (get().selectedId === id) {
-      const next = get().items[0]?.id ?? null;
-      set({ selectedId: next, detail: null });
-      if (next) void get().loadDetail(next);
-    }
-  },
+    toggleSidebar() {
+        set((s) => ({ sidebarVisible: !s.sidebarVisible }));
+    },
 
-  async toggleStar(id) {
-    const item = get().items.find((i) => i.id === id);
-    if (!item) return;
-    await get().updateItem(id, { flags: { ...item.flags, starred: !item.flags.starred } });
-  },
+    async toggleStar(id) {
+        const item = get().items.find((i) => i.id === id);
+        if (!item) return;
+        await get().updateItem(id, { flags: { ...item.flags, starred: !item.flags.starred } });
+    },
 
-  async addTag(id, tag) {
-    const clean = tag.trim().replace(/^#/, "").toLowerCase();
-    const item = get().items.find((i) => i.id === id);
-    if (!clean || !item || item.tags.includes(clean)) return;
-    await get().updateItem(id, { tags: [...item.tags, clean] });
-  },
+    toggleSwitch(key) {
+        set((s) => ({
+            prefs: { ...s.prefs, switches: { ...s.prefs.switches, [key]: !s.prefs.switches[key] } },
+        }));
+        persist(get());
+    },
 
-  async removeTag(id, tag) {
-    const item = get().items.find((i) => i.id === id);
-    if (!item) return;
-    await get().updateItem(id, { tags: item.tags.filter((t) => t !== tag) });
-  },
+    async updateCollection(id, patch) {
+        await getRepository().updateCollection(id, patch);
+        await get().refresh();
+    },
 
-  async renameItemFile(id, stem) {
-    const repo = getRepository();
-    if (!repo.renameItem) return;
-    await repo.renameItem(id, stem);
-    await get().refresh();
-  },
+    async updateItem(id, patch) {
+        await getRepository().updateItem(id, patch);
+        await get().refresh();
+    },
 
-  async createCollection(input) {
-    await getRepository().createCollection(input);
-    await get().refresh();
-  },
+    view: { kind: 'all', val: null },
 
-  async updateCollection(id, patch) {
-    await getRepository().updateCollection(id, patch);
-    await get().refresh();
-  },
+    workspaceError: null,
 
-  async deleteCollection(id) {
-    await getRepository().deleteCollection(id);
-    // If we were viewing the removed collection, fall back to All Items.
-    const v = get().view;
-    if (v.kind === "collection" && v.val === id) {
-      set({ view: { kind: "all", val: null } });
-    }
-    await get().refresh();
-  },
+    workspacePath: persisted.workspacePath,
 }));

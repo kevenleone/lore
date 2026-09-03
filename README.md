@@ -6,7 +6,7 @@ capture a link, note, task, or code snippet; Lore files it into a folder of
 Markdown files you can browse, search, ask questions about — and commit.
 
 Your library is a directory of `.md` files with YAML frontmatter. Not a database
-with an export button: the files *are* the data. Point Lore at a git repo, edit
+with an export button: the files _are_ the data. Point Lore at a git repo, edit
 a note in Obsidian or vim, `git pull` on another machine — the app follows along
 without a restart.
 
@@ -54,15 +54,15 @@ the vault root.
 ```markdown
 ---
 id: 01J8ZQ4F7K3M8YB2VNXR6TWDPA
-type: link                  # link | note | task | code | image
+type: link # link | note | task | code | image
 title: How Linear builds product
 url: https://linear.app/blog/how-linear-builds-product
 created: 2026-08-30T10:12:04.000Z
 updated: 2026-08-31T09:00:00.000Z
 tags: [product, research]
-inbox: true                 # flags are flat and omitted when false
+inbox: true # flags are flat and omitted when false
 related:
-  - "[[building-a-second-brain]]"
+    - '[[building-a-second-brain]]'
 ---
 
 The Markdown body — the note's content, or your own notes on a link.
@@ -90,20 +90,20 @@ Lore never runs git. The vault is a folder; committing it is up to you.
 
 Three processes, with one seam between them.
 
-| | Owns |
-| --- | --- |
-| **Renderer** (React) | UI, Zustand store, view selectors, preferences in localStorage |
+|                                      | Owns                                                                          |
+| ------------------------------------ | ----------------------------------------------------------------------------- |
+| **Renderer** (React)                 | UI, Zustand store, view selectors, preferences in localStorage                |
 | **Data engine** (Bun/Elysia sidecar) | The vault files, YAML, the SQLite/FTS5 index, the file watcher, link metadata |
-| **Rust/Tauri** | Windows, tray, ⌥Space, spawning and supervising the engine, the folder picker |
+| **Rust/Tauri**                       | Windows, tray, ⌥Space, spawning and supervising the engine, the folder picker |
 
 Everything the UI does goes through a single `KnowledgeRepository`
 (`src/data/repository.ts`), so the app is agnostic to where data lives:
 
-| Implementation | When it's used | Role |
-| --- | --- | --- |
-| `VaultRepository` (`vaultRepository.ts`) | inside Tauri | **source of truth** — Markdown files, over HTTP to the engine |
-| `MemoryRepository` (`memoryRepository.ts`) | Vite preview, unit tests | seed-backed |
-| `LocalRepository` (`localRepository.ts`) | *legacy* | SQLite; kept only so the one-shot import can read an old `lore.db` |
+| Implementation                             | When it's used           | Role                                                               |
+| ------------------------------------------ | ------------------------ | ------------------------------------------------------------------ |
+| `VaultRepository` (`vaultRepository.ts`)   | inside Tauri             | **source of truth** — Markdown files, over HTTP to the engine      |
+| `MemoryRepository` (`memoryRepository.ts`) | Vite preview, unit tests | seed-backed                                                        |
+| `LocalRepository` (`localRepository.ts`)   | _legacy_                 | SQLite; kept only so the one-shot import can read an old `lore.db` |
 
 `src/data/index.ts` picks the implementation and owns the teardown a workspace
 switch needs.
@@ -126,7 +126,7 @@ Search goes to FTS5 for queries of three characters or more, which is what lets
 it reach text the list pane cannot see; shorter queries use the client-side
 filter over already-loaded titles.
 
-The watcher reconciles the index *before* it notifies, and recognises the
+The watcher reconciles the index _before_ it notifies, and recognises the
 engine's own writes by content hash — several filesystem events for one write
 are all suppressed, while someone else's edit lands with a different hash and
 gets through.

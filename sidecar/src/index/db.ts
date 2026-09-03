@@ -3,7 +3,7 @@
 // rescan. That is what keeps "derived, deletable, rebuildable" true rather than
 // aspirational.
 
-import { Database } from "bun:sqlite";
+import { Database } from 'bun:sqlite';
 
 export const SCHEMA_VERSION = 1;
 
@@ -40,47 +40,47 @@ CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 `;
 
 export interface FileRow {
-  path: string;
-  id: string;
-  stem: string;
-  mtime_ms: number;
-  size: number;
-  hash: string;
-  json: string;
-  body: string;
-  unresolved: string;
-  extra: string;
-  indexed_at: number;
-}
-
-export function openIndex(path: string): Database {
-  const db = new Database(path, { create: true });
-  db.exec("PRAGMA journal_mode = WAL");
-  db.exec("PRAGMA synchronous = NORMAL");
-  db.exec("PRAGMA foreign_keys = ON");
-  db.run(SCHEMA);
-
-  const row = db.query<{ v: string }, []>("SELECT v FROM meta WHERE k = 'schema_version'").get();
-  if (!row) {
-    db.run("INSERT INTO meta (k, v) VALUES ('schema_version', ?)", [String(SCHEMA_VERSION)]);
-  } else if (Number(row.v) !== SCHEMA_VERSION) {
-    // Never migrate — the files are the truth, so a rebuild is always cheaper
-    // and safer than a schema migration.
-    db.close();
-    throw new IndexVersionMismatch();
-  }
-  return db;
+    body: string;
+    extra: string;
+    hash: string;
+    id: string;
+    indexed_at: number;
+    json: string;
+    mtime_ms: number;
+    path: string;
+    size: number;
+    stem: string;
+    unresolved: string;
 }
 
 export class IndexVersionMismatch extends Error {
-  constructor() {
-    super("index schema version mismatch");
-    this.name = "IndexVersionMismatch";
-  }
+    constructor() {
+        super('index schema version mismatch');
+        this.name = 'IndexVersionMismatch';
+    }
 }
 
 export function hashContent(text: string): string {
-  const h = new Bun.CryptoHasher("sha256");
-  h.update(text);
-  return h.digest("hex");
+    const h = new Bun.CryptoHasher('sha256');
+    h.update(text);
+    return h.digest('hex');
+}
+
+export function openIndex(path: string): Database {
+    const db = new Database(path, { create: true });
+    db.exec('PRAGMA journal_mode = WAL');
+    db.exec('PRAGMA synchronous = NORMAL');
+    db.exec('PRAGMA foreign_keys = ON');
+    db.run(SCHEMA);
+
+    const row = db.query<{ v: string }, []>("SELECT v FROM meta WHERE k = 'schema_version'").get();
+    if (!row) {
+        db.run("INSERT INTO meta (k, v) VALUES ('schema_version', ?)", [String(SCHEMA_VERSION)]);
+    } else if (Number(row.v) !== SCHEMA_VERSION) {
+        // Never migrate — the files are the truth, so a rebuild is always cheaper
+        // and safer than a schema migration.
+        db.close();
+        throw new IndexVersionMismatch();
+    }
+    return db;
 }

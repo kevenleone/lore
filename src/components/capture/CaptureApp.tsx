@@ -3,129 +3,150 @@
 // losing focus dismisses it. Hosts both capture directions (A command bar,
 // B composer) behind a small toggle.
 
-import { useEffect, useRef, useState } from "react";
-import { loadPersisted } from "../../store/persisted";
-import { setWorkspace } from "../../data";
-import { onWorkspaceChanged } from "../../lib/workspace";
-import { applyTokens, effectiveTheme, resolveAccent } from "../../theme/tokens";
-import { hideCapture } from "../../lib/captureActions";
-import { CommandBar } from "./CommandBar";
-import { Composer } from "./Composer";
+import { useEffect, useRef, useState } from 'react';
 
-const AC = "var(--ac, #5b5bd6)";
-type Mode = "A" | "B";
+import { setWorkspace } from '../../data';
+import { hideCapture } from '../../lib/captureActions';
+import { onWorkspaceChanged } from '../../lib/workspace';
+import { loadPersisted } from '../../store/persisted';
+import { applyTokens, effectiveTheme, resolveAccent } from '../../theme/tokens';
+import { CommandBar } from './CommandBar';
+import { Composer } from './Composer';
+
+const AC = 'var(--ac, #5b5bd6)';
+type Mode = 'A' | 'B';
 
 export function CaptureApp() {
-  const [mode, setMode] = useState<Mode>("A");
-  const rootRef = useRef<HTMLDivElement>(null);
-  // This window has its own JS context, so it reads the shared preferences
-  // straight from storage rather than through the knowledge-base store.
-  const [prefs, setPrefs] = useState(() => loadPersisted().prefs);
-  // Bumped each time the window is shown so the form remounts fresh (no leftover
-  // text/state from the previous capture).
-  const [sessionKey, setSessionKey] = useState(0);
+    const [mode, setMode] = useState<Mode>('A');
+    const rootRef = useRef<HTMLDivElement>(null);
+    // This window has its own JS context, so it reads the shared preferences
+    // straight from storage rather than through the knowledge-base store.
+    const [prefs, setPrefs] = useState(() => loadPersisted().prefs);
+    // Bumped each time the window is shown so the form remounts fresh (no leftover
+    // text/state from the previous capture).
+    const [sessionKey, setSessionKey] = useState(0);
 
-  // Esc closes; clicking the backdrop closes; losing focus closes; gaining focus
-  // (i.e. being shown) resets the form.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") void hideCapture();
-    };
-    window.addEventListener("keydown", onKey);
+    // Esc closes; clicking the backdrop closes; losing focus closes; gaining focus
+    // (i.e. being shown) resets the form.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') void hideCapture();
+        };
+        window.addEventListener('keydown', onKey);
 
-    let unlisten: (() => void) | undefined;
-    (async () => {
-      try {
-        const { getCurrentWindow } = await import("@tauri-apps/api/window");
-        unlisten = await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
-          if (focused) setSessionKey((k) => k + 1);
-          else void hideCapture();
+        let unlisten: (() => void) | undefined;
+        (async () => {
+            try {
+                const { getCurrentWindow } = await import('@tauri-apps/api/window');
+                unlisten = await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+                    if (focused) setSessionKey((k) => k + 1);
+                    else void hideCapture();
+                });
+            } catch {
+                // Outside Tauri.
+            }
+        })();
+
+        return () => {
+            window.removeEventListener('keydown', onKey);
+            unlisten?.();
+        };
+    }, []);
+
+    // Re-read preferences whenever the panel is shown, so a change made in
+    // Settings is reflected the next time ⌥Space opens it.
+    useEffect(() => {
+        setPrefs(loadPersisted().prefs);
+    }, [sessionKey]);
+
+    // This window holds its own repository in its own webview. Without following
+    // the main window's workspace, the next capture would be written into the
+    // vault the user just navigated away from.
+    useEffect(() => {
+        let unlisten: (() => void) | undefined;
+        void setWorkspace(loadPersisted().workspacePath);
+        void onWorkspaceChanged((path) => void setWorkspace(path)).then((fn) => {
+            unlisten = fn;
         });
-      } catch {
-        // Outside Tauri.
-      }
-    })();
+        return () => unlisten?.();
+    }, []);
 
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      unlisten?.();
-    };
-  }, []);
+    const theme = effectiveTheme(prefs.appearance);
+    useEffect(() => {
+        if (rootRef.current) applyTokens(rootRef.current, theme);
+    }, [theme]);
 
-  // Re-read preferences whenever the panel is shown, so a change made in
-  // Settings is reflected the next time ⌥Space opens it.
-  useEffect(() => {
-    setPrefs(loadPersisted().prefs);
-  }, [sessionKey]);
+    return (
+        <div
+            onMouseDown={(e) => {
+                if (e.target === e.currentTarget) void hideCapture();
+            }}
+            ref={rootRef}
+            style={{
+                ['--ac' as string]: resolveAccent(prefs.accent, theme),
+                alignItems: 'center',
+                background: 'transparent',
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                height: '100%',
+                overflow: 'hidden',
+                padding: '26px 28px',
+            }}
+        >
+            {/* direction toggle — a floating segmented control */}
+            <div
+                style={{
+                    backdropFilter: 'blur(20px)',
+                    background: 'rgba(255,255,255,.82)',
+                    border: '1px solid rgba(0,0,0,.05)',
+                    borderRadius: 9,
+                    boxShadow: '0 6px 18px -6px rgba(24,24,48,.35)',
+                    display: 'flex',
+                    gap: 3,
+                    padding: 3,
+                    WebkitBackdropFilter: 'blur(20px)',
+                }}
+            >
+                <Toggle active={mode === 'A'} onClick={() => setMode('A')}>
+                    Command bar
+                </Toggle>
+                <Toggle active={mode === 'B'} onClick={() => setMode('B')}>
+                    Composer
+                </Toggle>
+            </div>
 
-  // This window holds its own repository in its own webview. Without following
-  // the main window's workspace, the next capture would be written into the
-  // vault the user just navigated away from.
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    void setWorkspace(loadPersisted().workspacePath);
-    void onWorkspaceChanged((path) => void setWorkspace(path)).then((fn) => {
-      unlisten = fn;
-    });
-    return () => unlisten?.();
-  }, []);
-
-  const theme = effectiveTheme(prefs.appearance);
-  useEffect(() => {
-    if (rootRef.current) applyTokens(rootRef.current, theme);
-  }, [theme]);
-
-  return (
-    <div
-      ref={rootRef}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) void hideCapture();
-      }}
-      style={{
-        ["--ac" as string]: resolveAccent(prefs.accent, theme),
-        height: "100%",
-        boxSizing: "border-box",
-        padding: "26px 28px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 12,
-        background: "transparent",
-        overflow: "hidden",
-      }}
-    >
-      {/* direction toggle — a floating segmented control */}
-      <div style={{ display: "flex", gap: 3, background: "rgba(255,255,255,.82)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderRadius: 9, padding: 3, boxShadow: "0 6px 18px -6px rgba(24,24,48,.35)", border: "1px solid rgba(0,0,0,.05)" }}>
-        <Toggle active={mode === "A"} onClick={() => setMode("A")}>
-          Command bar
-        </Toggle>
-        <Toggle active={mode === "B"} onClick={() => setMode("B")}>
-          Composer
-        </Toggle>
-      </div>
-
-      <div style={{ width: "100%", maxWidth: 560 }}>
-        {mode === "A" ? <CommandBar key={sessionKey} /> : <Composer key={sessionKey} />}
-      </div>
-    </div>
-  );
+            <div style={{ maxWidth: 560, width: '100%' }}>
+                {mode === 'A' ? <CommandBar key={sessionKey} /> : <Composer key={sessionKey} />}
+            </div>
+        </div>
+    );
 }
 
-function Toggle({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <span
-      onClick={onClick}
-      style={{
-        fontSize: 12,
-        padding: "5px 12px",
-        borderRadius: 7,
-        cursor: "pointer",
-        fontWeight: active ? 600 : 500,
-        color: active ? "#fff" : "#6b6b76",
-        background: active ? AC : "transparent",
-      }}
-    >
-      {children}
-    </span>
-  );
+function Toggle({
+    active,
+    children,
+    onClick,
+}: {
+    active: boolean;
+    children: React.ReactNode;
+    onClick: () => void;
+}) {
+    return (
+        <span
+            onClick={onClick}
+            style={{
+                background: active ? AC : 'transparent',
+                borderRadius: 7,
+                color: active ? '#fff' : '#6b6b76',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: active ? 600 : 500,
+                padding: '5px 12px',
+            }}
+        >
+            {children}
+        </span>
+    );
 }

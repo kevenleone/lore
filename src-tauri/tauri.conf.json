@@ -1,58 +1,56 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Lore",
-  "version": "0.1.0",
-  "identifier": "com.lore.app",
-  "build": {
-    "beforeDevCommand": "pnpm dev:all",
-    "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build:sidecar && pnpm build",
-    "frontendDist": "../dist"
-  },
-  "app": {
-    "windows": [
-      {
-        "label": "main",
-        "title": "Lore",
-        "width": 1440,
-        "height": 960,
-        "minWidth": 960,
-        "minHeight": 640,
-        "decorations": false
-      },
-      {
-        "label": "capture",
-        "url": "capture.html",
-        "title": "Quick Capture",
-        "width": 640,
-        "height": 580,
-        "resizable": false,
-        "decorations": false,
-        "transparent": true,
-        "shadow": false,
-        "alwaysOnTop": true,
-        "skipTaskbar": true,
-        "center": true,
-        "visible": false
-      }
-    ],
-    "macOSPrivateApi": true,
-    "security": {
-      "csp": null
-    }
-  },
-  "bundle": {
-    "active": true,
-    "targets": "all",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ],
-    "externalBin": [
-      "binaries/lore-sidecar"
-    ]
-  }
+    "$schema": "https://schema.tauri.app/config/2",
+    "app": {
+        "macOSPrivateApi": true,
+        "security": {
+            "csp": null
+        },
+        "windows": [
+            {
+                "decorations": false,
+                "height": 960,
+                "label": "main",
+                "minHeight": 640,
+                "minWidth": 960,
+                "title": "Lore",
+                "width": 1440
+            },
+            {
+                "alwaysOnTop": true,
+                "center": true,
+                "decorations": false,
+                "height": 580,
+                "label": "capture",
+                "resizable": false,
+                "shadow": false,
+                "skipTaskbar": true,
+                "title": "Quick Capture",
+                "transparent": true,
+                "url": "capture.html",
+                "visible": false,
+                "width": 640
+            }
+        ]
+    },
+    "build": {
+        "beforeBuildCommand": "pnpm build:sidecar && pnpm build",
+        "beforeDevCommand": "pnpm dev:all",
+        "devUrl": "http://localhost:1420",
+        "frontendDist": "../dist"
+    },
+    "bundle": {
+        "active": true,
+        "externalBin": ["binaries/lore-sidecar"],
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico"
+        ],
+        "targets": "all"
+    },
+    "identifier": "com.lore.app",
+    "productName": "Lore",
+    "version": "0.1.0"
 }

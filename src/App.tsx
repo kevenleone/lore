@@ -6,102 +6,103 @@
 // Before any of that is reachable, `Lore Onboarding` covers the window until
 // the user has either signed in or chosen a local vault.
 
-import { useEffect, useRef } from "react";
-import { useStore } from "./store/useStore";
-import { openCaptureWindow } from "./lib/capture";
-import { applyTokens, effectiveTheme, resolveAccent } from "./theme/tokens";
-import { TitleBar } from "./components/kb/TitleBar";
-import { Sidebar } from "./components/kb/Sidebar";
-import { ListPane } from "./components/kb/ListPane";
-import { DetailPane } from "./components/kb/DetailPane";
-import { AskLoreChat } from "./components/kb/AskLoreChat";
-import { Notice } from "./components/kb/Notice";
-import { Onboarding } from "./components/onboarding/Onboarding";
-import { SettingsModal } from "./components/settings/SettingsModal";
+import { useEffect, useRef } from 'react';
+
+import { AskLoreChat } from './components/kb/AskLoreChat';
+import { DetailPane } from './components/kb/DetailPane';
+import { ListPane } from './components/kb/ListPane';
+import { Notice } from './components/kb/Notice';
+import { Sidebar } from './components/kb/Sidebar';
+import { TitleBar } from './components/kb/TitleBar';
+import { Onboarding } from './components/onboarding/Onboarding';
+import { SettingsModal } from './components/settings/SettingsModal';
+import { openCaptureWindow } from './lib/capture';
+import { useStore } from './store/useStore';
+import { applyTokens, effectiveTheme, resolveAccent } from './theme/tokens';
 
 export default function App() {
-  const hydrate = useStore((s) => s.hydrate);
-  const refresh = useStore((s) => s.refresh);
-  const appearance = useStore((s) => s.prefs.appearance);
-  const accent = useStore((s) => s.prefs.accent);
-  const textSize = useStore((s) => s.prefs.textSize);
-  const sidebarVisible = useStore((s) => s.sidebarVisible);
-  const chatOpen = useStore((s) => s.chatOpen);
-  const onboarded = useStore((s) => s.onboarded);
-  const settingsOpen = useStore((s) => s.settingsOpen);
-  const rootRef = useRef<HTMLDivElement>(null);
+    const hydrate = useStore((s) => s.hydrate);
+    const refresh = useStore((s) => s.refresh);
+    const appearance = useStore((s) => s.prefs.appearance);
+    const accent = useStore((s) => s.prefs.accent);
+    const textSize = useStore((s) => s.prefs.textSize);
+    const sidebarVisible = useStore((s) => s.sidebarVisible);
+    const chatOpen = useStore((s) => s.chatOpen);
+    const onboarded = useStore((s) => s.onboarded);
+    const settingsOpen = useStore((s) => s.settingsOpen);
+    const rootRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    void hydrate();
-  }, [hydrate]);
+    useEffect(() => {
+        void hydrate();
+    }, [hydrate]);
 
-  // Paint the token set for the effective theme, and repaint when the OS
-  // switches while Appearance is on Auto.
-  useEffect(() => {
-    const paint = () => {
-      if (rootRef.current) applyTokens(rootRef.current, effectiveTheme(appearance));
-    };
-    paint();
-    if (appearance !== "auto" || !window.matchMedia) return;
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    mq.addEventListener("change", paint);
-    return () => mq.removeEventListener("change", paint);
-  }, [appearance]);
+    // Paint the token set for the effective theme, and repaint when the OS
+    // switches while Appearance is on Auto.
+    useEffect(() => {
+        const paint = () => {
+            if (rootRef.current) applyTokens(rootRef.current, effectiveTheme(appearance));
+        };
+        paint();
+        if (appearance !== 'auto' || !window.matchMedia) return;
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        mq.addEventListener('change', paint);
+        return () => mq.removeEventListener('change', paint);
+    }, [appearance]);
 
-  // Refresh when the Quick Capture window saves a new item.
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    (async () => {
-      try {
-        const { listen } = await import("@tauri-apps/api/event");
-        unlisten = await listen("item:created", () => void refresh());
-      } catch {
-        // Outside Tauri — no event bus.
-      }
-    })();
-    return () => unlisten?.();
-  }, [refresh]);
+    // Refresh when the Quick Capture window saves a new item.
+    useEffect(() => {
+        let unlisten: (() => void) | undefined;
+        (async () => {
+            try {
+                const { listen } = await import('@tauri-apps/api/event');
+                unlisten = await listen('item:created', () => void refresh());
+            } catch {
+                // Outside Tauri — no event bus.
+            }
+        })();
+        return () => unlisten?.();
+    }, [refresh]);
 
-  const theme = effectiveTheme(appearance);
+    const theme = effectiveTheme(appearance);
 
-  return (
-    <div
-      ref={rootRef}
-      style={{
-        // `--ac` drives every accent reference in the tree; the design lifts it
-        // when it would be too dark to read on the dark ground.
-        ["--ac" as string]: resolveAccent(accent, theme),
-        // "Text size" scales the whole tree; every size in the UI is in px, so
-        // the zoom is applied here rather than through rem units.
-        zoom: textSize,
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        background: "var(--surface, #fff)",
-        color: "var(--text, #1a1a1f)",
-        overflow: "hidden",
-      }}
-    >
-      <TitleBar onCapture={openCaptureWindow} />
-      <Notice />
-      <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-        {sidebarVisible && <Sidebar onCapture={openCaptureWindow} />}
-        <ListPane />
+    return (
         <div
-          style={{
-            flex: 1,
-            minWidth: 0,
-            display: "flex",
-            flexDirection: "column",
-            background: "var(--surface, #fff)",
-          }}
+            ref={rootRef}
+            style={{
+                // `--ac` drives every accent reference in the tree; the design lifts it
+                // when it would be too dark to read on the dark ground.
+                ['--ac' as string]: resolveAccent(accent, theme),
+                background: 'var(--surface, #fff)',
+                color: 'var(--text, #1a1a1f)',
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                overflow: 'hidden',
+                // "Text size" scales the whole tree; every size in the UI is in px, so
+                // the zoom is applied here rather than through rem units.
+                zoom: textSize,
+            }}
         >
-          {chatOpen ? <AskLoreChat /> : <DetailPane />}
-        </div>
-      </div>
+            <TitleBar onCapture={openCaptureWindow} />
+            <Notice />
+            <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+                {sidebarVisible && <Sidebar onCapture={openCaptureWindow} />}
+                <ListPane />
+                <div
+                    style={{
+                        background: 'var(--surface, #fff)',
+                        display: 'flex',
+                        flex: 1,
+                        flexDirection: 'column',
+                        minWidth: 0,
+                    }}
+                >
+                    {chatOpen ? <AskLoreChat /> : <DetailPane />}
+                </div>
+            </div>
 
-      {settingsOpen && <SettingsModal />}
-      {!onboarded && <Onboarding />}
-    </div>
-  );
+            {settingsOpen && <SettingsModal />}
+            {!onboarded && <Onboarding />}
+        </div>
+    );
 }

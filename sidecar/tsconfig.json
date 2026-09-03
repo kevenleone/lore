@@ -1,28 +1,28 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "lib": ["ESNext"],
-    "types": ["bun"],
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
-    "skipLibCheck": true,
+    "compilerOptions": {
+        "allowImportingTsExtensions": true,
+        "lib": ["ESNext"],
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "noEmit": true,
+        "noFallthroughCasesInSwitch": true,
 
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-
-    /* Shared with the renderer by path rather than by package. `@lore/types` is
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        /* Shared with the renderer by path rather than by package. `@lore/types` is
        type-only and erased at build; `@lore/derive` is real code, shared on
        purpose so the rule "snippet is derived, never stored" has exactly one
        definition on both sides of the wire. */
-    "paths": {
-      "@lore/types": ["../src/store/types.ts"],
-      "@lore/derive": ["../src/data/derive.ts"]
-    }
-  },
-  "include": ["src", "test", "scripts"]
+        "paths": {
+            "@lore/derive": ["../src/data/derive.ts"],
+            "@lore/types": ["../src/store/types.ts"]
+        },
+        "skipLibCheck": true,
+
+        "strict": true,
+        "target": "ESNext",
+        "types": ["bun"],
+        "verbatimModuleSyntax": true
+    },
+    "include": ["src", "test", "scripts"]
 }

@@ -5,40 +5,32 @@
 // LocalRepository (SQLite) is no longer selected. It stays in the tree only so
 // the one-shot migration can still read a legacy `lore.db`; see migrateSqlite.
 
-import { MemoryRepository } from "./memoryRepository";
-import { VaultRepository } from "./vaultRepository";
-import type { KnowledgeRepository } from "./repository";
+import type { KnowledgeRepository } from './repository';
+
+import { MemoryRepository } from './memoryRepository';
+import { VaultRepository } from './vaultRepository';
 
 function isTauri(): boolean {
-  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
 let instance: KnowledgeRepository | null = null;
-let workspacePath: string | null = null;
-
-export function getRepository(): KnowledgeRepository {
-  if (!instance) {
-    instance = isTauri() ? new VaultRepository(workspacePath) : new MemoryRepository();
-  }
-  return instance;
-}
-
-/**
- * Points the app at a different vault. The next `getRepository()` builds a
- * repository for it; the caller is responsible for re-hydrating the store.
- */
-export async function setWorkspace(path: string | null): Promise<void> {
-  workspacePath = path;
-  await resetRepository();
-}
+let workspacePath: null | string = null;
 
 /**
  * Makes sure the backing store is ready before anything writes to it directly.
  * Only the SQLite import needs this; every normal call opens lazily on its own.
  */
 export async function ensureWorkspaceOpen(): Promise<void> {
-  const repo = getRepository();
-  if (repo instanceof VaultRepository) await repo.ensureOpen();
+    const repo = getRepository();
+    if (repo instanceof VaultRepository) await repo.ensureOpen();
+}
+
+export function getRepository(): KnowledgeRepository {
+    if (!instance) {
+        instance = isTauri() ? new VaultRepository(workspacePath) : new MemoryRepository();
+    }
+    return instance;
 }
 
 /**
@@ -49,9 +41,18 @@ export async function ensureWorkspaceOpen(): Promise<void> {
  * would hand back a repository still pointing at the previous vault.
  */
 export async function resetRepository(): Promise<void> {
-  const current = instance;
-  instance = null;
-  await current?.dispose?.();
+    const current = instance;
+    instance = null;
+    await current?.dispose?.();
 }
 
-export type { KnowledgeRepository } from "./repository";
+/**
+ * Points the app at a different vault. The next `getRepository()` builds a
+ * repository for it; the caller is responsible for re-hydrating the store.
+ */
+export async function setWorkspace(path: null | string): Promise<void> {
+    workspacePath = path;
+    await resetRepository();
+}
+
+export type { KnowledgeRepository } from './repository';

@@ -2,228 +2,235 @@
 // Shapes mirror the Claude Design prototype's seed data, with ISO timestamps
 // added so the real app can derive relative `time` / human `date` at render.
 
-export type ItemType = "link" | "note" | "task" | "code" | "image";
-
-export type IconName =
-  | ItemType
-  | "file"
-  | "inbox"
-  | "layers"
-  | "calendar"
-  | "star"
-  | "hash";
-
-export interface ItemFlags {
-  inbox?: boolean;
-  today?: boolean;
-  starred?: boolean;
-}
-
-export interface Item {
-  id: string;
-  type: ItemType;
-  title: string;
-  domain?: string;
-  collectionId?: string;
-  tags: string[];
-  flags: ItemFlags;
-  /** AI-generated summary (distinct from a link's own description). */
-  summary?: string;
-  points?: string[];
-  /**
-   * Where a link points. Links only — this used to share `snippet` with note
-   * bodies, which is why `snippet` is now derived rather than stored.
-   */
-  url?: string;
-  /**
-   * The item's own content: the note/task/code text, or the user's notes on a
-   * link. In the Markdown vault this is everything below the frontmatter.
-   */
-  body?: string;
-  /**
-   * Derived one-line preview for the list pane — `body`'s first line, or a
-   * link's `description`/`url`. Computed on read by every repository and never
-   * persisted; see `deriveSnippet`.
-   */
-  snippet?: string;
-  /** A link's own description (e.g. OpenGraph/meta description). */
-  description?: string;
-  /** Preview image URL (e.g. OpenGraph image for links). */
-  image?: string;
-  related: string[];
-  /**
-   * Vault-relative file path, supplied by the store that owns the file. Read
-   * only — renaming goes through `renameItem`, since it has to rewrite every
-   * wikilink pointing here.
-   */
-  path?: string;
-  /** ISO 8601. Display strings (`2m`, `Today, 14:30`) are derived at render. */
-  createdAt: string;
-  updatedAt: string;
-  /** Soft-delete tombstone for future Convex sync. */
-  deletedAt?: string | null;
-}
-
-export interface Collection {
-  id: string;
-  name: string;
-  color: string;
-}
-
-export interface TagCount {
-  name: string;
-  count: number;
-}
-
-/** A library view: the four built-ins, a collection, or a tag. */
-export type ViewKind =
-  | "all"
-  | "inbox"
-  | "today"
-  | "starred"
-  | "collection"
-  | "tag";
-
-export interface View {
-  kind: ViewKind;
-  /** collection id for `collection`, tag name for `tag`, else null. */
-  val: string | null;
+export interface ChatMessage {
+    id: string;
+    role: 'ai' | 'user';
+    sources?: ChatSource[];
+    text: string;
 }
 
 export interface ChatSource {
-  itemId: string;
+    itemId: string;
 }
 
-export interface ChatMessage {
-  id: string;
-  role: "user" | "ai";
-  text: string;
-  sources?: ChatSource[];
+export interface Collection {
+    color: string;
+    id: string;
+    name: string;
 }
+
+export type IconName = 'calendar' | 'file' | 'hash' | 'inbox' | 'layers' | 'star' | ItemType;
+
+export interface Item {
+    /**
+     * The item's own content: the note/task/code text, or the user's notes on a
+     * link. In the Markdown vault this is everything below the frontmatter.
+     */
+    body?: string;
+    collectionId?: string;
+    /** ISO 8601. Display strings (`2m`, `Today, 14:30`) are derived at render. */
+    createdAt: string;
+    /** Soft-delete tombstone for future Convex sync. */
+    deletedAt?: null | string;
+    /** A link's own description (e.g. OpenGraph/meta description). */
+    description?: string;
+    domain?: string;
+    flags: ItemFlags;
+    id: string;
+    /** Preview image URL (e.g. OpenGraph image for links). */
+    image?: string;
+    /**
+     * Vault-relative file path, supplied by the store that owns the file. Read
+     * only — renaming goes through `renameItem`, since it has to rewrite every
+     * wikilink pointing here.
+     */
+    path?: string;
+    points?: string[];
+    related: string[];
+    /**
+     * Derived one-line preview for the list pane — `body`'s first line, or a
+     * link's `description`/`url`. Computed on read by every repository and never
+     * persisted; see `deriveSnippet`.
+     */
+    snippet?: string;
+    /** AI-generated summary (distinct from a link's own description). */
+    summary?: string;
+    tags: string[];
+    title: string;
+    type: ItemType;
+    updatedAt: string;
+    /**
+     * Where a link points. Links only — this used to share `snippet` with note
+     * bodies, which is why `snippet` is now derived rather than stored.
+     */
+    url?: string;
+}
+
+export interface ItemFlags {
+    inbox?: boolean;
+    starred?: boolean;
+    today?: boolean;
+}
+
+export type ItemType = 'code' | 'image' | 'link' | 'note' | 'task';
+
+export interface TagCount {
+    count: number;
+    name: string;
+}
+
+export interface View {
+    kind: ViewKind;
+    /** collection id for `collection`, tag name for `tag`, else null. */
+    val: null | string;
+}
+
+/** A library view: the four built-ins, a collection, or a tag. */
+export type ViewKind = 'all' | 'collection' | 'inbox' | 'starred' | 'tag' | 'today';
 
 /**
  * Lore's accent palette (`Lore Settings.dc.html` → Look & Feel → Accent).
  * Graphite is the brand default; Slate blue is the dark-mode substitute the
  * design swaps in for accents that are too dark on a dark ground.
  */
-export const ACCENTS = ["#393A4A", "#5b5bd6", "#3f8f6a", "#c4553d", "#8a92b8"] as const;
+export const ACCENTS = ['#393A4A', '#5b5bd6', '#3f8f6a', '#c4553d', '#8a92b8'] as const;
 export type Accent = (typeof ACCENTS)[number];
 export const ACCENT_NAMES: Record<Accent, string> = {
-  "#393A4A": "Graphite",
-  "#5b5bd6": "Indigo",
-  "#3f8f6a": "Fern",
-  "#c4553d": "Clay",
-  "#8a92b8": "Slate blue",
+    '#393A4A': 'Graphite',
+    '#3f8f6a': 'Fern',
+    '#5b5bd6': 'Indigo',
+    '#8a92b8': 'Slate blue',
+    '#c4553d': 'Clay',
 };
-export const DEFAULT_ACCENT: Accent = "#393A4A";
+export const DEFAULT_ACCENT: Accent = '#393A4A';
 
-/** List sort order. */
-export type SortOrder = "newest" | "oldest" | "title";
+export type AiMode = 'cloud' | 'local';
 
 /* ------------------------------------------------------------------ *
  * Onboarding / account
  * ------------------------------------------------------------------ */
 
+/** Light/dark/system preference. `theme/tokens.ts` resolves `auto` at runtime. */
+export type Appearance = 'auto' | 'dark' | 'light';
+
+export interface Auth {
+    /** Address the magic link went to, or the signed-in account's address. */
+    email: null | string;
+    mode: AuthMode;
+    /** Display name, once an account exists. */
+    name: null | string;
+}
+
 /**
  * How this install is signed in. `null` means onboarding has not finished —
  * `Lore Onboarding.dc.html` runs until the user picks a lane.
  */
-export type AuthMode = "account" | "anonymous" | null;
-
-/** Which card the onboarding sheet is showing. */
-export type OnboardingStep = "signin" | "anon" | "magic";
-
-export interface Auth {
-  mode: AuthMode;
-  /** Address the magic link went to, or the signed-in account's address. */
-  email: string | null;
-  /** Display name, once an account exists. */
-  name: string | null;
-}
+export type AuthMode = 'account' | 'anonymous' | null;
 
 /* ------------------------------------------------------------------ *
  * Settings
  * ------------------------------------------------------------------ */
 
-/** Light/dark/system preference. `theme/tokens.ts` resolves `auto` at runtime. */
-export type Appearance = "light" | "dark" | "auto";
+export type Density = 'Compact' | 'Cozy' | 'Roomy';
 
-export type Density = "Cozy" | "Compact" | "Roomy";
-export type NotificationStyle = "Banner" | "Alert";
-export type AiMode = "cloud" | "local";
-export type WeekStart = "Monday" | "Sunday";
-
+export type NotificationStyle = 'Alert' | 'Banner';
+/** Which card the onboarding sheet is showing. */
+export type OnboardingStep = 'anon' | 'magic' | 'signin';
 /** The ten panes in the settings sheet's rail, in order. */
 export type SettingsPane =
-  | "general"
-  | "account"
-  | "look"
-  | "keys"
-  | "notif"
-  | "capture"
-  | "sync"
-  | "focus"
-  | "cal"
-  | "about";
+    | 'about'
+    | 'account'
+    | 'cal'
+    | 'capture'
+    | 'focus'
+    | 'general'
+    | 'keys'
+    | 'look'
+    | 'notif'
+    | 'sync';
+/** List sort order. */
+export type SortOrder = 'newest' | 'oldest' | 'title';
 
 /** Every boolean switch in the settings sheet, keyed as in the design. */
 export interface Switches {
-  // General
-  launch: boolean;
-  menubar: boolean;
-  dock: boolean;
-  clip: boolean;
-  // Account
-  touchid: boolean;
-  // Look & Feel
-  counts: boolean;
-  motion: boolean;
-  // Notifications
-  digest: boolean;
-  dueTasks: boolean;
-  focusEnd: boolean;
-  syncErr: boolean;
-  sounds: boolean;
-  quiet: boolean;
-  // Capture & AI
-  autoSum: boolean;
-  autoTag: boolean;
-  preview: boolean;
-  dupe: boolean;
-  // Sync
-  e2e: boolean;
-  wifi: boolean;
-  // Focus
-  dnd: boolean;
-  autoBreak: boolean;
-  chime: boolean;
-  logFocus: boolean;
-  // Calendar
-  showTasks: boolean;
-  showFocus: boolean;
-  attachNotes: boolean;
-  calWork: boolean;
-  calPersonal: boolean;
-  calShared: boolean;
+    attachNotes: boolean;
+    autoBreak: boolean;
+    // Capture & AI
+    autoSum: boolean;
+    autoTag: boolean;
+    calPersonal: boolean;
+    calShared: boolean;
+    calWork: boolean;
+    chime: boolean;
+    clip: boolean;
+    // Look & Feel
+    counts: boolean;
+    // Notifications
+    digest: boolean;
+    // Focus
+    dnd: boolean;
+    dock: boolean;
+    dueTasks: boolean;
+    dupe: boolean;
+    // Sync
+    e2e: boolean;
+    focusEnd: boolean;
+    // General
+    launch: boolean;
+    logFocus: boolean;
+    menubar: boolean;
+    motion: boolean;
+    preview: boolean;
+    quiet: boolean;
+    showFocus: boolean;
+    // Calendar
+    showTasks: boolean;
+    sounds: boolean;
+    syncErr: boolean;
+    // Account
+    touchid: boolean;
+    wifi: boolean;
 }
 
+export type WeekStart = 'Monday' | 'Sunday';
+
 export const DEFAULT_SWITCHES: Switches = {
-  launch: true, menubar: true, dock: false, clip: true,
-  touchid: true,
-  counts: true, motion: false,
-  digest: true, dueTasks: true, focusEnd: true, syncErr: true, sounds: false, quiet: true,
-  autoSum: true, autoTag: true, preview: true, dupe: true,
-  e2e: true, wifi: false,
-  dnd: true, autoBreak: true, chime: true, logFocus: false,
-  showTasks: true, showFocus: true, attachNotes: true,
-  calWork: true, calPersonal: true, calShared: false,
+    attachNotes: true,
+    autoBreak: true,
+    autoSum: true,
+    autoTag: true,
+    calPersonal: true,
+    calShared: false,
+    calWork: true,
+    chime: true,
+    clip: true,
+    counts: true,
+    digest: true,
+    dnd: true,
+    dock: false,
+    dueTasks: true,
+    dupe: true,
+    e2e: true,
+    focusEnd: true,
+    launch: true,
+    logFocus: false,
+    menubar: true,
+    motion: false,
+    preview: true,
+    quiet: true,
+    showFocus: true,
+    showTasks: true,
+    sounds: false,
+    syncErr: true,
+    touchid: true,
+    wifi: false,
 };
 
 /** Focus-timer interval lengths, in minutes. */
 export interface Durations {
-  focus: number;
-  short: number;
-  long: number;
+    focus: number;
+    long: number;
+    short: number;
 }
 
 /**
@@ -231,27 +238,27 @@ export interface Durations {
  * repository can take it over when there is a backend to hold it.
  */
 export interface Prefs {
-  appearance: Appearance;
-  accent: Accent;
-  density: Density;
-  textSize: number;
-  notifStyle: NotificationStyle;
-  aiMode: AiMode;
-  weekStart: WeekStart;
-  longBreakAfter: number;
-  durations: Durations;
-  switches: Switches;
+    accent: Accent;
+    aiMode: AiMode;
+    appearance: Appearance;
+    density: Density;
+    durations: Durations;
+    longBreakAfter: number;
+    notifStyle: NotificationStyle;
+    switches: Switches;
+    textSize: number;
+    weekStart: WeekStart;
 }
 
 export const DEFAULT_PREFS: Prefs = {
-  appearance: "light",
-  accent: DEFAULT_ACCENT,
-  density: "Cozy",
-  textSize: 1,
-  notifStyle: "Banner",
-  aiMode: "cloud",
-  weekStart: "Monday",
-  longBreakAfter: 4,
-  durations: { focus: 25, short: 5, long: 15 },
-  switches: DEFAULT_SWITCHES,
+    accent: DEFAULT_ACCENT,
+    aiMode: 'cloud',
+    appearance: 'light',
+    density: 'Cozy',
+    durations: { focus: 25, long: 15, short: 5 },
+    longBreakAfter: 4,
+    notifStyle: 'Banner',
+    switches: DEFAULT_SWITCHES,
+    textSize: 1,
+    weekStart: 'Monday',
 };

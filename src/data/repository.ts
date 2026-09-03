@@ -10,44 +10,44 @@
 // `matchesView` used to live here; it moved to store/views.ts so the data layer
 // no longer imports from the store and vice versa.
 
-import type { Collection, Item, TagCount, View } from "../store/types";
+import type { Collection, Item, TagCount, View } from '../store/types';
 
-export type NewItem = Omit<Item, "id" | "createdAt" | "updatedAt" | "deletedAt">;
-export type ItemPatch = Partial<Omit<Item, "id" | "createdAt">>;
-export type NewCollection = Omit<Collection, "id">;
-export type CollectionPatch = Partial<Omit<Collection, "id">>;
-
+export type CollectionPatch = Partial<Omit<Collection, 'id'>>;
+export type ItemPatch = Partial<Omit<Item, 'createdAt' | 'id'>>;
 export interface KnowledgeRepository {
-  listItems(view?: View): Promise<Item[]>;
-  getItem(id: string): Promise<Item | null>;
-  createItem(input: NewItem): Promise<Item>;
-  updateItem(id: string, patch: ItemPatch): Promise<Item>;
-  deleteItem(id: string): Promise<void>;
+    createCollection(input: NewCollection): Promise<Collection>;
+    createItem(input: NewItem): Promise<Item>;
+    /** Removes the collection and unfiles any items that referenced it. */
+    deleteCollection(id: string): Promise<void>;
+    deleteItem(id: string): Promise<void>;
+    /** Releases connections/streams so a workspace switch can rebuild cleanly. */
+    dispose?(): Promise<void> | void;
 
-  listCollections(): Promise<Collection[]>;
-  createCollection(input: NewCollection): Promise<Collection>;
-  updateCollection(id: string, patch: CollectionPatch): Promise<Collection>;
-  /** Removes the collection and unfiles any items that referenced it. */
-  deleteCollection(id: string): Promise<void>;
+    getItem(id: string): Promise<Item | null>;
+    listCollections(): Promise<Collection[]>;
+    listItems(view?: View): Promise<Item[]>;
+    listTags(): Promise<TagCount[]>;
 
-  listTags(): Promise<TagCount[]>;
+    /**
+     * Renames the file behind an item. Separate from `updateItem` because a
+     * retitle deliberately leaves the filename alone — a rename rewrites every
+     * inbound link and churns history, so it only happens when asked for.
+     */
+    renameItem?(id: string, stem: string): Promise<Item>;
 
-  /**
-   * Renames the file behind an item. Separate from `updateItem` because a
-   * retitle deliberately leaves the filename alone — a rename rewrites every
-   * inbound link and churns history, so it only happens when asked for.
-   */
-  renameItem?(id: string, stem: string): Promise<Item>;
+    /** ⌘K full-text search across titles, snippets, summaries, tags. */
+    search(query: string): Promise<Item[]>;
 
-  /** ⌘K full-text search across titles, snippets, summaries, tags. */
-  search(query: string): Promise<Item[]>;
+    /**
+     * Optional reactive hook — implemented by the vault store's file watcher;
+     * returns an unsubscribe.
+     */
+    subscribe?(cb: () => void): () => void;
 
-  /**
-   * Optional reactive hook — implemented by the vault store's file watcher;
-   * returns an unsubscribe.
-   */
-  subscribe?(cb: () => void): () => void;
+    updateCollection(id: string, patch: CollectionPatch): Promise<Collection>;
 
-  /** Releases connections/streams so a workspace switch can rebuild cleanly. */
-  dispose?(): void | Promise<void>;
+    updateItem(id: string, patch: ItemPatch): Promise<Item>;
 }
+export type NewCollection = Omit<Collection, 'id'>;
+
+export type NewItem = Omit<Item, 'createdAt' | 'deletedAt' | 'id' | 'updatedAt'>;

@@ -5,46 +5,46 @@
 // `bun build --bytecode` — which is what keeps the shipped binary's startup
 // fast — cannot compile top-level await.
 
-import { createApp } from "./app";
-import { handshakeLine, loadConfig, watchParent } from "./config";
-import { Workspace } from "./workspace";
+import { createApp } from './app';
+import { handshakeLine, loadConfig, watchParent } from './config';
+import { Workspace } from './workspace';
 
 async function main(): Promise<void> {
-  const config = loadConfig();
-  const workspace = new Workspace();
-  const app = createApp(config, workspace);
+    const config = loadConfig();
+    const workspace = new Workspace();
+    const app = createApp(config, workspace);
 
-  // The host may already know which vault to open; otherwise the renderer calls
-  // POST /workspace/open once it has resolved the path.
-  if (config.vault) {
-    await workspace.open(config.vault);
-  }
+    // The host may already know which vault to open; otherwise the renderer calls
+    // POST /workspace/open once it has resolved the path.
+    if (config.vault) {
+        await workspace.open(config.vault);
+    }
 
-  // Bind 127.0.0.1 explicitly — never 0.0.0.0, which would expose the vault to
-  // the local network.
-  app.listen({ hostname: "127.0.0.1", port: config.port });
+    // Bind 127.0.0.1 explicitly — never 0.0.0.0, which would expose the vault to
+    // the local network.
+    app.listen({ hostname: '127.0.0.1', port: config.port });
 
-  const port = app.server?.port;
-  if (!port) {
-    console.error("lore-sidecar: failed to bind a port");
-    process.exit(1);
-  }
+    const port = app.server?.port;
+    if (!port) {
+        console.error('lore-sidecar: failed to bind a port');
+        process.exit(1);
+    }
 
-  // Must be the first line on stdout: the host reads until it sees this.
-  console.log(handshakeLine(port));
+    // Must be the first line on stdout: the host reads until it sees this.
+    console.log(handshakeLine(port));
 
-  watchParent(config.parentPid);
+    watchParent(config.parentPid);
 
-  for (const signal of ["SIGINT", "SIGTERM"] as const) {
-    process.on(signal, () => {
-      void workspace.close();
-      void app.stop();
-      process.exit(0);
-    });
-  }
+    for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+        process.on(signal, () => {
+            void workspace.close();
+            void app.stop();
+            process.exit(0);
+        });
+    }
 }
 
 main().catch((e) => {
-  console.error("lore-sidecar: failed to start:", e);
-  process.exit(1);
+    console.error('lore-sidecar: failed to start:', e);
+    process.exit(1);
 });

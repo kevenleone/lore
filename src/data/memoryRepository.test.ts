@@ -1,30 +1,31 @@
-import { describe, expect, it } from "vitest";
-import { MemoryRepository } from "./memoryRepository";
+import { describe, expect, it } from 'vitest';
 
-describe("MemoryRepository collections", () => {
-  it("creates, updates, and lists collections", async () => {
-    const repo = new MemoryRepository();
-    const created = await repo.createCollection({ name: "Travel", color: "#5b5bd6" });
-    expect(created.id).toBeTruthy();
+import { MemoryRepository } from './memoryRepository';
 
-    const updated = await repo.updateCollection(created.id, { name: "Trips" });
-    expect(updated.name).toBe("Trips");
+describe('MemoryRepository collections', () => {
+    it('creates, updates, and lists collections', async () => {
+        const repo = new MemoryRepository();
+        const created = await repo.createCollection({ color: '#5b5bd6', name: 'Travel' });
+        expect(created.id).toBeTruthy();
 
-    const all = await repo.listCollections();
-    expect(all.find((c) => c.id === created.id)?.name).toBe("Trips");
-  });
+        const updated = await repo.updateCollection(created.id, { name: 'Trips' });
+        expect(updated.name).toBe('Trips');
 
-  it("unfiles items when their collection is deleted", async () => {
-    const repo = new MemoryRepository();
-    const before = await repo.listItems({ kind: "collection", val: "work" });
-    expect(before.length).toBeGreaterThan(0);
+        const all = await repo.listCollections();
+        expect(all.find((c) => c.id === created.id)?.name).toBe('Trips');
+    });
 
-    await repo.deleteCollection("work");
+    it('unfiles items when their collection is deleted', async () => {
+        const repo = new MemoryRepository();
+        const before = await repo.listItems({ kind: 'collection', val: 'work' });
+        expect(before.length).toBeGreaterThan(0);
 
-    const collections = await repo.listCollections();
-    expect(collections.find((c) => c.id === "work")).toBeUndefined();
+        await repo.deleteCollection('work');
 
-    const stillInWork = (await repo.listItems()).filter((i) => i.collectionId === "work");
-    expect(stillInWork).toHaveLength(0);
-  });
+        const collections = await repo.listCollections();
+        expect(collections.find((c) => c.id === 'work')).toBeUndefined();
+
+        const stillInWork = (await repo.listItems()).filter((i) => i.collectionId === 'work');
+        expect(stillInWork).toHaveLength(0);
+    });
 });
