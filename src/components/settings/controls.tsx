@@ -166,7 +166,7 @@ export function Segmented<T extends string>({
                         o === value
                             ? {
                                   background: 'var(--surface, #fff)',
-                                  boxShadow: '0 1px 2px rgba(0,0,0,.08)',
+                                  boxShadow: 'var(--seg-shadow, 0 1px 2px rgba(0,0,0,.08))',
                                   color: 'var(--text, #1a1a1f)',
                                   fontWeight: 600,
                               }
@@ -213,7 +213,7 @@ export function Toggle({
         >
             <span
                 style={{
-                    background: '#fff',
+                    background: 'var(--knob, #fff)',
                     borderRadius: '50%',
                     boxShadow: '0 1px 3px rgba(0,0,0,.22)',
                     height: 18,
