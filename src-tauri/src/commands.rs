@@ -69,25 +69,39 @@ pub fn hide_main(app: &AppHandle) {
     set_app_visible_in_switcher(app, false);
 }
 
-/// System-tray icon with a menu: Quick Capture · Open Lore · Quit.
+/// System-tray icon with a menu: Quick Capture · focus · Open Lore · Quit.
 /// Left-clicking the tray icon toggles the capture window.
+///
+/// The focus lines only ask the main window to act — the timer's state lives in
+/// the renderer, and `focus_tray` paints the countdown back onto this icon.
 #[cfg(desktop)]
 pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     use tauri::menu::{MenuBuilder, MenuItem};
     use tauri::tray::TrayIconBuilder;
+    use tauri::Emitter;
+
+    use crate::focus_tray::{FocusTray, TRAY_ID};
 
     let capture = MenuItem::with_id(app, "capture", "Quick Capture", true, Some("Alt+Space"))?;
+    let focus = MenuItem::with_id(app, "focus", "Start Focus", true, Some("Alt+Shift+F"))?;
+    let focus_mode = MenuItem::with_id(app, "focusmode", "Open Focus mode", true, None::<&str>)?;
     let open = MenuItem::with_id(app, "open", "Open Lore", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit Lore", true, Some("Cmd+Q"))?;
     let menu = MenuBuilder::new(app)
         .item(&capture)
-        .item(&open)
         .separator()
+        .item(&focus)
+        .item(&focus_mode)
+        .separator()
+        .item(&open)
         .item(&quit)
         .build()?;
 
+    // Held so the countdown can rename it between Start and Pause.
+    app.state::<FocusTray>().set_toggle_item(focus.clone());
+
     // Left-click opens the menu (macOS-standard); the user picks an action.
-    let tray = TrayIconBuilder::with_id("lore-tray")
+    let tray = TrayIconBuilder::with_id(TRAY_ID)
         // The retina master; macOS scales it down for the 1x menu bar.
         .icon(tauri::include_image!("icons/tray@2x.png"))
         .tooltip("Lore")
@@ -95,6 +109,13 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .show_menu_on_left_click(true)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "capture" => toggle_capture_window(app),
+            "focus" => {
+                let _ = app.emit_to("main", "focus:toggle", ());
+            }
+            "focusmode" => {
+                show_main(app);
+                let _ = app.emit_to("main", "focus:mode", ());
+            }
             "open" => show_main(app),
             "quit" => app.exit(0),
             _ => {}
