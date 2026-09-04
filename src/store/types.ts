@@ -262,3 +262,48 @@ export const DEFAULT_PREFS: Prefs = {
     textSize: 1,
     weekStart: 'Monday',
 };
+
+/* ------------------------------------------------------------------ *
+ * Focus timer
+ * ------------------------------------------------------------------ */
+
+/** Granularity of the calendar view. */
+export type CalendarScale = 'Day' | 'Month' | 'Week';
+
+/**
+ * Which interval the timer is in. The names double as keys into `Durations`,
+ * so a phase resolves to its length without a lookup table.
+ */
+export type FocusPhase = 'focus' | 'long' | 'short';
+
+/** A finished focus interval. Drawn on the calendar as a hatched block. */
+export interface FocusSession {
+    /** ISO 8601. */
+    endedAt: string;
+    id: string;
+    /** ISO 8601. */
+    startedAt: string;
+    /** The item that was in "Working on" when the interval ran, if any. */
+    taskId: null | string;
+}
+
+export interface FocusState {
+    /**
+     * Epoch ms the current interval ends at, while it runs. The countdown is
+     * derived from the clock rather than accumulated from ticks, so a throttled
+     * background tab does not make the timer run slow.
+     */
+    endsAt: null | number;
+    phase: FocusPhase;
+    /** Authoritative while paused; refreshed from `endsAt` on every tick. */
+    remainingSec: number;
+    running: boolean;
+    /** 1-based position in the current cycle, up to `longBreakAfter`. */
+    sessionIndex: number;
+    /** ISO 8601, set when the running interval started. */
+    startedAt: null | string;
+    taskId: null | string;
+}
+
+/** Which surface the window's main area is showing. */
+export type MainView = 'calendar' | 'library';
