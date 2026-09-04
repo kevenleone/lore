@@ -1,17 +1,26 @@
 // The focus session in the menu bar: the countdown beside the tray icon, the
-// stopwatch it swaps to while a session is under way, and the popover panel the
-// icon opens.
+// stopwatch it swaps to while a session runs, and the popover panel the icon
+// opens.
 //
 // The phase machine lives in the renderer (see `store/useStore.ts`); this only
 // draws it. The main window pushes a snapshot on every change; Rust caches it,
 // paints the tray from it, and forwards it to the popover window, which is a
 // thin remote control rather than a second copy of the timer.
 //
-// The countdown itself is Rust's: the renderer hands over the instant the
-// interval ends and Rust counts down to it, because a hidden window has its
-// timers throttled to about once a minute — exactly when the menu bar matters.
-// When the countdown reaches zero Rust emits `focus:elapsed` at the main
-// window; events are not throttled the way timers are, so that wakes the
+// **One task paints the tray, and nothing else ever does.** `sync_focus` only
+// writes what should be showing and returns; a single loop, started once at
+// launch, reads that and paints. Two earlier attempts had `sync_focus` paint
+// too, and both were wrong: a per-update ticker could repaint a stale countdown
+// after a stop had cleared it, and guarding that with a lock deadlocked the app,
+// because painting the tray blocks on the main thread and the main thread was
+// waiting for the lock. With a single painter there is no ordering to get wrong
+// and no lock is held across a paint.
+//
+// The countdown is Rust's rather than pushed frame by frame: the renderer hands
+// over the instant the interval ends and this loop counts down to it, because a
+// hidden window has its timers throttled to about once a minute — exactly when
+// the menu bar matters. When it reaches zero Rust emits `focus:elapsed` at the
+// main window; events are not throttled the way timers are, so that wakes the
 // renderer to roll the phase over even while it is hidden.
 
 use std::sync::{Mutex, PoisonError};
@@ -27,9 +36,9 @@ pub const PANEL_LABEL: &str = "focus";
 /// Gap between the menu bar and the top of the popover, in logical pixels.
 const PANEL_GAP: f64 = 6.0;
 
-/// How often the countdown is repainted. Faster than once a second so the title
-/// changes within a frame or two of the second boundary the renderer also draws
-/// on; `TICK_MS` in `useFocusTimer.ts` is the same number.
+/// How often the painter looks at the clock. Faster than once a second so the
+/// title turns over within a frame or two of the second boundary the window
+/// draws on; `TICK_MS` in `useFocusTimer.ts` is the same number.
 const TICK: Duration = Duration::from_millis(250);
 
 fn idle_icon() -> Image<'static> {
@@ -40,21 +49,32 @@ fn running_icon() -> Image<'static> {
     tauri::include_image!("icons/tray-focus@2x.png")
 }
 
+/// What the renderer says should be on the tray. `None` means nothing at all.
+#[derive(Clone)]
+struct Session {
+    /// Epoch ms the interval ends at, while it runs.
+    ends_at_ms: Option<i64>,
+    label: String,
+    /// Authoritative when the interval is not running.
+    remaining_sec: i64,
+    running: bool,
+}
+
+/// What the tray actually shows. Compared against the last paint so the loop
+/// only calls into AppKit when something changed.
+#[derive(Clone, PartialEq)]
+struct TrayView {
+    running: bool,
+    title: Option<String>,
+    tooltip: String,
+}
+
 #[derive(Default)]
 pub struct FocusTray {
-    /**
-     * Bumped on every update so an in-flight ticker knows it is stale and exits.
-     *
-     * A mutex rather than an atomic because the check and the paint that follows
-     * it have to be one step: with an atomic, a ticker could read a generation
-     * that was still current, lose the thread, and then repaint the countdown
-     * *after* a stop had already cleared it — which left the menu bar showing a
-     * frozen time for a session that had ended.
-     */
-    generation: Mutex<u64>,
+    session: Mutex<Option<Session>>,
     /// Last state the main window pushed, replayed to the panel when it opens.
     snapshot: Mutex<Option<serde_json::Value>>,
-    /// The tray menu's stop line, hidden until there is a session to end.
+    /// The tray menu's stop line, disabled until there is a session to end.
     stop_item: Mutex<Option<MenuItem<Wry>>>,
     /// The tray menu's start/pause line, kept so its label can follow the timer.
     toggle_item: Mutex<Option<MenuItem<Wry>>>,
@@ -83,26 +103,100 @@ fn now_ms() -> i64 {
         .unwrap_or(0)
 }
 
-/// Writes the title beside the tray icon. macOS is the only platform that shows
-/// one; elsewhere the tooltip carries the same text.
-fn paint(app: &AppHandle, title: Option<&str>, tooltip: &str) {
-    if let Some(tray) = app.tray_by_id(TRAY_ID) {
-        let _ = tray.set_title(title);
-        let _ = tray.set_tooltip(Some(tooltip));
+/// Seconds left, rounded up — the same arithmetic as `remainingSeconds` in
+/// `lib/focusTimer.ts`. Rounding differently is what put the menu bar and the
+/// window a second apart.
+fn remaining_at(ends_at_ms: i64, now_ms: i64) -> i64 {
+    let remaining = ends_at_ms - now_ms;
+    if remaining <= 0 {
+        return 0;
+    }
+    (remaining + 999) / 1000
+}
+
+fn view_for(session: Option<&Session>) -> TrayView {
+    let Some(session) = session else {
+        return TrayView {
+            running: false,
+            title: None,
+            tooltip: "Lore".into(),
+        };
+    };
+
+    let remaining = match session.ends_at_ms.filter(|_| session.running) {
+        Some(ends_at) => remaining_at(ends_at, now_ms()),
+        None => session.remaining_sec,
+    };
+    let text = clock(remaining);
+    let label = &session.label;
+
+    TrayView {
+        running: session.running,
+        title: Some(text.clone()),
+        tooltip: if session.running {
+            format!("{label} · {text} left")
+        } else {
+            format!("{label} · {text} · paused")
+        },
     }
 }
 
-/// Swaps the menu-bar mark for the stopwatch while a session is under way.
-/// Pausing keeps it: only stopping the session puts the plain mark back.
-fn paint_icon(app: &AppHandle, in_session: bool) {
+fn paint(app: &AppHandle, view: &TrayView) {
     let Some(tray) = app.tray_by_id(TRAY_ID) else {
         return;
     };
-    let _ = tray.set_icon(Some(if in_session { running_icon() } else { idle_icon() }));
+    let _ = tray.set_icon(Some(if view.running {
+        running_icon()
+    } else {
+        idle_icon()
+    }));
     // Setting an icon clears the template flag, so the menu bar would stop
     // inverting the mark for a light appearance without this.
     #[cfg(target_os = "macos")]
     let _ = tray.set_icon_as_template(true);
+
+    let _ = tray.set_title(view.title.as_deref());
+    let _ = tray.set_tooltip(Some(&view.tooltip));
+}
+
+/// The one and only painter. Started once, at launch.
+pub fn start_painter(app: &AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let mut painted: Option<TrayView> = None;
+        // Which interval's end has already been announced, so a session sitting
+        // at zero does not emit on every pass.
+        let mut announced: Option<i64> = None;
+
+        loop {
+            // The lock is released before painting: a paint blocks on the main
+            // thread, and the main thread must never be waiting on this lock.
+            let session = {
+                let state = app.state::<FocusTray>();
+                let guard = state.session.lock().unwrap_or_else(PoisonError::into_inner);
+                guard.clone()
+            };
+
+            let view = view_for(session.as_ref());
+            if painted.as_ref() != Some(&view) {
+                paint(&app, &view);
+                painted = Some(view);
+            }
+
+            if let Some(ends_at) = session
+                .as_ref()
+                .filter(|s| s.running)
+                .and_then(|s| s.ends_at_ms)
+            {
+                if now_ms() >= ends_at && announced != Some(ends_at) {
+                    announced = Some(ends_at);
+                    let _ = app.emit_to("main", "focus:elapsed", ());
+                }
+            }
+
+            tokio::time::sleep(TICK).await;
+        }
+    });
 }
 
 /// The last state the main window pushed. The popover asks for this on open, so
@@ -116,15 +210,15 @@ pub fn focus_snapshot(app: AppHandle) -> Option<serde_json::Value> {
         .and_then(|s| s.clone())
 }
 
-/// Mirrors the renderer's focus state into the menu bar and the popover.
+/// Records what the tray should show, and hands the popover the new snapshot.
+/// Paints nothing itself — the painter picks this up on its next pass.
 ///
-/// `ends_at_ms` is set only while the interval runs; when it is paused the
-/// renderer sends the frozen `remaining_sec` instead. `show` is false when the
-/// timer is sitting untouched at a full interval, which leaves the tray as a
-/// plain icon.
+/// `show` is false whenever the menu bar should be bare, which is every state
+/// but a running interval: pausing and stopping both take the countdown down.
 #[tauri::command]
 pub fn sync_focus(
     app: AppHandle,
+    can_stop: bool,
     ends_at_ms: Option<f64>,
     label: String,
     remaining_sec: i64,
@@ -133,14 +227,15 @@ pub fn sync_focus(
     snapshot: serde_json::Value,
 ) {
     let state = app.state::<FocusTray>();
-    // Claim this update, and keep the claim held through every paint below so no
-    // ticker can slip a stale frame in between.
-    let mut generation = state
-        .generation
-        .lock()
-        .unwrap_or_else(PoisonError::into_inner);
-    *generation += 1;
-    let claim = *generation;
+
+    if let Ok(mut slot) = state.session.lock() {
+        *slot = show.then(|| Session {
+            ends_at_ms: ends_at_ms.map(|ms| ms as i64),
+            label,
+            remaining_sec,
+            running,
+        });
+    }
 
     if let Ok(mut slot) = state.snapshot.lock() {
         *slot = Some(snapshot.clone());
@@ -152,75 +247,20 @@ pub fn sync_focus(
             let _ = item.set_text(if running { "Pause Focus" } else { "Start Focus" });
         }
     }
-    if let Ok(slot) = state.stop_item.lock() {
-        if let Some(item) = slot.as_ref() {
-            let _ = item.set_enabled(show);
-        }
-    }
-
-    // `show` is the session, not the countdown: a paused interval keeps both the
-    // stopwatch and its frozen time until the session is stopped.
-    paint_icon(&app, show);
-
-    if !show {
-        paint(&app, None, "Lore");
-        return;
-    }
-
-    let Some(ends_at) = ends_at_ms.filter(|_| running) else {
-        let text = clock(remaining_sec);
-        paint(&app, Some(&text), &format!("{label} · {text} · paused"));
-        return;
-    };
-
-    drop(generation);
-
-    let ends_at = ends_at as i64;
-    tauri::async_runtime::spawn(async move {
-        loop {
-            let remaining = {
-                let state = app.state::<FocusTray>();
-                let generation = state
-                    .generation
-                    .lock()
-                    .unwrap_or_else(PoisonError::into_inner);
-                // Another update landed while we slept — that call owns the tray.
-                if *generation != claim {
-                    return;
-                }
-
-                let remaining = remaining_at(ends_at, now_ms());
-                let text = clock(remaining);
-                paint(&app, Some(&text), &format!("{label} · {text} left"));
-                remaining
-            };
-
-            if remaining <= 0 {
-                let _ = app.emit_to("main", "focus:elapsed", ());
-                return;
+    {
+        let slot = state.stop_item.lock();
+        if let Ok(slot) = slot {
+            if let Some(item) = slot.as_ref() {
+                let _ = item.set_enabled(can_stop);
             }
-
-            tokio::time::sleep(TICK).await;
         }
-    });
-}
-
-/// Seconds left, rounded up. The renderer rounds the same way (`remainingSeconds`
-/// in `lib/focusTimer.ts`); rounding differently is what put the menu bar and the
-/// window a second apart.
-fn remaining_at(ends_at_ms: i64, now_ms: i64) -> i64 {
-    let remaining = ends_at_ms - now_ms;
-    if remaining <= 0 {
-        return 0;
     }
-    (remaining + 999) / 1000
 }
 
 /// Opens the popover under the tray icon, or closes it if it is already up.
 ///
-/// `icon_rect` is where the menu bar drew the icon, in physical pixels; the
-/// panel is centred on it and clamped so it cannot hang off either edge of the
-/// screen.
+/// The icon's rectangle arrives in physical pixels; the panel is centred on it
+/// and clamped so it cannot hang off either edge of the screen.
 pub fn toggle_panel(app: &AppHandle, icon_center_x: f64, icon_bottom_y: f64) {
     let Some(win) = app.get_webview_window(PANEL_LABEL) else {
         return;

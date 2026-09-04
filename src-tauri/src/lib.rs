@@ -86,6 +86,8 @@ pub fn run() {
                 app.global_shortcut().register(alt_space)?;
 
                 commands::build_tray(app.handle())?;
+                // The tray has to exist before anything tries to paint it.
+                focus_tray::start_painter(app.handle());
             }
             Ok(())
         })

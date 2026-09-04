@@ -1,17 +1,14 @@
-// The title bar's timer control, mirroring the menu bar: the countdown while a
-// session is under way — running or paused — and a bare clock face once it is
-// stopped. Click opens the popover (frame 1e); ⌥-click opens Focus mode (1f).
+// The title bar's timer control, mirroring the menu bar: the countdown while an
+// interval runs, and a bare clock face the moment it is paused or stopped.
+// Click opens the popover (frame 1e); ⌥-click opens Focus mode (1f).
 
-import { formatClock, isTimerIdle } from '../../lib/focusTimer';
+import { formatClock } from '../../lib/focusTimer';
 import { useStore } from '../../store/useStore';
 import { Timer } from '../common/glyphs';
 import { focusChip } from './Focus.css';
 
 export function FocusChip() {
     const focus = useStore((s) => s.focus);
-    // Matches the menu bar: a paused session still shows its time, and only
-    // stopping puts the chip back to a bare clock face.
-    const idle = useStore((s) => isTimerIdle(s.focus, s.prefs.durations));
     const open = useStore((s) => s.focusPopoverOpen);
     const togglePopover = useStore((s) => s.toggleFocusPopover);
     const toggleMode = useStore((s) => s.toggleFocusMode);
@@ -25,14 +22,12 @@ export function FocusChip() {
             style={
                 focus.running
                     ? { background: 'var(--ac)', color: '#fff' }
-                    : idle
-                      ? { color: open ? 'var(--ac)' : 'var(--text2, #6b6b76)' }
-                      : { background: 'var(--ac-tint, #eeeef2)', color: 'var(--ac)' }
+                    : { color: open ? 'var(--ac)' : 'var(--text2, #6b6b76)' }
             }
             type="button"
         >
             <Timer size={13} />
-            {!idle && formatClock(focus.remainingSec)}
+            {focus.running && formatClock(focus.remainingSec)}
         </button>
     );
 }
