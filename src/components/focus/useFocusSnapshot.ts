@@ -26,7 +26,7 @@ export function useFocusSnapshot(): FocusSnapshot {
         endsAt: focus.endsAt,
         phase: focus.phase,
         queueCount: queue.length,
-        remainingSec: focus.remainingSec,
+        remainingSec: focus.running ? 0 : focus.remainingSec,
         running: focus.running,
         sessionIndex: focus.sessionIndex,
         taskMeta: task

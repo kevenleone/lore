@@ -20,7 +20,11 @@ export interface FocusSnapshot {
     phase: FocusPhase;
     /** How many items are in Today, so the panel knows whether cycling is useful. */
     queueCount: number;
-    /** Authoritative while paused. */
+    /**
+     * Authoritative while paused. Zero while running, where the countdown comes
+     * from `endsAt` instead — reporting the live value here would change the
+     * snapshot every second and push it across the IPC bridge for nothing.
+     */
     remainingSec: number;
     running: boolean;
     sessionIndex: number;
