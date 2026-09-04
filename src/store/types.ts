@@ -67,6 +67,11 @@ export interface Item {
 }
 
 export interface ItemFlags {
+    /**
+     * Ticked off in the focus queue. It stays on the item rather than removing
+     * it from Today, so a finished task reads as finished instead of vanishing.
+     */
+    done?: boolean;
     inbox?: boolean;
     starred?: boolean;
     today?: boolean;

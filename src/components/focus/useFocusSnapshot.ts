@@ -15,8 +15,9 @@ export function useFocusSnapshot(): FocusSnapshot {
     const items = useStore((s) => s.items);
     const totalSessions = useStore((s) => s.prefs.longBreakAfter);
 
-    const queue = queueItems(items);
-    const task = items.find((i) => i.id === focus.taskId) ?? queue[0] ?? null;
+    // Ticked-off rows stay in the queue but are not something to work on.
+    const queue = queueItems(items).filter((i) => !i.flags.done);
+    const task = queue.find((i) => i.id === focus.taskId) ?? queue[0] ?? null;
     const collection = task ? collections.find((c) => c.id === task.collectionId)?.name : undefined;
 
     return {

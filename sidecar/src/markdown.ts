@@ -134,6 +134,7 @@ export function serializeFile(
     if (item.flags.inbox) fm.inbox = true;
     if (item.flags.today) fm.today = true;
     if (item.flags.starred) fm.starred = true;
+    if (item.flags.done) fm.done = true;
     if (item.image) fm.image = item.image;
     if (item.description) fm.description = item.description;
     if (item.summary) fm.summary = item.summary;
@@ -159,6 +160,7 @@ export function toItem(parsed: ParsedFile, ctx: ToItemContext): Item {
     if (data.inbox === true) flags.inbox = true;
     if (data.today === true) flags.today = true;
     if (data.starred === true) flags.starred = true;
+    if (data.done === true) flags.done = true;
 
     const created = iso(data.created, ctx.mtime);
 

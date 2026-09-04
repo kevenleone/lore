@@ -55,9 +55,9 @@ export function FocusLabel({ children, style }: { children: ReactNode; style?: C
 }
 
 /**
- * A task in the focus queue. Clicking the row makes it what the session is
- * "working on"; the box takes it off Today, which is as close to "done" as the
- * item format gets — there is no completion field on an item yet.
+ * A row in the focus queue. Clicking it makes it what the session is "working
+ * on"; the box ticks it off, which strikes it through and sinks it to the
+ * bottom rather than removing it — a finished task should read as finished.
  */
 export function QueueRow({ item }: { item: Item }) {
     const taskId = useStore((s) => s.focus.taskId);
@@ -65,31 +65,32 @@ export function QueueRow({ item }: { item: Item }) {
     const updateItem = useStore((s) => s.updateItem);
     const collections = useStore((s) => s.collections);
 
-    const active = item.id === taskId;
+    const done = !!item.flags.done;
+    const active = item.id === taskId && !done;
     const collection = collections.find((c) => c.id === item.collectionId)?.name;
 
     return (
         <div
             className={queueRow}
-            onClick={() => setFocusTask(item.id)}
+            onClick={() => !done && setFocusTask(item.id)}
             style={{
                 background: active ? 'var(--surface, #fff)' : 'transparent',
                 border: `1px solid ${active ? 'var(--ac-border, #dedee5)' : 'transparent'}`,
+                cursor: done ? 'default' : 'pointer',
                 ...(active ? { boxShadow: '0 1px 3px rgba(0,0,0,.05)' } : null),
             }}
         >
             <button
-                aria-label={`Clear ${item.title} from Today`}
+                aria-checked={done}
+                aria-label={item.title}
                 onClick={(e) => {
                     e.stopPropagation();
-                    void updateItem(item.id, { flags: { ...item.flags, today: false } });
+                    void updateItem(item.id, { flags: { ...item.flags, done: !done } });
                 }}
+                role="checkbox"
                 style={{
                     alignItems: 'center',
-                    background: 'transparent',
-                    border: '1.5px solid var(--dash, #d2d2dc)',
                     borderRadius: 5,
-                    color: 'transparent',
                     cursor: 'pointer',
                     display: 'flex',
                     flex: 'none',
@@ -98,6 +99,17 @@ export function QueueRow({ item }: { item: Item }) {
                     marginTop: 1,
                     padding: 0,
                     width: 17,
+                    ...(done
+                        ? {
+                              background: 'var(--ac)',
+                              border: '1.5px solid var(--ac)',
+                              color: '#fff',
+                          }
+                        : {
+                              background: 'transparent',
+                              border: '1.5px solid var(--dash, #d2d2dc)',
+                              color: 'transparent',
+                          }),
                 }}
                 type="button"
             >
@@ -106,16 +118,17 @@ export function QueueRow({ item }: { item: Item }) {
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                     style={{
-                        color: 'var(--text, #1a1a1f)',
                         fontSize: 12.5,
-                        fontWeight: active ? 620 : 560,
                         lineHeight: 1.4,
+                        ...(done
+                            ? { color: 'var(--text3, #9a9aa5)', textDecoration: 'line-through' }
+                            : { color: 'var(--text, #1a1a1f)', fontWeight: active ? 620 : 560 }),
                     }}
                 >
                     {item.title}
                 </div>
                 <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 11, marginTop: 2 }}>
-                    {[collection, item.flags.today ? 'due today' : null]
+                    {[collection, item.flags.today && !done ? 'due today' : null]
                         .filter(Boolean)
                         .join(' · ') || 'Task'}
                 </div>

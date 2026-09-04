@@ -513,7 +513,7 @@ export const useStore = create<StoreState>((set, get) => ({
         return item;
     },
     cycleFocusTask() {
-        const queue = queueItems(get().items);
+        const queue = queueItems(get().items).filter((i) => !i.flags.done);
         if (queue.length === 0) return;
         const current = queue.findIndex((i) => i.id === get().focus.taskId);
         get().setFocusTask(queue[(current + 1) % queue.length].id);

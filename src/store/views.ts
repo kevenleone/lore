@@ -50,12 +50,13 @@ export function matchesView(item: Item, view: View): boolean {
  * The focus queue: everything flagged for Today, oldest first so the list does
  * not reshuffle as things are captured. It is the Today view, not a task-only
  * filter — a link you meant to read today belongs in the session too.
+ *
+ * Ticked-off items stay in the list, struck through, and sink to the bottom.
  */
 export function queueItems(items: Item[]): Item[] {
-    return sortItems(
-        items.filter((i) => i.flags.today),
-        'oldest',
-    );
+    const open = items.filter((i) => i.flags.today && !i.flags.done);
+    const done = items.filter((i) => i.flags.today && i.flags.done);
+    return [...sortItems(open, 'oldest'), ...sortItems(done, 'oldest')];
 }
 
 export function sortItems(items: Item[], sort: SortOrder): Item[] {
