@@ -147,21 +147,3 @@ export const aboutLink = style({
         '&:hover': { background: 'var(--hover, #f0f0f2)', color: 'var(--text, #1a1a1f)' },
     },
 });
-
-/** A key on the shortcuts map (frame 1d). Sizing comes from the row it is in. */
-export const keyCapButton = style({
-    alignItems: 'center',
-    borderRadius: 8,
-    borderStyle: 'solid',
-    borderWidth: '1px 1px 2px',
-    display: 'flex',
-    flexBasis: 0,
-    flexDirection: 'column',
-    flexShrink: 1,
-    gap: 2,
-    justifyContent: 'center',
-    minWidth: 0,
-    overflow: 'hidden',
-    padding: '0 3px',
-    transition: 'background .14s ease',
-});
