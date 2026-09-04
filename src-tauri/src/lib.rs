@@ -35,10 +35,12 @@ pub fn run() {
         .on_window_event(|window, event| {
             // Closing the main window hides it (tray-app pattern) so it can be
             // reopened from the tray; Quit in the tray menu is the real exit.
+            // hide_main also drops the Dock/Cmd-Tab entry, so a hidden Lore is
+            // only in the menu bar.
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "main" {
                     api.prevent_close();
-                    let _ = window.hide();
+                    commands::hide_main(window.app_handle());
                 }
             }
         })
@@ -77,11 +79,13 @@ pub fn run() {
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|app, event| {
+        .run(|app, event| match event {
             // Tauri does not reap child processes, so without this quitting Lore
             // would leave the engine running and holding the vault.
-            if let tauri::RunEvent::Exit = event {
-                app.state::<sidecar::SidecarState>().shutdown();
-            }
+            tauri::RunEvent::Exit => app.state::<sidecar::SidecarState>().shutdown(),
+            // Clicking the Dock icon while the window is hidden.
+            #[cfg(target_os = "macos")]
+            tauri::RunEvent::Reopen { .. } => commands::show_main(app),
+            _ => {}
         });
 }
