@@ -29,12 +29,44 @@ pub fn hide_capture(app: AppHandle) {
     }
 }
 
-fn show_main(app: &AppHandle) {
+/// macOS only: `Accessory` keeps Lore in the menu bar but out of the Dock and
+/// the Cmd-Tab switcher; `Regular` puts it back. The quick-capture overlay
+/// stays Accessory on purpose — only the main window earns a Dock entry.
+fn set_app_visible_in_switcher(app: &AppHandle, visible: bool) {
+    #[cfg(target_os = "macos")]
+    {
+        use tauri::ActivationPolicy;
+
+        let policy = match visible {
+            true => ActivationPolicy::Regular,
+            false => ActivationPolicy::Accessory,
+        };
+        let _ = app.set_activation_policy(policy);
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = (app, visible);
+}
+
+/// Bring the main window back, restoring the Dock/Cmd-Tab entry first so the
+/// window can actually come to the front instead of opening behind other apps.
+pub fn show_main(app: &AppHandle) {
+    set_app_visible_in_switcher(app, true);
+
     if let Some(win) = app.get_webview_window("main") {
         let _ = win.show();
         let _ = win.unminimize();
         let _ = win.set_focus();
     }
+}
+
+/// Hide the main window and drop out of the Dock and Cmd-Tab; the tray icon
+/// stays, and is the way back in.
+pub fn hide_main(app: &AppHandle) {
+    if let Some(win) = app.get_webview_window("main") {
+        let _ = win.hide();
+    }
+
+    set_app_visible_in_switcher(app, false);
 }
 
 /// System-tray icon with a menu: Quick Capture · Open Lore · Quit.

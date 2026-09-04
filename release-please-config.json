@@ -1,0 +1,29 @@
+{
+    "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+    "packages": {
+        ".": {
+            "changelog-path": "CHANGELOG.md",
+            "changelog-sections": [
+                { "section": "Features", "type": "feat" },
+                { "section": "Bug Fixes", "type": "fix" },
+                { "section": "Performance", "type": "perf" },
+                { "section": "Refactoring", "type": "refactor" },
+                { "section": "Documentation", "type": "docs" },
+                { "section": "Build System", "type": "build" },
+                { "hidden": true, "section": "CI/CD", "type": "ci" },
+                { "hidden": true, "section": "Chores", "type": "chore" },
+                { "hidden": true, "section": "Styling", "type": "style" },
+                { "hidden": true, "section": "Tests", "type": "test" }
+            ],
+            "extra-files": [
+                { "jsonpath": "$.version", "path": "sidecar/package.json", "type": "json" },
+                { "jsonpath": "$.version", "path": "src-tauri/tauri.conf.json", "type": "json" },
+                "src-tauri/Cargo.toml"
+            ],
+            "include-component-in-tag": false,
+            "package-name": "lore",
+            "release-type": "node"
+        }
+    },
+    "separate-pull-requests": false
+}
