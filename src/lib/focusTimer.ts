@@ -80,10 +80,14 @@ export function nextPhase(
  * Seconds left in the current interval. While the timer runs this is derived
  * from the wall clock rather than accumulated from ticks, so a throttled
  * background window cannot make the countdown drift slow.
+ *
+ * Rounded **up**, matching `remaining_at` in `focus_tray.rs`: the menu bar and
+ * the window read the same `endsAt`, so rounding them differently showed two
+ * times a second apart for half of every second.
  */
 export function remainingSeconds(focus: FocusState, now: number = Date.now()): number {
     if (!focus.running || focus.endsAt === null) return focus.remainingSec;
-    return Math.max(0, Math.round((focus.endsAt - now) / 1000));
+    return Math.max(0, Math.ceil((focus.endsAt - now) / 1000));
 }
 
 export function startOfDay(date: Date): Date {

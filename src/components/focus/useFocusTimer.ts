@@ -8,18 +8,26 @@ import { useStore } from '../../store/useStore';
 import { useFocusSnapshot } from './useFocusSnapshot';
 
 /**
- * Ticks the store once a second while an interval runs, and again whenever the
- * window comes back to the foreground — a backgrounded window has its timers
- * throttled, so without the visibility pass an interval that ended while the
- * app was hidden would only roll over on the next tick.
+ * Polls the countdown while an interval runs, and again whenever the window
+ * comes back to the foreground — a backgrounded window has its timers throttled,
+ * so without the visibility pass an interval that ended while the app was hidden
+ * would only roll over on the next tick.
+ *
+ * Four times a second, not once: the displayed value only changes on a second
+ * boundary, and polling at exactly one second would notice each boundary up to a
+ * second late, which is what put the window behind the menu bar. The tick is a
+ * no-op when the value has not changed.
  */
+/** Poll interval for every surface that draws the countdown. */
+export const TICK_MS = 250;
+
 export function useFocusTimer(): void {
     const running = useStore((s) => s.focus.running);
     const tick = useStore((s) => s.tickFocus);
 
     useEffect(() => {
         if (!running) return;
-        const id = setInterval(tick, 1000);
+        const id = setInterval(tick, TICK_MS);
         const onVisible = () => {
             if (!document.hidden) tick();
         };

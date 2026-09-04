@@ -16,6 +16,7 @@ import { loadPersisted } from '../../store/persisted';
 import { applyTokens, effectiveTheme, resolveAccent } from '../../theme/tokens';
 import { PANEL_MARGIN, panelSurface, panelWindow } from './Focus.css';
 import { FocusPanelBody } from './FocusPanelBody';
+import { TICK_MS } from './useFocusTimer';
 
 const EMPTY: FocusSnapshot = {
     canStop: false,
@@ -117,14 +118,15 @@ export function FocusPanel() {
 
     // Tick from the snapshot's end instant rather than counting down locally, so
     // a slow push cannot leave this window showing a different time to the tray.
+    // Rounded up, like the tray and the main window — see `remainingSeconds`.
     useEffect(() => {
         const read = () =>
             snapshot.running && snapshot.endsAt !== null
-                ? Math.max(0, Math.round((snapshot.endsAt - Date.now()) / 1000))
+                ? Math.max(0, Math.ceil((snapshot.endsAt - Date.now()) / 1000))
                 : snapshot.remainingSec;
         setRemainingSec(read());
         if (!snapshot.running) return;
-        const id = setInterval(() => setRemainingSec(read()), 500);
+        const id = setInterval(() => setRemainingSec(read()), TICK_MS);
         return () => clearInterval(id);
     }, [snapshot]);
 

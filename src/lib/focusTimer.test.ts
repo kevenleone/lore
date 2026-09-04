@@ -98,6 +98,12 @@ describe('remainingSeconds', () => {
         expect(remainingSeconds(running, 30_000)).toBe(30);
     });
 
+    it('rounds up, so it agrees with the tray rather than trailing it by a second', () => {
+        const running: FocusState = { ...paused, endsAt: 60_000, running: true };
+        expect(remainingSeconds(running, 30_400)).toBe(30);
+        expect(remainingSeconds(running, 29_600)).toBe(31);
+    });
+
     it('floors at zero once the interval is over', () => {
         const running: FocusState = { ...paused, endsAt: 60_000, running: true };
         expect(remainingSeconds(running, 90_000)).toBe(0);
