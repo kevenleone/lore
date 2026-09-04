@@ -1,7 +1,9 @@
-// Drives the focus countdown. Mounted once, at the app root.
+// Drives the focus countdown and keeps the menu-bar tray in step with it.
+// Mounted once, at the app root.
 
 import { useEffect } from 'react';
 
+import { isTimerIdle, PHASE_LABELS, phaseSeconds } from '../../lib/focusTimer';
 import { useStore } from '../../store/useStore';
 
 /**
@@ -26,4 +28,78 @@ export function useFocusTimer(): void {
             document.removeEventListener('visibilitychange', onVisible);
         };
     }, [running, tick]);
+
+    useTrayMirror();
+    useTrayCommands();
+}
+
+/** The tray menu's focus lines, and the "this interval is over" wake-up. */
+function useTrayCommands(): void {
+    const openFocusMode = useStore((s) => s.toggleFocusMode);
+    const tick = useStore((s) => s.tickFocus);
+    const toggleFocus = useStore((s) => s.toggleFocus);
+
+    useEffect(() => {
+        let unlisten: (() => void)[] = [];
+        let cancelled = false;
+        void (async () => {
+            try {
+                const { listen } = await import('@tauri-apps/api/event');
+                const offs = [
+                    await listen('focus:toggle', () => toggleFocus()),
+                    // Rust reaches zero first; events are not throttled the way
+                    // timers are, so this is what rolls the phase over while the
+                    // window is hidden.
+                    await listen('focus:elapsed', () => tick()),
+                    await listen('focus:mode', () => {
+                        if (!useStore.getState().focusModeOpen) openFocusMode();
+                    }),
+                ];
+                // The effect can be torn down before the imports resolve — in
+                // development it always is, since StrictMode mounts twice.
+                if (cancelled) offs.forEach((off) => off());
+                else unlisten = offs;
+            } catch {
+                // Outside Tauri — no event bus.
+            }
+        })();
+        return () => {
+            cancelled = true;
+            unlisten.forEach((off) => off());
+        };
+    }, [openFocusMode, tick, toggleFocus]);
+}
+
+/**
+ * Hands the tray the instant the interval ends and lets Rust count down to it,
+ * rather than pushing a title every second: a hidden window's timers are
+ * throttled to roughly once a minute, and the tray clock has to keep moving
+ * exactly then. The dependencies below are the ones that survive a tick, so
+ * this fires on real state changes only.
+ */
+function useTrayMirror(): void {
+    const endsAt = useStore((s) => s.focus.endsAt);
+    const fullSec = useStore((s) => phaseSeconds(s.focus.phase, s.prefs.durations));
+    const label = useStore((s) => PHASE_LABELS[s.focus.phase]);
+    const running = useStore((s) => s.focus.running);
+    // Only meaningful while paused; it changes on every tick when it is not.
+    const pausedSec = useStore((s) => (s.focus.running ? null : s.focus.remainingSec));
+    const idle = useStore((s) => isTimerIdle(s.focus, s.prefs.durations));
+
+    useEffect(() => {
+        void (async () => {
+            try {
+                const { invoke } = await import('@tauri-apps/api/core');
+                await invoke('set_focus_tray', {
+                    endsAtMs: running ? endsAt : null,
+                    label,
+                    remainingSec: Math.round(pausedSec ?? fullSec),
+                    running,
+                    show: !idle,
+                });
+            } catch {
+                // Outside Tauri — there is no tray to paint.
+            }
+        })();
+    }, [endsAt, fullSec, idle, label, pausedSec, running]);
 }

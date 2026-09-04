@@ -13,6 +13,7 @@
 // folder is the one filesystem decision the user makes directly.
 
 mod commands;
+mod focus_tray;
 mod sidecar;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -25,9 +26,11 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(sidecar::SidecarState::default())
+        .manage(focus_tray::FocusTray::default())
         .invoke_handler(tauri::generate_handler![
             commands::toggle_capture,
             commands::hide_capture,
+            focus_tray::set_focus_tray,
             sidecar::sidecar_endpoint,
             sidecar::default_vault_path,
             sidecar::backup_legacy_db
