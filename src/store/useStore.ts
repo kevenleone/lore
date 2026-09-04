@@ -35,6 +35,7 @@ import {
     type Switches,
     type View,
 } from './types';
+import { queueItems } from './views';
 
 const ai: AiProvider = new MockAiProvider();
 
@@ -69,12 +70,14 @@ interface StoreState {
     auth: Auth;
     bumpDuration: (key: keyof Durations, delta: number) => void;
     chat: ChatMessage[];
-
     chatOpen: boolean;
+
     closeSettings: () => void;
     collections: Collection[];
     createCollection: (input: NewCollection) => Promise<void>;
     createItem: (input: NewItem) => Promise<Item>;
+    /** Steps "Working on" to the next item in the queue. */
+    cycleFocusTask: () => void;
     deleteCollection: (id: string) => Promise<void>;
     deleteItem: (id: string) => Promise<void>;
     /**
@@ -508,6 +511,12 @@ export const useStore = create<StoreState>((set, get) => ({
         await get().refresh();
         set({ selectedId: item.id });
         return item;
+    },
+    cycleFocusTask() {
+        const queue = queueItems(get().items);
+        if (queue.length === 0) return;
+        const current = queue.findIndex((i) => i.id === get().focus.taskId);
+        get().setFocusTask(queue[(current + 1) % queue.length].id);
     },
     async deleteCollection(id) {
         await getRepository().deleteCollection(id);

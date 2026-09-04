@@ -33,6 +33,23 @@ export const popover = style({
     zIndex: 40,
 });
 
+/**
+ * The menu-bar popover's own window. The window itself is transparent and
+ * undecorated, so the card — and the margin its shadow needs — are drawn here.
+ */
+export const panelSurface = style({
+    animation: `${popIn} .12s cubic-bezier(.2,.8,.3,1)`,
+    background: 'var(--surface, #fff)',
+    border: '1px solid var(--border, #ececef)',
+    borderRadius: 15,
+    boxShadow: '0 30px 70px -18px rgba(20,20,40,.44), 0 5px 14px rgba(0,0,0,.08)',
+    color: 'var(--text, #1a1a1f)',
+    fontFamily: "-apple-system, 'SF Pro Text', system-ui, 'Segoe UI', sans-serif",
+    margin: 8,
+    overflow: 'hidden',
+    position: 'relative',
+});
+
 export const surface = style({
     animation: `${fadeIn} .16s ease`,
     background: 'var(--surface, #fff)',
