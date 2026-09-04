@@ -24,6 +24,7 @@ export interface FocusPanelActions {
     onOpenFocusMode: () => void;
     onReset: () => void;
     onSkip: () => void;
+    onStop: () => void;
     onToggle: () => void;
 }
 
@@ -138,6 +139,7 @@ export function FocusPanelBody({
                     <Transport
                         onReset={actions.onReset}
                         onSkip={actions.onSkip}
+                        onStop={snapshot.canStop ? actions.onStop : undefined}
                         onToggle={actions.onToggle}
                         running={snapshot.running}
                     />

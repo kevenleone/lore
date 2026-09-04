@@ -3,7 +3,7 @@
 
 import { useEffect } from 'react';
 
-import { PHASE_LABELS, phaseSeconds } from '../../lib/focusTimer';
+import { isTimerIdle, PHASE_LABELS, phaseSeconds } from '../../lib/focusTimer';
 import { useStore } from '../../store/useStore';
 import { useFocusSnapshot } from './useFocusSnapshot';
 
@@ -40,6 +40,7 @@ function useTrayCommands(): void {
     const openFocusMode = useStore((s) => s.toggleFocusMode);
     const reset = useStore((s) => s.resetFocusInterval);
     const skip = useStore((s) => s.skipFocusInterval);
+    const stop = useStore((s) => s.stopFocus);
     const tick = useStore((s) => s.tickFocus);
     const toggleFocus = useStore((s) => s.toggleFocus);
 
@@ -53,6 +54,7 @@ function useTrayCommands(): void {
                     await listen('focus:toggle', () => toggleFocus()),
                     await listen('focus:reset', () => reset()),
                     await listen('focus:skip', () => skip()),
+                    await listen('focus:stop', () => stop()),
                     await listen('focus:next-task', () => cycleFocusTask()),
                     // Rust reaches zero first; events are not throttled the way
                     // timers are, so this is what rolls the phase over while the
@@ -74,7 +76,7 @@ function useTrayCommands(): void {
             cancelled = true;
             unlisten.forEach((off) => off());
         };
-    }, [cycleFocusTask, openFocusMode, reset, skip, tick, toggleFocus]);
+    }, [cycleFocusTask, openFocusMode, reset, skip, stop, tick, toggleFocus]);
 }
 
 /**
@@ -91,6 +93,8 @@ function useTrayMirror(): void {
     const running = useStore((s) => s.focus.running);
     // Only meaningful while paused; it changes on every tick when it is not.
     const pausedSec = useStore((s) => (s.focus.running ? null : s.focus.remainingSec));
+    // A paused session stays in the menu bar; only stopping takes it out.
+    const idle = useStore((s) => isTimerIdle(s.focus, s.prefs.durations));
     const snapshot = useFocusSnapshot();
     // The snapshot object is rebuilt on every render; compare its contents so a
     // tick that changes nothing the popover shows does not cross the bridge.
@@ -105,12 +109,12 @@ function useTrayMirror(): void {
                     label,
                     remainingSec: Math.round(pausedSec ?? fullSec),
                     running,
-                    show: running,
+                    show: !idle,
                     snapshot: JSON.parse(snapshotKey),
                 });
             } catch {
                 // Outside Tauri — there is no tray to paint.
             }
         })();
-    }, [endsAt, fullSec, label, pausedSec, running, snapshotKey]);
+    }, [endsAt, fullSec, idle, label, pausedSec, running, snapshotKey]);
 }

@@ -48,6 +48,21 @@ export function formatDuration(seconds: number): string {
 }
 
 /**
+ * True only for a timer with no session under way: a full focus interval, not
+ * running, at the start of a cycle. It is the one state the menu bar leaves
+ * blank — a paused session is still a session, and stays up there until it is
+ * stopped.
+ */
+export function isTimerIdle(focus: FocusState, durations: Durations): boolean {
+    return (
+        !focus.running &&
+        focus.phase === 'focus' &&
+        focus.sessionIndex === 1 &&
+        focus.remainingSec >= phaseSeconds('focus', durations)
+    );
+}
+
+/**
  * What follows `phase`. A focus interval leads into a long break every
  * `longBreakAfter` sessions and a short one otherwise; any break leads back
  * into focus.

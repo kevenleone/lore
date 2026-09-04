@@ -127,9 +127,9 @@ interface StoreState {
     resetFocusInterval: () => void;
     /** Item id → ISO time it sits at on the calendar. */
     schedule: Record<string, string>;
-
     /** Places an item on the calendar, or clears it when `at` is null. */
     scheduleItem: (id: string, at: Date | null) => void;
+
     search: string;
     searching: boolean;
     /**
@@ -142,12 +142,12 @@ interface StoreState {
     // ui actions
     selectView: (kind: View['kind'], val?: null | string) => void;
     sendChat: (question: string) => Promise<void>;
-
     setAccent: (accent: Accent) => void;
+
     setAiAssist: (on: boolean) => void;
     setAppearance: (appearance: Appearance) => void;
-
     setFocusTask: (id: null | string) => void;
+
     setMainView: (view: MainView) => void;
     // onboarding actions
     setOnboardingStep: (step: OnboardingStep) => void;
@@ -160,10 +160,15 @@ interface StoreState {
     settingsPane: SettingsPane;
     sidebarVisible: boolean;
     signOut: () => void;
-
     /** Ends the current interval early and moves to the next one. */
     skipFocusInterval: () => void;
+
     sort: SortOrder;
+    /**
+     * Ends the session: back to a fresh first interval, which is also what
+     * clears the countdown from the menu bar.
+     */
+    stopFocus: () => void;
     switchWorkspace: (path: null | string) => Promise<void>;
     // vault
     /** Sidebar tag order for the open vault; empty falls back to the seed order. */
@@ -747,6 +752,21 @@ export const useStore = create<StoreState>((set, get) => ({
      * stale selection or search cannot leak across — the ids do not even mean the
      * same thing in a different folder.
      */
+    stopFocus() {
+        set((s) => ({
+            focus: {
+                endsAt: null,
+                phase: 'focus',
+                remainingSec: phaseSeconds('focus', s.prefs.durations),
+                running: false,
+                sessionIndex: 1,
+                startedAt: null,
+                // The task stays: stopping ends the session, not the intention.
+                taskId: s.focus.taskId,
+            },
+        }));
+    },
+
     async switchWorkspace(path) {
         const previous = get().workspacePath;
         if (path === previous) return;

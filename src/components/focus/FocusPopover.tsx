@@ -16,6 +16,7 @@ export function FocusPopover() {
     const remainingSec = useStore((s) => s.focus.remainingSec);
     const reset = useStore((s) => s.resetFocusInterval);
     const skip = useStore((s) => s.skipFocusInterval);
+    const stop = useStore((s) => s.stopFocus);
     const toggle = useStore((s) => s.toggleFocus);
     const snapshot = useFocusSnapshot();
     const ref = useRef<HTMLDivElement>(null);
@@ -44,6 +45,7 @@ export function FocusPopover() {
                     },
                     onReset: reset,
                     onSkip: skip,
+                    onStop: stop,
                     onToggle: toggle,
                 }}
                 remainingSec={remainingSec}

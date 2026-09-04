@@ -7,6 +7,7 @@ import {
     focusedSecondsOn,
     formatClock,
     formatDuration,
+    isTimerIdle,
     nextPhase,
     phaseSeconds,
     remainingSeconds,
@@ -56,6 +57,34 @@ describe('nextPhase', () => {
     it('returns to focus after any break', () => {
         expect(nextPhase('short', 2, 4)).toBe('focus');
         expect(nextPhase('long', 4, 4)).toBe('focus');
+    });
+});
+
+describe('isTimerIdle', () => {
+    it('is idle only for an untouched first focus interval', () => {
+        expect(isTimerIdle({ ...paused, remainingSec: 1500 }, DURATIONS)).toBe(true);
+    });
+
+    it('is not idle while running', () => {
+        expect(isTimerIdle({ ...paused, remainingSec: 1500, running: true }, DURATIONS)).toBe(
+            false,
+        );
+    });
+
+    it('is not idle part-way through an interval, even paused', () => {
+        expect(isTimerIdle(paused, DURATIONS)).toBe(false);
+    });
+
+    it('is not idle on a break waiting to be started', () => {
+        expect(isTimerIdle({ ...paused, phase: 'short', remainingSec: 300 }, DURATIONS)).toBe(
+            false,
+        );
+    });
+
+    it('is not idle later in the cycle', () => {
+        expect(isTimerIdle({ ...paused, remainingSec: 1500, sessionIndex: 3 }, DURATIONS)).toBe(
+            false,
+        );
     });
 });
 
