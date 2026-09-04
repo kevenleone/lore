@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react';
 
 import { useStore } from '../../store/useStore';
 import { Plus, Search, SidebarToggle, Sort, Sparkle, ViewList } from '../common/glyphs';
+import { FocusChip } from '../focus/FocusChip';
 
 const AC = 'var(--ac, #5b5bd6)';
 
@@ -118,6 +119,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
             </label>
 
             <div style={{ alignItems: 'center', display: 'flex', gap: 6 }}>
+                <FocusChip />
                 <span
                     onClick={toggleChat}
                     style={{

@@ -8,6 +8,10 @@
 
 import { useEffect, useRef } from 'react';
 
+import { CalendarView } from './components/calendar/CalendarView';
+import { FocusMode } from './components/focus/FocusMode';
+import { FocusPopover } from './components/focus/FocusPopover';
+import { useFocusTimer } from './components/focus/useFocusTimer';
 import { AskLoreChat } from './components/kb/AskLoreChat';
 import { DetailPane } from './components/kb/DetailPane';
 import { ListPane } from './components/kb/ListPane';
@@ -29,13 +33,36 @@ export default function App() {
     const sidebarVisible = useStore((s) => s.sidebarVisible);
     const reduceMotion = useStore((s) => s.prefs.switches.motion);
     const chatOpen = useStore((s) => s.chatOpen);
+    const focusModeOpen = useStore((s) => s.focusModeOpen);
+    const focusPopoverOpen = useStore((s) => s.focusPopoverOpen);
+    const mainView = useStore((s) => s.mainView);
     const onboarded = useStore((s) => s.onboarded);
+    const setMainView = useStore((s) => s.setMainView);
     const settingsOpen = useStore((s) => s.settingsOpen);
+    const toggleFocus = useStore((s) => s.toggleFocus);
     const rootRef = useRef<HTMLDivElement>(null);
+
+    useFocusTimer();
 
     useEffect(() => {
         void hydrate();
     }, [hydrate]);
+
+    // The two window shortcuts the new surfaces claim, as listed in Settings →
+    // Keyboard Shortcuts. ⌘K lives with the search box it focuses.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.altKey && e.shiftKey && e.code === 'KeyF') {
+                e.preventDefault();
+                toggleFocus();
+            } else if ((e.metaKey || e.ctrlKey) && e.key === '3') {
+                e.preventDefault();
+                setMainView('calendar');
+            }
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [setMainView, toggleFocus]);
 
     // Paint the token set for the effective theme, and repaint when the OS
     // switches while Appearance is on Auto.
@@ -94,7 +121,7 @@ export default function App() {
             >
                 <TitleBar onCapture={openCaptureWindow} />
                 <Notice />
-                <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+                <div style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
                     {/*
                      * The sidebar stays mounted and collapses by width so the pane
                      * slides instead of popping. The clip is on the wrapper and the
@@ -115,18 +142,27 @@ export default function App() {
                     >
                         <Sidebar onCapture={openCaptureWindow} />
                     </div>
-                    <ListPane />
-                    <div
-                        style={{
-                            background: 'var(--surface, #fff)',
-                            display: 'flex',
-                            flex: 1,
-                            flexDirection: 'column',
-                            minWidth: 0,
-                        }}
-                    >
-                        {chatOpen ? <AskLoreChat /> : <DetailPane />}
-                    </div>
+                    {mainView === 'calendar' ? (
+                        <CalendarView onCapture={openCaptureWindow} />
+                    ) : (
+                        <>
+                            <ListPane />
+                            <div
+                                style={{
+                                    background: 'var(--surface, #fff)',
+                                    display: 'flex',
+                                    flex: 1,
+                                    flexDirection: 'column',
+                                    minWidth: 0,
+                                }}
+                            >
+                                {chatOpen ? <AskLoreChat /> : <DetailPane />}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Covers the body, not the title bar — the timer chip stays reachable. */}
+                    {focusModeOpen && <FocusMode />}
                 </div>
             </div>
 
@@ -137,6 +173,7 @@ export default function App() {
              * inside the zoom, every drag step rescales the slider under the pointer,
              * which breaks the native drag and slams the value to one end.
              */}
+            {focusPopoverOpen && <FocusPopover />}
             {settingsOpen && <SettingsModal />}
             {!onboarded && <Onboarding />}
         </div>
