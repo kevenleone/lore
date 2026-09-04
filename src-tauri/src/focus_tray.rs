@@ -14,8 +14,7 @@
 // window; events are not throttled the way timers are, so that wakes the
 // renderer to roll the phase over even while it is hidden.
 
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Mutex;
+use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use tauri::image::Image;
@@ -28,6 +27,11 @@ pub const PANEL_LABEL: &str = "focus";
 /// Gap between the menu bar and the top of the popover, in logical pixels.
 const PANEL_GAP: f64 = 6.0;
 
+/// How often the countdown is repainted. Faster than once a second so the title
+/// changes within a frame or two of the second boundary the renderer also draws
+/// on; `TICK_MS` in `useFocusTimer.ts` is the same number.
+const TICK: Duration = Duration::from_millis(250);
+
 fn idle_icon() -> Image<'static> {
     tauri::include_image!("icons/tray@2x.png")
 }
@@ -38,8 +42,16 @@ fn running_icon() -> Image<'static> {
 
 #[derive(Default)]
 pub struct FocusTray {
-    /// Bumped on every update so an in-flight ticker knows it is stale and exits.
-    generation: AtomicU64,
+    /**
+     * Bumped on every update so an in-flight ticker knows it is stale and exits.
+     *
+     * A mutex rather than an atomic because the check and the paint that follows
+     * it have to be one step: with an atomic, a ticker could read a generation
+     * that was still current, lose the thread, and then repaint the countdown
+     * *after* a stop had already cleared it — which left the menu bar showing a
+     * frozen time for a session that had ended.
+     */
+    generation: Mutex<u64>,
     /// Last state the main window pushed, replayed to the panel when it opens.
     snapshot: Mutex<Option<serde_json::Value>>,
     /// The tray menu's stop line, hidden until there is a session to end.
@@ -121,8 +133,14 @@ pub fn sync_focus(
     snapshot: serde_json::Value,
 ) {
     let state = app.state::<FocusTray>();
-    // Claim this update; any ticker still running for an older one now exits.
-    let generation = state.generation.fetch_add(1, Ordering::SeqCst) + 1;
+    // Claim this update, and keep the claim held through every paint below so no
+    // ticker can slip a stale frame in between.
+    let mut generation = state
+        .generation
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner);
+    *generation += 1;
+    let claim = *generation;
 
     if let Ok(mut slot) = state.snapshot.lock() {
         *slot = Some(snapshot.clone());
@@ -155,26 +173,47 @@ pub fn sync_focus(
         return;
     };
 
+    drop(generation);
+
     let ends_at = ends_at as i64;
     tauri::async_runtime::spawn(async move {
         loop {
-            // Another update landed while we slept — that call owns the tray now.
-            if app.state::<FocusTray>().generation.load(Ordering::SeqCst) != generation {
-                return;
-            }
+            let remaining = {
+                let state = app.state::<FocusTray>();
+                let generation = state
+                    .generation
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner);
+                // Another update landed while we slept — that call owns the tray.
+                if *generation != claim {
+                    return;
+                }
 
-            let remaining = (ends_at - now_ms() + 999) / 1000;
-            let text = clock(remaining);
-            paint(&app, Some(&text), &format!("{label} · {text} left"));
+                let remaining = remaining_at(ends_at, now_ms());
+                let text = clock(remaining);
+                paint(&app, Some(&text), &format!("{label} · {text} left"));
+                remaining
+            };
 
             if remaining <= 0 {
                 let _ = app.emit_to("main", "focus:elapsed", ());
                 return;
             }
 
-            tokio::time::sleep(Duration::from_millis(500)).await;
+            tokio::time::sleep(TICK).await;
         }
     });
+}
+
+/// Seconds left, rounded up. The renderer rounds the same way (`remainingSeconds`
+/// in `lib/focusTimer.ts`); rounding differently is what put the menu bar and the
+/// window a second apart.
+fn remaining_at(ends_at_ms: i64, now_ms: i64) -> i64 {
+    let remaining = ends_at_ms - now_ms;
+    if remaining <= 0 {
+        return 0;
+    }
+    (remaining + 999) / 1000
 }
 
 /// Opens the popover under the tray icon, or closes it if it is already up.

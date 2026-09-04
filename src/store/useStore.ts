@@ -809,7 +809,11 @@ export const useStore = create<StoreState>((set, get) => ({
         if (!state.focus.running) return;
         const remaining = remainingSeconds(state.focus);
         if (remaining > 0) {
-            set({ focus: { ...state.focus, remainingSec: remaining } });
+            // Most ticks land inside the same second; writing an identical value
+            // would re-render every subscriber for nothing.
+            if (remaining !== state.focus.remainingSec) {
+                set({ focus: { ...state.focus, remainingSec: remaining } });
+            }
             return;
         }
         finishInterval(get, set);
