@@ -14,7 +14,7 @@ import type { FocusSnapshot } from './focusSnapshot';
 
 import { loadPersisted } from '../../store/persisted';
 import { applyTokens, effectiveTheme, resolveAccent } from '../../theme/tokens';
-import { panelSurface } from './Focus.css';
+import { PANEL_MARGIN, panelSurface, panelWindow } from './Focus.css';
 import { FocusPanelBody } from './FocusPanelBody';
 
 const EMPTY: FocusSnapshot = {
@@ -34,6 +34,7 @@ const EMPTY: FocusSnapshot = {
 export function FocusPanel() {
     const [snapshot, setSnapshot] = useState<FocusSnapshot>(EMPTY);
     const [remainingSec, setRemainingSec] = useState(EMPTY.remainingSec);
+    const cardRef = useRef<HTMLDivElement>(null);
     const rootRef = useRef<HTMLDivElement>(null);
 
     // This window has no store, so preferences come straight off the shared
@@ -44,6 +45,44 @@ export function FocusPanel() {
     useEffect(() => {
         if (rootRef.current) applyTokens(rootRef.current, theme);
     }, [theme]);
+
+    // Fit the window to the card instead of guessing a height in the config: the
+    // card grows and shrinks with the task title's wrapping and the empty state,
+    // and a window even a few pixels short scrolls its own contents under the
+    // cursor.
+    useEffect(() => {
+        const card = cardRef.current;
+        const root = rootRef.current;
+        if (!card || !root) return;
+        let disposed = false;
+        const resize = async (height: number) => {
+            try {
+                const [{ getCurrentWindow }, { LogicalSize }] = await Promise.all([
+                    import('@tauri-apps/api/window'),
+                    import('@tauri-apps/api/dpi'),
+                ]);
+                if (disposed) return;
+                const win = getCurrentWindow();
+                await win.setSize(
+                    new LogicalSize(
+                        card.offsetWidth + PANEL_MARGIN * 2,
+                        Math.ceil(height) + PANEL_MARGIN * 2,
+                    ),
+                );
+            } catch {
+                // Outside Tauri — the page is just as tall as it is.
+            }
+        };
+        const observer = new ResizeObserver(
+            ([entry]) =>
+                void resize(entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height),
+        );
+        observer.observe(card);
+        return () => {
+            disposed = true;
+            observer.disconnect();
+        };
+    }, []);
 
     // Seed from the cached snapshot on open, then follow the pushes.
     useEffect(() => {
@@ -114,21 +153,24 @@ export function FocusPanel() {
 
     return (
         <div
-            className={panelSurface}
+            className={panelWindow}
+            data-frameless
             ref={rootRef}
             style={{ ['--ac' as string]: resolveAccent(prefs.accent, theme) }}
         >
-            <FocusPanelBody
-                actions={{
-                    onNextTask: () => send('focus:next-task'),
-                    onOpenFocusMode: openFocusMode,
-                    onReset: () => send('focus:reset'),
-                    onSkip: () => send('focus:skip'),
-                    onToggle: () => send('focus:toggle'),
-                }}
-                remainingSec={remainingSec}
-                snapshot={snapshot}
-            />
+            <div className={panelSurface} ref={cardRef}>
+                <FocusPanelBody
+                    actions={{
+                        onNextTask: () => send('focus:next-task'),
+                        onOpenFocusMode: openFocusMode,
+                        onReset: () => send('focus:reset'),
+                        onSkip: () => send('focus:skip'),
+                        onToggle: () => send('focus:toggle'),
+                    }}
+                    remainingSec={remainingSec}
+                    snapshot={snapshot}
+                />
+            </div>
         </div>
     );
 }

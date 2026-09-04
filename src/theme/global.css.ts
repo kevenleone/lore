@@ -19,6 +19,13 @@ globalStyle('html, body, #root', {
     padding: 0,
 });
 
+// The frameless windows are sized to their content; if a rounding difference
+// makes it one pixel too tall, the page must not become scrollable — a popover
+// that slides under the pointer is worse than one that clips a hairline.
+globalStyle('body:has(> #root > [data-frameless])', {
+    overflow: 'hidden',
+});
+
 globalStyle('body', {
     // Transparent so the frameless capture window can float; the main window
     // paints its own opaque background on the app root.
