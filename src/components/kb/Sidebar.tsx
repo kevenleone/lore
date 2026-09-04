@@ -57,6 +57,8 @@ const LIB_VIEWS: {
 
 export function Sidebar({ onCapture }: { onCapture: () => void }) {
     const items = useStore((s) => s.items);
+    const mainView = useStore((s) => s.mainView);
+    const setMainView = useStore((s) => s.setMainView);
     const view = useStore((s) => s.view);
     const selectView = useStore((s) => s.selectView);
     const toggleChat = useStore((s) => s.toggleChat);
@@ -126,7 +128,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
             {/* Library */}
             <div style={{ ...SECTION_LABEL, paddingTop: 6 }}>Library</div>
             {LIB_VIEWS.map((v) => {
-                const active = isViewActive(view, v.kind);
+                const active = mainView === 'library' && isViewActive(view, v.kind);
                 return (
                     <div
                         className={active ? undefined : hoverable}
@@ -142,6 +144,27 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                     </div>
                 );
             })}
+
+            {/* The calendar is a surface rather than a filter, so it sits apart. */}
+            <div
+                className={mainView === 'calendar' ? undefined : hoverable}
+                onClick={() => setMainView('calendar')}
+                style={rowStyle(mainView === 'calendar')}
+            >
+                <span style={{ display: 'flex', flex: 'none' }}>
+                    <Icon name="calendar" />
+                </span>
+                <span style={{ flex: 1 }}>Calendar</span>
+                <span
+                    style={{
+                        fontFamily: 'ui-monospace,Menlo,monospace',
+                        fontSize: 11,
+                        opacity: 0.5,
+                    }}
+                >
+                    ⌘3
+                </span>
+            </div>
 
             {/* Collections (add / edit / remove) */}
             <CollectionsSection />
