@@ -3,6 +3,13 @@
 
 import { keyframes, style } from '@vanilla-extract/css';
 
+/**
+ * Room the popover window leaves around its card. The window is transparent, so
+ * the drop shadow is drawn by CSS and has to fit inside this gap — anything that
+ * spills past it is cut off square by the window edge.
+ */
+export const PANEL_MARGIN = 20;
+
 const popIn = keyframes({
     from: { opacity: 0, transform: 'translateY(-6px) scale(.98)' },
     to: { opacity: 1, transform: 'translateY(0) scale(1)' },
@@ -42,12 +49,30 @@ export const panelSurface = style({
     background: 'var(--surface, #fff)',
     border: '1px solid var(--border, #ececef)',
     borderRadius: 15,
-    boxShadow: '0 30px 70px -18px rgba(20,20,40,.44), 0 5px 14px rgba(0,0,0,.08)',
+    // Kept inside PANEL_MARGIN on every side, offset included.
+    boxShadow: '0 8px 24px -6px rgba(20,20,40,.38), 0 2px 6px rgba(0,0,0,.10)',
     color: 'var(--text, #1a1a1f)',
     fontFamily: "-apple-system, 'SF Pro Text', system-ui, 'Segoe UI', sans-serif",
-    margin: 8,
     overflow: 'hidden',
     position: 'relative',
+    // A popover is chrome, not a document: dragging across it should not leave
+    // half its labels selected.
+    userSelect: 'none',
+});
+
+/**
+ * Holds the card away from the window edges so its shadow has somewhere to fall.
+ *
+ * The gap is padding on a wrapper that is only as tall as its contents, not a
+ * margin on the card: a margin inside the full-height `#root` adds to the
+ * document instead of fitting inside it, which made the popover scroll its own
+ * contents by exactly that gap whenever the pointer crossed it.
+ */
+export const panelWindow = style({
+    boxSizing: 'border-box',
+    height: 'auto',
+    padding: PANEL_MARGIN,
+    width: '100%',
 });
 
 export const surface = style({

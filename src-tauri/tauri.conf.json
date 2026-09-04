@@ -18,7 +18,7 @@
             {
                 "alwaysOnTop": true,
                 "decorations": false,
-                "height": 404,
+                "height": 424,
                 "label": "focus",
                 "resizable": false,
                 "shadow": false,
@@ -27,7 +27,7 @@
                 "transparent": true,
                 "url": "focus.html",
                 "visible": false,
-                "width": 348
+                "width": 372
             },
             {
                 "alwaysOnTop": true,
