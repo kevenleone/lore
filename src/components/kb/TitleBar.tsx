@@ -37,7 +37,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
             style={{
                 alignItems: 'center',
                 backdropFilter: 'blur(20px)',
-                background: 'rgba(252,252,253,.86)',
+                background: 'var(--titlebar, rgba(252,252,253,.86))',
                 borderBottom: '1px solid var(--border, #ececef)',
                 display: 'flex',
                 flex: 'none',
@@ -74,7 +74,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                     alignItems: 'center',
                     background: 'var(--surface3, #f1f1f3)',
                     borderRadius: 9,
-                    color: search ? '#1a1a1f' : '#9a9aa5',
+                    color: search ? 'var(--text, #1a1a1f)' : 'var(--text3, #9a9aa5)',
                     display: 'flex',
                     fontSize: 13,
                     gap: 8,
