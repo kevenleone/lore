@@ -3,7 +3,7 @@
 
 import type { FocusSnapshot } from './focusSnapshot';
 
-import { phaseSeconds } from '../../lib/focusTimer';
+import { isTimerIdle, phaseSeconds } from '../../lib/focusTimer';
 import { useStore } from '../../store/useStore';
 import { queueItems } from '../../store/views';
 
@@ -21,6 +21,7 @@ export function useFocusSnapshot(): FocusSnapshot {
     const collection = task ? collections.find((c) => c.id === task.collectionId)?.name : undefined;
 
     return {
+        canStop: !isTimerIdle(focus, durations),
         dnd,
         endsAt: focus.endsAt,
         phase: focus.phase,

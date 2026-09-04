@@ -11,6 +11,7 @@ import {
     focusedSecondsOn,
     formatClock,
     formatDuration,
+    isTimerIdle,
     PHASE_LABELS,
     phaseSeconds,
 } from '../../lib/focusTimer';
@@ -30,6 +31,7 @@ export function FocusMode() {
     const totalSessions = useStore((s) => s.prefs.longBreakAfter);
     const reset = useStore((s) => s.resetFocusInterval);
     const skip = useStore((s) => s.skipFocusInterval);
+    const stop = useStore((s) => s.stopFocus);
     const toggle = useStore((s) => s.toggleFocus);
     const updateItem = useStore((s) => s.updateItem);
     const [adding, setAdding] = useState(false);
@@ -50,6 +52,7 @@ export function FocusMode() {
         return () => window.removeEventListener('keydown', onKey);
     }, [close]);
 
+    const idle = isTimerIdle(focus, durations);
     const total = phaseSeconds(focus.phase, durations);
     const progress = elapsedFraction(focus.remainingSec, total);
     const queue = queueItems(items);
@@ -182,6 +185,7 @@ export function FocusMode() {
                         <Transport
                             onReset={reset}
                             onSkip={skip}
+                            onStop={idle ? undefined : stop}
                             onToggle={toggle}
                             running={focus.running}
                             size={40}

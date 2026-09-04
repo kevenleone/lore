@@ -242,6 +242,21 @@ export function StarOutline({ size = 18, style, sw = 1.7 }: GlyphProps) {
     );
 }
 
+/** Filled square — end the session, not just this interval. */
+export function Stop({ size = 13, style }: GlyphProps) {
+    return (
+        <svg
+            fill="currentColor"
+            height={size}
+            style={{ display: 'block', flex: 'none', ...style }}
+            viewBox="0 0 24 24"
+            width={size}
+        >
+            <rect height="14" rx="2.2" width="14" x="5" y="5" />
+        </svg>
+    );
+}
+
 /** The clock face used by the focus chip in the title bar. */
 export function Timer({ size = 13, style, sw = 2 }: GlyphProps) {
     return (

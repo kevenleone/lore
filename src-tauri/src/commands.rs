@@ -97,6 +97,7 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
 
     let capture = MenuItem::with_id(app, "capture", "Quick Capture", true, Some("Alt+Space"))?;
     let focus = MenuItem::with_id(app, "focus", "Start Focus", true, Some("Alt+Shift+F"))?;
+    let stop = MenuItem::with_id(app, "stopfocus", "Stop Focus", false, None::<&str>)?;
     let focus_mode = MenuItem::with_id(app, "focusmode", "Open Focus mode", true, None::<&str>)?;
     let open = MenuItem::with_id(app, "open", "Open Lore", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit Lore", true, Some("Cmd+Q"))?;
@@ -104,14 +105,16 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .item(&capture)
         .separator()
         .item(&focus)
+        .item(&stop)
         .item(&focus_mode)
         .separator()
         .item(&open)
         .item(&quit)
         .build()?;
 
-    // Held so the countdown can rename it between Start and Pause.
-    app.state::<FocusTray>().set_toggle_item(focus.clone());
+    // Held so the countdown can rename Start/Pause and enable Stop.
+    app.state::<FocusTray>()
+        .set_menu_items(focus.clone(), stop.clone());
 
     // Left-click opens the menu (macOS-standard); the user picks an action.
     let tray = TrayIconBuilder::with_id(TRAY_ID)
@@ -142,6 +145,9 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
             "capture" => toggle_capture_window(app),
             "focus" => {
                 let _ = app.emit_to("main", "focus:toggle", ());
+            }
+            "stopfocus" => {
+                let _ = app.emit_to("main", "focus:stop", ());
             }
             "focusmode" => {
                 focus_tray::hide_panel(app);

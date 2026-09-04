@@ -18,6 +18,7 @@ import { PANEL_MARGIN, panelSurface, panelWindow } from './Focus.css';
 import { FocusPanelBody } from './FocusPanelBody';
 
 const EMPTY: FocusSnapshot = {
+    canStop: false,
     dnd: true,
     endsAt: null,
     phase: 'focus',
@@ -165,6 +166,7 @@ export function FocusPanel() {
                         onOpenFocusMode: openFocusMode,
                         onReset: () => send('focus:reset'),
                         onSkip: () => send('focus:skip'),
+                        onStop: () => send('focus:stop'),
                         onToggle: () => send('focus:toggle'),
                     }}
                     remainingSec={remainingSec}

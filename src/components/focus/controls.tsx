@@ -9,7 +9,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { Item } from '../../store/types';
 
 import { useStore } from '../../store/useStore';
-import { Check, Pause, Play, Plus, Restart, SkipForward } from '../common/glyphs';
+import { Check, Pause, Play, Plus, Restart, SkipForward, Stop } from '../common/glyphs';
 import { queueRow, transportButton } from './Focus.css';
 
 /** The small round "+" that puts a captured item into the queue. */
@@ -164,15 +164,24 @@ export function SessionPips({
     );
 }
 
+/**
+ * Restart · start/pause · skip, plus Stop once a session is under way.
+ *
+ * Stop is the difference between pausing and finishing: a paused session still
+ * counts down in the menu bar, and stopping is what takes it out of there.
+ */
 export function Transport({
     onReset,
     onSkip,
+    onStop,
     onToggle,
     running,
     size = 38,
 }: {
     onReset: () => void;
     onSkip: () => void;
+    /** Omitted when there is no session to end, which hides the button. */
+    onStop?: () => void;
     onToggle: () => void;
     running: boolean;
     size?: number;
@@ -215,6 +224,18 @@ export function Transport({
             >
                 <SkipForward size={size * 0.4} />
             </button>
+            {onStop && (
+                <button
+                    aria-label="Stop the session"
+                    className={transportButton}
+                    onClick={onStop}
+                    style={{ height: size, width: size }}
+                    title="Stop the session"
+                    type="button"
+                >
+                    <Stop size={size * 0.34} />
+                </button>
+            )}
         </div>
     );
 }

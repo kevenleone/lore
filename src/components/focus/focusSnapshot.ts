@@ -11,6 +11,8 @@ import type { FocusPhase } from '../../store/types';
 import { PHASE_LABELS } from '../../lib/focusTimer';
 
 export interface FocusSnapshot {
+    /** False for an untouched timer, which hides the Stop button. */
+    canStop: boolean;
     /** True when Do Not Disturb is on for sessions. */
     dnd: boolean;
     /** Epoch ms the interval ends at, while it runs; the panel ticks from this. */

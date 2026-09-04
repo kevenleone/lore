@@ -1,5 +1,6 @@
 // The focus session in the menu bar: the countdown beside the tray icon, the
-// icon swap while a session runs, and the popover panel the icon opens.
+// stopwatch it swaps to while a session is under way, and the popover panel the
+// icon opens.
 //
 // The phase machine lives in the renderer (see `store/useStore.ts`); this only
 // draws it. The main window pushes a snapshot on every change; Rust caches it,
@@ -41,14 +42,19 @@ pub struct FocusTray {
     generation: AtomicU64,
     /// Last state the main window pushed, replayed to the panel when it opens.
     snapshot: Mutex<Option<serde_json::Value>>,
+    /// The tray menu's stop line, hidden until there is a session to end.
+    stop_item: Mutex<Option<MenuItem<Wry>>>,
     /// The tray menu's start/pause line, kept so its label can follow the timer.
     toggle_item: Mutex<Option<MenuItem<Wry>>>,
 }
 
 impl FocusTray {
-    pub fn set_toggle_item(&self, item: MenuItem<Wry>) {
+    pub fn set_menu_items(&self, toggle: MenuItem<Wry>, stop: MenuItem<Wry>) {
         if let Ok(mut slot) = self.toggle_item.lock() {
-            *slot = Some(item);
+            *slot = Some(toggle);
+        }
+        if let Ok(mut slot) = self.stop_item.lock() {
+            *slot = Some(stop);
         }
     }
 }
@@ -74,12 +80,13 @@ fn paint(app: &AppHandle, title: Option<&str>, tooltip: &str) {
     }
 }
 
-/// Swaps the menu-bar mark for the stopwatch while a session runs.
-fn paint_icon(app: &AppHandle, running: bool) {
+/// Swaps the menu-bar mark for the stopwatch while a session is under way.
+/// Pausing keeps it: only stopping the session puts the plain mark back.
+fn paint_icon(app: &AppHandle, in_session: bool) {
     let Some(tray) = app.tray_by_id(TRAY_ID) else {
         return;
     };
-    let _ = tray.set_icon(Some(if running { running_icon() } else { idle_icon() }));
+    let _ = tray.set_icon(Some(if in_session { running_icon() } else { idle_icon() }));
     // Setting an icon clears the template flag, so the menu bar would stop
     // inverting the mark for a light appearance without this.
     #[cfg(target_os = "macos")]
@@ -127,8 +134,15 @@ pub fn sync_focus(
             let _ = item.set_text(if running { "Pause Focus" } else { "Start Focus" });
         }
     }
+    if let Ok(slot) = state.stop_item.lock() {
+        if let Some(item) = slot.as_ref() {
+            let _ = item.set_enabled(show);
+        }
+    }
 
-    paint_icon(&app, running);
+    // `show` is the session, not the countdown: a paused interval keeps both the
+    // stopwatch and its frozen time until the session is stopped.
+    paint_icon(&app, show);
 
     if !show {
         paint(&app, None, "Lore");
