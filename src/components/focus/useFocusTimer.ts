@@ -3,7 +3,7 @@
 
 import { useEffect } from 'react';
 
-import { isTimerIdle, PHASE_LABELS, phaseSeconds } from '../../lib/focusTimer';
+import { PHASE_LABELS, phaseSeconds } from '../../lib/focusTimer';
 import { useStore } from '../../store/useStore';
 import { useFocusSnapshot } from './useFocusSnapshot';
 
@@ -91,7 +91,6 @@ function useTrayMirror(): void {
     const running = useStore((s) => s.focus.running);
     // Only meaningful while paused; it changes on every tick when it is not.
     const pausedSec = useStore((s) => (s.focus.running ? null : s.focus.remainingSec));
-    const idle = useStore((s) => isTimerIdle(s.focus, s.prefs.durations));
     const snapshot = useFocusSnapshot();
     // The snapshot object is rebuilt on every render; compare its contents so a
     // tick that changes nothing the popover shows does not cross the bridge.
@@ -106,12 +105,12 @@ function useTrayMirror(): void {
                     label,
                     remainingSec: Math.round(pausedSec ?? fullSec),
                     running,
-                    show: !idle,
+                    show: running,
                     snapshot: JSON.parse(snapshotKey),
                 });
             } catch {
                 // Outside Tauri — there is no tray to paint.
             }
         })();
-    }, [endsAt, fullSec, idle, label, pausedSec, running, snapshotKey]);
+    }, [endsAt, fullSec, label, pausedSec, running, snapshotKey]);
 }
