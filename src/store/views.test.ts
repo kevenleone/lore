@@ -7,6 +7,7 @@ import {
     collectionCount,
     detailFlags,
     filterByView,
+    queueItems,
     relatedItems,
     sortItems,
     tagCounts,
@@ -113,5 +114,39 @@ describe('relatedItems', () => {
         const item: Item = { ...SEED_ITEMS[0], related: ['i2', 'does-not-exist'] };
         const related = relatedItems(item, SEED_ITEMS);
         expect(related.map((r) => r.id)).toEqual(['i2']);
+    });
+});
+
+describe('queueItems', () => {
+    const at = (hoursAgo: number) => new Date(Date.now() - hoursAgo * 3_600_000).toISOString();
+    const item = (id: string, flags: Item['flags'], hoursAgo: number): Item => ({
+        createdAt: at(hoursAgo),
+        flags,
+        id,
+        related: [],
+        tags: [],
+        title: id,
+        type: 'task',
+        updatedAt: at(hoursAgo),
+    });
+
+    it('takes everything flagged for Today, not only tasks', () => {
+        const note: Item = { ...item('n', { today: true }, 1), type: 'note' };
+        expect(queueItems([note, item('t', { today: true }, 2)]).map((i) => i.id)).toEqual([
+            't',
+            'n',
+        ]);
+    });
+
+    it('leaves out anything not in Today', () => {
+        expect(queueItems([item('a', {}, 1), item('b', { inbox: true }, 2)])).toEqual([]);
+    });
+
+    it('keeps ticked-off rows, sunk to the bottom', () => {
+        const queue = queueItems([
+            item('done', { done: true, today: true }, 5),
+            item('open', { today: true }, 1),
+        ]);
+        expect(queue.map((i) => i.id)).toEqual(['open', 'done']);
     });
 });
