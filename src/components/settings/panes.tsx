@@ -3,6 +3,8 @@
 // through the store and persist; the rest render the design's copy against
 // placeholder figures until there is a backend to read them from.
 
+import { useState } from 'react';
+
 import type { Appearance } from '../../theme/tokens';
 
 import {
@@ -19,6 +21,8 @@ import { useStore } from '../../store/useStore';
 import { LoreMark } from '../common/LoreMark';
 import { SettingsIcon, type SettingsIconName } from '../common/settingsGlyphs';
 import { Chooser, KeyCap, PillButton, Row, SectionLabel, Segmented, Toggle } from './controls';
+import { KeyboardMap } from './KeyboardMap';
+import { CALENDAR_ACCOUNTS, SHORTCUT_GROUPS } from './settingsData';
 import { aboutLink, choiceCard, pillButton } from './SettingsModal.css';
 
 export function GeneralPane() {
@@ -370,6 +374,26 @@ const APPEARANCES: { id: Appearance; label: string; swatch: string }[] = [
     { id: 'auto', label: 'Auto', swatch: 'linear-gradient(135deg,#f4f4f6 50%,#26262d 50%)' },
 ];
 
+/** The two takes on the same shortcut set: the grouped list (1c), the map (1d). */
+type ShortcutsTake = 'List' | 'Map';
+
+/* ------------------------------------------------------------------ *
+ * Keyboard shortcuts
+ * ------------------------------------------------------------------ */
+
+export function KeysPane() {
+    const [take, setTake] = useState<ShortcutsTake>('List');
+
+    return (
+        <>
+            <div style={{ display: 'flex', marginBottom: 18 }}>
+                <Segmented onChange={setTake} options={SHORTCUT_TAKES} value={take} />
+            </div>
+            {take === 'Map' ? <KeyboardMap /> : <ShortcutList />}
+        </>
+    );
+}
+
 export function LookPane() {
     const appearance = useStore((s) => s.prefs.appearance);
     const setAppearance = useStore((s) => s.setAppearance);
@@ -502,48 +526,60 @@ export function LookPane() {
         </>
     );
 }
+const SHORTCUT_TAKES: readonly ShortcutsTake[] = ['List', 'Map'] as const;
+
+export function NotifPane() {
+    const digest = useSwitch('digest');
+    const notifStyle = useStore((s) => s.prefs.notifStyle);
+    const setPref = useStore((s) => s.setPref);
+    const sounds = useSwitch('sounds');
+
+    return (
+        <>
+            <SectionLabel first>Send me</SectionLabel>
+            <Row desc="Three things worth revisiting, chosen by the AI." title="Weekly digest">
+                <Chooser options={['Mondays, 08:00']} value="Mondays, 08:00" />
+                <Toggle label="Weekly digest" on={digest.on} onChange={digest.onChange} />
+            </Row>
+            <SwitchRow
+                desc="Due-date alerts for captured tasks."
+                name="dueTasks"
+                title="Task reminders"
+            />
+            <SwitchRow name="focusEnd" title="Focus session end" />
+            <SwitchRow
+                desc="Only when something needs your attention."
+                last
+                name="syncErr"
+                title="Sync problems"
+            />
+
+            <SectionLabel>Delivery</SectionLabel>
+            <Row title="Style">
+                <Segmented<NotificationStyle>
+                    onChange={(v) => setPref('notifStyle', v)}
+                    options={['Banner', 'Alert']}
+                    value={notifStyle}
+                />
+            </Row>
+            <Row title="Play a sound">
+                <Toggle label="Play a sound" on={sounds.on} onChange={sounds.onChange} />
+            </Row>
+            <SwitchRow
+                desc="22:00 – 07:30 · nothing but sync problems gets through."
+                last
+                name="quiet"
+                title="Quiet hours"
+            />
+        </>
+    );
+}
 
 /* ------------------------------------------------------------------ *
- * Keyboard shortcuts
+ * Notifications
  * ------------------------------------------------------------------ */
 
-const SHORTCUT_GROUPS = [
-    {
-        name: 'Global',
-        rows: [
-            { keys: ['⌥', 'Space'], label: 'Quick capture' },
-            { keys: ['⌥', '⇧', 'C'], label: 'Capture the current browser tab' },
-            { keys: ['⌥', '⇧', 'S'], label: 'Capture selected text' },
-            { keys: ['⌥', '⇧', 'F'], label: 'Start or pause a focus session' },
-            { keys: ['⌥', '⇧', 'L'], label: 'Open the knowledge base' },
-        ],
-    },
-    {
-        name: 'Capture window',
-        rows: [
-            { keys: ['⏎'], label: 'Save' },
-            { keys: ['⌘', '⏎'], label: 'Save and keep going' },
-            { keys: ['⇥'], label: 'Cycle capture type' },
-            { keys: ['#'], label: 'Add a tag' },
-            { keys: ['⌘', 'L'], label: 'Pick a collection' },
-            { keys: ['esc'], label: 'Dismiss' },
-        ],
-    },
-    {
-        name: 'Knowledge base',
-        rows: [
-            { keys: ['⌘', 'K'], label: 'Search everything' },
-            { keys: ['⌘', 'J'], label: 'Ask Lore' },
-            { keys: ['⌘', '⌥', 'S'], label: 'Toggle the sidebar' },
-            { keys: ['⌘', 'D'], label: 'Flag item' },
-            { keys: ['⌘', '⇧', 'C'], label: 'Share' },
-            { keys: ['↑', '↓'], label: 'Next / previous item' },
-            { keys: ['⌘', '3'], label: 'Calendar view' },
-        ],
-    },
-];
-
-export function KeysPane() {
+function ShortcutList() {
     return (
         <>
             <div style={{ alignItems: 'center', display: 'flex', gap: 10, marginBottom: 20 }}>
@@ -593,57 +629,6 @@ export function KeysPane() {
                     ))}
                 </div>
             ))}
-        </>
-    );
-}
-
-/* ------------------------------------------------------------------ *
- * Notifications
- * ------------------------------------------------------------------ */
-
-export function NotifPane() {
-    const digest = useSwitch('digest');
-    const notifStyle = useStore((s) => s.prefs.notifStyle);
-    const setPref = useStore((s) => s.setPref);
-    const sounds = useSwitch('sounds');
-
-    return (
-        <>
-            <SectionLabel first>Send me</SectionLabel>
-            <Row desc="Three things worth revisiting, chosen by the AI." title="Weekly digest">
-                <Chooser options={['Mondays, 08:00']} value="Mondays, 08:00" />
-                <Toggle label="Weekly digest" on={digest.on} onChange={digest.onChange} />
-            </Row>
-            <SwitchRow
-                desc="Due-date alerts for captured tasks."
-                name="dueTasks"
-                title="Task reminders"
-            />
-            <SwitchRow name="focusEnd" title="Focus session end" />
-            <SwitchRow
-                desc="Only when something needs your attention."
-                last
-                name="syncErr"
-                title="Sync problems"
-            />
-
-            <SectionLabel>Delivery</SectionLabel>
-            <Row title="Style">
-                <Segmented<NotificationStyle>
-                    onChange={(v) => setPref('notifStyle', v)}
-                    options={['Banner', 'Alert']}
-                    value={notifStyle}
-                />
-            </Row>
-            <Row title="Play a sound">
-                <Toggle label="Play a sound" on={sounds.on} onChange={sounds.onChange} />
-            </Row>
-            <SwitchRow
-                desc="22:00 – 07:30 · nothing but sync problems gets through."
-                last
-                name="quiet"
-                title="Quiet hours"
-            />
         </>
     );
 }
@@ -946,6 +931,75 @@ const DURATION_LABELS = [
     { key: 'long', label: 'Long break' },
 ] as const;
 
+export function CalendarPane() {
+    const switches = useStore((s) => s.prefs.switches);
+    const toggle = useStore((s) => s.toggleSwitch);
+    const weekStart = useStore((s) => s.prefs.weekStart);
+    const setPref = useStore((s) => s.setPref);
+
+    return (
+        <>
+            <SectionLabel first>Connected calendars</SectionLabel>
+            {CALENDAR_ACCOUNTS.map((c) => (
+                <div
+                    key={c.key}
+                    style={{
+                        alignItems: 'center',
+                        borderBottom: '1px solid var(--border-soft, #f0f0f2)',
+                        display: 'flex',
+                        gap: 12,
+                        padding: '11px 0',
+                    }}
+                >
+                    <span
+                        style={{
+                            background: c.color,
+                            borderRadius: 3,
+                            flex: 'none',
+                            height: 10,
+                            width: 10,
+                        }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</div>
+                        <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12, marginTop: 1 }}>
+                            {c.meta}
+                        </div>
+                    </div>
+                    <Toggle label={c.name} on={switches[c.key]} onChange={() => toggle(c.key)} />
+                </div>
+            ))}
+            <div style={{ marginTop: 12 }}>
+                <PillButton>
+                    <SettingsIcon name="plus" size={13} sw={2.2} />
+                    Add a calendar account
+                </PillButton>
+            </div>
+
+            <SectionLabel>In the calendar view</SectionLabel>
+            <SwitchRow
+                desc="Tasks with due dates appear as all-day chips."
+                name="showTasks"
+                title="Show captured tasks alongside events"
+            />
+            <SwitchRow name="showFocus" title="Show focus sessions" />
+            <Row title="Week starts on">
+                <Chooser<WeekStart>
+                    onChange={(v) => setPref('weekStart', v)}
+                    options={['Monday', 'Sunday']}
+                    value={weekStart}
+                />
+            </Row>
+            <SwitchRow
+                desc="Notes captured during an event get filed to it."
+                last
+                name="attachNotes"
+                title="Attach meeting notes automatically"
+            />
+        </>
+    );
+}
+
 export function FocusPane() {
     const durations = useStore((s) => s.prefs.durations);
     const bump = useStore((s) => s.bumpDuration);
@@ -1047,6 +1101,10 @@ export function FocusPane() {
     );
 }
 
+/* ------------------------------------------------------------------ *
+ * Calendar
+ * ------------------------------------------------------------------ */
+
 function StepButton({ label, onClick, up }: { label: string; onClick: () => void; up?: boolean }) {
     return (
         <button
@@ -1058,95 +1116,6 @@ function StepButton({ label, onClick, up }: { label: string; onClick: () => void
         >
             <SettingsIcon name={up ? 'chevronUp' : 'chevronDown'} size={11} sw={2.6} />
         </button>
-    );
-}
-
-/* ------------------------------------------------------------------ *
- * Calendar
- * ------------------------------------------------------------------ */
-
-const CALENDAR_ACCOUNTS: { color: string; key: keyof Switches; meta: string; name: string }[] = [
-    {
-        color: '#8a92b8',
-        key: 'calWork',
-        meta: 'rowan@shaw.studio · 4 calendars',
-        name: 'Work — Google',
-    },
-    {
-        color: '#a88f6e',
-        key: 'calPersonal',
-        meta: 'rowan@icloud.com · 2 calendars',
-        name: 'Personal — iCloud',
-    },
-    { color: '#82a896', key: 'calShared', meta: 'Read-only invite', name: 'Studio shared' },
-];
-
-export function CalendarPane() {
-    const switches = useStore((s) => s.prefs.switches);
-    const toggle = useStore((s) => s.toggleSwitch);
-    const weekStart = useStore((s) => s.prefs.weekStart);
-    const setPref = useStore((s) => s.setPref);
-
-    return (
-        <>
-            <SectionLabel first>Connected calendars</SectionLabel>
-            {CALENDAR_ACCOUNTS.map((c) => (
-                <div
-                    key={c.key}
-                    style={{
-                        alignItems: 'center',
-                        borderBottom: '1px solid var(--border-soft, #f0f0f2)',
-                        display: 'flex',
-                        gap: 12,
-                        padding: '11px 0',
-                    }}
-                >
-                    <span
-                        style={{
-                            background: c.color,
-                            borderRadius: 3,
-                            flex: 'none',
-                            height: 10,
-                            width: 10,
-                        }}
-                    />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</div>
-                        <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12, marginTop: 1 }}>
-                            {c.meta}
-                        </div>
-                    </div>
-                    <Toggle label={c.name} on={switches[c.key]} onChange={() => toggle(c.key)} />
-                </div>
-            ))}
-            <div style={{ marginTop: 12 }}>
-                <PillButton>
-                    <SettingsIcon name="plus" size={13} sw={2.2} />
-                    Add a calendar account
-                </PillButton>
-            </div>
-
-            <SectionLabel>In the calendar view</SectionLabel>
-            <SwitchRow
-                desc="Tasks with due dates appear as all-day chips."
-                name="showTasks"
-                title="Show captured tasks alongside events"
-            />
-            <SwitchRow name="showFocus" title="Show focus sessions" />
-            <Row title="Week starts on">
-                <Chooser<WeekStart>
-                    onChange={(v) => setPref('weekStart', v)}
-                    options={['Monday', 'Sunday']}
-                    value={weekStart}
-                />
-            </Row>
-            <SwitchRow
-                desc="Notes captured during an event get filed to it."
-                last
-                name="attachNotes"
-                title="Attach meeting notes automatically"
-            />
-        </>
     );
 }
 
