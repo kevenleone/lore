@@ -54,6 +54,18 @@ export function Close({ size = 18, style, sw = 1.9 }: GlyphProps) {
     );
 }
 
+/** Arrows to opposite corners — "give this the whole window". */
+export function Expand({ size = 14, style, sw = 2 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <polyline points="15 3 21 3 21 9" />
+            <polyline points="9 21 3 21 3 15" />
+            <line x1="21" x2="14" y1="3" y2="10" />
+            <line x1="3" x2="10" y1="21" y2="14" />
+        </Stroke>
+    );
+}
+
 export function External({ size = 13, style, sw = 2 }: GlyphProps) {
     return (
         <Stroke size={size} style={style} sw={sw}>
@@ -90,6 +102,22 @@ export function Message({ size = 16, style, sw = 1.8 }: GlyphProps) {
     );
 }
 
+/** Filled pause bars — the transport button in both focus surfaces. */
+export function Pause({ size = 14, style }: GlyphProps) {
+    return (
+        <svg
+            fill="currentColor"
+            height={size}
+            style={{ display: 'block', flex: 'none', ...style }}
+            viewBox="0 0 24 24"
+            width={size}
+        >
+            <rect height="14" rx="1.3" width="4" x="6" y="5" />
+            <rect height="14" rx="1.3" width="4" x="14" y="5" />
+        </svg>
+    );
+}
+
 export function Pencil({ size = 14, style, sw = 1.8 }: GlyphProps) {
     return (
         <Stroke size={size} style={style} sw={sw}>
@@ -99,11 +127,36 @@ export function Pencil({ size = 14, style, sw = 1.8 }: GlyphProps) {
     );
 }
 
+/** Filled play triangle. */
+export function Play({ size = 14, style }: GlyphProps) {
+    return (
+        <svg
+            fill="currentColor"
+            height={size}
+            style={{ display: 'block', flex: 'none', ...style }}
+            viewBox="0 0 24 24"
+            width={size}
+        >
+            <path d="M7 4.8 19 12 7 19.2z" />
+        </svg>
+    );
+}
+
 export function Plus({ size = 14, style, sw = 2.2 }: GlyphProps) {
     return (
         <Stroke size={size} style={style} sw={sw}>
             <line x1="12" x2="12" y1="5" y2="19" />
             <line x1="5" x2="19" y1="12" y2="12" />
+        </Stroke>
+    );
+}
+
+/** Counter-clockwise arrow — "start this interval over". */
+export function Restart({ size = 15, style, sw = 2 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <path d="M3 12a9 9 0 1 0 3-6.7" />
+            <polyline points="3 4 3 9 8 9" />
         </Stroke>
     );
 }
@@ -146,6 +199,16 @@ export function SidebarToggle({ size = 17, style, sw = 1.8 }: GlyphProps) {
     );
 }
 
+/** Play-to-end bar — "skip to the next interval". */
+export function SkipForward({ size = 15, style, sw = 2 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <polyline points="6 5 15 12 6 19" />
+            <line x1="18" x2="18" y1="5" y2="19" />
+        </Stroke>
+    );
+}
+
 export function Sort({ size = 16, style, sw = 1.8 }: GlyphProps) {
     return (
         <Stroke size={size} style={style} sw={sw}>
@@ -175,6 +238,17 @@ export function StarOutline({ size = 18, style, sw = 1.7 }: GlyphProps) {
     return (
         <Stroke size={size} style={style} sw={sw}>
             <polygon points="12 3 14.5 8.6 20.6 9.3 16 13.4 17.3 19.4 12 16.2 6.7 19.4 8 13.4 3.4 9.3 9.5 8.6" />
+        </Stroke>
+    );
+}
+
+/** The clock face used by the focus chip in the title bar. */
+export function Timer({ size = 13, style, sw = 2 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <circle cx="12" cy="13" r="8" />
+            <path d="M12 9v4l2.5 2" />
+            <path d="M9 2h6" />
         </Stroke>
     );
 }
