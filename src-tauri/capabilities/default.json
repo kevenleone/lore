@@ -18,5 +18,5 @@
         "global-shortcut:default",
         "dialog:allow-open"
     ],
-    "windows": ["main", "capture"]
+    "windows": ["main", "capture", "focus"]
 }

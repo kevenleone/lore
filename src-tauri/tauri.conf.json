@@ -17,6 +17,20 @@
             },
             {
                 "alwaysOnTop": true,
+                "decorations": false,
+                "height": 372,
+                "label": "focus",
+                "resizable": false,
+                "shadow": false,
+                "skipTaskbar": true,
+                "title": "Focus",
+                "transparent": true,
+                "url": "focus.html",
+                "visible": false,
+                "width": 348
+            },
+            {
+                "alwaysOnTop": true,
                 "center": true,
                 "decorations": false,
                 "height": 580,

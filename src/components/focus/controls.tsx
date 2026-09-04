@@ -1,14 +1,40 @@
 // Pieces shared by the focus popover (frame 1e) and the focus surface (1f):
 // the restart / pause / skip transport, the session pips, and the queue rows.
+//
+// They take props rather than reading the store: the popover also runs inside
+// the menu-bar window, which has no store to read.
 
 import type { CSSProperties, ReactNode } from 'react';
 
 import type { Item } from '../../store/types';
 
-import { PHASE_LABELS } from '../../lib/focusTimer';
 import { useStore } from '../../store/useStore';
-import { Check, Pause, Play, Restart, SkipForward } from '../common/glyphs';
+import { Check, Pause, Play, Plus, Restart, SkipForward } from '../common/glyphs';
 import { queueRow, transportButton } from './Focus.css';
+
+/** The small round "+" that puts a captured item into the queue. */
+export function AddToQueueButton({ label, onClick }: { label: string; onClick: () => void }) {
+    return (
+        <button
+            aria-label={label}
+            className={transportButton}
+            onClick={onClick}
+            style={{
+                background: 'transparent',
+                border: '1px solid var(--border, #e4e4ea)',
+                borderRadius: 6,
+                color: 'var(--text2, #6b6b76)',
+                flex: 'none',
+                height: 20,
+                width: 20,
+            }}
+            title={label}
+            type="button"
+        >
+            <Plus size={12} sw={2.4} />
+        </button>
+    );
+}
 
 /** Small uppercase caption used above every block in both surfaces. */
 export function FocusLabel({ children, style }: { children: ReactNode; style?: CSSProperties }) {
@@ -98,28 +124,16 @@ export function QueueRow({ item }: { item: Item }) {
     );
 }
 
-export function SessionCaption() {
-    const sessionIndex = useStore((s) => s.focus.sessionIndex);
-    const phase = useStore((s) => s.focus.phase);
-    const total = useStore((s) => s.prefs.longBreakAfter);
-
-    if (phase !== 'focus') return <>next: {PHASE_LABELS[phase].toLowerCase()}</>;
-    return (
-        <>
-            Session {sessionIndex} of {total}
-        </>
-    );
-}
-
 /** One filled dot per completed session in the current cycle. */
-export function SessionPips({ size = 7 }: { size?: number }) {
-    const sessionIndex = useStore((s) => s.focus.sessionIndex);
-    const phase = useStore((s) => s.focus.phase);
-    const total = useStore((s) => s.prefs.longBreakAfter);
-
-    // The session in progress counts as done only once its break has started.
-    const done = phase === 'focus' ? sessionIndex - 1 : sessionIndex;
-
+export function SessionPips({
+    done,
+    size = 7,
+    total,
+}: {
+    done: number;
+    size?: number;
+    total: number;
+}) {
     return (
         <span style={{ alignItems: 'center', display: 'flex', gap: 5 }}>
             {Array.from({ length: total }, (_, i) => (
@@ -137,18 +151,25 @@ export function SessionPips({ size = 7 }: { size?: number }) {
     );
 }
 
-export function Transport({ size = 38 }: { size?: number }) {
-    const running = useStore((s) => s.focus.running);
-    const toggle = useStore((s) => s.toggleFocus);
-    const reset = useStore((s) => s.resetFocusInterval);
-    const skip = useStore((s) => s.skipFocusInterval);
-
+export function Transport({
+    onReset,
+    onSkip,
+    onToggle,
+    running,
+    size = 38,
+}: {
+    onReset: () => void;
+    onSkip: () => void;
+    onToggle: () => void;
+    running: boolean;
+    size?: number;
+}) {
     return (
         <div style={{ alignItems: 'center', display: 'flex', gap: 9 }}>
             <button
                 aria-label="Start this interval over"
                 className={transportButton}
-                onClick={reset}
+                onClick={onReset}
                 style={{ height: size, width: size }}
                 type="button"
             >
@@ -156,7 +177,7 @@ export function Transport({ size = 38 }: { size?: number }) {
             </button>
             <button
                 className={transportButton}
-                onClick={toggle}
+                onClick={onToggle}
                 style={{
                     background: 'var(--ac)',
                     color: '#fff',
@@ -175,7 +196,7 @@ export function Transport({ size = 38 }: { size?: number }) {
             <button
                 aria-label="Skip to the next interval"
                 className={transportButton}
-                onClick={skip}
+                onClick={onSkip}
                 style={{ height: size, width: size }}
                 type="button"
             >

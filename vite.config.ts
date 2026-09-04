@@ -7,11 +7,13 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
-    // Two HTML entry points: the main KB window and the quick-capture window.
+    // Three HTML entry points: the main KB window, the quick-capture window, and
+    // the menu-bar focus popover.
     build: {
         rollupOptions: {
             input: {
                 capture: 'capture.html',
+                focus: 'focus.html',
                 main: 'index.html',
             },
         },

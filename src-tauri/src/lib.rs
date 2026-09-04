@@ -30,7 +30,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::toggle_capture,
             commands::hide_capture,
-            focus_tray::set_focus_tray,
+            commands::open_focus_mode,
+            focus_tray::focus_snapshot,
+            focus_tray::sync_focus,
             sidecar::sidecar_endpoint,
             sidecar::default_vault_path,
             sidecar::backup_legacy_db
@@ -40,11 +42,18 @@ pub fn run() {
             // reopened from the tray; Quit in the tray menu is the real exit.
             // hide_main also drops the Dock/Cmd-Tab entry, so a hidden Lore is
             // only in the menu bar.
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                if window.label() == "main" {
+            match event {
+                tauri::WindowEvent::CloseRequested { api, .. } if window.label() == "main" => {
                     api.prevent_close();
                     commands::hide_main(window.app_handle());
                 }
+                // A menu-bar popover goes away as soon as you look elsewhere.
+                tauri::WindowEvent::Focused(false)
+                    if window.label() == focus_tray::PANEL_LABEL =>
+                {
+                    let _ = window.hide();
+                }
+                _ => {}
             }
         })
         .setup(|app| {
