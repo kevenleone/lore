@@ -3,8 +3,6 @@
 // through the store and persist; the rest render the design's copy against
 // placeholder figures until there is a backend to read them from.
 
-import { useState } from 'react';
-
 import type { Appearance } from '../../theme/tokens';
 
 import {
@@ -20,9 +18,8 @@ import {
 import { useStore } from '../../store/useStore';
 import { LoreMark } from '../common/LoreMark';
 import { SettingsIcon, type SettingsIconName } from '../common/settingsGlyphs';
+import { CALENDAR_ACCOUNTS } from './calendarAccounts';
 import { Chooser, KeyCap, PillButton, Row, SectionLabel, Segmented, Toggle } from './controls';
-import { KeyboardMap } from './KeyboardMap';
-import { CALENDAR_ACCOUNTS, SHORTCUT_GROUPS } from './settingsData';
 import { aboutLink, choiceCard, pillButton } from './SettingsModal.css';
 
 export function GeneralPane() {
@@ -374,26 +371,6 @@ const APPEARANCES: { id: Appearance; label: string; swatch: string }[] = [
     { id: 'auto', label: 'Auto', swatch: 'linear-gradient(135deg,#f4f4f6 50%,#26262d 50%)' },
 ];
 
-/** The two takes on the same shortcut set: the grouped list (1c), the map (1d). */
-type ShortcutsTake = 'List' | 'Map';
-
-/* ------------------------------------------------------------------ *
- * Keyboard shortcuts
- * ------------------------------------------------------------------ */
-
-export function KeysPane() {
-    const [take, setTake] = useState<ShortcutsTake>('List');
-
-    return (
-        <>
-            <div style={{ display: 'flex', marginBottom: 18 }}>
-                <Segmented onChange={setTake} options={SHORTCUT_TAKES} value={take} />
-            </div>
-            {take === 'Map' ? <KeyboardMap /> : <ShortcutList />}
-        </>
-    );
-}
-
 export function LookPane() {
     const appearance = useStore((s) => s.prefs.appearance);
     const setAppearance = useStore((s) => s.setAppearance);
@@ -526,60 +503,48 @@ export function LookPane() {
         </>
     );
 }
-const SHORTCUT_TAKES: readonly ShortcutsTake[] = ['List', 'Map'] as const;
-
-export function NotifPane() {
-    const digest = useSwitch('digest');
-    const notifStyle = useStore((s) => s.prefs.notifStyle);
-    const setPref = useStore((s) => s.setPref);
-    const sounds = useSwitch('sounds');
-
-    return (
-        <>
-            <SectionLabel first>Send me</SectionLabel>
-            <Row desc="Three things worth revisiting, chosen by the AI." title="Weekly digest">
-                <Chooser options={['Mondays, 08:00']} value="Mondays, 08:00" />
-                <Toggle label="Weekly digest" on={digest.on} onChange={digest.onChange} />
-            </Row>
-            <SwitchRow
-                desc="Due-date alerts for captured tasks."
-                name="dueTasks"
-                title="Task reminders"
-            />
-            <SwitchRow name="focusEnd" title="Focus session end" />
-            <SwitchRow
-                desc="Only when something needs your attention."
-                last
-                name="syncErr"
-                title="Sync problems"
-            />
-
-            <SectionLabel>Delivery</SectionLabel>
-            <Row title="Style">
-                <Segmented<NotificationStyle>
-                    onChange={(v) => setPref('notifStyle', v)}
-                    options={['Banner', 'Alert']}
-                    value={notifStyle}
-                />
-            </Row>
-            <Row title="Play a sound">
-                <Toggle label="Play a sound" on={sounds.on} onChange={sounds.onChange} />
-            </Row>
-            <SwitchRow
-                desc="22:00 – 07:30 · nothing but sync problems gets through."
-                last
-                name="quiet"
-                title="Quiet hours"
-            />
-        </>
-    );
-}
 
 /* ------------------------------------------------------------------ *
- * Notifications
+ * Keyboard shortcuts
  * ------------------------------------------------------------------ */
 
-function ShortcutList() {
+const SHORTCUT_GROUPS = [
+    {
+        name: 'Global',
+        rows: [
+            { keys: ['⌥', 'Space'], label: 'Quick capture' },
+            { keys: ['⌥', '⇧', 'C'], label: 'Capture the current browser tab' },
+            { keys: ['⌥', '⇧', 'S'], label: 'Capture selected text' },
+            { keys: ['⌥', '⇧', 'F'], label: 'Start or pause a focus session' },
+            { keys: ['⌥', '⇧', 'L'], label: 'Open the knowledge base' },
+        ],
+    },
+    {
+        name: 'Capture window',
+        rows: [
+            { keys: ['⏎'], label: 'Save' },
+            { keys: ['⌘', '⏎'], label: 'Save and keep going' },
+            { keys: ['⇥'], label: 'Cycle capture type' },
+            { keys: ['#'], label: 'Add a tag' },
+            { keys: ['⌘', 'L'], label: 'Pick a collection' },
+            { keys: ['esc'], label: 'Dismiss' },
+        ],
+    },
+    {
+        name: 'Knowledge base',
+        rows: [
+            { keys: ['⌘', 'K'], label: 'Search everything' },
+            { keys: ['⌘', 'J'], label: 'Ask Lore' },
+            { keys: ['⌘', '⌥', 'S'], label: 'Toggle the sidebar' },
+            { keys: ['⌘', 'D'], label: 'Flag item' },
+            { keys: ['⌘', '⇧', 'C'], label: 'Share' },
+            { keys: ['↑', '↓'], label: 'Next / previous item' },
+            { keys: ['⌘', '3'], label: 'Calendar view' },
+        ],
+    },
+];
+
+export function KeysPane() {
     return (
         <>
             <div style={{ alignItems: 'center', display: 'flex', gap: 10, marginBottom: 20 }}>
@@ -629,6 +594,57 @@ function ShortcutList() {
                     ))}
                 </div>
             ))}
+        </>
+    );
+}
+
+/* ------------------------------------------------------------------ *
+ * Notifications
+ * ------------------------------------------------------------------ */
+
+export function NotifPane() {
+    const digest = useSwitch('digest');
+    const notifStyle = useStore((s) => s.prefs.notifStyle);
+    const setPref = useStore((s) => s.setPref);
+    const sounds = useSwitch('sounds');
+
+    return (
+        <>
+            <SectionLabel first>Send me</SectionLabel>
+            <Row desc="Three things worth revisiting, chosen by the AI." title="Weekly digest">
+                <Chooser options={['Mondays, 08:00']} value="Mondays, 08:00" />
+                <Toggle label="Weekly digest" on={digest.on} onChange={digest.onChange} />
+            </Row>
+            <SwitchRow
+                desc="Due-date alerts for captured tasks."
+                name="dueTasks"
+                title="Task reminders"
+            />
+            <SwitchRow name="focusEnd" title="Focus session end" />
+            <SwitchRow
+                desc="Only when something needs your attention."
+                last
+                name="syncErr"
+                title="Sync problems"
+            />
+
+            <SectionLabel>Delivery</SectionLabel>
+            <Row title="Style">
+                <Segmented<NotificationStyle>
+                    onChange={(v) => setPref('notifStyle', v)}
+                    options={['Banner', 'Alert']}
+                    value={notifStyle}
+                />
+            </Row>
+            <Row title="Play a sound">
+                <Toggle label="Play a sound" on={sounds.on} onChange={sounds.onChange} />
+            </Row>
+            <SwitchRow
+                desc="22:00 – 07:30 · nothing but sync problems gets through."
+                last
+                name="quiet"
+                title="Quiet hours"
+            />
         </>
     );
 }

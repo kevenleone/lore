@@ -28,8 +28,8 @@ import {
 import { startOfDay } from '../../lib/focusTimer';
 import { useStore } from '../../store/useStore';
 import { ChevronRight, Plus } from '../common/glyphs';
+import { CALENDAR_ACCOUNTS } from '../settings/calendarAccounts';
 import { Segmented } from '../settings/controls';
-import { CALENDAR_ACCOUNTS } from '../settings/settingsData';
 import {
     dropTarget,
     eventBlock,
