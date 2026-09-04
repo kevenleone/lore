@@ -3,12 +3,17 @@
 // exists this module is the only thing that has to change — the store reads and
 // writes through `loadPersisted` / `savePersisted` and nothing else.
 
-import { type Auth, DEFAULT_PREFS, DEFAULT_SWITCHES, type Prefs } from './types';
+import { type Auth, DEFAULT_PREFS, DEFAULT_SWITCHES, type FocusSession, type Prefs } from './types';
 
 const KEY = 'lore.prefs.v1';
 
 export interface Persisted {
     auth: Auth;
+    /**
+     * Finished focus intervals, so the calendar can draw where attention went
+     * across launches. Trimmed to the most recent `MAX_SESSIONS`.
+     */
+    focusSessions: FocusSession[];
     /** When the legacy SQLite store was imported. Guards the one-shot migration. */
     migratedAt: null | string;
     /** True once the user has finished `Lore Onboarding` either way. */
@@ -16,6 +21,12 @@ export interface Persisted {
     prefs: Prefs;
     /** Most-recently-opened vaults, for the switcher. */
     recentWorkspaces: WorkspaceRef[];
+    /**
+     * Item id → ISO time it was dragged onto in the calendar. Scheduling lives
+     * here rather than on the item because the Markdown vault has no field for
+     * it yet; move it onto `Item` once the format gains one.
+     */
+    schedule: Record<string, string>;
     /** Vault folder in use; null means the default one beside the app's data. */
     workspacePath: null | string;
 }
@@ -29,12 +40,17 @@ export interface WorkspaceRef {
 
 export const DEFAULT_PERSISTED: Persisted = {
     auth: { email: null, mode: null, name: null },
+    focusSessions: [],
     migratedAt: null,
     onboarded: false,
     prefs: DEFAULT_PREFS,
     recentWorkspaces: [],
+    schedule: {},
     workspacePath: null,
 };
+
+/** Sessions older than this are dropped — the calendar only looks back weeks. */
+const MAX_SESSIONS = 500;
 
 export function loadPersisted(): Persisted {
     try {
@@ -45,6 +61,7 @@ export function loadPersisted(): Persisted {
         // its default instead of coming back undefined.
         return {
             auth: { ...DEFAULT_PERSISTED.auth, ...saved.auth },
+            focusSessions: saved.focusSessions ?? [],
             migratedAt: saved.migratedAt ?? null,
             onboarded: saved.onboarded ?? false,
             prefs: {
@@ -54,6 +71,7 @@ export function loadPersisted(): Persisted {
                 switches: { ...DEFAULT_SWITCHES, ...saved.prefs?.switches },
             },
             recentWorkspaces: saved.recentWorkspaces ?? [],
+            schedule: saved.schedule ?? {},
             workspacePath: saved.workspacePath ?? null,
         };
     } catch {
@@ -64,7 +82,11 @@ export function loadPersisted(): Persisted {
 
 export function savePersisted(state: Persisted): void {
     try {
-        localStorage.setItem(KEY, JSON.stringify(state));
+        const trimmed: Persisted = {
+            ...state,
+            focusSessions: state.focusSessions.slice(-MAX_SESSIONS),
+        };
+        localStorage.setItem(KEY, JSON.stringify(trimmed));
     } catch {
         // Private browsing / quota — preferences just will not survive the launch.
     }

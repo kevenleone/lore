@@ -13,6 +13,8 @@ import { MockAiProvider } from '../ai/mockAiProvider';
 import { getRepository } from '../data';
 import { ensureWorkspaceOpen, setWorkspace } from '../data';
 import { migrateSqlite } from '../data/migrateSqlite';
+import { formatTime } from '../lib/calendar';
+import { nextPhase, phaseSeconds, remainingSeconds } from '../lib/focusTimer';
 import { broadcastWorkspaceChange, pickWorkspaceFolder, rememberWorkspace } from '../lib/workspace';
 import { loadPersisted, savePersisted } from './persisted';
 import { SEED_CHAT, SEED_COLLECTIONS, SEED_ITEMS } from './seed';
@@ -22,7 +24,10 @@ import {
     type ChatMessage,
     type Collection,
     type Durations,
+    type FocusSession,
+    type FocusState,
     type Item,
+    type MainView,
     type OnboardingStep,
     type Prefs,
     type SettingsPane,
@@ -79,8 +84,16 @@ interface StoreState {
      */
     detail: Item | null;
     dismissMigrationNotice: () => void;
-
     finishOnboarding: (mode: 'account' | 'anonymous', email?: string) => void;
+    /** The running (or paused) focus interval — `Lore Settings` frames 1e/1f. */
+    focus: FocusState;
+    /** True while the full Focus surface (frame 1f) covers the window. */
+    focusModeOpen: boolean;
+    /** True while the menu-bar-style focus popover (frame 1e) is open. */
+    focusPopoverOpen: boolean;
+
+    /** Finished intervals, newest last. Drawn on the calendar. */
+    focusSessions: FocusSession[];
     // lifecycle
     hydrate: () => Promise<void>;
     hydrated: boolean;
@@ -88,9 +101,11 @@ interface StoreState {
     items: Item[];
 
     loadDetail: (id: string) => Promise<void>;
+    /** Which surface the window's main area shows: the library or the calendar. */
+    mainView: MainView;
+
     /** Set once by a migration so the UI can say what happened. */
     migrationNotice: null | string;
-
     onboarded: boolean;
     onboardingStep: OnboardingStep;
     // settings actions
@@ -105,7 +120,13 @@ interface StoreState {
 
     renameItemFile: (id: string, stem: string) => Promise<void>;
     requestMagicLink: (email: string) => void;
+    /** Puts the current interval back to its full length, still paused. */
+    resetFocusInterval: () => void;
+    /** Item id → ISO time it sits at on the calendar. */
+    schedule: Record<string, string>;
 
+    /** Places an item on the calendar, or clears it when `at` is null. */
+    scheduleItem: (id: string, at: Date | null) => void;
     search: string;
     searching: boolean;
     /**
@@ -118,13 +139,15 @@ interface StoreState {
     // ui actions
     selectView: (kind: View['kind'], val?: null | string) => void;
     sendChat: (question: string) => Promise<void>;
-    setAccent: (accent: Accent) => void;
 
+    setAccent: (accent: Accent) => void;
     setAiAssist: (on: boolean) => void;
     setAppearance: (appearance: Appearance) => void;
+
+    setFocusTask: (id: null | string) => void;
+    setMainView: (view: MainView) => void;
     // onboarding actions
     setOnboardingStep: (step: OnboardingStep) => void;
-
     setPref: <K extends keyof Prefs>(key: K, value: Prefs[K]) => void;
     setSearch: (q: string) => void;
     setSettingsPane: (pane: SettingsPane) => void;
@@ -134,13 +157,21 @@ interface StoreState {
     settingsPane: SettingsPane;
     sidebarVisible: boolean;
     signOut: () => void;
-    sort: SortOrder;
 
+    /** Ends the current interval early and moves to the next one. */
+    skipFocusInterval: () => void;
+    sort: SortOrder;
     switchWorkspace: (path: null | string) => Promise<void>;
     // vault
     /** Sidebar tag order for the open vault; empty falls back to the seed order. */
     tagOrder: string[];
+    /** Recomputes the countdown from the clock, and rolls over at zero. */
+    tickFocus: () => void;
     toggleChat: () => void;
+    /** Starts or pauses the current interval — the ⌥⇧F shortcut and both surfaces. */
+    toggleFocus: () => void;
+    toggleFocusMode: () => void;
+    toggleFocusPopover: () => void;
     toggleSidebar: () => void;
     toggleStar: (id: string) => Promise<void>;
     toggleSwitch: (key: keyof Switches) => void;
@@ -151,6 +182,72 @@ interface StoreState {
     /** Set when a vault cannot be opened — an unmounted drive, a deleted folder. */
     workspaceError: null | string;
     workspacePath: null | string;
+}
+
+/**
+ * Ends the interval the timer is in and returns the state of the next one.
+ *
+ * A finished *focus* interval is what produces a `FocusSession`; breaks are not
+ * recorded, so the calendar only ever shows time actually spent working.
+ */
+function completeInterval(
+    state: StoreState,
+    now: number,
+): { focus: FocusState; sessions: FocusSession[] } {
+    const { focus, focusSessions, prefs } = state;
+    const finishedFocus = focus.phase === 'focus' && focus.startedAt !== null;
+    const sessions = finishedFocus
+        ? [
+              ...focusSessions,
+              {
+                  endedAt: new Date(now).toISOString(),
+                  id: `fs_${now}`,
+                  startedAt: focus.startedAt!,
+                  taskId: focus.taskId,
+              },
+          ]
+        : focusSessions;
+
+    const phase = nextPhase(focus.phase, focus.sessionIndex, prefs.longBreakAfter);
+    const seconds = phaseSeconds(phase, prefs.durations);
+    // Breaks auto-start only when the user asked them to; a finished break always
+    // waits for a deliberate start so nobody is dropped back into focus.
+    const running = phase !== 'focus' && prefs.switches.autoBreak;
+
+    // A finished focus interval leaves the counter alone — it is only after the
+    // break that the next session begins — and a long break closes the cycle.
+    let sessionIndex = focus.sessionIndex;
+    if (focus.phase === 'short') sessionIndex = focus.sessionIndex + 1;
+    else if (focus.phase === 'long') sessionIndex = 1;
+
+    return {
+        focus: {
+            endsAt: running ? now + seconds * 1000 : null,
+            phase,
+            remainingSec: seconds,
+            running,
+            sessionIndex,
+            startedAt: running ? new Date(now).toISOString() : null,
+            taskId: focus.taskId,
+        },
+        sessions,
+    };
+}
+
+/** Shared tail of "this interval is over": roll the phase, persist, log. */
+function finishInterval(get: () => StoreState, set: (partial: Partial<StoreState>) => void): void {
+    const before = get();
+    const { focus, sessions } = completeInterval(before, Date.now());
+    set({ focus, focusSessions: sessions });
+    persist(get());
+
+    const logged =
+        sessions.length > before.focusSessions.length ? sessions[sessions.length - 1] : null;
+    if (logged && before.prefs.switches.logFocus) {
+        void logFocusSession(before, logged)
+            .then(() => get().refresh())
+            .catch((e) => console.error('lore: could not write the focus log', e));
+    }
 }
 
 /** The real hydrate. Only ever entered through the single-flight guard above. */
@@ -223,17 +320,68 @@ async function hydrateOnce(
     unsubscribeVault = repo.subscribe?.(scheduleRefresh(get)) ?? null;
 }
 
+/**
+ * Appends a finished interval to today's focus note, when "Log sessions to my
+ * knowledge base" is on. One note a day: the first session of the day creates
+ * it, every later one adds a line.
+ *
+ * Best-effort — a vault that refuses the write must not stall the timer, which
+ * is why the callers do not await this.
+ */
+async function logFocusSession(state: StoreState, session: FocusSession): Promise<void> {
+    const day = new Date(session.startedAt);
+    const title = `Focus log — ${day.toLocaleDateString(undefined, {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    })}`;
+    const task = session.taskId ? state.items.find((i) => i.id === session.taskId) : undefined;
+    const minutes = Math.round(
+        (new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime()) / 60_000,
+    );
+    const line = `- ${formatTime(session.startedAt)}–${formatTime(session.endedAt)} · ${minutes} min${
+        task ? ` · ${task.title}` : ''
+    }`;
+
+    const repo = getRepository();
+    const existing = state.items.find((i) => i.title === title);
+    if (existing) {
+        const current = (await repo.getItem(existing.id))?.body ?? '';
+        await repo.updateItem(existing.id, { body: `${current}\n${line}`.trim() });
+    } else {
+        await repo.createItem({
+            body: line,
+            flags: {},
+            related: [],
+            tags: ['focus'],
+            title,
+            type: 'note',
+        });
+    }
+}
+
 function persist(
     s: {
         migratedAt?: null | string;
-    } & Pick<StoreState, 'auth' | 'onboarded' | 'prefs' | 'recentWorkspaces' | 'workspacePath'>,
+    } & Pick<
+        StoreState,
+        | 'auth'
+        | 'focusSessions'
+        | 'onboarded'
+        | 'prefs'
+        | 'recentWorkspaces'
+        | 'schedule'
+        | 'workspacePath'
+    >,
 ): void {
     savePersisted({
         auth: s.auth,
+        focusSessions: s.focusSessions,
         migratedAt: s.migratedAt ?? persisted.migratedAt,
         onboarded: s.onboarded,
         prefs: s.prefs,
         recentWorkspaces: s.recentWorkspaces,
+        schedule: s.schedule,
         workspacePath: s.workspacePath,
     });
 }
@@ -384,6 +532,8 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ migrationNotice: null });
     },
 
+    /* ---------------- focus timer ---------------- */
+
     finishOnboarding(mode, email) {
         const auth: Auth =
             mode === 'account'
@@ -392,6 +542,19 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ auth, onboarded: true });
         persist(get());
     },
+    focus: {
+        endsAt: null,
+        phase: 'focus',
+        remainingSec: persisted.prefs.durations.focus * 60,
+        running: false,
+        sessionIndex: 1,
+        startedAt: null,
+        taskId: null,
+    },
+    focusModeOpen: false,
+    focusPopoverOpen: false,
+
+    focusSessions: persisted.focusSessions,
     async hydrate() {
         if (hydrating) return hydrating;
         hydrating = (async () => {
@@ -411,6 +574,8 @@ export const useStore = create<StoreState>((set, get) => ({
         // Ignore a response that lost the race to a newer selection.
         if (get().selectedId === id) set({ detail: item });
     },
+    mainView: 'library',
+
     migrationNotice: null,
 
     onboarded: persisted.onboarded,
@@ -453,16 +618,42 @@ export const useStore = create<StoreState>((set, get) => ({
         set((s) => ({ auth: { ...s.auth, email }, onboardingStep: 'magic' }));
     },
 
+    resetFocusInterval() {
+        set((s) => ({
+            focus: {
+                ...s.focus,
+                endsAt: null,
+                remainingSec: phaseSeconds(s.focus.phase, s.prefs.durations),
+                running: false,
+                startedAt: null,
+            },
+        }));
+    },
+
+    schedule: persisted.schedule,
+
+    scheduleItem(id, at) {
+        set((s) => {
+            const schedule = { ...s.schedule };
+            if (at) schedule[id] = at.toISOString();
+            else delete schedule[id];
+            return { schedule };
+        });
+        persist(get());
+    },
+
     search: '',
     searching: false,
     searchResults: null,
     selectedId: 'i1',
     selectItem(id) {
-        set({ chatOpen: false, detail: null, selectedId: id });
+        // Opening an item always means the library — the calendar and the chat
+        // are both places you leave to look at one.
+        set({ chatOpen: false, detail: null, mainView: 'library', selectedId: id });
         void get().loadDetail(id);
     },
     selectView(kind, val = null) {
-        set({ chatOpen: false, view: { kind, val } });
+        set({ chatOpen: false, mainView: 'library', view: { kind, val } });
     },
     async sendChat(question) {
         const text = question.trim();
@@ -495,6 +686,14 @@ export const useStore = create<StoreState>((set, get) => ({
 
     /* ---------------- settings ---------------- */
 
+    setFocusTask(id) {
+        set((s) => ({ focus: { ...s.focus, taskId: id } }));
+    },
+
+    setMainView(view) {
+        set({ mainView: view });
+    },
+
     setOnboardingStep(step) {
         set({ onboardingStep: step });
     },
@@ -524,6 +723,10 @@ export const useStore = create<StoreState>((set, get) => ({
         // Drops the account but keeps the local vault and every preference.
         set({ auth: { email: null, mode: 'anonymous', name: null } });
         persist(get());
+    },
+
+    skipFocusInterval() {
+        finishInterval(get, set);
     },
 
     sort: 'newest',
@@ -572,8 +775,51 @@ export const useStore = create<StoreState>((set, get) => ({
 
     tagOrder: [],
 
+    tickFocus() {
+        const state = get();
+        if (!state.focus.running) return;
+        const remaining = remainingSeconds(state.focus);
+        if (remaining > 0) {
+            set({ focus: { ...state.focus, remainingSec: remaining } });
+            return;
+        }
+        finishInterval(get, set);
+    },
+
     toggleChat() {
         set((s) => ({ chatOpen: !s.chatOpen }));
+    },
+
+    toggleFocus() {
+        set((s) => {
+            const running = !s.focus.running;
+            const remaining =
+                s.focus.remainingSec > 0
+                    ? s.focus.remainingSec
+                    : phaseSeconds(s.focus.phase, s.prefs.durations);
+            return {
+                focus: {
+                    ...s.focus,
+                    endsAt: running ? Date.now() + remaining * 1000 : null,
+                    remainingSec: remaining,
+                    running,
+                    // The session's clock starts on the first start, not on every
+                    // resume — otherwise a pause would shorten the block the
+                    // calendar draws for it.
+                    startedAt: running
+                        ? (s.focus.startedAt ?? new Date().toISOString())
+                        : s.focus.startedAt,
+                },
+            };
+        });
+    },
+
+    toggleFocusMode() {
+        set((s) => ({ focusModeOpen: !s.focusModeOpen, focusPopoverOpen: false }));
+    },
+
+    toggleFocusPopover() {
+        set((s) => ({ focusPopoverOpen: !s.focusPopoverOpen }));
     },
 
     toggleSidebar() {
