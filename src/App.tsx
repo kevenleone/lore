@@ -12,7 +12,7 @@ import { AskLoreChat } from './components/kb/AskLoreChat';
 import { DetailPane } from './components/kb/DetailPane';
 import { ListPane } from './components/kb/ListPane';
 import { Notice } from './components/kb/Notice';
-import { Sidebar } from './components/kb/Sidebar';
+import { Sidebar, SIDEBAR_WIDTH } from './components/kb/Sidebar';
 import { TitleBar } from './components/kb/TitleBar';
 import { Onboarding } from './components/onboarding/Onboarding';
 import { SettingsModal } from './components/settings/SettingsModal';
@@ -27,6 +27,7 @@ export default function App() {
     const accent = useStore((s) => s.prefs.accent);
     const textSize = useStore((s) => s.prefs.textSize);
     const sidebarVisible = useStore((s) => s.sidebarVisible);
+    const reduceMotion = useStore((s) => s.prefs.switches.motion);
     const chatOpen = useStore((s) => s.chatOpen);
     const onboarded = useStore((s) => s.onboarded);
     const settingsOpen = useStore((s) => s.settingsOpen);
@@ -94,7 +95,26 @@ export default function App() {
                 <TitleBar onCapture={openCaptureWindow} />
                 <Notice />
                 <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-                    {sidebarVisible && <Sidebar onCapture={openCaptureWindow} />}
+                    {/*
+                     * The sidebar stays mounted and collapses by width so the pane
+                     * slides instead of popping. The clip is on the wrapper and the
+                     * width on the sidebar is fixed, so its contents keep their layout
+                     * through the transition rather than reflowing on every frame.
+                     */}
+                    <div
+                        aria-hidden={!sidebarVisible}
+                        inert={!sidebarVisible}
+                        style={{
+                            flex: 'none',
+                            overflow: 'hidden',
+                            transition: reduceMotion
+                                ? undefined
+                                : 'width .22s cubic-bezier(.4,0,.2,1)',
+                            width: sidebarVisible ? SIDEBAR_WIDTH : 0,
+                        }}
+                    >
+                        <Sidebar onCapture={openCaptureWindow} />
+                    </div>
                     <ListPane />
                     <div
                         style={{

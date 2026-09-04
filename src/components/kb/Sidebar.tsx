@@ -15,6 +15,9 @@ import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
 const AC = 'var(--ac, #5b5bd6)';
 
+/** Fixed while the pane collapses, so the contents don't reflow mid-transition. */
+export const SIDEBAR_WIDTH = 248;
+
 const ROW_BASE = {
     alignItems: 'center',
     borderRadius: 7,
@@ -80,9 +83,10 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                 flex: 'none',
                 flexDirection: 'column',
                 fontSize: 13.5,
+                height: '100%',
                 overflow: 'auto',
                 padding: 10,
-                width: 248,
+                width: SIDEBAR_WIDTH,
             }}
         >
             {/* Which vault this window is showing — scopes everything below it. */}
