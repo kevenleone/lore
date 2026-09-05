@@ -110,6 +110,35 @@ export function Globe({ size = 13, style, sw = 1.8 }: GlyphProps) {
     );
 }
 
+export function History({ size = 13, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1" />
+            <polyline points="3 3.5 3 8 7.5 8" />
+            <polyline points="12 7.5 12 12 15.5 13.8" />
+        </Stroke>
+    );
+}
+
+export function Info({ size = 13, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <circle cx="12" cy="12" r="9" />
+            <line x1="12" x2="12" y1="11" y2="16.5" />
+            <line x1="12" x2="12" y1="7.6" y2="8.2" />
+        </Stroke>
+    );
+}
+
+export function Link({ size = 13, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <path d="M10 13.5a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7l-1.5 1.5" />
+            <path d="M14 10.5a4 4 0 0 0-5.7 0l-2.8 2.8a4 4 0 0 0 5.7 5.7l1.5-1.5" />
+        </Stroke>
+    );
+}
+
 export function Message({ size = 16, style, sw = 1.8 }: GlyphProps) {
     return (
         <Stroke size={size} style={style} sw={sw}>
@@ -133,6 +162,16 @@ export function OpenPage({ size = 14, style, sw = 1.8 }: GlyphProps) {
         <Stroke size={size} style={style} sw={sw}>
             <rect height="16" rx="2.4" width="18" x="3" y="4" />
             <line x1="3" x2="21" y1="9" y2="9" />
+        </Stroke>
+    );
+}
+
+/** Mirror of `SidebarToggle`: the divider sits on the right. */
+export function PanelRight({ size = 17, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <rect height="16" rx="2.5" width="18" x="3" y="4" />
+            <line x1="14.5" x2="14.5" y1="4" y2="20" />
         </Stroke>
     );
 }

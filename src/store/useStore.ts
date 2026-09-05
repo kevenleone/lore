@@ -32,6 +32,8 @@ import {
     type FocusSession,
     type FocusState,
     type Item,
+    type ItemComment,
+    type ItemMeta,
     type MainView,
     type OnboardingStep,
     type OpenMode,
@@ -72,6 +74,8 @@ let searchTimer: null | ReturnType<typeof setTimeout> = null;
 let searchSeq = 0;
 
 interface StoreState {
+    /** Appends a comment to the item's frontmatter. */
+    addComment: (id: string, body: string) => Promise<void>;
     addTag: (id: string, tag: string) => Promise<void>;
     aiAssist: boolean;
     auth: Auth;
@@ -127,10 +131,16 @@ interface StoreState {
     // lifecycle
     hydrate: () => Promise<void>;
     hydrated: boolean;
+    /**
+     * Per-file facts for the Properties panel — size, mtime, word count and
+     * backlinks. Null until the panel is open and a response has landed.
+     */
+    itemMeta: ItemMeta | null;
     // data
     items: Item[];
 
     loadDetail: (id: string) => Promise<void>;
+    loadItemMeta: (id: string) => Promise<void>;
     /** Which surface the window's main area shows: the library or the calendar. */
     mainView: MainView;
 
@@ -157,6 +167,7 @@ interface StoreState {
     recentWorkspaces: WorkspaceRef[];
     // data actions
     refresh: () => Promise<void>;
+    removeComment: (id: string, commentId: string) => Promise<void>;
     removeTag: (id: string, tag: string) => Promise<void>;
 
     renameItemFile: (id: string, stem: string) => Promise<void>;
@@ -224,6 +235,8 @@ interface StoreState {
     toggleFocus: () => void;
     toggleFocusMode: () => void;
     toggleFocusPopover: () => void;
+    /** Shows or hides the right-hand Properties panel. Persisted with the prefs. */
+    toggleProperties: () => void;
     toggleSidebar: () => void;
     toggleStar: (id: string) => Promise<void>;
     toggleSwitch: (key: keyof Switches) => void;
@@ -284,6 +297,16 @@ function completeInterval(
         },
         sessions,
     };
+}
+
+/**
+ * The freshest copy of an item. `detail` is the only one carrying a body, but it
+ * lands a tick after the list row, so an edit made in that gap must still read
+ * from the row rather than find nothing.
+ */
+function currentItem(state: StoreState, id: string): Item | undefined {
+    if (state.detail?.id === id) return state.detail;
+    return state.items.find((i) => i.id === id);
 }
 
 /** Shared tail of "this interval is over": roll the phase, persist, log, notify. */
@@ -534,6 +557,17 @@ async function seedDefaultVault(): Promise<void> {
 }
 
 export const useStore = create<StoreState>((set, get) => ({
+    async addComment(id, body) {
+        const text = body.trim();
+        const item = currentItem(get(), id);
+        if (!text || !item) return;
+        const comment: ItemComment = {
+            at: new Date().toISOString(),
+            body: text,
+            id: `c_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+        };
+        await get().updateItem(id, { comments: [...(item.comments ?? []), comment] });
+    },
     async addTag(id, tag) {
         const clean = tag.trim().replace(/^#/, '').toLowerCase();
         const item = get().items.find((i) => i.id === id);
@@ -653,12 +687,26 @@ export const useStore = create<StoreState>((set, get) => ({
         return hydrating;
     },
     hydrated: false,
+    itemMeta: null,
+
     items: [],
 
     async loadDetail(id) {
         const item = await getRepository().getItem(id);
         // Ignore a response that lost the race to a newer selection.
         if (get().selectedId === id) set({ detail: item });
+        void get().loadItemMeta(id);
+    },
+
+    /**
+     * A second round-trip per selection that only the Properties panel reads, so
+     * it is skipped entirely while the panel is closed.
+     */
+    async loadItemMeta(id) {
+        if (!get().prefs.propertiesOpen) return;
+        const repo = getRepository();
+        const meta = repo.itemMeta ? await repo.itemMeta(id).catch(() => null) : null;
+        if (get().selectedId === id) set({ itemMeta: meta });
     },
     mainView: 'library',
     migrationNotice: null,
@@ -689,6 +737,14 @@ export const useStore = create<StoreState>((set, get) => ({
         // Re-read the body: a mutation may have changed it.
         const id = get().selectedId;
         if (id) void get().loadDetail(id);
+    },
+
+    async removeComment(id, commentId) {
+        const item = currentItem(get(), id);
+        if (!item?.comments) return;
+        await get().updateItem(id, {
+            comments: item.comments.filter((c) => c.id !== commentId),
+        });
     },
 
     async removeTag(id, tag) {
@@ -747,6 +803,7 @@ export const useStore = create<StoreState>((set, get) => ({
         set({
             chatOpen: false,
             detail: null,
+            itemMeta: null,
             mainView: 'library',
             openAs: null,
             openId: opens ? id : null,
@@ -987,6 +1044,14 @@ export const useStore = create<StoreState>((set, get) => ({
 
     toggleFocusPopover() {
         set((s) => ({ focusPopoverOpen: !s.focusPopoverOpen }));
+    },
+
+    toggleProperties() {
+        const open = !get().prefs.propertiesOpen;
+        get().setPref('propertiesOpen', open);
+        const id = get().selectedId;
+        if (open && id) void get().loadItemMeta(id);
+        else if (!open) set({ itemMeta: null });
     },
 
     toggleSidebar() {
