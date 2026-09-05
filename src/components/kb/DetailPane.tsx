@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { OpenMode } from '../../store/types';
 
+import { cn } from '../../lib/cn';
 import { formatSavedDate } from '../../lib/format';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
@@ -16,7 +17,8 @@ import { Icon } from '../common/Icon';
 import { AiSummaryCard } from './AiSummaryCard';
 import { RelatedCards } from './RelatedCards';
 
-const AC = 'var(--ac, #5b5bd6)';
+/** The pane's own section headings (Tags, Related). */
+const SECTION_LABEL = 'text-caption font-[680] tracking-[.06em] text-faint uppercase';
 
 interface DetailPaneProps {
     /**
@@ -73,7 +75,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     }, [addingTag]);
 
     if (!sel) {
-        return <div style={{ background: 'var(--surface, #fff)', flex: 1 }} />;
+        return <div className="flex-1 bg-surface" />;
     }
 
     const asPage = chrome === 'page';
@@ -126,56 +128,21 @@ export function DetailPane({ chrome }: DetailPaneProps) {
         if (next) void addTag(sel.id, next);
     };
 
-    const bodyTextareaStyle = (mono: boolean): React.CSSProperties => ({
-        border: `1px solid ${AC}`,
-        borderRadius: 11,
-        margin: '18px 0 4px',
-        minHeight: 120,
-        outline: 'none',
-        padding: 14,
-        resize: 'vertical',
-        width: '100%',
-        ...(mono
-            ? {
-                  background: 'var(--surface3, #f1f1f3)',
-                  color: 'var(--text2, #6b6b76)',
-                  fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace',
-                  fontSize: 13,
-                  lineHeight: 1.7,
-              }
-            : { color: 'var(--text2, #6b6b76)', font: 'inherit', fontSize: 15, lineHeight: 1.65 }),
-    });
+    const bodyTextareaClass = (mono: boolean): string =>
+        cn(
+            'mt-[18px] mb-1 min-h-[120px] w-full resize-y rounded-11 border border-accent p-[14px] outline-none',
+            mono
+                ? 'bg-surface3 font-mono text-body-lg leading-[1.7] text-text2'
+                : 'font-[inherit] text-title-lg leading-[1.65] text-text2',
+        );
 
     return (
-        <div style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}>
+        <div className="flex min-h-0 flex-1 flex-col">
             {chrome && (
-                <div
-                    style={{
-                        alignItems: 'center',
-                        background: 'var(--surface2, #fafafa)',
-                        borderBottom: '1px solid var(--border, #ececef)',
-                        display: 'flex',
-                        flex: 'none',
-                        gap: 8,
-                        padding: '9px 12px',
-                    }}
-                >
+                <div className="flex flex-none items-center gap-2 border-b border-border bg-surface2 px-3 py-[9px]">
                     <button
+                        className="inline-flex cursor-pointer items-center gap-[7px] rounded-7 border-none bg-transparent px-[9px] py-[5px] font-[inherit] text-body font-[560] text-text2"
                         onClick={closeOpenItem}
-                        style={{
-                            alignItems: 'center',
-                            background: 'transparent',
-                            border: 'none',
-                            borderRadius: 7,
-                            color: 'var(--text2, #6b6b76)',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            fontFamily: 'inherit',
-                            fontSize: 12.5,
-                            fontWeight: 560,
-                            gap: 7,
-                            padding: '5px 9px',
-                        }}
                         type="button"
                     >
                         {asPage ? <Back /> : <Close size={15} sw={2} />}
@@ -184,21 +151,8 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     {chrome === 'drawer' && (
                         <button
                             aria-label="Open full screen"
+                            className="ml-auto inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-7 border-none bg-transparent p-0 text-text3"
                             onClick={expandOpenItem}
-                            style={{
-                                alignItems: 'center',
-                                background: 'transparent',
-                                border: 'none',
-                                borderRadius: 7,
-                                color: 'var(--text3, #9a9aa5)',
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                height: 28,
-                                justifyContent: 'center',
-                                marginLeft: 'auto',
-                                padding: 0,
-                                width: 28,
-                            }}
                             title="Open full screen"
                             type="button"
                         >
@@ -208,99 +162,55 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                 </div>
             )}
             <div
-                style={{
-                    flex: 1,
-                    overflow: 'auto',
+                className={cn(
+                    'flex-1 overflow-auto',
                     // A page fills the window, so its column is centred and capped
                     // rather than run out to a 1200px measure.
-                    padding: asPage ? '34px max(48px, calc((100% - 700px) / 2))' : '28px 34px',
-                }}
+                    asPage ? 'px-[max(48px,calc((100%-700px)/2))] py-[34px]' : 'px-[34px] py-7',
+                )}
             >
                 {/* header row */}
-                <div
-                    style={{ alignItems: 'center', display: 'flex', gap: 12, position: 'relative' }}
-                >
+                <div className="relative flex items-center gap-3">
                     <span
-                        style={{
-                            alignItems: 'center',
-                            background: meta.bg,
-                            borderRadius: 6,
-                            color: meta.fg,
-                            display: 'inline-flex',
-                            fontSize: 11.5,
-                            fontWeight: 600,
-                            gap: 6,
-                            padding: '3px 9px',
-                        }}
+                        className={cn(
+                            'inline-flex items-center gap-[6px] rounded-md px-[9px] py-[3px] text-label font-semibold',
+                            meta.chip,
+                        )}
                     >
                         <Icon name={sel.type} size={13} /> {meta.label}
                     </span>
                     {sel.domain && (
-                        <span
-                            style={{
-                                alignItems: 'center',
-                                color: 'var(--text3, #9a9aa5)',
-                                display: 'inline-flex',
-                                fontSize: 12.5,
-                                gap: 5,
-                            }}
-                        >
+                        <span className="inline-flex items-center gap-[5px] text-body text-text3">
                             <Globe />
                             {sel.domain}
                         </span>
                     )}
-                    <span
-                        style={{
-                            alignItems: 'center',
-                            display: 'flex',
-                            gap: 8,
-                            marginLeft: 'auto',
-                        }}
-                    >
+                    <span className="ml-auto flex items-center gap-2">
                         {linkUrl && (
                             <span
+                                className="inline-flex cursor-pointer items-center gap-[6px] rounded-lg border border-border px-[11px] py-[5px] text-body text-text2"
                                 onClick={() => void openExternal(linkUrl)}
-                                style={{
-                                    alignItems: 'center',
-                                    border: '1px solid var(--border, #e4e4ea)',
-                                    borderRadius: 8,
-                                    color: 'var(--text2, #6b6b76)',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    fontSize: 12.5,
-                                    gap: 6,
-                                    padding: '5px 11px',
-                                }}
                             >
                                 <External />
                                 Open
                             </span>
                         )}
                         <button
+                            className={cn(
+                                'inline-flex cursor-pointer border-none bg-none p-1',
+                                sel.flags.starred ? 'text-accent' : 'text-[#c4c4cc]',
+                            )}
                             onClick={() => void toggleStar(sel.id)}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                color: sel.flags.starred ? AC : '#c4c4cc',
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                padding: 4,
-                            }}
                             title={sel.flags.starred ? 'Remove flag' : 'Flag'}
                             type="button"
                         >
-                            <StarOutline style={sel.flags.starred ? { fill: AC } : undefined} />
+                            <StarOutline
+                                style={sel.flags.starred ? { fill: 'var(--ac)' } : undefined}
+                            />
                         </button>
                         <button
+                            className="inline-flex cursor-pointer border-none bg-none p-1 text-faint"
                             onClick={() => setConfirmDelete(true)}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                color: 'var(--faint, #a8a8b0)',
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                padding: 4,
-                            }}
                             title="Delete"
                             type="button"
                         >
@@ -309,71 +219,25 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     </span>
 
                     {confirmDelete && (
-                        <div
-                            style={{
-                                background: 'var(--surface, #fff)',
-                                border: '1px solid var(--border, #ececef)',
-                                borderRadius: 12,
-                                boxShadow: '0 16px 40px -12px rgba(24,24,48,.35)',
-                                padding: 16,
-                                position: 'absolute',
-                                right: 0,
-                                top: 36,
-                                width: 260,
-                                zIndex: 30,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    color: 'var(--text, #1a1a1f)',
-                                    fontSize: 14,
-                                    fontWeight: 600,
-                                }}
-                            >
+                        <div className="absolute top-9 right-0 z-30 w-[260px] rounded-xl border border-border bg-surface p-4 shadow-[0_16px_40px_-12px_rgba(24,24,48,.35)]">
+                            <div className="text-title font-semibold text-text">
                                 Delete this item?
                             </div>
-                            <div
-                                style={{
-                                    color: 'var(--text3, #9a9aa5)',
-                                    fontSize: 12.5,
-                                    marginTop: 4,
-                                }}
-                            >
+                            <div className="mt-1 text-body text-text3">
                                 This removes “{sel.title}” from your knowledge base.
                             </div>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    gap: 8,
-                                    justifyContent: 'flex-end',
-                                    marginTop: 14,
-                                }}
-                            >
+                            <div className="mt-[14px] flex justify-end gap-2">
                                 <span
+                                    className="cursor-pointer rounded-lg px-3 py-[6px] text-body-lg text-text2"
                                     onClick={() => setConfirmDelete(false)}
-                                    style={{
-                                        borderRadius: 8,
-                                        color: 'var(--text2, #6b6b76)',
-                                        cursor: 'pointer',
-                                        fontSize: 13,
-                                        padding: '6px 12px',
-                                    }}
                                 >
                                     Cancel
                                 </span>
                                 <span
+                                    className="cursor-pointer rounded-lg bg-[#c0392b] px-[14px] py-[6px] text-body-lg font-semibold text-white"
                                     onClick={() => {
                                         setConfirmDelete(false);
                                         void deleteItem(sel.id);
-                                    }}
-                                    style={{
-                                        background: '#c0392b',
-                                        borderRadius: 8,
-                                        color: '#fff',
-                                        cursor: 'pointer',
-                                        fontSize: 13,
-                                        fontWeight: 600,
-                                        padding: '6px 14px',
                                     }}
                                 >
                                     Delete
@@ -387,43 +251,21 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                 {editingTitle ? (
                     <input
                         autoFocus
+                        className="mt-[14px] w-full border-b-2 border-none border-b-accent bg-transparent text-[23px] leading-[1.25] font-bold tracking-[-.015em] text-text outline-none"
                         onBlur={commitTitle}
                         onChange={(e) => setTitleDraft(e.target.value)}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') commitTitle();
                             if (e.key === 'Escape') setEditingTitle(false);
                         }}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            borderBottom: `2px solid ${AC}`,
-                            color: 'var(--text, #1a1a1f)',
-                            font: 'inherit',
-                            fontFamily: 'inherit',
-                            fontSize: 23,
-                            fontWeight: 700,
-                            letterSpacing: '-.015em',
-                            lineHeight: 1.25,
-                            margin: '14px 0 0',
-                            outline: 'none',
-                            width: '100%',
-                        }}
                         value={titleDraft}
                     />
                 ) : (
                     <h1
+                        className="mt-[14px] mb-0 cursor-text text-[23px] leading-[1.25] font-bold tracking-[-.015em] text-text"
                         onClick={() => {
                             setTitleDraft(sel.title);
                             setEditingTitle(true);
-                        }}
-                        style={{
-                            color: 'var(--text, #1a1a1f)',
-                            cursor: 'text',
-                            fontSize: 23,
-                            fontWeight: 700,
-                            letterSpacing: '-.015em',
-                            lineHeight: 1.25,
-                            margin: '14px 0 0',
                         }}
                         title="Click to edit"
                     >
@@ -431,62 +273,36 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     </h1>
                 )}
 
-                <div
-                    style={{
-                        alignItems: 'center',
-                        color: 'var(--text3, #9a9aa5)',
-                        display: 'flex',
-                        fontSize: 12.5,
-                        gap: 7,
-                        marginTop: 9,
-                    }}
-                >
+                <div className="mt-[9px] flex items-center gap-[7px] text-body text-text3">
                     <span
-                        style={{
-                            background: coll?.color ?? '#c4c4cc',
-                            borderRadius: '50%',
-                            height: 9,
-                            width: 9,
-                        }}
+                        className="h-[9px] w-[9px] rounded-full"
+                        // The collection's own colour, which the user picks.
+                        style={{ background: coll?.color ?? '#c4c4cc' }}
                     />
                     {coll?.name ?? 'Unfiled'}
-                    <span style={{ opacity: 0.5 }}>·</span>
+                    <span className="opacity-50">·</span>
                     Saved {formatSavedDate(sel.createdAt)}
                     {sel.path && (
                         <>
-                            <span style={{ opacity: 0.5 }}>·</span>
+                            <span className="opacity-50">·</span>
                             {editingFilename ? (
                                 <input
                                     autoFocus
+                                    className="min-w-[120px] border-b-[1.5px] border-none border-b-accent bg-transparent font-mono text-body-sm text-text outline-none"
                                     onBlur={commitFilename}
                                     onChange={(e) => setFilenameDraft(e.target.value)}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') commitFilename();
                                         if (e.key === 'Escape') setEditingFilename(false);
                                     }}
-                                    style={{
-                                        background: 'transparent',
-                                        border: 'none',
-                                        borderBottom: `1.5px solid ${AC}`,
-                                        color: 'var(--text, #1a1a1f)',
-                                        font: 'inherit',
-                                        fontFamily: 'ui-monospace,Menlo,monospace',
-                                        fontSize: 12,
-                                        minWidth: 120,
-                                        outline: 'none',
-                                    }}
                                     value={filenameDraft}
                                 />
                             ) : (
                                 <span
+                                    className="cursor-text font-mono text-body-sm"
                                     onClick={() => {
                                         setFilenameDraft(fileStem);
                                         setEditingFilename(true);
-                                    }}
-                                    style={{
-                                        cursor: 'text',
-                                        fontFamily: 'ui-monospace,Menlo,monospace',
-                                        fontSize: 12,
                                     }}
                                     title="Click to rename the file. Renaming rewrites links that point here."
                                 >
@@ -501,17 +317,9 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                 {flags.showPreview && sel.image && (
                     <img
                         alt={sel.title}
+                        className="mt-5 mb-1 block h-[204px] w-full rounded-[13px] border border-border object-cover"
                         draggable={false}
                         src={sel.image}
-                        style={{
-                            border: '1px solid var(--border, #ececef)',
-                            borderRadius: 13,
-                            display: 'block',
-                            height: 204,
-                            margin: '20px 0 4px',
-                            objectFit: 'cover',
-                            width: '100%',
-                        }}
                     />
                 )}
 
@@ -519,6 +327,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                 {bodyField && editingBody ? (
                     <textarea
                         autoFocus
+                        className={bodyTextareaClass(flags.detIsCode)}
                         onBlur={commitBody}
                         onChange={(e) => setBodyDraft(e.target.value)}
                         onKeyDown={(e) => {
@@ -528,56 +337,31 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                         placeholder={
                             bodyField === 'description' ? 'Add a description…' : 'Add content…'
                         }
-                        style={bodyTextareaStyle(flags.detIsCode)}
                         value={bodyDraft}
                     />
                 ) : flags.detIsCode ? (
                     <pre
+                        className="mt-5 mb-1 cursor-text overflow-auto rounded-11 border border-border bg-surface3 p-4 font-mono text-body-lg leading-[1.7] whitespace-pre text-text2"
                         onClick={startBody}
-                        style={{
-                            background: 'var(--surface3, #f1f1f3)',
-                            border: '1px solid var(--border, #ececef)',
-                            borderRadius: 11,
-                            color: 'var(--text2, #6b6b76)',
-                            cursor: 'text',
-                            fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace',
-                            fontSize: 13,
-                            lineHeight: 1.7,
-                            margin: '20px 0 4px',
-                            overflow: 'auto',
-                            padding: 16,
-                            whiteSpace: 'pre',
-                        }}
                         title="Click to edit"
                     >
                         {sel.body}
                     </pre>
                 ) : flags.detIsText ? (
                     <p
+                        className="mt-[18px] mb-1 cursor-text text-title-lg leading-[1.65] text-text2"
                         onClick={startBody}
-                        style={{
-                            color: 'var(--text2, #6b6b76)',
-                            cursor: 'text',
-                            fontSize: 15,
-                            lineHeight: 1.65,
-                            margin: '18px 0 4px',
-                        }}
                         title="Click to edit"
                     >
                         {sel.body}
                     </p>
                 ) : sel.type === 'link' ? (
                     <p
+                        className={cn(
+                            'mt-[18px] mb-1 cursor-text text-[14.5px] leading-[1.6]',
+                            sel.description ? 'text-text2' : 'text-faint',
+                        )}
                         onClick={startBody}
-                        style={{
-                            color: sel.description
-                                ? 'var(--text2, #3b3b44)'
-                                : 'var(--faint, #b3b3bd)',
-                            cursor: 'text',
-                            fontSize: 14.5,
-                            lineHeight: 1.6,
-                            margin: '18px 0 4px',
-                        }}
                         title="Click to edit"
                     >
                         {sel.description || 'Add a description…'}
@@ -593,46 +377,18 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                 )}
 
                 {/* tags */}
-                <div style={{ marginTop: 20 }}>
-                    <div
-                        style={{
-                            color: 'var(--faint, #a8a8b0)',
-                            fontSize: 11,
-                            fontWeight: 680,
-                            letterSpacing: '.06em',
-                            marginBottom: 9,
-                            textTransform: 'uppercase',
-                        }}
-                    >
-                        Tags
-                    </div>
-                    <div
-                        style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: 7 }}
-                    >
+                <div className="mt-5">
+                    <div className={cn(SECTION_LABEL, 'mb-[9px]')}>Tags</div>
+                    <div className="flex flex-wrap items-center gap-[7px]">
                         {sel.tags.map((tag) => (
                             <span
+                                className="inline-flex items-center gap-[5px] rounded-7 bg-accent-tint px-[9px] py-1 font-mono text-body-sm text-accent"
                                 key={tag}
-                                style={{
-                                    alignItems: 'center',
-                                    background: 'var(--ac-tint, #eeeef2)',
-                                    borderRadius: 7,
-                                    color: AC,
-                                    display: 'inline-flex',
-                                    fontFamily: 'ui-monospace,Menlo,monospace',
-                                    fontSize: 12,
-                                    gap: 5,
-                                    padding: '4px 9px',
-                                }}
                             >
                                 #{tag}
                                 <span
+                                    className="cursor-pointer text-body-lg leading-none opacity-55"
                                     onClick={() => void removeTag(sel.id, tag)}
-                                    style={{
-                                        cursor: 'pointer',
-                                        fontSize: 13,
-                                        lineHeight: 1,
-                                        opacity: 0.55,
-                                    }}
                                     title="Remove tag"
                                 >
                                     ×
@@ -641,6 +397,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                         ))}
                         {addingTag ? (
                             <input
+                                className="w-20 rounded-7 border border-accent bg-transparent px-2 py-[3px] font-mono text-body-sm text-accent outline-none"
                                 onBlur={commitTag}
                                 onChange={(e) => setTagDraft(e.target.value)}
                                 onKeyDown={(e) => {
@@ -652,31 +409,12 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                                 }}
                                 placeholder="tag"
                                 ref={tagInputRef}
-                                style={{
-                                    background: 'transparent',
-                                    border: `1px solid ${AC}`,
-                                    borderRadius: 7,
-                                    color: AC,
-                                    fontFamily: 'ui-monospace,Menlo,monospace',
-                                    fontSize: 12,
-                                    outline: 'none',
-                                    padding: '3px 8px',
-                                    width: 80,
-                                }}
                                 value={tagDraft}
                             />
                         ) : (
                             <span
+                                className="cursor-pointer rounded-7 border border-dashed border-dash px-[9px] py-[3px] font-mono text-body-sm text-faint"
                                 onClick={() => setAddingTag(true)}
-                                style={{
-                                    border: '1px dashed var(--dash, #d2d2dc)',
-                                    borderRadius: 7,
-                                    color: 'var(--faint, #a8a8b0)',
-                                    cursor: 'pointer',
-                                    fontFamily: 'ui-monospace,Menlo,monospace',
-                                    fontSize: 12,
-                                    padding: '3px 9px',
-                                }}
                             >
                                 + add
                             </span>
