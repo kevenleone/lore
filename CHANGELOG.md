@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.1.0](https://github.com/kevenleone/lore/compare/v1.0.0...v1.1.0) (2026-09-05)
+
+
+### Features
+
+* add a properties side panel ([4a7c3cb](https://github.com/kevenleone/lore/commit/4a7c3cb3e1345fe46f96dda00bf3a1d32cf3bc62))
+* adopt the Open seal mark as the app icon ([5bcbe58](https://github.com/kevenleone/lore/commit/5bcbe5801feceaac5c1fbad319e7509d86aef1fb))
+* capture from a drawer when Lore is already open ([d5b3626](https://github.com/kevenleone/lore/commit/d5b3626eff9cde3558daadcc15f529eceb06c4d0))
+* filter the library by category, tag, collection and date ([2b8ec70](https://github.com/kevenleone/lore/commit/2b8ec70ab1a2377fddec17b3f61e54b9c2c7fd36))
+* label the title bar's icon buttons on hover ([2017609](https://github.com/kevenleone/lore/commit/20176095191a5cb7da23190d259b9e6d93c4e35a))
+* notify when a focus interval ends ([56bbf05](https://github.com/kevenleone/lore/commit/56bbf05254deedce6501f2af93638e5e68bb835d))
+* read comments, file stats and backlinks from the vault ([f1191dd](https://github.com/kevenleone/lore/commit/f1191dd3ddc380e4fc86368442aef120501a8a04))
+
+
+### Bug Fixes
+
+* do not let item images start a native drag ([292d6e2](https://github.com/kevenleone/lore/commit/292d6e2a0df66bd72d67eb9525ec558cc1d82ebe))
+
+
+### Refactoring
+
+* never let the page itself scroll ([5d0dbf5](https://github.com/kevenleone/lore/commit/5d0dbf52768fbf3db00a17bc150892788c5de8cf))
+
+
+### Build System
+
+* add the Tauri notification plugin ([e5692a6](https://github.com/kevenleone/lore/commit/e5692a6e5bf8ed17e9c24f3a385c8b0b40cfffa0))
+* let the sidecar build script target a specific triple ([0552db9](https://github.com/kevenleone/lore/commit/0552db939945560138aba120bf3732ccc88b1c14))
+
 ## [1.0.0](https://github.com/kevenleone/lore/compare/v0.1.0...v1.0.0) (2026-09-05)
 
 
