@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react';
 
 import { useStore } from '../../store/useStore';
 import { Plus, Search, SidebarToggle, Sort, Sparkle, ViewList } from '../common/glyphs';
+import { Tooltip } from '../common/Tooltip';
 import { FocusChip } from '../focus/FocusChip';
 
 const AC = 'var(--ac, #5b5bd6)';
@@ -47,6 +48,9 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                 padding: '0 14px',
                 position: 'relative',
                 WebkitBackdropFilter: 'blur(20px)',
+                // Above every pane below it, so a tooltip hanging off the bar is
+                // drawn over the list header rather than behind it.
+                zIndex: 35,
             }}
         >
             <div style={{ alignItems: 'center', display: 'flex', gap: 8 }}>
@@ -55,17 +59,20 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                 <TrafficLight action="toggleMaximize" color="#28c840" />
             </div>
 
-            <span
-                onClick={toggleSidebar}
-                style={{
-                    color: 'var(--faint, #a8a8b0)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    marginLeft: 4,
-                }}
-            >
-                <SidebarToggle />
-            </span>
+            <Tooltip keys="⌘⌥S" label="Toggle sidebar">
+                <span
+                    aria-label="Toggle sidebar"
+                    onClick={toggleSidebar}
+                    style={{
+                        color: 'var(--faint, #a8a8b0)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        marginLeft: 4,
+                    }}
+                >
+                    <SidebarToggle />
+                </span>
+            </Tooltip>
 
             <div style={{ flex: 1 }} />
 
@@ -119,30 +126,39 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
             </label>
 
             <div style={{ alignItems: 'center', display: 'flex', gap: 6 }}>
-                <FocusChip />
-                <span
-                    onClick={toggleChat}
-                    style={{
-                        alignItems: 'center',
-                        borderRadius: 8,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        height: 30,
-                        justifyContent: 'center',
-                        width: 30,
-                        ...(chatOpen
-                            ? { background: 'var(--ac-tint, #eeeef2)', color: AC }
-                            : { color: 'var(--text2, #6b6b76)' }),
-                    }}
-                >
-                    <Sparkle />
-                </span>
-                <ChromeButton>
-                    <ViewList />
-                </ChromeButton>
-                <ChromeButton>
-                    <Sort />
-                </ChromeButton>
+                <Tooltip keys="⌥⇧F" label="Focus timer">
+                    <FocusChip />
+                </Tooltip>
+                <Tooltip keys="⌘J" label="Ask Lore">
+                    <span
+                        aria-label="Ask Lore"
+                        onClick={toggleChat}
+                        style={{
+                            alignItems: 'center',
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            height: 30,
+                            justifyContent: 'center',
+                            width: 30,
+                            ...(chatOpen
+                                ? { background: 'var(--ac-tint, #eeeef2)', color: AC }
+                                : { color: 'var(--text2, #6b6b76)' }),
+                        }}
+                    >
+                        <Sparkle />
+                    </span>
+                </Tooltip>
+                <Tooltip label="View options">
+                    <ChromeButton label="View options">
+                        <ViewList />
+                    </ChromeButton>
+                </Tooltip>
+                <Tooltip label="Sort">
+                    <ChromeButton label="Sort">
+                        <Sort />
+                    </ChromeButton>
+                </Tooltip>
                 <span
                     onClick={onCapture}
                     style={{
@@ -178,9 +194,10 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
     );
 }
 
-function ChromeButton({ children }: { children: React.ReactNode }) {
+function ChromeButton({ children, label }: { children: React.ReactNode; label: string }) {
     return (
         <span
+            aria-label={label}
             style={{
                 alignItems: 'center',
                 borderRadius: 8,
