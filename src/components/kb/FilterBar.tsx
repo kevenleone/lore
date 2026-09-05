@@ -9,14 +9,12 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { FilterFacet, ItemType } from '../../store/types';
 
+import { cn } from '../../lib/cn';
 import { SEED_TAG_ORDER } from '../../store/seed';
 import { TYPE_META } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
 import { activeFilterCount, tagCounts } from '../../store/views';
-import { hoverable } from '../../theme/util.css';
 import { ChevronDown } from '../common/glyphs';
-
-const AC = 'var(--ac, #5b5bd6)';
 
 /** Which popover is open, or `date` for the two date inputs. */
 type MenuId = 'date' | FilterFacet;
@@ -49,16 +47,8 @@ export function FilterBar() {
 
     return (
         <div
+            className="flex flex-none flex-wrap items-center gap-[6px] border-b border-border px-4 py-2"
             ref={barRef}
-            style={{
-                alignItems: 'center',
-                borderBottom: '1px solid var(--border, #ececef)',
-                display: 'flex',
-                flex: 'none',
-                flexWrap: 'wrap',
-                gap: 6,
-                padding: '8px 16px',
-            }}
         >
             <Menu
                 active={filters.categories.length > 0}
@@ -129,20 +119,10 @@ export function FilterBar() {
 
             {count > 0 && (
                 <button
-                    className={hoverable}
+                    className="ml-[2px] cursor-pointer border-none bg-transparent px-[6px] py-1 font-[inherit] text-body text-text3 hover:bg-hover"
                     onClick={() => {
                         clearFilters();
                         setMenu(null);
-                    }}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text3, #9a9aa5)',
-                        cursor: 'pointer',
-                        font: 'inherit',
-                        fontSize: 12.5,
-                        marginLeft: 2,
-                        padding: '4px 6px',
                     }}
                     type="button"
                 >
@@ -156,17 +136,10 @@ export function FilterBar() {
 function Checkbox({ checked }: { checked: boolean }) {
     return (
         <span
-            style={{
-                alignItems: 'center',
-                border: `1.5px solid ${checked ? AC : 'var(--border, #d8d8de)'}`,
-                borderRadius: 4,
-                display: 'flex',
-                flex: 'none',
-                height: 14,
-                justifyContent: 'center',
-                width: 14,
-                ...(checked ? { background: AC, color: '#fff' } : {}),
-            }}
+            className={cn(
+                'flex h-[14px] w-[14px] flex-none items-center justify-center rounded-sm border-[1.5px]',
+                checked ? 'border-accent bg-accent text-white' : 'border-border',
+            )}
         >
             {checked && (
                 <svg fill="none" height="10" viewBox="0 0 24 24" width="10">
@@ -193,30 +166,11 @@ function DateField({
     value: null | string;
 }) {
     return (
-        <label
-            style={{
-                alignItems: 'center',
-                color: 'var(--text2, #6b6b76)',
-                display: 'flex',
-                fontSize: 12.5,
-                gap: 8,
-                padding: '5px 8px',
-            }}
-        >
-            <span style={{ width: 34 }}>{label}</span>
+        <label className="flex items-center gap-2 px-2 py-[5px] text-body text-text2">
+            <span className="w-[34px]">{label}</span>
             <input
+                className="min-w-0 flex-1 rounded-7 border border-border bg-surface3 px-[7px] py-1 font-[inherit] text-text outline-none"
                 onChange={(e) => onChange(e.target.value || null)}
-                style={{
-                    background: 'var(--surface3, #f1f1f3)',
-                    border: '1px solid var(--border, #ececef)',
-                    borderRadius: 7,
-                    color: 'var(--text, #1a1a1f)',
-                    flex: 1,
-                    font: 'inherit',
-                    minWidth: 0,
-                    outline: 'none',
-                    padding: '4px 7px',
-                }}
                 type="date"
                 value={value ?? ''}
             />
@@ -232,11 +186,7 @@ function dateLabel(from: null | string, to: null | string): string {
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-    return (
-        <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12.5, padding: '7px 10px' }}>
-            {children}
-        </div>
-    );
+    return <div className="px-[10px] py-[7px] text-body text-text3">{children}</div>;
 }
 
 function facetLabel(label: string, count: number): string {
@@ -259,33 +209,16 @@ function Menu({
     width?: number;
 }) {
     return (
-        <div style={{ position: 'relative' }}>
+        <div className="relative">
             <button
                 aria-expanded={open}
+                className={cn(
+                    'flex cursor-pointer items-center gap-[5px] rounded-lg border px-2 py-1 font-[inherit] text-body',
+                    active
+                        ? 'border-transparent bg-accent-tint font-[590] text-accent'
+                        : 'border-border bg-surface font-medium text-text2',
+                )}
                 onClick={onToggle}
-                style={{
-                    alignItems: 'center',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    fontFamily: 'inherit',
-                    fontSize: 12.5,
-                    gap: 5,
-                    padding: '4px 8px',
-                    ...(active
-                        ? {
-                              background: 'var(--ac-tint, #eeeef2)',
-                              border: '1px solid transparent',
-                              color: AC,
-                              fontWeight: 590,
-                          }
-                        : {
-                              background: 'var(--surface, #fff)',
-                              border: '1px solid var(--border, #ececef)',
-                              color: 'var(--text2, #6b6b76)',
-                              fontWeight: 500,
-                          }),
-                }}
                 type="button"
             >
                 {label}
@@ -293,20 +226,8 @@ function Menu({
             </button>
             {open && (
                 <div
-                    style={{
-                        background: 'var(--surface, #fff)',
-                        border: '1px solid var(--border, #ececef)',
-                        borderRadius: 10,
-                        boxShadow: '0 12px 30px -10px rgba(24,24,48,.3)',
-                        left: 0,
-                        maxHeight: 280,
-                        overflowY: 'auto',
-                        padding: 5,
-                        position: 'absolute',
-                        top: 30,
-                        width,
-                        zIndex: 25,
-                    }}
+                    className="absolute top-[30px] left-0 z-25 max-h-[280px] overflow-y-auto rounded-10 border border-border bg-surface p-[5px] shadow-[0_12px_30px_-10px_rgba(24,24,48,.3)]"
+                    style={{ width }}
                 >
                     {children}
                 </div>
@@ -330,54 +251,23 @@ function Option({
 }) {
     return (
         <div
-            className={hoverable}
+            className={cn(
+                'flex cursor-pointer items-center gap-2 rounded-7 px-[9px] py-[6px] text-body-lg hover:bg-hover',
+                checked ? 'font-[590] text-accent' : 'font-normal text-text2',
+            )}
             onClick={onClick}
-            style={{
-                alignItems: 'center',
-                borderRadius: 7,
-                color: checked ? AC : 'var(--text2, #6b6b76)',
-                cursor: 'pointer',
-                display: 'flex',
-                fontSize: 13,
-                fontWeight: checked ? 590 : 400,
-                gap: 8,
-                padding: '6px 9px',
-            }}
         >
             <Checkbox checked={checked} />
             {color && (
                 <span
-                    style={{
-                        background: color,
-                        borderRadius: '50%',
-                        flex: 'none',
-                        height: 8,
-                        width: 8,
-                    }}
+                    className="h-2 w-2 flex-none rounded-full"
+                    // The collection's own colour, which the user picks.
+                    style={{ background: color }}
                 />
             )}
-            <span
-                style={{
-                    flex: 1,
-                    minWidth: 0,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                }}
-            >
-                {label}
-            </span>
+            <span className="min-w-0 flex-1 truncate">{label}</span>
             {count !== undefined && (
-                <span
-                    style={{
-                        color: 'var(--faint, #a8a8b0)',
-                        fontSize: 11.5,
-                        fontVariantNumeric: 'tabular-nums',
-                        fontWeight: 400,
-                    }}
-                >
-                    {count}
-                </span>
+                <span className="text-label font-normal text-faint tabular-nums">{count}</span>
             )}
         </div>
     );
