@@ -48,6 +48,7 @@ export interface Item {
      */
     body?: string;
     collectionId?: string;
+    comments?: ItemComment[];
     /** ISO 8601. Display strings (`2m`, `Today, 14:30`) are derived at render. */
     createdAt: string;
     /** Soft-delete tombstone for future Convex sync. */
@@ -86,6 +87,18 @@ export interface Item {
     url?: string;
 }
 
+/**
+ * A note left on an item. Stored in the file's own frontmatter, so it travels
+ * with the note rather than living in a database beside it.
+ */
+export interface ItemComment {
+    /** ISO 8601. */
+    at: string;
+    author?: string;
+    body: string;
+    id: string;
+}
+
 export interface ItemFlags {
     /**
      * Ticked off in the focus queue. It stays on the item rather than removing
@@ -95,6 +108,22 @@ export interface ItemFlags {
     inbox?: boolean;
     starred?: boolean;
     today?: boolean;
+}
+
+/**
+ * Per-file facts the Properties panel shows, read straight off the index rather
+ * than carried on `Item`: `listItems()` re-runs after every mutation, so putting
+ * file stats on the item would cost the whole vault on each save.
+ */
+export interface ItemMeta {
+    /** Items whose frontmatter `related` points at this one. */
+    backlinks: Item[];
+    /** ISO 8601, from the file's mtime on disk. */
+    modifiedAt: string;
+    path: string;
+    /** Bytes on disk, frontmatter included. */
+    size: number;
+    words: number;
 }
 
 export type ItemType = 'code' | 'image' | 'link' | 'note' | 'task';
@@ -289,6 +318,8 @@ export interface Prefs {
     longBreakAfter: number;
     notifStyle: NotificationStyle;
     openMode: OpenMode;
+    /** Whether the right-hand Properties panel is showing. */
+    propertiesOpen: boolean;
     switches: Switches;
     textSize: number;
     viewMode: ViewMode;
@@ -304,6 +335,7 @@ export const DEFAULT_PREFS: Prefs = {
     longBreakAfter: 4,
     notifStyle: 'Banner',
     openMode: 'drawer',
+    propertiesOpen: false,
     switches: DEFAULT_SWITCHES,
     textSize: 1,
     viewMode: 'list',

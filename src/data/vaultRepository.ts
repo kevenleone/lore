@@ -4,7 +4,7 @@
 // is a translation layer and nothing more. The one piece of real logic is
 // making sure a workspace is open before the first read.
 
-import type { Collection, Item, TagCount, View } from '../store/types';
+import type { Collection, Item, ItemMeta, TagCount, View } from '../store/types';
 import type {
     CollectionPatch,
     ItemPatch,
@@ -78,6 +78,17 @@ export class VaultRepository implements KnowledgeRepository {
     async getItem(id: string): Promise<Item | null> {
         try {
             return await this.call(() => request<Item>(`/items/${encodeURIComponent(id)}`));
+        } catch (e) {
+            if (e instanceof HttpError && e.status === 404) return null;
+            throw e;
+        }
+    }
+
+    async itemMeta(id: string): Promise<ItemMeta | null> {
+        try {
+            return await this.call(() =>
+                request<ItemMeta>(`/items/${encodeURIComponent(id)}/meta`),
+            );
         } catch (e) {
             if (e instanceof HttpError && e.status === 404) return null;
             throw e;
