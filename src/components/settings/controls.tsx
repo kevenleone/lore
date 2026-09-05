@@ -5,8 +5,22 @@
 
 import type { CSSProperties, ReactNode } from 'react';
 
+import { cn } from '../../lib/cn';
 import { SettingsIcon } from '../common/settingsGlyphs';
-import { pillButton, segItem, settingsRow } from './SettingsModal.css';
+
+/**
+ * Outlined pill: actions and the menu-shaped choosers. Exported because the
+ * panes build a few one-off buttons that have to match these exactly.
+ */
+export const PILL_BUTTON =
+    'text-body inline-flex flex-none cursor-pointer items-center gap-[7px] rounded-lg border border-border bg-surface px-[10px] py-[6px] font-[inherit] text-text2 disabled:cursor-default not-disabled:hover:bg-hover';
+
+/** One option inside a segmented control. */
+const SEG_ITEM =
+    'text-body cursor-pointer rounded-7 border-none bg-transparent px-[11px] py-[5px] font-[inherit]';
+
+/** Slide durations for the toggle; `ease` rather than a Tailwind easing token. */
+const SWITCH_TRANSITION = 'duration-[160ms] ease-[ease]';
 
 /**
  * A menu-shaped control whose options need a backend that does not exist yet
@@ -30,7 +44,7 @@ export function Chooser<T extends number | string>({
         onChange(options[(i + 1) % options.length]);
     };
     return (
-        <button className={pillButton} disabled={!onChange} onClick={next} type="button">
+        <button className={PILL_BUTTON} disabled={!onChange} onClick={next} type="button">
             {leading}
             {value}
             <SettingsIcon name="chevronDown" size={13} sw={2} />
@@ -41,20 +55,7 @@ export function Chooser<T extends number | string>({
 /** A ⌘/⇧/K key cap in the shortcuts pane. */
 export function KeyCap({ children }: { children: ReactNode }) {
     return (
-        <span
-            style={{
-                background: 'var(--kbd-bg, #fff)',
-                border: '1px solid var(--kbd-border, #e2e2e7)',
-                borderBottomWidth: 2,
-                borderRadius: 6,
-                color: 'var(--text2, #6b6b76)',
-                fontFamily: 'ui-monospace,Menlo,monospace',
-                fontSize: 11.5,
-                minWidth: 22,
-                padding: '2px 6px',
-                textAlign: 'center',
-            }}
-        >
+        <span className="min-w-[22px] rounded-md border border-b-2 border-kbd-border bg-kbd-bg px-[6px] py-[2px] text-center font-mono text-label text-text2">
             {children}
         </span>
     );
@@ -63,20 +64,22 @@ export function KeyCap({ children }: { children: ReactNode }) {
 /** Outlined action button (Sync now, Change plan, Reveal in Finder…). */
 export function PillButton({
     children,
+    className,
     onClick,
     style,
     tone = 'neutral',
 }: {
     children: ReactNode;
+    className?: string;
     onClick?: () => void;
     style?: CSSProperties;
     tone?: 'danger' | 'neutral';
 }) {
     return (
         <button
-            className={pillButton}
+            className={cn(PILL_BUTTON, tone === 'danger' && 'text-danger', className)}
             onClick={onClick}
-            style={{ ...(tone === 'danger' ? { color: '#b4442f' } : null), ...style }}
+            style={style}
             type="button"
         >
             {children}
@@ -97,21 +100,15 @@ export function Row({
     title: string;
 }) {
     return (
-        <div className={settingsRow} style={last ? { borderBottom: 'none' } : undefined}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 600 }}>{title}</div>
-                {desc && (
-                    <div
-                        style={{
-                            color: 'var(--text3, #9a9aa5)',
-                            fontSize: 12.5,
-                            lineHeight: 1.5,
-                            marginTop: 2,
-                        }}
-                    >
-                        {desc}
-                    </div>
-                )}
+        <div
+            className={cn(
+                'flex items-start gap-4 border-b border-border-soft py-[13px]',
+                last && 'border-b-0',
+            )}
+        >
+            <div className="min-w-0 flex-1">
+                <div className="text-subhead font-semibold">{title}</div>
+                {desc && <div className="mt-[2px] text-body leading-[1.5] text-text3">{desc}</div>}
             </div>
             {children}
         </div>
@@ -121,14 +118,10 @@ export function Row({
 export function SectionLabel({ children, first }: { children: ReactNode; first?: boolean }) {
     return (
         <div
-            style={{
-                color: 'var(--faint, #a8a8b0)',
-                fontSize: 11,
-                fontWeight: 680,
-                letterSpacing: '.07em',
-                margin: first ? '0 0 4px' : '26px 0 4px',
-                textTransform: 'uppercase',
-            }}
+            className={cn(
+                'mb-1 text-caption font-[680] tracking-[.07em] text-faint uppercase',
+                first ? 'mt-0' : 'mt-[26px]',
+            )}
         >
             {children}
         </div>
@@ -146,32 +139,18 @@ export function Segmented<T extends string>({
     value: T;
 }) {
     return (
-        <div
-            style={{
-                background: 'var(--surface3, #f1f1f3)',
-                borderRadius: 9,
-                display: 'flex',
-                flex: 'none',
-                gap: 2,
-                padding: 3,
-            }}
-        >
+        <div className="flex flex-none gap-[2px] rounded-9 bg-surface3 p-[3px]">
             {options.map((o) => (
                 <button
                     aria-pressed={o === value}
-                    className={segItem}
+                    className={cn(
+                        SEG_ITEM,
+                        o === value
+                            ? 'bg-surface font-semibold text-text shadow-seg'
+                            : 'text-text2',
+                    )}
                     key={o}
                     onClick={() => onChange(o)}
-                    style={
-                        o === value
-                            ? {
-                                  background: 'var(--surface, #fff)',
-                                  boxShadow: 'var(--seg-shadow, 0 1px 2px rgba(0,0,0,.08))',
-                                  color: 'var(--text, #1a1a1f)',
-                                  fontWeight: 600,
-                              }
-                            : { color: 'var(--text2, #6b6b76)' }
-                    }
                     type="button"
                 >
                     {o}
@@ -195,34 +174,21 @@ export function Toggle({
         <button
             aria-checked={on}
             aria-label={label}
+            className={cn(
+                'relative h-[22px] w-[38px] flex-none cursor-pointer rounded-xl border-none p-0 transition-[background]',
+                SWITCH_TRANSITION,
+                on ? 'bg-accent' : 'bg-track-off',
+            )}
             onClick={onChange}
             role="switch"
-            style={{
-                background: on ? 'var(--ac)' : 'var(--track-off, #d9d9e0)',
-                border: 'none',
-                borderRadius: 12,
-                cursor: 'pointer',
-                flex: 'none',
-                height: 22,
-                padding: 0,
-                position: 'relative',
-                transition: 'background .16s ease',
-                width: 38,
-            }}
             type="button"
         >
             <span
-                style={{
-                    background: 'var(--knob, #fff)',
-                    borderRadius: '50%',
-                    boxShadow: '0 1px 3px rgba(0,0,0,.22)',
-                    height: 18,
-                    left: on ? 18 : 2,
-                    position: 'absolute',
-                    top: 2,
-                    transition: 'left .16s ease',
-                    width: 18,
-                }}
+                className={cn(
+                    'absolute top-[2px] h-[18px] w-[18px] rounded-full bg-knob shadow-[0_1px_3px_rgba(0,0,0,.22)] transition-[left]',
+                    SWITCH_TRANSITION,
+                    on ? 'left-[18px]' : 'left-[2px]',
+                )}
             />
         </button>
     );
