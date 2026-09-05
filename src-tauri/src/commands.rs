@@ -146,6 +146,8 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
             "focus" => {
                 let _ = app.emit_to("main", "focus:toggle", ());
             }
+            // The renderer owns the timer, so this only asks. The stop comes
+            // back through `sync_focus`, which is where `on_focus_stopped` runs.
             "stopfocus" => {
                 let _ = app.emit_to("main", "focus:stop", ());
             }
