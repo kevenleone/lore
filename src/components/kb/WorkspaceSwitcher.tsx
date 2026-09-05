@@ -6,9 +6,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { cn } from '../../lib/cn';
 import { workspaceName } from '../../lib/workspace';
 import { useStore } from '../../store/useStore';
-import { hoverable } from '../../theme/util.css';
 import { Check, ChevronDown } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 
@@ -43,71 +43,31 @@ export function WorkspaceSwitcher() {
     const label = workspacePath ? workspaceName(workspacePath) : DEFAULT_LABEL;
 
     return (
-        <div ref={ref} style={{ padding: '0 2px 8px', position: 'relative' }}>
+        <div className="relative px-[2px] pb-2" ref={ref}>
             <button
+                className={cn(
+                    'flex w-full cursor-pointer items-center gap-2 rounded-lg border-none px-[9px] py-[7px] text-left font-[inherit] text-text',
+                    open ? 'bg-hover' : 'bg-transparent hover:bg-hover',
+                )}
                 onClick={() => setOpen((v) => !v)}
-                style={{
-                    alignItems: 'center',
-                    background: open ? 'var(--hover, #f0f0f2)' : 'transparent',
-                    border: 'none',
-                    borderRadius: 8,
-                    color: 'var(--text, #1a1a1f)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    font: 'inherit',
-                    gap: 8,
-                    padding: '7px 9px',
-                    textAlign: 'left',
-                    width: '100%',
-                }}
                 title={workspacePath ?? DEFAULT_LABEL}
                 type="button"
             >
                 <Icon name="layers" size={15} />
-                <span
-                    style={{
-                        flex: 1,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        minWidth: 0,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                    }}
-                >
-                    {label}
-                </span>
+                <span className="min-w-0 flex-1 truncate text-body-lg font-semibold">{label}</span>
                 <ChevronDown />
             </button>
 
             {error && (
-                <div
-                    style={{
-                        color: '#b4442f',
-                        fontSize: 11.5,
-                        lineHeight: 1.45,
-                        padding: '4px 9px 0',
-                    }}
-                >
+                <div className="px-[9px] pt-1 text-label leading-[1.45] text-danger">
                     Could not open that folder — staying on {label}.
                 </div>
             )}
 
             {open && (
                 <div
+                    className="absolute top-full right-[2px] left-[2px] z-40 rounded-10 border border-border bg-surface p-[5px] shadow-[0_14px_32px_-12px_rgba(20,20,35,.28)]"
                     role="menu"
-                    style={{
-                        background: 'var(--surface, #fff)',
-                        border: '1px solid var(--border, #e4e4ea)',
-                        borderRadius: 10,
-                        boxShadow: '0 14px 32px -12px rgba(20,20,35,.28)',
-                        left: 2,
-                        padding: 5,
-                        position: 'absolute',
-                        right: 2,
-                        top: '100%',
-                        zIndex: 40,
-                    }}
                 >
                     <Row
                         active={workspacePath === null}
@@ -120,16 +80,7 @@ export function WorkspaceSwitcher() {
                     />
 
                     {recents.filter((r) => r.path !== workspacePath).length > 0 && (
-                        <div
-                            style={{
-                                color: 'var(--faint, #a8a8b0)',
-                                fontSize: 10.5,
-                                fontWeight: 680,
-                                letterSpacing: '.07em',
-                                padding: '8px 9px 4px',
-                                textTransform: 'uppercase',
-                            }}
-                        >
+                        <div className="px-[9px] pt-2 pb-1 text-micro font-[680] tracking-[.07em] text-faint uppercase">
                             Recent
                         </div>
                     )}
@@ -146,13 +97,7 @@ export function WorkspaceSwitcher() {
                         />
                     ))}
 
-                    <div
-                        style={{
-                            background: 'var(--border-soft, #f0f0f2)',
-                            height: 1,
-                            margin: '5px 0',
-                        }}
-                    />
+                    <div className="my-[5px] h-px bg-border-soft" />
                     <Row
                         label="Open Folder…"
                         onClick={() => {
@@ -179,39 +124,14 @@ function Row({
 }) {
     return (
         <button
-            className={hoverable}
+            className="flex w-full cursor-pointer items-center gap-2 rounded-7 border-none bg-transparent px-[9px] py-[7px] text-left font-[inherit] text-body-lg text-text hover:bg-hover"
             onClick={onClick}
-            style={{
-                alignItems: 'center',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: 7,
-                color: 'var(--text, #1a1a1f)',
-                cursor: 'pointer',
-                display: 'flex',
-                font: 'inherit',
-                fontSize: 13,
-                gap: 8,
-                padding: '7px 9px',
-                textAlign: 'left',
-                width: '100%',
-            }}
             title={hint}
             type="button"
         >
-            <span
-                style={{
-                    flex: 1,
-                    minWidth: 0,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                }}
-            >
-                {label}
-            </span>
+            <span className="min-w-0 flex-1 truncate">{label}</span>
             {active && (
-                <span style={{ color: 'var(--ac)', display: 'flex' }}>
+                <span className="flex text-accent">
                     <Check />
                 </span>
             )}

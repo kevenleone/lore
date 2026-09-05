@@ -3,12 +3,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 import { collectionCount, isViewActive } from '../../store/views';
-import { hoverable } from '../../theme/util.css';
 import { Check, Close, Pencil, Plus, Trash } from '../common/glyphs';
 
-const AC = 'var(--ac, #5b5bd6)';
 const NEW = '__new__';
 
 /** Swatches offered when picking a collection color. */
@@ -23,15 +22,8 @@ const COLLECTION_COLORS = [
     '#9e7b46',
 ];
 
-const ROW_BASE: React.CSSProperties = {
-    alignItems: 'center',
-    borderRadius: 7,
-    cursor: 'pointer',
-    display: 'flex',
-    fontSize: 13.5,
-    gap: 9,
-    padding: '6px 9px',
-};
+const ROW_BASE =
+    'text-subhead flex cursor-pointer items-center gap-[9px] rounded-7 px-[9px] py-[6px]';
 
 export function CollectionsSection() {
     const items = useStore((s) => s.items);
@@ -79,18 +71,14 @@ export function CollectionsSection() {
     // across keystrokes.
     const renderEditor = (key: string) => (
         <div
+            className={cn(
+                ROW_BASE,
+                'cursor-default flex-col items-stretch gap-2 bg-sel px-[9px] py-2',
+            )}
             key={key}
-            style={{
-                ...ROW_BASE,
-                alignItems: 'stretch',
-                background: 'var(--sel, #f4f4f6)',
-                cursor: 'default',
-                flexDirection: 'column',
-                gap: 8,
-                padding: '8px 9px',
-            }}
         >
             <input
+                className="rounded-7 border border-border bg-surface px-[9px] py-[6px] font-[inherit] text-subhead outline-none"
                 onChange={(e) => setDraftName(e.target.value)}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter') void save();
@@ -98,57 +86,33 @@ export function CollectionsSection() {
                 }}
                 placeholder="Collection name"
                 ref={nameRef}
-                style={{
-                    background: 'var(--surface, #fff)',
-                    border: '1px solid var(--border, #e4e4ea)',
-                    borderRadius: 7,
-                    font: 'inherit',
-                    fontSize: 13.5,
-                    outline: 'none',
-                    padding: '6px 9px',
-                }}
                 value={draftName}
             />
-            <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div className="flex flex-wrap items-center gap-[6px]">
                 {COLLECTION_COLORS.map((c) => (
                     <span
+                        className="h-[18px] w-[18px] cursor-pointer rounded-full"
                         key={c}
                         onClick={() => setDraftColor(c)}
+                        // Both the swatch and its selected ring are the swatch's
+                        // own colour, so they cannot come from a class.
                         style={{
                             background: c,
-                            borderRadius: '50%',
                             boxShadow: draftColor === c ? `0 0 0 2px #fff, 0 0 0 4px ${c}` : 'none',
-                            cursor: 'pointer',
-                            height: 18,
-                            width: 18,
                         }}
                     />
                 ))}
             </div>
-            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+            <div className="flex justify-end gap-[6px]">
                 <span
+                    className="cursor-pointer rounded-7 px-[10px] py-1 text-body text-text2"
                     onClick={cancel}
-                    style={{
-                        borderRadius: 7,
-                        color: 'var(--text2, #6b6b76)',
-                        cursor: 'pointer',
-                        fontSize: 12.5,
-                        padding: '4px 10px',
-                    }}
                 >
                     Cancel
                 </span>
                 <span
+                    className="cursor-pointer rounded-7 bg-accent px-3 py-1 text-body font-semibold text-white"
                     onClick={() => void save()}
-                    style={{
-                        background: AC,
-                        borderRadius: 7,
-                        color: '#fff',
-                        cursor: 'pointer',
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                        padding: '4px 12px',
-                    }}
                 >
                     Save
                 </span>
@@ -158,26 +122,13 @@ export function CollectionsSection() {
 
     return (
         <>
-            <div style={{ alignItems: 'center', display: 'flex', padding: '15px 9px 5px' }}>
-                <span
-                    style={{
-                        color: 'var(--faint, #a8a8b0)',
-                        fontSize: 11,
-                        fontWeight: 680,
-                        letterSpacing: '.06em',
-                        textTransform: 'uppercase',
-                    }}
-                >
+            <div className="flex items-center px-[9px] pt-[15px] pb-[5px]">
+                <span className="text-caption font-[680] tracking-[.06em] text-faint uppercase">
                     Collections
                 </span>
                 <span
+                    className="ml-auto flex cursor-pointer text-faint"
                     onClick={startAdd}
-                    style={{
-                        color: 'var(--faint, #a8a8b0)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        marginLeft: 'auto',
-                    }}
                     title="New collection"
                 >
                     <Plus size={13} sw={2} />
@@ -189,30 +140,23 @@ export function CollectionsSection() {
 
                 if (confirmId === c.id) {
                     return (
-                        <div
-                            key={c.id}
-                            style={{ ...ROW_BASE, background: '#fbecec', cursor: 'default' }}
-                        >
-                            <span style={{ color: '#a23b30', flex: 1, fontSize: 12.5 }}>
+                        <div className={cn(ROW_BASE, 'cursor-default bg-[#fbecec]')} key={c.id}>
+                            <span className="flex-1 text-body text-[#a23b30]">
                                 Delete “{c.name}”?
                             </span>
                             <span
+                                className="flex cursor-pointer text-text3"
                                 onClick={() => setConfirmId(null)}
-                                style={{
-                                    color: 'var(--text3, #9a9aa5)',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                }}
                                 title="Cancel"
                             >
                                 <Close size={14} />
                             </span>
                             <span
+                                className="flex cursor-pointer text-[#c0392b]"
                                 onClick={() => {
                                     setConfirmId(null);
                                     void deleteCollection(c.id);
                                 }}
-                                style={{ color: '#c0392b', cursor: 'pointer', display: 'flex' }}
                                 title="Delete"
                             >
                                 <Check size={14} sw={2.4} />
@@ -225,76 +169,48 @@ export function CollectionsSection() {
                 const hovered = hoveredId === c.id;
                 return (
                     <div
-                        className={active ? undefined : hoverable}
+                        className={cn(
+                            ROW_BASE,
+                            active
+                                ? 'bg-accent-tint font-[590] text-accent'
+                                : 'text-text2 hover:bg-hover',
+                        )}
                         key={c.id}
                         onClick={() => selectView('collection', c.id)}
                         onMouseEnter={() => setHoveredId(c.id)}
                         onMouseLeave={() => setHoveredId((h) => (h === c.id ? null : h))}
-                        style={{
-                            ...ROW_BASE,
-                            ...(active
-                                ? {
-                                      background: 'var(--ac-tint, #eeeef2)',
-                                      color: AC,
-                                      fontWeight: 590,
-                                  }
-                                : { color: 'var(--text2, #6b6b76)' }),
-                        }}
                     >
                         <span
-                            style={{
-                                background: c.color,
-                                borderRadius: 3,
-                                flex: 'none',
-                                height: 10,
-                                width: 10,
-                            }}
+                            className="h-[10px] w-[10px] flex-none rounded-[3px]"
+                            // The collection's own colour, which the user picks.
+                            style={{ background: c.color }}
                         />
-                        <span
-                            style={{
-                                flex: 1,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                            }}
-                        >
-                            {c.name}
-                        </span>
+                        <span className="flex-1 truncate">{c.name}</span>
                         {hovered ? (
-                            <span style={{ alignItems: 'center', display: 'flex', gap: 8 }}>
+                            <span className="flex items-center gap-2">
                                 <span
+                                    className="flex cursor-pointer text-text3"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         startEdit(c.id, c.name, c.color);
-                                    }}
-                                    style={{
-                                        color: 'var(--text3, #9a9aa5)',
-                                        cursor: 'pointer',
-                                        display: 'flex',
                                     }}
                                     title="Edit"
                                 >
                                     <Pencil size={13} />
                                 </span>
                                 <span
+                                    className="flex cursor-pointer text-[#b0807c]"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setConfirmId(c.id);
                                     }}
-                                    style={{ color: '#b0807c', cursor: 'pointer', display: 'flex' }}
                                     title="Delete"
                                 >
                                     <Trash size={13} />
                                 </span>
                             </span>
                         ) : (
-                            <span
-                                style={{
-                                    fontSize: 12,
-                                    fontVariantNumeric: 'tabular-nums',
-                                    opacity: 0.5,
-                                }}
-                            >
+                            <span className="text-body-sm tabular-nums opacity-50">
                                 {collectionCount(items, c.id)}
                             </span>
                         )}

@@ -5,12 +5,15 @@
 
 import { useEffect, useRef } from 'react';
 
+import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 import { PanelRight, Plus, Search, SidebarToggle, Sort, Sparkle, ViewList } from '../common/glyphs';
 import { Tooltip } from '../common/Tooltip';
 import { FocusChip } from '../focus/FocusChip';
 
-const AC = 'var(--ac, #5b5bd6)';
+/** The three round chrome buttons either side of the Capture button. */
+const CHROME_BUTTON =
+    'flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-lg';
 
 export function TitleBar({ onCapture }: { onCapture: () => void }) {
     const toggleSidebar = useStore((s) => s.toggleSidebar);
@@ -37,25 +40,12 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
 
     return (
         <div
+            // z-35 keeps it above every pane below, so a tooltip hanging off the
+            // bar is drawn over the list header rather than behind it.
+            className="relative z-35 flex h-[46px] flex-none items-center gap-[14px] border-b border-border bg-titlebar px-[14px] backdrop-blur-[20px]"
             data-tauri-drag-region
-            style={{
-                alignItems: 'center',
-                backdropFilter: 'blur(20px)',
-                background: 'var(--titlebar, rgba(252,252,253,.86))',
-                borderBottom: '1px solid var(--border, #ececef)',
-                display: 'flex',
-                flex: 'none',
-                gap: 14,
-                height: 46,
-                padding: '0 14px',
-                position: 'relative',
-                WebkitBackdropFilter: 'blur(20px)',
-                // Above every pane below it, so a tooltip hanging off the bar is
-                // drawn over the list header rather than behind it.
-                zIndex: 35,
-            }}
         >
-            <div style={{ alignItems: 'center', display: 'flex', gap: 8 }}>
+            <div className="flex items-center gap-2">
                 <TrafficLight action="close" color="#ff5f57" />
                 <TrafficLight action="minimize" color="#febc2e" />
                 <TrafficLight action="toggleMaximize" color="#28c840" />
@@ -64,89 +54,47 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
             <Tooltip keys="⌘⌥S" label="Toggle sidebar">
                 <span
                     aria-label="Toggle sidebar"
+                    className="ml-1 flex cursor-pointer text-faint"
                     onClick={toggleSidebar}
-                    style={{
-                        color: 'var(--faint, #a8a8b0)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        marginLeft: 4,
-                    }}
                 >
                     <SidebarToggle />
                 </span>
             </Tooltip>
 
-            <div style={{ flex: 1 }} />
+            <div className="flex-1" />
 
             {/* window-centered search */}
             <label
-                style={{
-                    alignItems: 'center',
-                    background: 'var(--surface3, #f1f1f3)',
-                    borderRadius: 9,
-                    color: search ? 'var(--text, #1a1a1f)' : 'var(--text3, #9a9aa5)',
-                    display: 'flex',
-                    fontSize: 13,
-                    gap: 8,
-                    left: '50%',
-                    padding: '7px 11px',
-                    position: 'absolute',
-                    top: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    width: 'min(420px, 38vw)',
-                }}
+                className={cn(
+                    'absolute top-1/2 left-1/2 flex w-[min(420px,38vw)] [transform:translate(-50%,-50%)] items-center gap-2 rounded-9 bg-surface3 px-[11px] py-[7px] text-body-lg',
+                    search ? 'text-text' : 'text-text3',
+                )}
             >
                 <Search />
                 <input
+                    className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-text outline-none"
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search your knowledge…"
                     ref={inputRef}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text, #1a1a1f)',
-                        flex: 1,
-                        font: 'inherit',
-                        minWidth: 0,
-                        outline: 'none',
-                    }}
                     value={search}
                 />
-                <span
-                    style={{
-                        background: 'var(--surface, #fff)',
-                        border: '1px solid var(--border, #e4e4ea)',
-                        borderRadius: 5,
-                        color: 'var(--faint, #a8a8b0)',
-                        fontFamily: 'ui-monospace,Menlo,monospace',
-                        fontSize: 11,
-                        padding: '1px 6px',
-                    }}
-                >
+                <span className="rounded-5 border border-border bg-surface px-[6px] py-px font-mono text-caption text-faint">
                     ⌘K
                 </span>
             </label>
 
-            <div style={{ alignItems: 'center', display: 'flex', gap: 6 }}>
+            <div className="flex items-center gap-[6px]">
                 <Tooltip keys="⌥⇧F" label="Focus timer">
                     <FocusChip />
                 </Tooltip>
                 <Tooltip keys="⌘J" label="Ask Lore">
                     <span
                         aria-label="Ask Lore"
+                        className={cn(
+                            CHROME_BUTTON,
+                            chatOpen ? 'bg-accent-tint text-accent' : 'text-text2',
+                        )}
                         onClick={toggleChat}
-                        style={{
-                            alignItems: 'center',
-                            borderRadius: 8,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            height: 30,
-                            justifyContent: 'center',
-                            width: 30,
-                            ...(chatOpen
-                                ? { background: 'var(--ac-tint, #eeeef2)', color: AC }
-                                : { color: 'var(--text2, #6b6b76)' }),
-                        }}
                     >
                         <Sparkle />
                     </span>
@@ -155,20 +103,12 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                     <span
                         aria-label="Properties"
                         aria-pressed={propertiesOpen}
+                        className={cn(
+                            CHROME_BUTTON,
+                            propertiesOpen ? 'bg-accent-tint text-accent' : 'text-text2',
+                        )}
                         onClick={toggleProperties}
                         role="button"
-                        style={{
-                            alignItems: 'center',
-                            borderRadius: 8,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            height: 30,
-                            justifyContent: 'center',
-                            width: 30,
-                            ...(propertiesOpen
-                                ? { background: 'var(--ac-tint, #eeeef2)', color: AC }
-                                : { color: 'var(--text2, #6b6b76)' }),
-                        }}
                     >
                         <PanelRight />
                     </span>
@@ -184,32 +124,12 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                     </ChromeButton>
                 </Tooltip>
                 <span
+                    className="ml-1 inline-flex cursor-pointer items-center gap-[7px] rounded-lg bg-accent px-[11px] py-[6px] text-body font-semibold text-white"
                     onClick={onCapture}
-                    style={{
-                        alignItems: 'center',
-                        background: AC,
-                        borderRadius: 8,
-                        color: '#fff',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                        gap: 7,
-                        marginLeft: 4,
-                        padding: '6px 11px',
-                    }}
                 >
                     <Plus />
                     Capture
-                    <span
-                        style={{
-                            background: 'rgba(255,255,255,.22)',
-                            borderRadius: 5,
-                            fontFamily: 'ui-monospace,Menlo,monospace',
-                            fontSize: 10.5,
-                            padding: '1px 6px',
-                        }}
-                    >
+                    <span className="rounded-5 bg-white/22 px-[6px] py-px font-mono text-micro">
                         ⌥Space
                     </span>
                 </span>
@@ -220,19 +140,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
 
 function ChromeButton({ children, label }: { children: React.ReactNode; label: string }) {
     return (
-        <span
-            aria-label={label}
-            style={{
-                alignItems: 'center',
-                borderRadius: 8,
-                color: 'var(--text2, #6b6b76)',
-                cursor: 'pointer',
-                display: 'flex',
-                height: 30,
-                justifyContent: 'center',
-                width: 30,
-            }}
-        >
+        <span aria-label={label} className={cn(CHROME_BUTTON, 'text-text2')}>
             {children}
         </span>
     );
@@ -247,14 +155,10 @@ function TrafficLight({
 }) {
     return (
         <span
+            className="h-3 w-3 cursor-pointer rounded-full"
             onClick={() => windowControl(action)}
-            style={{
-                background: color,
-                borderRadius: '50%',
-                cursor: 'pointer',
-                height: 12,
-                width: 12,
-            }}
+            // The macOS traffic-light colours are fixed, not themed.
+            style={{ background: color }}
         />
     );
 }
