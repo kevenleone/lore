@@ -14,6 +14,8 @@ import { getRepository } from '../data';
 import { ensureWorkspaceOpen, setWorkspace } from '../data';
 import { migrateSqlite } from '../data/migrateSqlite';
 import { formatTime } from '../lib/calendar';
+import { primeChime } from '../lib/focusChime';
+import { ensureNotificationPermission, notifyIntervalEnd } from '../lib/focusNotify';
 import { nextPhase, phaseSeconds, remainingSeconds } from '../lib/focusTimer';
 import { broadcastWorkspaceChange, pickWorkspaceFolder, rememberWorkspace } from '../lib/workspace';
 import { loadPersisted, savePersisted } from './persisted';
@@ -275,12 +277,22 @@ function completeInterval(
     };
 }
 
-/** Shared tail of "this interval is over": roll the phase, persist, log. */
-function finishInterval(get: () => StoreState, set: (partial: Partial<StoreState>) => void): void {
+/** Shared tail of "this interval is over": roll the phase, persist, log, notify. */
+function finishInterval(
+    get: () => StoreState,
+    set: (partial: Partial<StoreState>) => void,
+    // A skip is the user ending the interval themselves; they do not need to be
+    // told about something they just did.
+    reason: 'elapsed' | 'skipped',
+): void {
     const before = get();
     const { focus, sessions } = completeInterval(before, Date.now());
     set({ focus, focusSessions: sessions });
     persist(get());
+
+    if (reason === 'elapsed') {
+        void notifyIntervalEnd(before.prefs, before.focus.phase, focus.phase);
+    }
 
     const logged =
         sessions.length > before.focusSessions.length ? sessions[sessions.length - 1] : null;
@@ -818,7 +830,7 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     skipFocusInterval() {
-        finishInterval(get, set);
+        finishInterval(get, set, 'skipped');
     },
 
     sort: 'newest',
@@ -896,7 +908,7 @@ export const useStore = create<StoreState>((set, get) => ({
             }
             return;
         }
-        finishInterval(get, set);
+        finishInterval(get, set, 'elapsed');
     },
 
     toggleCapture() {
@@ -908,6 +920,14 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     toggleFocus() {
+        if (!get().focus.running) {
+            // Both of these need settling now, while there is still a gesture
+            // behind the call and minutes before the interval ends: an audio
+            // context only resumes on one, and a consent sheet raised at the
+            // end would swallow the notification it was asked about.
+            primeChime();
+            void ensureNotificationPermission();
+        }
         set((s) => {
             const running = !s.focus.running;
             const remaining =
