@@ -75,6 +75,17 @@ describe('isTimerIdle', () => {
         expect(isTimerIdle(paused, DURATIONS)).toBe(false);
     });
 
+    it('is not idle when paused before the first second has elapsed', () => {
+        // The clock still reads a full interval here; only `startedAt` knows
+        // that a session was ever begun.
+        const justPaused: FocusState = {
+            ...paused,
+            remainingSec: 1500,
+            startedAt: new Date().toISOString(),
+        };
+        expect(isTimerIdle(justPaused, DURATIONS)).toBe(false);
+    });
+
     it('is not idle on a break waiting to be started', () => {
         expect(isTimerIdle({ ...paused, phase: 'short', remainingSec: 300 }, DURATIONS)).toBe(
             false,

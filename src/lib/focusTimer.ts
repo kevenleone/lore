@@ -55,6 +55,11 @@ export function formatDuration(seconds: number): string {
  */
 export function isTimerIdle(focus: FocusState, durations: Durations): boolean {
     return (
+        // The decisive one: `startedAt` survives a pause and is cleared by a
+        // stop, so it says whether a session exists rather than inferring it
+        // from the clock. Without it, pausing inside the first second still
+        // read as untouched — the interval had not lost a whole second yet.
+        focus.startedAt === null &&
         !focus.running &&
         focus.phase === 'focus' &&
         focus.sessionIndex === 1 &&
