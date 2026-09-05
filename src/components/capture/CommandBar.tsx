@@ -190,6 +190,7 @@ export function CommandBar() {
                             {meta?.image ? (
                                 <img
                                     alt=""
+                                    draggable={false}
                                     src={meta.image}
                                     style={{ height: '100%', objectFit: 'cover', width: '100%' }}
                                 />

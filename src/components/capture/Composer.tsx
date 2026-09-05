@@ -339,6 +339,7 @@ export function Composer({
                                 {meta.image && (
                                     <img
                                         alt=""
+                                        draggable={false}
                                         src={meta.image}
                                         style={{
                                             display: 'block',

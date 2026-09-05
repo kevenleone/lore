@@ -501,6 +501,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                 {flags.showPreview && sel.image && (
                     <img
                         alt={sel.title}
+                        draggable={false}
                         src={sel.image}
                         style={{
                             border: '1px solid var(--border, #ececef)',
