@@ -1,0 +1,244 @@
+/*
+ * Lore's Tailwind entry. Imported by all three window entries (main, capture,
+ * focus); there is no other stylesheet.
+ *
+ * Two things here are deliberately unlike a stock Tailwind setup:
+ *
+ * 1. Every length is px, not rem. App.tsx scales the whole tree with `zoom` for
+ *    the Text size preference, and the CSS spec leaves `rem` under `zoom`
+ *    unspecified. The numbers are Tailwind's own — `--spacing: 4px` means `p-4`
+ *    is still 16px — so snippets from the docs still translate; they are just
+ *    computed in px so the zoom arithmetic is predictable.
+ *
+ * 2. There is no `dark:` variant, and there must not be one. The colour tokens
+ *    in src/theme/tokens.ts flip wholesale between LIGHT_TOKENS and DARK_TOKENS,
+ *    so `bg-surface` is already correct in both themes. If you need a colour
+ *    that differs by theme, add a key to BOTH token maps and bridge it below —
+ *    do not reach for `dark:`.
+ */
+
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/*
+ * Preflight is deliberately not imported yet. It resets `button` background and
+ * cursor and zeroes every border width, which would repaint the components that
+ * have not been migrated off inline styles. It goes in as its own commit once
+ * the last one is converted.
+ */
+/* @import 'tailwindcss/preflight.css' layer(base); */
+
+/*
+ * `inline` is load-bearing, not a style choice. The theme tokens are written
+ * with `el.style.setProperty()` onto an element (see applyTokens in tokens.ts),
+ * not into a static `:root` rule. A plain `@theme` would emit
+ * `--color-surface: var(--surface)` at `:root` and resolve it there once, where
+ * the token is not defined. `@theme inline` substitutes the value into the
+ * utility instead, so `bg-surface` compiles to `background-color: var(--surface)`
+ * and resolves against the nearest ancestor that defines it.
+ */
+@theme inline {
+    --color-*: initial;
+
+    --color-transparent: transparent;
+    --color-current: currentColor;
+    --color-white: #fff;
+    --color-black: #000;
+
+    --color-surface: var(--surface);
+    --color-surface2: var(--surface2);
+    --color-surface3: var(--surface3);
+    --color-surface-glass: var(--surface-glass);
+    --color-canvas: var(--canvas);
+    --color-titlebar: var(--titlebar);
+
+    --color-text: var(--text);
+    --color-text2: var(--text2);
+    --color-text3: var(--text3);
+    --color-faint: var(--faint);
+
+    --color-border: var(--border);
+    --color-border-soft: var(--border-soft);
+    --color-dash: var(--dash);
+    --color-swatch-border: var(--swatch-border);
+
+    --color-hover: var(--hover);
+    --color-sel: var(--sel);
+    --color-scrim: var(--scrim);
+    --color-knob: var(--knob);
+    --color-track-off: var(--track-off);
+    --color-kbd-bg: var(--kbd-bg);
+    --color-kbd-border: var(--kbd-border);
+
+    /* Accent. `--ac` is injected per window and lifted by resolveAccent(). */
+    --color-accent: var(--ac);
+    --color-accent-tint: var(--ac-tint);
+    --color-accent-border: var(--ac-border);
+
+    /* Per-type chips (link / note / task / code / image). */
+    --color-type-link-bg: var(--type-link-bg);
+    --color-type-link-fg: var(--type-link-fg);
+    --color-type-note-bg: var(--type-note-bg);
+    --color-type-note-fg: var(--type-note-fg);
+    --color-type-task-bg: var(--type-task-bg);
+    --color-type-task-fg: var(--type-task-fg);
+    --color-type-code-bg: var(--type-code-bg);
+    --color-type-code-fg: var(--type-code-fg);
+    --color-type-image-bg: var(--type-image-bg);
+    --color-type-image-fg: var(--type-image-fg);
+
+    /* The token values are complete box-shadow strings. */
+    --shadow-float: var(--float-shadow);
+    --shadow-sheet: var(--sheet-shadow);
+    --shadow-seg: var(--seg-shadow);
+}
+
+@theme {
+    /* Tailwind's own 4px grid, in px rather than rem — see the header note. */
+    --spacing: 4px;
+
+    --font-sans: -apple-system, 'SF Pro Text', system-ui, 'Segoe UI', sans-serif;
+    --font-mono: ui-monospace, Menlo, monospace;
+
+    /*
+     * The type scale is named by role because the values came from the design
+     * prototype and are half-pixel, so a t-shirt scale would imply a regularity
+     * that is not there. Counts are current call sites.
+     */
+    --text-*: initial;
+    --text-micro: 10.5px; /* 16 */
+    --text-caption: 11px; /* 32 */
+    --text-label: 11.5px; /* 22 */
+    --text-body-sm: 12px; /* 37 */
+    --text-body: 12.5px; /* 65 — the workhorse */
+    --text-body-lg: 13px; /* 31 */
+    --text-subhead: 13.5px; /* 20 */
+    --text-title: 14px; /* 12 */
+    --text-title-lg: 15px; /* 7 */
+
+    /*
+     * Tailwind's default radius names, at their default values but in px. The
+     * numeric names below are the design's off-scale radii, which are frequent
+     * enough to earn a token; the name says "exact pixel value" on purpose.
+     */
+    --radius-xs: 2px;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+    --radius-2xl: 16px;
+    --radius-3xl: 24px;
+    --radius-5: 5px; /* 15 */
+    --radius-7: 7px; /* 29 */
+    --radius-9: 9px; /* 10 */
+    --radius-10: 10px; /* 7 */
+    --radius-11: 11px; /* 6 */
+
+    /* Ported from App.css.ts and Tooltip.css.ts. DRAWER_MS in src/lib/motion.ts
+       must stay equal to the 240ms below — it drives the unmount timer. */
+    --animate-drawer-in: drawer-in 240ms cubic-bezier(0.32, 0.72, 0, 1);
+    --animate-drawer-out: drawer-out 240ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    --animate-scrim-in: fade-in 240ms ease;
+    --animate-scrim-out: fade-out 240ms ease forwards;
+    --animate-tooltip-in: tooltip-in 100ms ease-out;
+
+    @keyframes drawer-in {
+        from {
+            transform: translateX(100%);
+        }
+        to {
+            transform: translateX(0);
+        }
+    }
+    @keyframes drawer-out {
+        from {
+            transform: translateX(0);
+        }
+        to {
+            transform: translateX(100%);
+        }
+    }
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    @keyframes fade-out {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
+    @keyframes tooltip-in {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -3px);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+    }
+}
+
+/*
+ * Ported from theme/global.css.ts. None of this is expressible as a utility —
+ * the scrollbar rules in particular have no Tailwind equivalent. The bare
+ * `var(--text)` with no fallback is safe because theme/bootstrap.ts paints the
+ * tokens onto :root before React's first render.
+ */
+@layer base {
+    *,
+    ::before,
+    ::after {
+        box-sizing: border-box;
+    }
+
+    /* Nothing in Lore scrolls the page itself: every pane, sheet and drawer is
+       sized to the window and scrolls its own content. A drawer sliding in from
+       off-screen briefly overflows to the right, and an engine that scrolls to
+       reach a focused field inside it would drag the whole window sideways. */
+    html,
+    body,
+    #root {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    body {
+        /* Transparent so the frameless capture window can float; the main window
+           paints its own opaque background on the app root. */
+        background: transparent;
+        color: var(--text);
+        font-family: var(--font-sans);
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    ::-webkit-scrollbar {
+        height: 10px;
+        width: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: var(--scrollbar);
+        background-clip: padding-box;
+        border: 2px solid transparent;
+        border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-hover);
+        background-clip: padding-box;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+}

@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite';
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
@@ -24,7 +25,7 @@ export default defineConfig(async () => ({
     // 1. prevent Vite from obscuring rust errors
     clearScreen: false,
 
-    plugins: [react(), vanillaExtractPlugin()],
+    plugins: [tailwindcss(), react(), vanillaExtractPlugin()],
 
     // 2. tauri expects a fixed port, fail if that port is not available
     server: {

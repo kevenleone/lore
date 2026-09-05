@@ -10,10 +10,12 @@
             }
         }
     ],
-    "plugins": ["prettier-plugin-sort-json"],
+    "plugins": ["prettier-plugin-sort-json", "prettier-plugin-tailwindcss"],
     "printWidth": 100,
     "semi": true,
     "singleQuote": true,
     "tabWidth": 4,
+    "tailwindFunctions": ["cn"],
+    "tailwindStylesheet": "./src/theme/tailwind.css",
     "trailingComma": "all"
 }
