@@ -92,6 +92,12 @@ interface StoreState {
      */
     detail: Item | null;
     dismissMigrationNotice: () => void;
+    /**
+     * Promotes the open drawer to a full page for this item only. It writes the
+     * override rather than the preference, so the next item still opens the way
+     * the user chose.
+     */
+    expandOpenItem: () => void;
     finishOnboarding: (mode: 'account' | 'anonymous', email?: string) => void;
     /** The running (or paused) focus interval — `Lore Settings` frames 1e/1f. */
     focus: FocusState;
@@ -116,6 +122,11 @@ interface StoreState {
     migrationNotice: null | string;
     onboarded: boolean;
     onboardingStep: OnboardingStep;
+    /**
+     * Overrides `prefs.openMode` for the item currently open, or null to follow
+     * the preference. Cleared with `openId`, so it never outlives its item.
+     */
+    openAs: null | OpenMode;
     /**
      * The item Cards or Table has opened, or null. List mode never sets it —
      * there the detail pane is a permanent column, so there is nothing to open.
@@ -516,7 +527,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     chatOpen: false,
     closeOpenItem() {
-        set({ openId: null });
+        set({ openAs: null, openId: null });
     },
     closeSettings() {
         set({ settingsOpen: false });
@@ -557,9 +568,13 @@ export const useStore = create<StoreState>((set, get) => ({
             if (next) void get().loadDetail(next);
         }
     },
+
     detail: null,
     dismissMigrationNotice() {
         set({ migrationNotice: null });
+    },
+    expandOpenItem() {
+        set({ openAs: 'page' });
     },
 
     /* ---------------- focus timer ---------------- */
@@ -610,6 +625,7 @@ export const useStore = create<StoreState>((set, get) => ({
     onboarded: persisted.onboarded,
 
     onboardingStep: 'signin',
+    openAs: null,
     openId: null,
     openSettings(pane) {
         set({ settingsOpen: true, ...(pane ? { settingsPane: pane } : {}) });
@@ -688,13 +704,20 @@ export const useStore = create<StoreState>((set, get) => ({
             chatOpen: false,
             detail: null,
             mainView: 'library',
+            openAs: null,
             openId: opens ? id : null,
             selectedId: id,
         });
         void get().loadDetail(id);
     },
     selectView(kind, val = null) {
-        set({ chatOpen: false, mainView: 'library', openId: null, view: { kind, val } });
+        set({
+            chatOpen: false,
+            mainView: 'library',
+            openAs: null,
+            openId: null,
+            view: { kind, val },
+        });
     },
     async sendChat(question) {
         const text = question.trim();
@@ -741,7 +764,7 @@ export const useStore = create<StoreState>((set, get) => ({
     setOpenMode(mode) {
         // Whatever is open was opened the old way; close it rather than teleport
         // it from a drawer into a page.
-        set({ openId: null });
+        set({ openAs: null, openId: null });
         get().setPref('openMode', mode);
     },
     setPref(key, value) {
@@ -765,7 +788,7 @@ export const useStore = create<StoreState>((set, get) => ({
     settingsPane: 'general',
 
     setViewMode(mode) {
-        set({ openId: null });
+        set({ openAs: null, openId: null });
         get().setPref('viewMode', mode);
     },
 
@@ -815,6 +838,7 @@ export const useStore = create<StoreState>((set, get) => ({
             detail: null,
             hydrated: false,
             items: [],
+            openAs: null,
             openId: null,
             search: '',
             searchResults: null,
