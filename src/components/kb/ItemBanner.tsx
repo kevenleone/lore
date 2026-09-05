@@ -40,6 +40,7 @@ export function ItemBanner({ chip, item }: ItemBannerProps) {
             {item.image && (
                 <img
                     alt=""
+                    draggable={false}
                     loading="lazy"
                     onLoad={() => setLoadedSrc(item.image ?? null)}
                     src={item.image}
