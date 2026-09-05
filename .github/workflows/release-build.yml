@@ -1,0 +1,207 @@
+name: Release Build
+
+on:
+    workflow_call:
+        inputs:
+            ref:
+                description: Git ref to build (usually the release tag).
+                required: true
+                type: string
+            tag_name:
+                description: Release tag the bundles are uploaded to.
+                required: true
+                type: string
+    workflow_dispatch:
+        inputs:
+            ref:
+                description: Git ref to build (usually the release tag).
+                required: true
+                type: string
+            tag_name:
+                description: Release tag the bundles are uploaded to.
+                required: true
+                type: string
+
+permissions:
+    contents: write
+
+env:
+    CARGO_TERM_COLOR: always
+    NODE_OPTIONS: --max-old-space-size=4096
+
+jobs:
+    macos:
+        name: macOS (${{ matrix.arch }})
+        runs-on: macos-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - arch: aarch64
+                      target: aarch64-apple-darwin
+                    - arch: x86_64
+                      target: x86_64-apple-darwin
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ inputs.ref }}
+
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 10
+
+            - uses: actions/setup-node@v4
+              with:
+                  cache: pnpm
+                  node-version: '22'
+
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  targets: ${{ matrix.target }}
+
+            - uses: swatinem/rust-cache@v2
+              with:
+                  key: ${{ matrix.target }}
+                  workspaces: src-tauri -> target
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build sidecar for ${{ matrix.target }}
+              run: cd sidecar && bun scripts/build.ts ${{ matrix.target }}
+
+            - name: Build Tauri bundles
+              env:
+                  APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+                  APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+                  APPLE_ID: ${{ secrets.APPLE_ID }}
+                  APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+                  APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+                  APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+              run: pnpm tauri build --target ${{ matrix.target }} --bundles app,dmg --config src-tauri/tauri.ci.conf.json
+
+            - name: Upload to release
+              uses: softprops/action-gh-release@v2
+              with:
+                  fail_on_unmatched_files: true
+                  files: src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+                  tag_name: ${{ inputs.tag_name }}
+
+    linux:
+        name: Linux (x86_64)
+        runs-on: ubuntu-22.04
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ inputs.ref }}
+
+            - name: Install Tauri system dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y \
+                    build-essential \
+                    file \
+                    libayatana-appindicator3-dev \
+                    libfuse2 \
+                    librsvg2-dev \
+                    libsoup-3.0-dev \
+                    libssl-dev \
+                    libwebkit2gtk-4.1-dev \
+                    libxdo-dev \
+                    patchelf \
+                    rpm
+
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 10
+
+            - uses: actions/setup-node@v4
+              with:
+                  cache: pnpm
+                  node-version: '22'
+
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  targets: x86_64-unknown-linux-gnu
+
+            - uses: swatinem/rust-cache@v2
+              with:
+                  key: x86_64-unknown-linux-gnu
+                  workspaces: src-tauri -> target
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build sidecar for x86_64-unknown-linux-gnu
+              run: cd sidecar && bun scripts/build.ts x86_64-unknown-linux-gnu
+
+            - name: Build Tauri bundles
+              env:
+                  APPIMAGE_EXTRACT_AND_RUN: 1
+              run: pnpm tauri build --target x86_64-unknown-linux-gnu --bundles deb,rpm,appimage --config src-tauri/tauri.ci.conf.json
+
+            - name: Upload to release
+              uses: softprops/action-gh-release@v2
+              with:
+                  fail_on_unmatched_files: true
+                  files: |
+                      src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage
+                      src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/deb/*.deb
+                      src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/rpm/*.rpm
+                  tag_name: ${{ inputs.tag_name }}
+
+    windows:
+        name: Windows (x86_64)
+        runs-on: windows-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ inputs.ref }}
+
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 10
+
+            - uses: actions/setup-node@v4
+              with:
+                  cache: pnpm
+                  node-version: '22'
+
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  targets: x86_64-pc-windows-msvc
+
+            - uses: swatinem/rust-cache@v2
+              with:
+                  key: x86_64-pc-windows-msvc
+                  workspaces: src-tauri -> target
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build sidecar for x86_64-pc-windows-msvc
+              run: cd sidecar && bun scripts/build.ts x86_64-pc-windows-msvc
+
+            - name: Build Tauri bundles
+              run: pnpm tauri build --target x86_64-pc-windows-msvc --bundles nsis,msi --config src-tauri/tauri.ci.conf.json
+
+            - name: Upload to release
+              uses: softprops/action-gh-release@v2
+              with:
+                  fail_on_unmatched_files: true
+                  files: |
+                      src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+                      src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
+                  tag_name: ${{ inputs.tag_name }}
