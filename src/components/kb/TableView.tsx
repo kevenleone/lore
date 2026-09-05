@@ -8,6 +8,7 @@
 import type { Item } from '../../store/types';
 
 import { hasBanner } from '../../lib/banner';
+import { cn } from '../../lib/cn';
 import { formatRelative } from '../../lib/format';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
@@ -15,9 +16,6 @@ import { collectionFor } from '../../store/views';
 import { Icon } from '../common/Icon';
 import { ItemBanner } from './ItemBanner';
 import { subtitle } from './itemText';
-import { tableRow } from './ListPane.css';
-
-const AC = 'var(--ac, #5b5bd6)';
 
 const GRID_COLUMNS = 'minmax(240px, 1fr) 168px 176px 116px 92px';
 
@@ -31,28 +29,13 @@ export function TableView({ items }: { items: Item[] }) {
     return (
         <>
             <div
-                style={{
-                    alignItems: 'center',
-                    background: 'var(--surface2, #fafafa)',
-                    borderBottom: '1px solid var(--border, #ececef)',
-                    color: 'var(--faint, #a8a8b0)',
-                    display: 'grid',
-                    fontSize: 10.5,
-                    fontWeight: 680,
-                    gap: 16,
-                    gridTemplateColumns: GRID_COLUMNS,
-                    letterSpacing: '.07em',
-                    padding: '9px 18px',
-                    position: 'sticky',
-                    textTransform: 'uppercase',
-                    top: 0,
-                    zIndex: 2,
-                }}
+                className="sticky top-0 z-2 grid items-center gap-4 border-b border-border bg-surface2 px-[18px] py-[9px] text-micro font-[680] tracking-[.07em] text-faint uppercase"
+                style={{ gridTemplateColumns: GRID_COLUMNS }}
             >
                 {COLUMNS.map((label, i) => (
                     <span
+                        className={i === COLUMNS.length - 1 ? 'text-right' : 'text-left'}
                         key={label}
-                        style={{ textAlign: i === COLUMNS.length - 1 ? 'right' : 'left' }}
                     >
                         {label}
                     </span>
@@ -64,150 +47,61 @@ export function TableView({ items }: { items: Item[] }) {
                 const selected = item.id === selectedId;
                 return (
                     <div
-                        className={tableRow}
+                        className={cn(
+                            // Table rows have no thumbnail column to anchor them, so
+                            // they take a hover of their own.
+                            'grid cursor-pointer items-center gap-4 border-b border-border-soft px-[18px] py-[9px] hover:bg-hover',
+                            selected && 'bg-sel shadow-[inset_2px_0_0_var(--ac)]',
+                        )}
                         key={item.id}
                         onClick={() => selectItem(item.id)}
-                        style={{
-                            alignItems: 'center',
-                            borderBottom: '1px solid var(--border-soft, #f0f0f2)',
-                            cursor: 'pointer',
-                            display: 'grid',
-                            gap: 16,
-                            gridTemplateColumns: GRID_COLUMNS,
-                            padding: '9px 18px',
-                            ...(selected
-                                ? {
-                                      background: 'var(--sel, #f4f4f6)',
-                                      boxShadow: `inset 2px 0 0 ${AC}`,
-                                  }
-                                : {}),
-                        }}
+                        style={{ gridTemplateColumns: GRID_COLUMNS }}
                     >
-                        <div
-                            style={{
-                                alignItems: 'center',
-                                display: 'flex',
-                                gap: 11,
-                                minWidth: 0,
-                            }}
-                        >
+                        <div className="flex min-w-0 items-center gap-[11px]">
                             {hasBanner(item) ? (
-                                <span
-                                    style={{
-                                        background: 'var(--surface3, #f1f1f3)',
-                                        borderRadius: 5,
-                                        flex: 'none',
-                                        height: 30,
-                                        overflow: 'hidden',
-                                        position: 'relative',
-                                        width: 44,
-                                    }}
-                                >
+                                <span className="relative h-[30px] w-[44px] flex-none overflow-hidden rounded-5 bg-surface3">
                                     <ItemBanner item={item} />
                                 </span>
                             ) : (
                                 <span
-                                    style={{
-                                        alignItems: 'center',
-                                        background: meta.bg,
-                                        borderRadius: 5,
-                                        color: meta.fg,
-                                        display: 'flex',
-                                        flex: 'none',
-                                        height: 30,
-                                        justifyContent: 'center',
-                                        width: 44,
-                                    }}
+                                    className={cn(
+                                        'flex h-[30px] w-[44px] flex-none items-center justify-center rounded-5',
+                                        meta.chip,
+                                    )}
                                 >
                                     <Icon name={item.type} size={15} />
                                 </span>
                             )}
-                            <span style={{ minWidth: 0 }}>
-                                <span
-                                    style={{
-                                        color: 'var(--text, #1a1a1f)',
-                                        display: 'block',
-                                        fontSize: 13,
-                                        fontWeight: 590,
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
+                            <span className="min-w-0">
+                                <span className="block truncate text-body-lg font-[590] text-text">
                                     {item.title}
                                 </span>
-                                <span
-                                    style={{
-                                        color: 'var(--text3, #9a9aa5)',
-                                        display: 'block',
-                                        fontSize: 11.5,
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
+                                <span className="block truncate text-label text-text3">
                                     {subtitle(item)}
                                 </span>
                             </span>
                         </div>
-                        <div
-                            style={{
-                                alignItems: 'center',
-                                color: 'var(--text2, #6b6b76)',
-                                display: 'flex',
-                                fontSize: 12.5,
-                                gap: 7,
-                                minWidth: 0,
-                            }}
-                        >
+                        <div className="flex min-w-0 items-center gap-[7px] text-body text-text2">
                             <span
-                                style={{
-                                    background: coll?.color ?? 'var(--faint, #a8a8b0)',
-                                    borderRadius: 2,
-                                    flex: 'none',
-                                    height: 8,
-                                    width: 8,
-                                }}
+                                className="h-2 w-2 flex-none rounded-xs"
+                                // The dot carries the collection's own colour, which
+                                // the user picks; there is no token for it.
+                                style={{ background: coll?.color ?? 'var(--faint)' }}
                             />
-                            <span
-                                style={{
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
-                                {coll?.name ?? 'Unfiled'}
-                            </span>
+                            <span className="truncate">{coll?.name ?? 'Unfiled'}</span>
                         </div>
-                        <div style={{ display: 'flex', gap: 5, overflow: 'hidden' }}>
+                        <div className="flex gap-[5px] overflow-hidden">
                             {item.tags.map((tag) => (
                                 <span
+                                    className="rounded-5 bg-surface3 px-[6px] py-[2px] font-mono text-micro whitespace-nowrap text-text3"
                                     key={tag}
-                                    style={{
-                                        background: 'var(--surface3, #f1f1f3)',
-                                        borderRadius: 5,
-                                        color: 'var(--text3, #9a9aa5)',
-                                        fontFamily: 'ui-monospace,Menlo,monospace',
-                                        fontSize: 10.5,
-                                        padding: '2px 6px',
-                                        whiteSpace: 'nowrap',
-                                    }}
                                 >
                                     #{tag}
                                 </span>
                             ))}
                         </div>
-                        <div style={{ color: 'var(--text2, #6b6b76)', fontSize: 12 }}>
-                            {meta.label}
-                        </div>
-                        <div
-                            style={{
-                                color: 'var(--faint, #a8a8b0)',
-                                fontSize: 12,
-                                fontVariantNumeric: 'tabular-nums',
-                                textAlign: 'right',
-                            }}
-                        >
+                        <div className="text-body-sm text-text2">{meta.label}</div>
+                        <div className="text-right text-body-sm text-faint tabular-nums">
                             {formatRelative(item.createdAt)}
                         </div>
                     </div>
