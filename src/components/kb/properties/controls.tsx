@@ -5,20 +5,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { hoverable } from '../../../theme/util.css';
+import { cn } from '../../../lib/cn';
 import { ChevronDown } from '../../common/glyphs';
-
-const AC = 'var(--ac, #5b5bd6)';
 
 /** The 86px label column every row in the panel shares. */
 export const LABEL_WIDTH = 78;
 
 export function Empty({ children }: { children: React.ReactNode }) {
-    return (
-        <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12.5, padding: '3px 0' }}>
-            {children}
-        </div>
-    );
+    return <div className="py-[3px] text-body text-text3">{children}</div>;
 }
 
 export function MenuItem({
@@ -32,19 +26,11 @@ export function MenuItem({
 }) {
     return (
         <div
-            className={hoverable}
+            className={cn(
+                'flex cursor-pointer items-center gap-[7px] rounded-7 px-2 py-[6px] text-body hover:bg-hover',
+                selected ? 'font-[590] text-accent' : 'font-normal text-text2',
+            )}
             onClick={onClick}
-            style={{
-                alignItems: 'center',
-                borderRadius: 7,
-                color: selected ? AC : 'var(--text2, #6b6b76)',
-                cursor: 'pointer',
-                display: 'flex',
-                fontSize: 12.5,
-                fontWeight: selected ? 590 : 400,
-                gap: 7,
-                padding: '6px 8px',
-            }}
         >
             {children}
         </div>
@@ -77,47 +63,20 @@ export function Picker({
     }, [open]);
 
     return (
-        <div ref={ref} style={{ position: 'relative' }}>
+        <div className="relative" ref={ref}>
             <button
                 aria-expanded={open}
-                className={hoverable}
+                className="flex max-w-full cursor-pointer items-center gap-[5px] rounded-7 border-none bg-transparent px-[6px] py-[3px] text-left font-[inherit] text-body text-text hover:bg-hover"
                 onClick={() => setOpen((o) => !o)}
-                style={{
-                    alignItems: 'center',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: 7,
-                    color: 'var(--text, #1a1a1f)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    font: 'inherit',
-                    fontSize: 12.5,
-                    gap: 5,
-                    maxWidth: '100%',
-                    padding: '3px 6px',
-                    textAlign: 'left',
-                }}
                 type="button"
             >
                 {trigger}
-                <ChevronDown size={11} style={{ color: 'var(--faint, #a8a8b0)', flex: 'none' }} />
+                <ChevronDown className="flex-none text-faint" size={11} />
             </button>
             {open && (
                 <div
-                    style={{
-                        background: 'var(--surface, #fff)',
-                        border: '1px solid var(--border, #ececef)',
-                        borderRadius: 10,
-                        boxShadow: '0 12px 30px -10px rgba(24,24,48,.3)',
-                        maxHeight: 260,
-                        overflowY: 'auto',
-                        padding: 5,
-                        position: 'absolute',
-                        right: 0,
-                        top: 28,
-                        width,
-                        zIndex: 25,
-                    }}
+                    className="absolute top-7 right-0 z-25 max-h-[260px] overflow-y-auto rounded-10 border border-border bg-surface p-[5px] shadow-[0_12px_30px_-10px_rgba(24,24,48,.3)]"
+                    style={{ width }}
                 >
                     {children(() => setOpen(false))}
                 </div>
@@ -131,16 +90,7 @@ export function ReadOnly({ children }: { children?: false | null | number | stri
     const empty =
         children === null || children === undefined || children === '' || children === false;
     return (
-        <span
-            style={{
-                color: empty ? 'var(--faint, #a8a8b0)' : 'var(--text2, #6b6b76)',
-                display: 'block',
-                fontSize: 12.5,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-            }}
-        >
+        <span className={cn('block truncate text-body', empty ? 'text-faint' : 'text-text2')}>
             {empty ? '—' : children}
         </span>
     );
@@ -157,43 +107,21 @@ export function Row({
     label: string;
 }) {
     return (
-        <div
-            style={{
-                alignItems: 'center',
-                display: 'flex',
-                gap: 8,
-                minHeight: 30,
-                padding: '2px 0',
-            }}
-        >
+        <div className="flex min-h-[30px] items-center gap-2 py-[2px]">
             <span
-                style={{
-                    alignItems: 'center',
-                    color: 'var(--text3, #9a9aa5)',
-                    display: 'flex',
-                    flex: 'none',
-                    fontSize: 12.5,
-                    gap: 7,
-                    width: LABEL_WIDTH,
-                }}
+                className="flex flex-none items-center gap-[7px] text-body text-text3"
+                // Shared with the sections that lay values out against it.
+                style={{ width: LABEL_WIDTH }}
             >
                 {icon}
                 {label}
             </span>
-            <span
-                style={{
-                    alignItems: 'center',
-                    display: 'flex',
-                    flex: 1,
-                    justifyContent: 'flex-end',
-                    // No `overflow` here: the pickers hang their popover off this
-                    // column, and clipping it would hide the menu entirely. Values
-                    // that can run long clip themselves instead.
-                    minWidth: 0,
-                }}
-            >
-                {children}
-            </span>
+            {/*
+             * No `overflow` here: the pickers hang their popover off this column,
+             * and clipping it would hide the menu entirely. Values that can run
+             * long clip themselves instead.
+             */}
+            <span className="flex min-w-0 flex-1 items-center justify-end">{children}</span>
         </div>
     );
 }
@@ -208,25 +136,8 @@ export function Section({
     title: string;
 }) {
     return (
-        <section
-            style={{
-                borderTop: '1px solid var(--border, #ececef)',
-                padding: '16px 16px 18px',
-            }}
-        >
-            <div
-                style={{
-                    alignItems: 'center',
-                    color: 'var(--faint, #a8a8b0)',
-                    display: 'flex',
-                    fontSize: 11,
-                    fontWeight: 680,
-                    gap: 7,
-                    letterSpacing: '.06em',
-                    marginBottom: 10,
-                    textTransform: 'uppercase',
-                }}
-            >
+        <section className="border-t border-border px-4 pt-4 pb-[18px]">
+            <div className="mb-[10px] flex items-center gap-[7px] text-caption font-[680] tracking-[.06em] text-faint uppercase">
                 {icon}
                 {title}
             </div>

@@ -5,12 +5,11 @@ import { useState } from 'react';
 
 import type { Item } from '../../../store/types';
 
+import { cn } from '../../../lib/cn';
 import { formatSavedDate } from '../../../lib/format';
 import { useStore } from '../../../store/useStore';
 import { Message } from '../../common/glyphs';
 import { Empty, Section } from './controls';
-
-const AC = 'var(--ac, #5b5bd6)';
 
 export function CommentsSection({ item }: { item: Item }) {
     const addComment = useStore((s) => s.addComment);
@@ -30,63 +29,28 @@ export function CommentsSection({ item }: { item: Item }) {
             {comments.length === 0 ? (
                 <Empty>No comments yet</Empty>
             ) : (
-                <div
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 8,
-                        marginBottom: 10,
-                    }}
-                >
+                <div className="mb-[10px] flex flex-col gap-2">
                     {comments.map((comment) => (
                         <div
+                            className="rounded-9 border border-border bg-surface2 px-[10px] py-2"
                             key={comment.id}
-                            style={{
-                                background: 'var(--surface2, #fafafa)',
-                                border: '1px solid var(--border, #ececef)',
-                                borderRadius: 9,
-                                padding: '8px 10px',
-                            }}
                         >
-                            <div
-                                style={{
-                                    alignItems: 'center',
-                                    color: 'var(--faint, #a8a8b0)',
-                                    display: 'flex',
-                                    fontSize: 11.5,
-                                    gap: 6,
-                                    marginBottom: 4,
-                                }}
-                            >
+                            <div className="mb-1 flex items-center gap-[6px] text-label text-faint">
                                 {comment.author && (
-                                    <span
-                                        style={{ color: 'var(--text2, #6b6b76)', fontWeight: 600 }}
-                                    >
+                                    <span className="font-semibold text-text2">
                                         {comment.author}
                                     </span>
                                 )}
                                 <span>{formatSavedDate(comment.at)}</span>
                                 <span
+                                    className="ml-auto cursor-pointer text-body-lg leading-none"
                                     onClick={() => void removeComment(item.id, comment.id)}
-                                    style={{
-                                        cursor: 'pointer',
-                                        fontSize: 13,
-                                        lineHeight: 1,
-                                        marginLeft: 'auto',
-                                    }}
                                     title="Delete comment"
                                 >
                                     ×
                                 </span>
                             </div>
-                            <div
-                                style={{
-                                    color: 'var(--text2, #6b6b76)',
-                                    fontSize: 12.5,
-                                    lineHeight: 1.55,
-                                    whiteSpace: 'pre-wrap',
-                                }}
-                            >
+                            <div className="text-body leading-[1.55] whitespace-pre-wrap text-text2">
                                 {comment.body}
                             </div>
                         </div>
@@ -95,42 +59,24 @@ export function CommentsSection({ item }: { item: Item }) {
             )}
 
             <textarea
+                className="min-h-[58px] w-full resize-y rounded-9 border border-border bg-surface px-[10px] py-2 font-[inherit] text-body leading-[1.5] text-text outline-none"
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit();
                 }}
                 placeholder="Add a comment…"
-                style={{
-                    background: 'var(--surface, #fff)',
-                    border: '1px solid var(--border, #ececef)',
-                    borderRadius: 9,
-                    color: 'var(--text, #1a1a1f)',
-                    font: 'inherit',
-                    fontSize: 12.5,
-                    lineHeight: 1.5,
-                    minHeight: 58,
-                    outline: 'none',
-                    padding: '8px 10px',
-                    resize: 'vertical',
-                    width: '100%',
-                }}
                 value={draft}
             />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 7 }}>
+            <div className="mt-[7px] flex justify-end">
                 <button
+                    className={cn(
+                        'rounded-lg border-none px-3 py-[5px] font-[inherit] text-body-sm font-semibold',
+                        draft.trim()
+                            ? 'cursor-pointer bg-accent text-white'
+                            : 'cursor-default bg-surface3 text-faint',
+                    )}
                     disabled={!draft.trim()}
                     onClick={submit}
-                    style={{
-                        background: draft.trim() ? AC : 'var(--surface3, #f1f1f3)',
-                        border: 'none',
-                        borderRadius: 8,
-                        color: draft.trim() ? '#fff' : 'var(--faint, #a8a8b0)',
-                        cursor: draft.trim() ? 'pointer' : 'default',
-                        font: 'inherit',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        padding: '5px 12px',
-                    }}
                     type="button"
                 >
                     Comment

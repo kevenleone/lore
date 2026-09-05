@@ -27,16 +27,7 @@ export function InfoSection({ item, meta }: { item: Item; meta: ItemMeta | null 
                 <ReadOnly>{meta ? formatBytes(meta.size) : null}</ReadOnly>
             </Row>
             <Row label="File">
-                <span
-                    style={{
-                        fontFamily: 'ui-monospace,Menlo,monospace',
-                        minWidth: 0,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                    }}
-                    title={meta?.path ?? item.path}
-                >
+                <span className="min-w-0 truncate font-mono" title={meta?.path ?? item.path}>
                     <ReadOnly>{meta?.path ?? item.path}</ReadOnly>
                 </span>
             </Row>
