@@ -3,11 +3,13 @@
 // Tauri's `externalBin` resolves `binaries/lore-sidecar-<target-triple>`, so the
 // output names must match Rust's triples exactly, not Bun's target names.
 //
-//   bun scripts/build.ts            # host triple only — what `tauri dev` needs
-//   bun scripts/build.ts --all      # every target, for a release build
+//   bun scripts/build.ts                          # host triple only — what `tauri dev` needs
+//   bun scripts/build.ts --all                    # every target, for a release build
+//   bun scripts/build.ts aarch64-apple-darwin     # one named target, for CI
 
 import { $ } from 'bun';
 import { mkdir } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 
 interface Target {
     /** Bun's `--target` value. */
@@ -24,7 +26,7 @@ const TARGETS: Target[] = [
     { bun: 'bun-linux-x64', triple: 'x86_64-unknown-linux-gnu' },
 ];
 
-const OUT_DIR = new URL('../../src-tauri/binaries/', import.meta.url).pathname;
+const OUT_DIR = fileURLToPath(new URL('../../src-tauri/binaries/', import.meta.url));
 
 /** The triple of the machine running this script, so a dev build is one target. */
 function hostTriple(): string {
@@ -34,8 +36,25 @@ function hostTriple(): string {
     return `${arch}-unknown-linux-gnu`;
 }
 
-const all = process.argv.includes('--all');
-const wanted = all ? TARGETS : TARGETS.filter((t) => t.triple === hostTriple());
+const args = process.argv.slice(2);
+const all = args.includes('--all');
+const requested = args.filter((argument) => !argument.startsWith('--'));
+
+for (const triple of requested) {
+    if (!TARGETS.some((target) => target.triple === triple)) {
+        console.error(`Unknown target: ${triple}`);
+        console.error(`Known targets: ${TARGETS.map((target) => target.triple).join(', ')}`);
+        process.exit(1);
+    }
+}
+
+function selectTargets(): Target[] {
+    if (all) return TARGETS;
+    if (requested.length > 0) return TARGETS.filter((target) => requested.includes(target.triple));
+    return TARGETS.filter((target) => target.triple === hostTriple());
+}
+
+const wanted = selectTargets();
 
 if (wanted.length === 0) {
     console.error(`No target matches this host (${hostTriple()}).`);
