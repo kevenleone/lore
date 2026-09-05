@@ -2,101 +2,52 @@
 
 import type { Item } from '../../store/types';
 
+import { cn } from '../../lib/cn';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
-import { hoverCard } from '../../theme/util.css';
 import { ChevronRight, Sparkle } from '../common/glyphs';
 import { Icon } from '../common/Icon';
-
-const AC = 'var(--ac, #5b5bd6)';
 
 export function RelatedCards({ related }: { related: Item[] }) {
     const selectItem = useStore((s) => s.selectItem);
 
     return (
-        <div style={{ marginTop: 22 }}>
-            <div style={{ alignItems: 'center', display: 'flex', gap: 8, marginBottom: 11 }}>
-                <span
-                    style={{
-                        color: 'var(--faint, #a8a8b0)',
-                        fontSize: 11,
-                        fontWeight: 680,
-                        letterSpacing: '.06em',
-                        textTransform: 'uppercase',
-                    }}
-                >
+        <div className="mt-[22px]">
+            <div className="mb-[11px] flex items-center gap-2">
+                <span className="text-caption font-[680] tracking-[.06em] text-faint uppercase">
                     Related
                 </span>
-                <span
-                    style={{
-                        alignItems: 'center',
-                        color: AC,
-                        display: 'inline-flex',
-                        fontSize: 11,
-                        gap: 4,
-                    }}
-                >
+                <span className="inline-flex items-center gap-1 text-caption text-accent">
                     <Sparkle size={12} />
                     surfaced by AI
                 </span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="flex flex-col gap-2">
                 {related.map((r) => {
                     const meta = typeMeta(r.type);
                     return (
                         <div
-                            className={hoverCard}
+                            className="flex cursor-pointer items-center gap-[11px] rounded-11 border border-border px-[13px] py-[11px] hover:border-border hover:bg-surface2"
                             key={r.id}
                             onClick={() => selectItem(r.id)}
-                            style={{
-                                alignItems: 'center',
-                                border: '1px solid var(--border, #ececef)',
-                                borderRadius: 11,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                gap: 11,
-                                padding: '11px 13px',
-                            }}
                         >
                             <span
-                                style={{
-                                    alignItems: 'center',
-                                    background: meta.bg,
-                                    borderRadius: 8,
-                                    color: meta.fg,
-                                    display: 'flex',
-                                    flex: 'none',
-                                    height: 30,
-                                    justifyContent: 'center',
-                                    width: 30,
-                                }}
+                                className={cn(
+                                    'flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg',
+                                    meta.chip,
+                                )}
                             >
                                 <Icon name={r.type} />
                             </span>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div
-                                    style={{
-                                        color: 'var(--text, #1a1a1f)',
-                                        fontSize: 13.5,
-                                        fontWeight: 600,
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
+                            <div className="min-w-0 flex-1">
+                                <div className="truncate text-subhead font-semibold text-text">
                                     {r.title}
                                 </div>
-                                <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12 }}>
+                                <div className="text-body-sm text-text3">
                                     {r.domain || meta.label}
                                 </div>
                             </div>
-                            <span
-                                style={{
-                                    color: 'var(--faint, #a8a8b0)',
-                                    display: 'flex',
-                                    flex: 'none',
-                                }}
-                            >
+                            <span className="flex flex-none text-faint">
                                 <ChevronRight />
                             </span>
                         </div>

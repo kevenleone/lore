@@ -5,6 +5,7 @@
 import type { Item } from '../../store/types';
 
 import { hasBanner } from '../../lib/banner';
+import { cn } from '../../lib/cn';
 import { formatRelative } from '../../lib/format';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
@@ -13,154 +14,66 @@ import { Icon } from '../common/Icon';
 import { ItemBanner } from './ItemBanner';
 import { subtitle } from './itemText';
 
-const AC = 'var(--ac, #5b5bd6)';
-
 export function CardGrid({ items }: { items: Item[] }) {
     const collections = useStore((s) => s.collections);
     const selectedId = useStore((s) => s.selectedId);
     const selectItem = useStore((s) => s.selectItem);
 
     return (
-        <div
-            style={{
-                alignContent: 'start',
-                display: 'grid',
-                gap: 14,
-                gridTemplateColumns: 'repeat(auto-fill, minmax(216px, 1fr))',
-                padding: 16,
-            }}
-        >
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(216px,1fr))] content-start gap-[14px] p-4">
             {items.map((item) => {
                 const meta = typeMeta(item.type);
                 const coll = collectionFor(item, collections);
                 const selected = item.id === selectedId;
                 return (
                     <div
+                        className={cn(
+                            'flex cursor-pointer flex-col overflow-hidden rounded-xl border bg-surface',
+                            selected
+                                ? 'border-accent shadow-[0_0_0_2px_var(--ac-tint)]'
+                                : 'border-border',
+                        )}
                         key={item.id}
                         onClick={() => selectItem(item.id)}
-                        style={{
-                            background: 'var(--surface, #fff)',
-                            border: `1px solid ${selected ? AC : 'var(--border, #ececef)'}`,
-                            borderRadius: 12,
-                            boxShadow: selected ? `0 0 0 2px var(--ac-tint, #eeeef2)` : undefined,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            overflow: 'hidden',
-                        }}
                     >
-                        <div
-                            style={{
-                                background: 'var(--surface3, #f1f1f3)',
-                                flex: 'none',
-                                height: 118,
-                                overflow: 'hidden',
-                                position: 'relative',
-                            }}
-                        >
+                        <div className="relative h-[118px] flex-none overflow-hidden bg-surface3">
                             {hasBanner(item) ? (
                                 <ItemBanner chip item={item} />
                             ) : (
                                 <div
-                                    style={{
-                                        alignItems: 'center',
-                                        background: meta.bg,
-                                        color: meta.fg,
-                                        display: 'flex',
-                                        height: '100%',
-                                        justifyContent: 'center',
-                                    }}
+                                    className={cn(
+                                        'flex h-full items-center justify-center',
+                                        meta.chip,
+                                    )}
                                 >
                                     <Icon name={item.type} size={26} strokeWidth={1.5} />
                                 </div>
                             )}
                         </div>
-                        <div
-                            style={{
-                                display: 'flex',
-                                flex: 1,
-                                flexDirection: 'column',
-                                gap: 5,
-                                padding: '11px 12px 12px',
-                            }}
-                        >
+                        <div className="flex flex-1 flex-col gap-[5px] px-3 pt-[11px] pb-3">
                             <div
-                                style={{
-                                    alignItems: 'center',
-                                    color: meta.fg,
-                                    display: 'flex',
-                                    fontSize: 10.5,
-                                    fontWeight: 600,
-                                    gap: 6,
-                                    letterSpacing: '.04em',
-                                    textTransform: 'uppercase',
-                                }}
+                                className={cn(
+                                    'flex items-center gap-[6px] text-micro font-semibold tracking-[.04em] uppercase',
+                                    meta.chipFg,
+                                )}
                             >
                                 <Icon name={item.type} size={12} strokeWidth={2} />
                                 {meta.label}
                             </div>
-                            <div
-                                style={{
-                                    color: 'var(--text, #1a1a1f)',
-                                    display: '-webkit-box',
-                                    fontSize: 13.5,
-                                    fontWeight: 620,
-                                    lineHeight: 1.35,
-                                    overflow: 'hidden',
-                                    WebkitBoxOrient: 'vertical',
-                                    WebkitLineClamp: 2,
-                                }}
-                            >
+                            <div className="line-clamp-2 text-subhead leading-[1.35] font-[620] text-text">
                                 {item.title}
                             </div>
-                            <div
-                                style={{
-                                    color: 'var(--text3, #9a9aa5)',
-                                    fontSize: 11.5,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
-                                {subtitle(item)}
-                            </div>
-                            <div
-                                style={{
-                                    alignItems: 'center',
-                                    display: 'flex',
-                                    gap: 6,
-                                    marginTop: 'auto',
-                                    paddingTop: 8,
-                                }}
-                            >
+                            <div className="truncate text-label text-text3">{subtitle(item)}</div>
+                            <div className="mt-auto flex items-center gap-[6px] pt-2">
                                 <span
-                                    style={{
-                                        background: coll?.color ?? 'var(--faint, #a8a8b0)',
-                                        borderRadius: 2,
-                                        flex: 'none',
-                                        height: 8,
-                                        width: 8,
-                                    }}
+                                    className="h-2 w-2 flex-none rounded-xs"
+                                    // The collection's own colour, which the user picks.
+                                    style={{ background: coll?.color ?? 'var(--faint)' }}
                                 />
-                                <span
-                                    style={{
-                                        color: 'var(--text3, #9a9aa5)',
-                                        fontSize: 11.5,
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
+                                <span className="truncate text-label text-text3">
                                     {coll?.name ?? 'Unfiled'}
                                 </span>
-                                <span
-                                    style={{
-                                        color: 'var(--faint, #a8a8b0)',
-                                        fontSize: 11,
-                                        marginLeft: 'auto',
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
+                                <span className="ml-auto text-caption whitespace-nowrap text-faint">
                                     {formatRelative(item.createdAt)}
                                 </span>
                             </div>
