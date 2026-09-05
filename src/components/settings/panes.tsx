@@ -12,7 +12,9 @@ import {
     type AiMode,
     type Density,
     type NotificationStyle,
+    type OpenMode,
     type Switches,
+    type ViewMode,
     type WeekStart,
 } from '../../store/types';
 import { useStore } from '../../store/useStore';
@@ -371,6 +373,11 @@ const APPEARANCES: { id: Appearance; label: string; swatch: string }[] = [
     { id: 'auto', label: 'Auto', swatch: 'linear-gradient(135deg,#f4f4f6 50%,#26262d 50%)' },
 ];
 
+/** The ids double as their own labels once capitalised, so one map covers both. */
+const VIEW_MODES: ViewMode[] = ['list', 'cards', 'table'];
+const OPEN_MODES: OpenMode[] = ['drawer', 'page'];
+const titleCase = (s: string): string => s[0].toUpperCase() + s.slice(1);
+
 export function LookPane() {
     const appearance = useStore((s) => s.prefs.appearance);
     const setAppearance = useStore((s) => s.setAppearance);
@@ -379,6 +386,10 @@ export function LookPane() {
     const density = useStore((s) => s.prefs.density);
     const textSize = useStore((s) => s.prefs.textSize);
     const setPref = useStore((s) => s.setPref);
+    const viewMode = useStore((s) => s.prefs.viewMode);
+    const setViewMode = useStore((s) => s.setViewMode);
+    const openMode = useStore((s) => s.prefs.openMode);
+    const setOpenMode = useStore((s) => s.setOpenMode);
     const counts = useSwitch('counts');
     const motion = useSwitch('motion');
 
@@ -465,6 +476,25 @@ export function LookPane() {
                     {ACCENT_NAMES[accent]}
                 </span>
             </div>
+
+            <SectionLabel>Library</SectionLabel>
+            <Row desc="Also switchable from the list header." title="Item layout">
+                <Segmented<string>
+                    onChange={(v) => setViewMode(v.toLowerCase() as ViewMode)}
+                    options={VIEW_MODES.map(titleCase)}
+                    value={titleCase(viewMode)}
+                />
+            </Row>
+            <Row
+                desc="Cards and Table have no detail column, so an item opens over or instead of them."
+                title="Open items in"
+            >
+                <Segmented<string>
+                    onChange={(v) => setOpenMode(v.toLowerCase() as OpenMode)}
+                    options={OPEN_MODES.map(titleCase)}
+                    value={titleCase(openMode)}
+                />
+            </Row>
 
             <SectionLabel>Density &amp; text</SectionLabel>
             <Row desc="Compact hides the tag row until hover." title="List density">
