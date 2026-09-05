@@ -129,6 +129,22 @@ describe('markdown format', () => {
         expect(back.createdAt).toBe('2026-01-01T00:00:00.000Z');
     });
 
+    it('keeps a ticked-off item ticked off across a round trip', () => {
+        const text = serializeFile(
+            {
+                ...baseItem(),
+                createdAt: '',
+                flags: { done: true, today: true },
+                id: 'I',
+                updatedAt: '',
+            } as Item,
+            [],
+        );
+        const back = toItem(parseFile(text), { id: 'I', mtime: '', relatedIds: [], stem: 'i' });
+
+        expect(back.flags).toEqual({ done: true, today: true });
+    });
+
     it('writes flags flat and omits the false ones', () => {
         const text = serializeFile(
             {

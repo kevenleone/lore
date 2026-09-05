@@ -15,6 +15,7 @@ const ITEM_TYPES: ItemType[] = ['link', 'note', 'task', 'code', 'image'];
 const KNOWN_KEYS = new Set([
     'created',
     'description',
+    'done',
     'id',
     'image',
     'inbox',
