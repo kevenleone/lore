@@ -6,10 +6,9 @@ import type { ReactNode } from 'react';
 
 import type { OpenMode, ViewMode } from '../../store/types';
 
+import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 import { OpenDrawer, OpenPage, ViewCards, ViewRows, ViewTable } from '../common/glyphs';
-
-const AC = 'var(--ac, #5b5bd6)';
 
 const VIEW_MODES: { glyph: ReactNode; id: ViewMode; label: string }[] = [
     { glyph: <ViewRows />, id: 'list', label: 'List' },
@@ -27,30 +26,20 @@ export function OpenModePicker() {
     const setOpenMode = useStore((s) => s.setOpenMode);
 
     return (
-        <span style={{ alignItems: 'center', display: 'flex', gap: 7 }}>
-            <span
-                style={{
-                    color: 'var(--faint, #a8a8b0)',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    letterSpacing: '.05em',
-                    textTransform: 'uppercase',
-                }}
-            >
+        <span className="flex items-center gap-[7px]">
+            <span className="text-caption font-semibold tracking-[.05em] text-faint uppercase">
                 Open in
             </span>
             <Track>
                 {OPEN_MODES.map((mode) => (
                     <button
                         aria-pressed={openMode === mode.id}
+                        className={cn(
+                            segmentClass(openMode === mode.id),
+                            'gap-[5px] px-[9px] py-1 text-body-sm',
+                        )}
                         key={mode.id}
                         onClick={() => setOpenMode(mode.id)}
-                        style={{
-                            ...segmentStyle(openMode === mode.id),
-                            fontSize: 12,
-                            gap: 5,
-                            padding: '4px 9px',
-                        }}
                         type="button"
                     >
                         {mode.glyph}
@@ -72,9 +61,9 @@ export function ViewModePicker() {
                 <button
                     aria-label={mode.label}
                     aria-pressed={viewMode === mode.id}
+                    className={cn(segmentClass(viewMode === mode.id), 'h-[26px] w-[30px]')}
                     key={mode.id}
                     onClick={() => setViewMode(mode.id)}
-                    style={{ ...segmentStyle(viewMode === mode.id), height: 26, width: 30 }}
                     title={mode.label}
                     type="button"
                 >
@@ -85,38 +74,15 @@ export function ViewModePicker() {
     );
 }
 
-function segmentStyle(active: boolean): React.CSSProperties {
-    return {
-        alignItems: 'center',
-        border: 'none',
-        borderRadius: 6,
-        cursor: 'pointer',
-        display: 'flex',
-        fontFamily: 'inherit',
-        justifyContent: 'center',
-        ...(active
-            ? {
-                  background: 'var(--surface, #fff)',
-                  boxShadow: 'var(--seg-shadow, 0 1px 2px rgba(0,0,0,.08))',
-                  color: AC,
-                  fontWeight: 590,
-              }
-            : { background: 'transparent', color: 'var(--text3, #9a9aa5)', fontWeight: 500 }),
-    };
+function segmentClass(active: boolean): string {
+    return cn(
+        'flex cursor-pointer items-center justify-center rounded-md border-none font-[inherit]',
+        active
+            ? 'bg-surface font-[590] text-accent shadow-seg'
+            : 'bg-transparent font-medium text-text3',
+    );
 }
 
 function Track({ children }: { children: ReactNode }) {
-    return (
-        <span
-            style={{
-                background: 'var(--surface3, #f1f1f3)',
-                borderRadius: 8,
-                display: 'flex',
-                gap: 2,
-                padding: 2,
-            }}
-        >
-            {children}
-        </span>
-    );
+    return <span className="flex gap-[2px] rounded-lg bg-surface3 p-[2px]">{children}</span>;
 }

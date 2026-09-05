@@ -40,37 +40,20 @@ export function ItemBanner({ chip, item }: ItemBannerProps) {
             {item.image && (
                 <img
                     alt=""
+                    className="absolute inset-0 h-full w-full object-cover"
                     draggable={false}
                     loading="lazy"
                     onLoad={() => setLoadedSrc(item.image ?? null)}
                     src={item.image}
                     style={{
                         filter: loaded ? 'none' : 'blur(6px)',
-                        height: '100%',
-                        inset: 0,
-                        objectFit: 'cover',
                         opacity: loaded ? 1 : 0,
-                        position: 'absolute',
                         transition: reduceMotion ? undefined : 'opacity .5s ease, filter .5s ease',
-                        width: '100%',
                     }}
                 />
             )}
             {chip && !loaded && (
-                <span
-                    style={{
-                        background: 'rgba(20,20,28,.42)',
-                        borderRadius: 5,
-                        bottom: 8,
-                        color: '#fff',
-                        fontFamily: 'ui-monospace,Menlo,monospace',
-                        fontSize: 9.5,
-                        left: 8,
-                        letterSpacing: '.03em',
-                        padding: '2px 6px',
-                        position: 'absolute',
-                    }}
-                >
+                <span className="absolute bottom-2 left-2 rounded-5 bg-[rgba(20,20,28,.42)] px-[6px] py-[2px] font-mono text-[9.5px] tracking-[.03em] text-white">
                     loading preview
                 </span>
             )}

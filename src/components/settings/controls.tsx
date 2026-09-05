@@ -15,6 +15,10 @@ import { SettingsIcon } from '../common/settingsGlyphs';
 export const PILL_BUTTON =
     'text-body inline-flex flex-none cursor-pointer items-center gap-[7px] rounded-lg border border-border bg-surface px-[10px] py-[6px] font-[inherit] text-text2 disabled:cursor-default not-disabled:hover:bg-hover';
 
+/** Square icon-only button: pane headers, the notice's dismiss. */
+export const ICON_BUTTON =
+    'flex cursor-pointer items-center justify-center rounded-lg border-none bg-transparent text-text2 hover:bg-hover';
+
 /** One option inside a segmented control. */
 const SEG_ITEM =
     'text-body cursor-pointer rounded-7 border-none bg-transparent px-[11px] py-[5px] font-[inherit]';
