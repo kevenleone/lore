@@ -1,10 +1,12 @@
 <!--
-  Lore app / Dock icon — `Lore Identity.dc.html` § 02: "Squircle, indigo field,
+  Lore app / Dock icon — `Lore App Icons.dc.html` § "21 — Open seal", on the
+  squircle field from `Lore Identity.dc.html` § 02: "Squircle, indigo field,
   paper-white mark. macOS 1024px master."
 
   The squircle is inset to Apple's 824/1024 icon grid so Lore sits at the same
-  optical size as every other Dock icon, with corner radius 0.225 x its side and
-  the mark at 0.56 x its side, per the identity's `squircle()` helper.
+  optical size as every other Dock icon, with corner radius 0.225 x its side.
+  The mark's extent is 0.58 x the tile — a hair larger than the old page mark,
+  because a ring reads smaller than a rectangle at the same measured width.
 
   This file is the master: regenerate every raster with
       pnpm tauri icon src-tauri/icons/app-icon.svg -o src-tauri/icons
@@ -30,17 +32,21 @@
     <rect x="100" y="100" width="824" height="824" rx="185.4" ry="185.4" fill="url(#sheen)"/>
 
     <!--
-      The mark, 461.44 wide on its 32-unit grid: scale 461.44/32 = 14.42,
-      centred on the tile at (512, 512).
+      The mark's inked extent on its 64-unit grid is 48.6 x 50.3 centred on
+      (32, 31.15) — the leaf pushes it above the ring's own centre. 0.58 x 824
+      over the taller side gives scale 9.5, and the translate re-centres that
+      extent, not the grid, on the tile.
+
+      The ring is stroked at 3 rather than the design file's 2.6: `tauri icon`
+      downscales this one master to every size, and 2.6 leaves the ring a
+      sub-pixel hairline by the 32px raster.
     -->
-    <g transform="translate(281.28, 281.28) scale(14.42)">
-      <path d="M7.5 2.75 h11.1 L25 9.1 V29.25 H7.5 Z"
-            fill="none" stroke="#ffffff" stroke-width="2.4"
-            stroke-linejoin="round" stroke-linecap="round"/>
-      <path d="M18.4 2.9 V9.4 H24.9"
-            fill="none" stroke="#ffffff" stroke-width="2.2"
-            stroke-linejoin="round" stroke-linecap="round"/>
-      <circle cx="16.2" cy="19.6" r="3.5" fill="#ffffff"/>
+    <g transform="translate(208, 216.1) scale(9.5)">
+      <path d="M32 9a23 23 0 1 1-19 10"
+            fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+      <path d="M13 19C21 19 27 14 28 6 20 6 14 11 13 19Z" fill="#ffffff"/>
+      <path d="M25.2 22 H33.2 V23.5 H31.5 V39.2 H36.9 V37.1 H38.8 V42 H26.6 L27.1 23.5 H25.2 Z"
+            fill="#ffffff"/>
     </g>
   </g>
 </svg>

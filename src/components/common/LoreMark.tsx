@@ -1,5 +1,5 @@
-// Lore's logo mark — a page with a folded corner and a filled dot, ported from
-// the `loreMark()` helper shared by every Lore design file.
+// Lore's logo mark — `Lore App Icons.dc.html` § "21 — Open seal": a ring drawn
+// as one stroke that stops and becomes a leaf, wrapped around a serif L.
 
 import type { CSSProperties } from 'react';
 
@@ -11,27 +11,45 @@ interface LoreMarkProps {
 }
 
 export function LoreMark({ color = 'currentColor', size = 22, style }: LoreMarkProps) {
+    // Below 22px the leaf collapses into the ring's own stroke, so it is dropped.
+    const showLeaf = size >= 22;
+
     return (
-        <svg height={size} style={{ display: 'block', ...style }} viewBox="0 0 32 32" width={size}>
+        <svg height={size} style={{ display: 'block', ...style }} viewBox="0 0 64 64" width={size}>
             <path
-                d="M7.5 2.75 h11.1 L25 9.1 V29.25 H7.5 Z"
+                d="M32 9a23 23 0 1 1-19 10"
                 fill="none"
                 stroke={color}
                 strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.4}
+                strokeWidth={ringWeight(size)}
             />
+            {showLeaf ? <path d="M13 19C21 19 27 14 28 6 20 6 14 11 13 19Z" fill={color} /> : null}
             <path
-                d="M18.4 2.9 V9.4 H24.9"
-                fill="none"
-                stroke={color}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.2}
+                d="M25.2 22 H33.2 V23.5 H31.5 V39.2 H36.9 V37.1 H38.8 V42 H26.6 L27.1 23.5 H25.2 Z"
+                fill={color}
             />
-            <circle cx={16.2} cy={19.6} fill={color} r={3.5} />
         </svg>
     );
+}
+
+/**
+ * The design file redraws the ring heavier as the mark shrinks (2.6 on the dock
+ * tile, then 3 / 4 / 5.4 at 40 / 28 / 18px) so the stroke survives rasterising.
+ */
+function ringWeight(size: number): number {
+    if (size >= 64) {
+        return 2.6;
+    }
+
+    if (size >= 34) {
+        return 3;
+    }
+
+    if (size >= 22) {
+        return 4;
+    }
+
+    return 5.4;
 }
 
 /** The serif wordmark that sits beside the mark. */
