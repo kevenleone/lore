@@ -7,6 +7,14 @@ const DAY = 24 * HOUR;
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+/** File size for the Properties panel: "412 B", "6.5 KB", "1.2 MB". */
+export function formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    return `${(kb / 1024).toFixed(1)} MB`;
+}
+
 /** Compact list-row label: "2m", "1h", "Yesterday", "3d", or a weekday. */
 export function formatRelative(iso: string, now: number = Date.now()): string {
     const then = new Date(iso).getTime();

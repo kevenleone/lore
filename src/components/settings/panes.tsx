@@ -566,6 +566,7 @@ const SHORTCUT_GROUPS = [
             { keys: ['⌘', 'K'], label: 'Search everything' },
             { keys: ['⌘', 'J'], label: 'Ask Lore' },
             { keys: ['⌘', '⌥', 'S'], label: 'Toggle the sidebar' },
+            { keys: ['⌘', '⌥', 'I'], label: 'Toggle the properties panel' },
             { keys: ['⌘', 'D'], label: 'Flag item' },
             { keys: ['⌘', '⇧', 'C'], label: 'Share' },
             { keys: ['↑', '↓'], label: 'Next / previous item' },

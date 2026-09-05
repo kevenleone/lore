@@ -18,6 +18,7 @@ import { AskLoreChat } from './components/kb/AskLoreChat';
 import { DetailPane } from './components/kb/DetailPane';
 import { ListPane } from './components/kb/ListPane';
 import { Notice } from './components/kb/Notice';
+import { PROPERTIES_WIDTH, PropertiesPanel } from './components/kb/PropertiesPanel';
 import { Sidebar, SIDEBAR_WIDTH } from './components/kb/Sidebar';
 import { TitleBar } from './components/kb/TitleBar';
 import { Onboarding } from './components/onboarding/Onboarding';
@@ -43,6 +44,7 @@ export default function App() {
     const mainView = useStore((s) => s.mainView);
     const onboarded = useStore((s) => s.onboarded);
     const openId = useStore((s) => s.openId);
+    const propertiesOpen = useStore((s) => s.prefs.propertiesOpen);
     // The per-item override wins over the saved preference — that is what the
     // drawer's expand button sets.
     const openAs = useStore((s) => s.openAs ?? s.prefs.openMode);
@@ -51,6 +53,7 @@ export default function App() {
     const settingsOpen = useStore((s) => s.settingsOpen);
     const toggleCapture = useStore((s) => s.toggleCapture);
     const toggleFocus = useStore((s) => s.toggleFocus);
+    const toggleProperties = useStore((s) => s.toggleProperties);
     const viewMode = useStore((s) => s.prefs.viewMode);
     const rootRef = useRef<HTMLDivElement>(null);
 
@@ -67,6 +70,9 @@ export default function App() {
             if (e.altKey && e.shiftKey && e.code === 'KeyF') {
                 e.preventDefault();
                 toggleFocus();
+            } else if ((e.metaKey || e.ctrlKey) && e.altKey && e.code === 'KeyI') {
+                e.preventDefault();
+                toggleProperties();
             } else if ((e.metaKey || e.ctrlKey) && e.key === '3') {
                 e.preventDefault();
                 setMainView('calendar');
@@ -80,7 +86,7 @@ export default function App() {
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [captureOpen, closeCapture, closeOpenItem, setMainView, toggleFocus]);
+    }, [captureOpen, closeCapture, closeOpenItem, setMainView, toggleFocus, toggleProperties]);
 
     // Paint the token set for the effective theme, and repaint when the OS
     // switches while Appearance is on Auto.
@@ -251,6 +257,30 @@ export default function App() {
                                     </div>
                                 </>
                             )}
+                            {/*
+                             * Docked on the far edge, outside the drawer/page
+                             * branches: a full-page item and a drawer both keep it,
+                             * and it collapses by width the way the sidebar does so
+                             * its contents never reflow mid-transition.
+                             */}
+                            <div
+                                aria-hidden={!propertiesOpen}
+                                inert={!propertiesOpen}
+                                style={{
+                                    borderLeft: propertiesOpen
+                                        ? '1px solid var(--border, #ececef)'
+                                        : 'none',
+                                    flex: 'none',
+                                    overflow: 'hidden',
+                                    transition: reduceMotion
+                                        ? undefined
+                                        : 'width .22s cubic-bezier(.4,0,.2,1)',
+                                    width: propertiesOpen ? PROPERTIES_WIDTH : 0,
+                                    zIndex: 31,
+                                }}
+                            >
+                                <PropertiesPanel />
+                            </div>
                         </>
                     )}
 

@@ -6,7 +6,7 @@
 import { useEffect, useRef } from 'react';
 
 import { useStore } from '../../store/useStore';
-import { Plus, Search, SidebarToggle, Sort, Sparkle, ViewList } from '../common/glyphs';
+import { PanelRight, Plus, Search, SidebarToggle, Sort, Sparkle, ViewList } from '../common/glyphs';
 import { Tooltip } from '../common/Tooltip';
 import { FocusChip } from '../focus/FocusChip';
 
@@ -15,7 +15,9 @@ const AC = 'var(--ac, #5b5bd6)';
 export function TitleBar({ onCapture }: { onCapture: () => void }) {
     const toggleSidebar = useStore((s) => s.toggleSidebar);
     const toggleChat = useStore((s) => s.toggleChat);
+    const toggleProperties = useStore((s) => s.toggleProperties);
     const chatOpen = useStore((s) => s.chatOpen);
+    const propertiesOpen = useStore((s) => s.prefs.propertiesOpen);
     const search = useStore((s) => s.search);
     const setSearch = useStore((s) => s.setSearch);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -147,6 +149,28 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                         }}
                     >
                         <Sparkle />
+                    </span>
+                </Tooltip>
+                <Tooltip keys="⌘⌥I" label="Properties">
+                    <span
+                        aria-label="Properties"
+                        aria-pressed={propertiesOpen}
+                        onClick={toggleProperties}
+                        role="button"
+                        style={{
+                            alignItems: 'center',
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            height: 30,
+                            justifyContent: 'center',
+                            width: 30,
+                            ...(propertiesOpen
+                                ? { background: 'var(--ac-tint, #eeeef2)', color: AC }
+                                : { color: 'var(--text2, #6b6b76)' }),
+                        }}
+                    >
+                        <PanelRight />
                     </span>
                 </Tooltip>
                 <Tooltip label="View options">
