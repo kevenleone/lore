@@ -1,7 +1,7 @@
 // The vault store: the index plus the read/write operations the routes expose.
 // This is where the file tree and the derived index are kept in agreement.
 
-import type { Collection, Item, TagCount } from '@lore/types';
+import type { Collection, Item, ItemMeta, TagCount } from '@lore/types';
 import type { Database } from 'bun:sqlite';
 
 import { deriveDomain, deriveSnippet } from '@lore/derive';
@@ -121,6 +121,22 @@ export class VaultStore {
         return row ? rowToItem(row, true) : null;
     }
 
+    /** The per-file facts the Properties panel shows. Null when the id is unknown. */
+    itemMeta(id: string): ItemMeta | null {
+        const row = this.db.query<FileRow, [string]>('SELECT * FROM files WHERE id = ?').get(id);
+        if (!row) return null;
+        const body = row.body.trim();
+        return {
+            backlinks: this.inboundIds(id)
+                .map((src) => this.getItem(src))
+                .filter((x): x is Item => !!x),
+            modifiedAt: new Date(row.mtime_ms).toISOString(),
+            path: row.path,
+            size: row.size,
+            words: body ? body.split(/\s+/).length : 0,
+        };
+    }
+
     async listCollections(): Promise<Collection[]> {
         return this.vault.listCollections();
     }
@@ -214,14 +230,7 @@ export class VaultStore {
         const stem = uniqueStem(requestedStem, id, taken);
         if (stem === row.stem) return this.getItem(id);
 
-        // Who points here? This is the only consumer of the links table.
-        const inbound = this.db
-            .query<{ src_id: string }, [string]>(
-                'SELECT DISTINCT src_id FROM links WHERE target_id = ?',
-            )
-            .all(id)
-            .map((r) => r.src_id)
-            .filter((src) => src !== id);
+        const inbound = this.inboundIds(id);
 
         for (const srcId of inbound) {
             const src = this.db
@@ -342,6 +351,17 @@ export class VaultStore {
             this.db.run('DELETE FROM links WHERE src_id = ?', [row.id]);
             this.db.run('DELETE FROM items_fts WHERE id = ?', [row.id]);
         }
+    }
+
+    /** Ids whose frontmatter `related` resolves to `id` — the links table's readers. */
+    private inboundIds(id: string): string[] {
+        return this.db
+            .query<{ src_id: string }, [string]>(
+                'SELECT DISTINCT src_id FROM links WHERE target_id = ?',
+            )
+            .all(id)
+            .map((r) => r.src_id)
+            .filter((src) => src !== id);
     }
 
     /* ---------------- writes ---------------- */

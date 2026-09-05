@@ -129,6 +129,37 @@ describe('markdown format', () => {
         expect(back.createdAt).toBe('2026-01-01T00:00:00.000Z');
     });
 
+    it('round-trips comments through the frontmatter', () => {
+        const comment = {
+            at: '2026-01-03T00:00:00.000Z',
+            author: 'Keven',
+            body: 'Worth revisiting.',
+            id: 'c1',
+        };
+        const text = serializeFile({ ...baseItem(), comments: [comment] } as Item, []);
+        expect(text).toContain('comments:');
+
+        const back = toItem(parseFile(text), {
+            id: 'ID1',
+            mtime: '',
+            relatedIds: [],
+            stem: 'a-note',
+        });
+        expect(back.comments).toEqual([comment]);
+    });
+
+    it('fills in what a hand-written comment leaves out, and drops bodyless ones', () => {
+        const parsed = parseFile(
+            '---\ntitle: A\ncreated: 2026-02-01T00:00:00.000Z\ncomments:\n  - body: Just text\n  - author: nobody\n---\n\nb',
+        );
+        const back = toItem(parsed, { id: 'ID1', mtime: '', relatedIds: [], stem: 'a' });
+
+        expect(back.comments).toHaveLength(1);
+        expect(back.comments![0].body).toBe('Just text');
+        expect(back.comments![0].at).toBe('2026-02-01T00:00:00.000Z');
+        expect(back.comments![0].id).toBeTruthy();
+    });
+
     it('keeps a ticked-off item ticked off across a round trip', () => {
         const text = serializeFile(
             {
@@ -406,6 +437,28 @@ describe('store: wikilinks', () => {
         const a = s.listItems().find((i) => i.title === 'A')!;
         const later = s.listItems().find((i) => i.title === 'Later')!;
         expect(a.related).toEqual([later.id]);
+    });
+});
+
+describe('store: itemMeta', () => {
+    it('reports the file stats and who links here', async () => {
+        const s = await open();
+        const target = await s.createItem(baseItem({ body: 'one two three', title: 'Target' }));
+        const source = await s.createItem(baseItem({ related: [target.id], title: 'Source' }));
+
+        const meta = s.itemMeta(target.id)!;
+        expect(meta.path).toBe('target.md');
+        expect(meta.words).toBe(3);
+        expect(meta.size).toBeGreaterThan(0);
+        expect(meta.backlinks.map((b) => b.id)).toEqual([source.id]);
+
+        // The inbound side is one-directional: the source has no backlinks of its own.
+        expect(s.itemMeta(source.id)!.backlinks).toEqual([]);
+    });
+
+    it('is null for an unknown id', async () => {
+        const s = await open();
+        expect(s.itemMeta('nope')).toBeNull();
     });
 });
 

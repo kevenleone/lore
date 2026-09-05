@@ -4,15 +4,18 @@
 // round-trip control — what gets written back must stay diff-friendly, and
 // unknown keys a user or another tool added must survive being edited in Lore.
 
-import type { Item, ItemFlags, ItemType } from '@lore/types';
+import type { Item, ItemComment, ItemFlags, ItemType } from '@lore/types';
 
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+
+import { newId } from './slug';
 
 const FENCE = '---';
 const ITEM_TYPES: ItemType[] = ['link', 'note', 'task', 'code', 'image'];
 
 /** Frontmatter keys Lore owns. Anything else is passed through untouched. */
 const KNOWN_KEYS = new Set([
+    'comments',
     'created',
     'description',
     'done',
@@ -98,6 +101,30 @@ const iso = (v: unknown, fallback: string): string => {
     return fallback;
 };
 
+/**
+ * Comments a person may well have typed into the file by hand, so everything but
+ * the text itself is optional and filled in here rather than rejected.
+ */
+const commentArray = (v: unknown, fallback: string): ItemComment[] => {
+    if (!Array.isArray(v)) return [];
+    const out: ItemComment[] = [];
+    for (const entry of v) {
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+        const raw = entry as Record<string, unknown>;
+        const body = str(raw.body);
+        if (!body) continue;
+        const comment: ItemComment = {
+            at: iso(raw.at, fallback),
+            body,
+            id: str(raw.id) ?? newId(),
+        };
+        const author = str(raw.author);
+        if (author) comment.author = author;
+        out.push(comment);
+    }
+    return out;
+};
+
 export interface ToItemContext {
     /** Vault-relative directory; "" at the root means uncollected. */
     collectionId?: string;
@@ -141,6 +168,7 @@ export function serializeFile(
     if (item.summary) fm.summary = item.summary;
     if (item.points?.length) fm.points = item.points;
     if (relatedLinks.length) fm.related = relatedLinks;
+    if (item.comments?.length) fm.comments = item.comments;
 
     // `collectionId` is deliberately absent: the parent folder is the collection,
     // so writing it too would give us two sources of truth that could disagree.
@@ -164,12 +192,14 @@ export function toItem(parsed: ParsedFile, ctx: ToItemContext): Item {
     if (data.done === true) flags.done = true;
 
     const created = iso(data.created, ctx.mtime);
+    const comments = commentArray(data.comments, created);
 
     return {
         // trimEnd, not trim: leading indentation is meaningful inside code blocks,
         // but the trailing newline serializeFile adds must not accumulate.
         body: body.trim() ? body.replace(/\s+$/, '') : undefined,
         collectionId: ctx.collectionId || undefined,
+        comments: comments.length ? comments : undefined,
         createdAt: created,
         description: str(data.description),
         flags,

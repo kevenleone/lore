@@ -115,6 +115,31 @@ describe('item routes', () => {
     });
 });
 
+describe('item meta route', () => {
+    beforeEach(openVault);
+
+    it('answers file stats and backlinks', async () => {
+        const target = await call('POST', '/items', newItem({ body: 'one two', title: 'Target' }));
+        const source = await call(
+            'POST',
+            '/items',
+            newItem({ related: [target.body.id], title: 'Source' }),
+        );
+
+        const meta = await call('GET', `/items/${target.body.id}/meta`);
+        expect(meta.status).toBe(200);
+        expect(meta.body.path).toBe('target.md');
+        expect(meta.body.words).toBe(2);
+        expect(meta.body.size).toBeGreaterThan(0);
+        expect(meta.body.modifiedAt).toBeTruthy();
+        expect(meta.body.backlinks.map((b: Item) => b.id)).toEqual([source.body.id]);
+    });
+
+    it('404s an unknown id', async () => {
+        expect((await call('GET', '/items/nope/meta')).status).toBe(404);
+    });
+});
+
 describe('collection routes', () => {
     beforeEach(openVault);
 

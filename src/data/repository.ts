@@ -10,7 +10,7 @@
 // `matchesView` used to live here; it moved to store/views.ts so the data layer
 // no longer imports from the store and vice versa.
 
-import type { Collection, Item, TagCount, View } from '../store/types';
+import type { Collection, Item, ItemMeta, TagCount, View } from '../store/types';
 
 export type CollectionPatch = Partial<Omit<Collection, 'id'>>;
 export type ItemPatch = Partial<Omit<Item, 'createdAt' | 'id'>>;
@@ -24,6 +24,11 @@ export interface KnowledgeRepository {
     dispose?(): Promise<void> | void;
 
     getItem(id: string): Promise<Item | null>;
+    /**
+     * Per-file facts for the Properties panel. Optional: only the vault knows a
+     * file's size or who links to it, so the other stores simply do not answer.
+     */
+    itemMeta?(id: string): Promise<ItemMeta | null>;
     listCollections(): Promise<Collection[]>;
     listItems(view?: View): Promise<Item[]>;
     listTags(): Promise<TagCount[]>;

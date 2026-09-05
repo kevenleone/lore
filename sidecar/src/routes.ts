@@ -127,6 +127,20 @@ export function routes(workspace: Workspace) {
             })
 
             /**
+             * Per-file facts for the Properties panel: size, mtime, word count and
+             * backlinks. Separate from the item itself so `/items` stays cheap —
+             * it is re-read after every mutation.
+             */
+            .get('/items/:id/meta', ({ params, set }) => {
+                const meta = workspace.current.itemMeta(params.id);
+                if (!meta) {
+                    set.status = 404;
+                    return { error: 'not_found' };
+                }
+                return meta;
+            })
+
+            /**
              * Renames the file behind an item, rewriting inbound wikilinks.
              * Separate from PATCH because retitling deliberately does not rename.
              */
