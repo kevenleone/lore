@@ -13,7 +13,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FocusSnapshot } from './focusSnapshot';
 
 import { loadPersisted } from '../../store/persisted';
-import { applyTokens, effectiveTheme, resolveAccent } from '../../theme/tokens';
+import { effectiveTheme, paintTheme } from '../../theme/tokens';
 import { PANEL_MARGIN, panelSurface, panelWindow } from './Focus.css';
 import { FocusPanelBody } from './FocusPanelBody';
 import { TICK_MS } from './useFocusTimer';
@@ -45,8 +45,8 @@ export function FocusPanel() {
     const theme = effectiveTheme(prefs.appearance);
 
     useEffect(() => {
-        if (rootRef.current) applyTokens(rootRef.current, theme);
-    }, [theme]);
+        paintTheme(theme, prefs.accent);
+    }, [prefs.accent, theme]);
 
     // Fit the window to the card instead of guessing a height in the config: the
     // card grows and shrinks with the task title's wrapping and the empty state,
@@ -155,11 +155,7 @@ export function FocusPanel() {
     }, []);
 
     return (
-        <div
-            className={panelWindow}
-            ref={rootRef}
-            style={{ ['--ac' as string]: resolveAccent(prefs.accent, theme) }}
-        >
+        <div className={panelWindow} ref={rootRef}>
             <div className={panelSurface} ref={cardRef}>
                 <FocusPanelBody
                     actions={{

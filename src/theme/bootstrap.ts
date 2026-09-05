@@ -6,10 +6,8 @@
 // no colours at all, and the focus popover measures itself on that frame.
 
 import { loadPersisted } from '../store/persisted';
-import { applyTokens, effectiveTheme, resolveAccent } from './tokens';
+import { effectiveTheme, paintTheme } from './tokens';
 
 const { prefs } = loadPersisted();
-const theme = effectiveTheme(prefs.appearance);
 
-applyTokens(document.documentElement, theme);
-document.documentElement.style.setProperty('--ac', resolveAccent(prefs.accent, theme));
+paintTheme(effectiveTheme(prefs.appearance), prefs.accent);

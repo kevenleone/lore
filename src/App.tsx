@@ -6,7 +6,7 @@
 // Before any of that is reachable, `Lore Onboarding` covers the window until
 // the user has either signed in or chosen a local vault.
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 import { DRAWER_MS, drawerIn, drawerOut, scrimIn, scrimOut } from './App.css';
 import { CalendarView } from './components/calendar/CalendarView';
@@ -25,7 +25,7 @@ import { Onboarding } from './components/onboarding/Onboarding';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { useMountTransition } from './lib/useMountTransition';
 import { useStore } from './store/useStore';
-import { applyTokens, effectiveTheme, resolveAccent } from './theme/tokens';
+import { effectiveTheme, paintTheme } from './theme/tokens';
 
 export default function App() {
     const hydrate = useStore((s) => s.hydrate);
@@ -55,7 +55,6 @@ export default function App() {
     const toggleFocus = useStore((s) => s.toggleFocus);
     const toggleProperties = useStore((s) => s.toggleProperties);
     const viewMode = useStore((s) => s.prefs.viewMode);
-    const rootRef = useRef<HTMLDivElement>(null);
 
     useFocusTimer();
 
@@ -91,9 +90,7 @@ export default function App() {
     // Paint the token set for the effective theme, and repaint when the OS
     // switches while Appearance is on Auto.
     useEffect(() => {
-        const paint = () => {
-            if (rootRef.current) applyTokens(rootRef.current, effectiveTheme(appearance));
-        };
+        const paint = () => paintTheme(effectiveTheme(appearance), accent);
         paint();
         if (appearance !== 'auto' || !window.matchMedia) return;
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -118,7 +115,6 @@ export default function App() {
         return () => unlisteners.forEach((off) => off());
     }, [refresh, toggleCapture]);
 
-    const theme = effectiveTheme(appearance);
     // List keeps a permanent detail column; Cards and Table open an item over or
     // instead of themselves, which is what `openMode` chooses between.
     const listMode = viewMode === 'list';
@@ -133,11 +129,7 @@ export default function App() {
 
     return (
         <div
-            ref={rootRef}
             style={{
-                // `--ac` drives every accent reference in the tree; the design lifts it
-                // when it would be too dark to read on the dark ground.
-                ['--ac' as string]: resolveAccent(accent, theme),
                 background: 'var(--surface, #fff)',
                 color: 'var(--text, #1a1a1f)',
                 height: '100%',
