@@ -23,6 +23,7 @@
 // main window; events are not throttled the way timers are, so that wakes the
 // renderer to roll the phase over even while it is hidden.
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -71,6 +72,14 @@ struct TrayView {
 
 #[derive(Default)]
 pub struct FocusTray {
+    /// Whether the last update had a session to stop, so `sync_focus` can spot
+    /// the edge where one ends. See `on_focus_stopped`.
+    was_stoppable: AtomicBool,
+    /// What the painter last put on the tray, so it can skip a redundant call
+    /// into AppKit. It lives here rather than inside the loop so a reset can
+    /// clear it: a painter that only diffs against its own last view can never
+    /// be told the tray is showing something it did not paint.
+    painted: Mutex<Option<TrayView>>,
     session: Mutex<Option<Session>>,
     /// Last state the main window pushed, replayed to the panel when it opens.
     snapshot: Mutex<Option<serde_json::Value>>,
@@ -141,46 +150,113 @@ fn view_for(session: Option<&Session>) -> TrayView {
     }
 }
 
+/// Draws a view onto the tray icon. Errors are logged rather than discarded:
+/// these calls reach AppKit, and a silently dropped one leaves the menu bar
+/// showing a state nothing in this file believes is on screen.
 fn paint(app: &AppHandle, view: &TrayView) {
     let Some(tray) = app.tray_by_id(TRAY_ID) else {
+        eprintln!("focus tray: no tray with id {TRAY_ID} to paint");
         return;
     };
-    let _ = tray.set_icon(Some(if view.running {
+    let icon = if view.running {
         running_icon()
     } else {
         idle_icon()
-    }));
+    };
+    if let Err(e) = tray.set_icon(Some(icon)) {
+        eprintln!("focus tray: set_icon failed: {e}");
+    }
     // Setting an icon clears the template flag, so the menu bar would stop
     // inverting the mark for a light appearance without this.
     #[cfg(target_os = "macos")]
-    let _ = tray.set_icon_as_template(true);
+    if let Err(e) = tray.set_icon_as_template(true) {
+        eprintln!("focus tray: set_icon_as_template failed: {e}");
+    }
 
-    let _ = tray.set_title(view.title.as_deref());
-    let _ = tray.set_tooltip(Some(&view.tooltip));
+    // An empty string, not `None`: tray-icon's macOS backend only touches the
+    // status item when a title is given, so `set_title(None)` returns Ok and
+    // leaves the last countdown frozen in the menu bar.
+    if let Err(e) = tray.set_title(Some(view.title.as_deref().unwrap_or(""))) {
+        eprintln!("focus tray: set_title failed: {e}");
+    }
+    if let Err(e) = tray.set_tooltip(Some(&view.tooltip)) {
+        eprintln!("focus tray: set_tooltip failed: {e}");
+    }
+}
+
+/// ---------------------------------------------------------------------------
+/// PLACEHOLDER — runs once, the moment a focus session is stopped.
+///
+/// This is the edge where the stopwatch leaves the menu bar for good: it fires
+/// for a real stop (the ■ button, or Stop Focus in the tray menu), and *not* for
+/// a pause, which takes the countdown down but keeps the session alive.
+///
+/// It resets the tray first, so the menu bar is back to the plain mark within a
+/// tick. Add whatever you want to test after that.
+///
+/// Called from `sync_focus`, on whichever thread the renderer's IPC landed on —
+/// so keep it quick, or spawn with `tauri::async_runtime::spawn` for anything
+/// slow. Do not paint the tray from here: a synchronous command runs on the main
+/// thread, and the AppKit call goes nowhere. Change what the painter reads —
+/// `reset_tray` is the example — and let it draw.
+/// ---------------------------------------------------------------------------
+fn on_focus_stopped(app: &AppHandle) {
+    reset_tray(app);
+
+    // TODO: test code goes here.
+
+    println!("focus stopped");
+}
+
+/// Drops the session and forces the painter to redraw, putting the tray back to
+/// its resting state — plain mark, no title — on its next pass.
+///
+/// It clears `painted` as well as `session`. Clearing the session alone is not
+/// enough: the painter skips a redraw whenever the view it computes matches the
+/// one it last painted, so a tray already believed to be at rest would never be
+/// repainted, and anything else that reached the menu bar would stay there.
+/// This does not paint itself — painting from a command runs on the main thread,
+/// where the AppKit call is dropped, which is the whole reason a single painter
+/// owns the tray.
+pub fn reset_tray(app: &AppHandle) {
+    let state = app.state::<FocusTray>();
+    *state.session.lock().unwrap_or_else(PoisonError::into_inner) = None;
+    *state.painted.lock().unwrap_or_else(PoisonError::into_inner) = None;
 }
 
 /// The one and only painter. Started once, at launch.
 pub fn start_painter(app: &AppHandle) {
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
-        let mut painted: Option<TrayView> = None;
         // Which interval's end has already been announced, so a session sitting
         // at zero does not emit on every pass.
         let mut announced: Option<i64> = None;
 
         loop {
-            // The lock is released before painting: a paint blocks on the main
-            // thread, and the main thread must never be waiting on this lock.
-            let session = {
+            // Both locks are released before painting: a paint blocks on the main
+            // thread, and the main thread must never be waiting on either.
+            let (session, painted) = {
                 let state = app.state::<FocusTray>();
-                let guard = state.session.lock().unwrap_or_else(PoisonError::into_inner);
-                guard.clone()
+                let session = state
+                    .session
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner)
+                    .clone();
+                let painted = state
+                    .painted
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner)
+                    .clone();
+                (session, painted)
             };
 
             let view = view_for(session.as_ref());
             if painted.as_ref() != Some(&view) {
                 paint(&app, &view);
-                painted = Some(view);
+                *app.state::<FocusTray>()
+                    .painted
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner) = Some(view);
             }
 
             if let Some(ends_at) = session
@@ -237,6 +313,16 @@ pub fn sync_focus(
         });
     }
 
+    // After the session is stored, not before: `on_focus_stopped` clears what
+    // the painter reads, and running it first would let the write above put a
+    // session straight back.
+    //
+    // `can_stop` falls from true to false exactly once per session, when it
+    // ends — a pause leaves it true, so this is the stop edge and nothing else.
+    if state.was_stoppable.swap(can_stop, Ordering::SeqCst) && !can_stop {
+        on_focus_stopped(&app);
+    }
+
     if let Ok(mut slot) = state.snapshot.lock() {
         *slot = Some(snapshot.clone());
     }
@@ -244,7 +330,11 @@ pub fn sync_focus(
 
     if let Ok(slot) = state.toggle_item.lock() {
         if let Some(item) = slot.as_ref() {
-            let _ = item.set_text(if running { "Pause Focus" } else { "Start Focus" });
+            let _ = item.set_text(if running {
+                "Pause Focus"
+            } else {
+                "Start Focus"
+            });
         }
     }
     {
