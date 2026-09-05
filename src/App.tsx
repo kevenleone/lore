@@ -8,6 +8,7 @@
 
 import { useEffect, useRef } from 'react';
 
+import { DRAWER_MS, drawerIn, drawerOut, scrimIn, scrimOut } from './App.css';
 import { CalendarView } from './components/calendar/CalendarView';
 import { FocusMode } from './components/focus/FocusMode';
 import { FocusPopover } from './components/focus/FocusPopover';
@@ -21,6 +22,7 @@ import { TitleBar } from './components/kb/TitleBar';
 import { Onboarding } from './components/onboarding/Onboarding';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { openCaptureWindow } from './lib/capture';
+import { useMountTransition } from './lib/useMountTransition';
 import { useStore } from './store/useStore';
 import { applyTokens, effectiveTheme, resolveAccent } from './theme/tokens';
 
@@ -39,7 +41,9 @@ export default function App() {
     const mainView = useStore((s) => s.mainView);
     const onboarded = useStore((s) => s.onboarded);
     const openId = useStore((s) => s.openId);
-    const openMode = useStore((s) => s.prefs.openMode);
+    // The per-item override wins over the saved preference — that is what the
+    // drawer's expand button sets.
+    const openAs = useStore((s) => s.openAs ?? s.prefs.openMode);
     const setMainView = useStore((s) => s.setMainView);
     const settingsOpen = useStore((s) => s.settingsOpen);
     const toggleFocus = useStore((s) => s.toggleFocus);
@@ -104,8 +108,13 @@ export default function App() {
     // instead of themselves, which is what `openMode` chooses between.
     const listMode = viewMode === 'list';
     const opened = !listMode && openId !== null;
-    const asDrawer = opened && openMode === 'drawer';
-    const asPage = opened && openMode === 'page';
+    const asDrawer = opened && openAs === 'drawer';
+    const asPage = opened && openAs === 'page';
+    const drawer = useMountTransition(asDrawer && !chatOpen, DRAWER_MS, reduceMotion);
+    // Reduce Motion drops both runs; otherwise the class picks the direction, and
+    // the panel's own style is the open position it animates to and from.
+    const drawerClass = reduceMotion ? undefined : drawer.open ? drawerIn : drawerOut;
+    const scrimClass = reduceMotion ? undefined : drawer.open ? scrimIn : scrimOut;
 
     return (
         <div
@@ -179,41 +188,59 @@ export default function App() {
                                     {chatOpen ? <AskLoreChat /> : <DetailPane />}
                                 </div>
                             )}
-                            {asDrawer && (
-                                <div
-                                    onClick={closeOpenItem}
-                                    style={{
-                                        background: 'var(--scrim, rgba(20,20,30,.36))',
-                                        cursor: 'pointer',
-                                        inset: 0,
-                                        position: 'absolute',
-                                        zIndex: 20,
-                                    }}
-                                />
-                            )}
-                            {opened && !chatOpen && (
+                            {asPage && !chatOpen && (
                                 <div
                                     style={{
                                         background: 'var(--surface, #fff)',
                                         display: 'flex',
+                                        flex: 1,
                                         flexDirection: 'column',
                                         minHeight: 0,
-                                        ...(asDrawer
-                                            ? {
-                                                  borderLeft: '1px solid var(--border, #ececef)',
-                                                  bottom: 0,
-                                                  boxShadow: 'var(--float-shadow)',
-                                                  position: 'absolute',
-                                                  right: 0,
-                                                  top: 0,
-                                                  width: 496,
-                                                  zIndex: 30,
-                                              }
-                                            : { flex: 1, minWidth: 0 }),
+                                        minWidth: 0,
                                     }}
                                 >
-                                    <DetailPane />
+                                    <DetailPane chrome="page" />
                                 </div>
+                            )}
+                            {/*
+                             * Held in the tree by `drawer.mounted` for the length of
+                             * the slide out — but dropped at once when the item is
+                             * promoted to a page, since it is not leaving, it is
+                             * becoming the thing underneath.
+                             */}
+                            {drawer.mounted && !chatOpen && !asPage && (
+                                <>
+                                    <div
+                                        className={scrimClass}
+                                        onClick={closeOpenItem}
+                                        style={{
+                                            background: 'var(--scrim, rgba(20,20,30,.36))',
+                                            cursor: 'pointer',
+                                            inset: 0,
+                                            position: 'absolute',
+                                            zIndex: 20,
+                                        }}
+                                    />
+                                    <div
+                                        className={drawerClass}
+                                        style={{
+                                            background: 'var(--surface, #fff)',
+                                            borderLeft: '1px solid var(--border, #ececef)',
+                                            bottom: 0,
+                                            boxShadow: 'var(--float-shadow)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            minHeight: 0,
+                                            position: 'absolute',
+                                            right: 0,
+                                            top: 0,
+                                            width: 496,
+                                            zIndex: 30,
+                                        }}
+                                    >
+                                        <DetailPane chrome="drawer" />
+                                    </div>
+                                </>
                             )}
                         </>
                     )}
