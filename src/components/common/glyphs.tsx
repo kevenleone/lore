@@ -10,6 +10,14 @@ interface GlyphProps {
     sw?: number;
 }
 
+export function Back({ size = 15, style, sw = 2 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <polyline points="14 6 8 12 14 18" />
+        </Stroke>
+    );
+}
+
 export function Calendar({ size = 13, style, sw = 1.8 }: GlyphProps) {
     return (
         <Stroke size={size} style={style} sw={sw}>
@@ -103,6 +111,24 @@ export function Message({ size = 16, style, sw = 1.8 }: GlyphProps) {
 }
 
 /** Filled pause bars — the transport button in both focus surfaces. */
+export function OpenDrawer({ size = 14, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <rect height="16" rx="2.4" width="18" x="3" y="4" />
+            <line x1="14" x2="14" y1="4" y2="20" />
+        </Stroke>
+    );
+}
+
+export function OpenPage({ size = 14, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <rect height="16" rx="2.4" width="18" x="3" y="4" />
+            <line x1="3" x2="21" y1="9" y2="9" />
+        </Stroke>
+    );
+}
+
 export function Pause({ size = 14, style }: GlyphProps) {
     return (
         <svg
@@ -279,6 +305,17 @@ export function Trash({ size = 16, style, sw = 1.8 }: GlyphProps) {
     );
 }
 
+export function ViewCards({ size = 15, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <rect height="7" rx="1.6" width="7" x="4" y="4" />
+            <rect height="7" rx="1.6" width="7" x="13" y="4" />
+            <rect height="7" rx="1.6" width="7" x="4" y="13" />
+            <rect height="7" rx="1.6" width="7" x="13" y="13" />
+        </Stroke>
+    );
+}
+
 export function ViewList({ size = 16, style, sw = 1.8 }: GlyphProps) {
     return (
         <Stroke size={size} style={style} sw={sw}>
@@ -288,6 +325,26 @@ export function ViewList({ size = 16, style, sw = 1.8 }: GlyphProps) {
             <circle cx="4" cy="6" r="1" />
             <circle cx="4" cy="12" r="1" />
             <circle cx="4" cy="18" r="1" />
+        </Stroke>
+    );
+}
+
+export function ViewRows({ size = 15, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <line x1="4" x2="20" y1="7" y2="7" />
+            <line x1="4" x2="20" y1="12" y2="12" />
+            <line x1="4" x2="20" y1="17" y2="17" />
+        </Stroke>
+    );
+}
+
+export function ViewTable({ size = 15, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <rect height="14" rx="2" width="18" x="3" y="5" />
+            <line x1="3" x2="21" y1="10" y2="10" />
+            <line x1="10" x2="10" y1="10" y2="19" />
         </Stroke>
     );
 }

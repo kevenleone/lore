@@ -5,6 +5,13 @@ import { style } from '@vanilla-extract/css';
 
 export const listRow = style({});
 
+/** Table rows have no thumbnail column to anchor them, so they take a hover. */
+export const tableRow = style({
+    selectors: {
+        '&:hover': { background: 'var(--hover, #f0f0f2)' },
+    },
+});
+
 /** Tag chips under an item's subtitle. */
 export const tagRow = style({
     display: 'flex',

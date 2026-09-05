@@ -139,8 +139,15 @@ export type AuthMode = 'account' | 'anonymous' | null;
 export type Density = 'Compact' | 'Cozy' | 'Roomy';
 
 export type NotificationStyle = 'Alert' | 'Banner';
+
 /** Which card the onboarding sheet is showing. */
 export type OnboardingStep = 'anon' | 'magic' | 'signin';
+/**
+ * Where an item goes when it is opened from Cards or Table. Neither view keeps
+ * a permanent detail column, so opening one has to put it somewhere: over the
+ * grid as a drawer, or in place of it as a full page.
+ */
+export type OpenMode = 'drawer' | 'page';
 /** The ten panes in the settings sheet's rail, in order. */
 export type SettingsPane =
     | 'about'
@@ -197,6 +204,9 @@ export interface Switches {
     wifi: boolean;
 }
 
+/** How the library pane lays its items out. */
+export type ViewMode = 'cards' | 'list' | 'table';
+
 export type WeekStart = 'Monday' | 'Sunday';
 
 export const DEFAULT_SWITCHES: Switches = {
@@ -250,8 +260,10 @@ export interface Prefs {
     durations: Durations;
     longBreakAfter: number;
     notifStyle: NotificationStyle;
+    openMode: OpenMode;
     switches: Switches;
     textSize: number;
+    viewMode: ViewMode;
     weekStart: WeekStart;
 }
 
@@ -263,8 +275,10 @@ export const DEFAULT_PREFS: Prefs = {
     durations: { focus: 25, long: 15, short: 5 },
     longBreakAfter: 4,
     notifStyle: 'Banner',
+    openMode: 'drawer',
     switches: DEFAULT_SWITCHES,
     textSize: 1,
+    viewMode: 'list',
     weekStart: 'Monday',
 };
 
