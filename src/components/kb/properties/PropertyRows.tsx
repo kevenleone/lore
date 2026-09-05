@@ -8,14 +8,13 @@ import { useState } from 'react';
 
 import type { Item, ItemFlags, ItemType } from '../../../store/types';
 
+import { cn } from '../../../lib/cn';
 import { formatSavedDate } from '../../../lib/format';
 import { TYPE_META, typeMeta } from '../../../store/typeMeta';
 import { useStore } from '../../../store/useStore';
 import { Calendar, Globe, Link } from '../../common/glyphs';
 import { Icon } from '../../common/Icon';
 import { MenuItem, Picker, ReadOnly, Row } from './controls';
-
-const AC = 'var(--ac, #5b5bd6)';
 
 const TYPES = Object.keys(TYPE_META) as ItemType[];
 
@@ -41,7 +40,7 @@ export function PropertyRows({ item }: { item: Item }) {
     };
 
     return (
-        <div style={{ padding: '14px 16px 16px' }}>
+        <div className="px-4 pt-[14px] pb-4">
             <Row icon={<Icon name="file" size={13} />} label="Type">
                 <Picker trigger={<TypeBadge type={item.type} />} width={160}>
                     {(close) =>
@@ -67,23 +66,11 @@ export function PropertyRows({ item }: { item: Item }) {
                     trigger={
                         <>
                             <span
-                                style={{
-                                    background: collection?.color ?? '#c4c4cc',
-                                    borderRadius: '50%',
-                                    flex: 'none',
-                                    height: 8,
-                                    width: 8,
-                                }}
+                                className="h-2 w-2 flex-none rounded-full"
+                                // The collection's own colour, which the user picks.
+                                style={{ background: collection?.color ?? '#c4c4cc' }}
                             />
-                            <span
-                                style={{
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
-                                {collection?.name ?? 'Unfiled'}
-                            </span>
+                            <span className="truncate">{collection?.name ?? 'Unfiled'}</span>
                         </>
                     }
                 >
@@ -110,13 +97,8 @@ export function PropertyRows({ item }: { item: Item }) {
                                     selected={c.id === item.collectionId}
                                 >
                                     <span
-                                        style={{
-                                            background: c.color,
-                                            borderRadius: '50%',
-                                            flex: 'none',
-                                            height: 8,
-                                            width: 8,
-                                        }}
+                                        className="h-2 w-2 flex-none rounded-full"
+                                        style={{ background: c.color }}
                                     />
                                     {c.name}
                                 </MenuItem>
@@ -131,14 +113,7 @@ export function PropertyRows({ item }: { item: Item }) {
             </Row>
 
             <Row icon={<Globe />} label="Status">
-                <span
-                    style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: 5,
-                        justifyContent: 'flex-end',
-                    }}
-                >
+                <span className="flex flex-wrap justify-end gap-[5px]">
                     {FLAGS.map(({ key, label }) => (
                         <FlagChip
                             key={key}
@@ -158,6 +133,7 @@ export function PropertyRows({ item }: { item: Item }) {
                 {editingUrl ? (
                     <input
                         autoFocus
+                        className="w-full min-w-0 border-b-[1.5px] border-none border-b-accent bg-transparent text-right font-[inherit] text-body text-text outline-none"
                         onBlur={commitUrl}
                         onChange={(e) => setUrlDraft(e.target.value)}
                         onKeyDown={(e) => {
@@ -165,27 +141,15 @@ export function PropertyRows({ item }: { item: Item }) {
                             if (e.key === 'Escape') setEditingUrl(false);
                         }}
                         placeholder="https://…"
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            borderBottom: `1.5px solid ${AC}`,
-                            color: 'var(--text, #1a1a1f)',
-                            font: 'inherit',
-                            fontSize: 12.5,
-                            minWidth: 0,
-                            outline: 'none',
-                            textAlign: 'right',
-                            width: '100%',
-                        }}
                         value={urlDraft}
                     />
                 ) : (
                     <span
+                        className="min-w-0 cursor-text overflow-hidden"
                         onClick={() => {
                             setUrlDraft(item.url ?? '');
                             setEditingUrl(true);
                         }}
-                        style={{ cursor: 'text', minWidth: 0, overflow: 'hidden' }}
                         title={item.url ?? 'Click to edit'}
                     >
                         <ReadOnly>{item.url}</ReadOnly>
@@ -200,26 +164,13 @@ function FlagChip({ label, on, onClick }: { label: string; on: boolean; onClick:
     return (
         <button
             aria-pressed={on}
+            className={cn(
+                'cursor-pointer rounded-md border px-[7px] py-[2.5px] font-[inherit] text-label',
+                on
+                    ? 'border-solid border-transparent bg-accent-tint font-semibold text-accent'
+                    : 'border-dashed border-dash bg-transparent font-medium text-faint',
+            )}
             onClick={onClick}
-            style={{
-                borderRadius: 6,
-                cursor: 'pointer',
-                font: 'inherit',
-                fontSize: 11.5,
-                fontWeight: on ? 600 : 500,
-                padding: '2.5px 7px',
-                ...(on
-                    ? {
-                          background: 'var(--ac-tint, #eeeef2)',
-                          border: '1px solid transparent',
-                          color: AC,
-                      }
-                    : {
-                          background: 'transparent',
-                          border: '1px dashed var(--dash, #d2d2dc)',
-                          color: 'var(--faint, #a8a8b0)',
-                      }),
-            }}
             type="button"
         >
             {label}
@@ -231,17 +182,10 @@ function TypeBadge({ type }: { type: ItemType }) {
     const meta = typeMeta(type);
     return (
         <span
-            style={{
-                alignItems: 'center',
-                background: meta.bg,
-                borderRadius: 6,
-                color: meta.fg,
-                display: 'inline-flex',
-                fontSize: 11.5,
-                fontWeight: 600,
-                gap: 5,
-                padding: '2.5px 7px',
-            }}
+            className={cn(
+                'inline-flex items-center gap-[5px] rounded-md px-[7px] py-[2.5px] text-label font-semibold',
+                meta.chip,
+            )}
         >
             <Icon name={type} size={12} /> {meta.label}
         </span>

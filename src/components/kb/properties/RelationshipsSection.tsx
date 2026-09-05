@@ -9,14 +9,12 @@ import { useMemo, useState } from 'react';
 
 import type { Item } from '../../../store/types';
 
+import { cn } from '../../../lib/cn';
 import { typeMeta } from '../../../store/typeMeta';
 import { useStore } from '../../../store/useStore';
-import { hoverCard } from '../../../theme/util.css';
 import { Plus, Search } from '../../common/glyphs';
 import { Icon } from '../../common/Icon';
 import { Empty, Section } from './controls';
-
-const AC = 'var(--ac, #5b5bd6)';
 
 /** Enough to pick from without turning the panel into a second list pane. */
 const MAX_SUGGESTIONS = 8;
@@ -59,30 +57,17 @@ export function RelationshipsSection({ item }: { item: Item }) {
     return (
         <Section icon={<Icon name="layers" size={12} />} title="Relationships">
             <SubLabel>Related to</SubLabel>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div className="flex flex-col gap-[5px]">
                 {related.map((r) => (
                     <RelationCard item={r} key={r.id} onRemove={() => remove(r.id)} />
                 ))}
                 {adding ? (
-                    <div
-                        style={{
-                            border: `1px solid ${AC}`,
-                            borderRadius: 9,
-                            overflow: 'hidden',
-                        }}
-                    >
-                        <label
-                            style={{
-                                alignItems: 'center',
-                                color: 'var(--text3, #9a9aa5)',
-                                display: 'flex',
-                                gap: 7,
-                                padding: '6px 9px',
-                            }}
-                        >
+                    <div className="overflow-hidden rounded-9 border border-accent">
+                        <label className="flex items-center gap-[7px] px-[9px] py-[6px] text-text3">
                             <Search size={13} />
                             <input
                                 autoFocus
+                                className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-body text-text outline-none"
                                 onChange={(e) => setQuery(e.target.value)}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Escape') {
@@ -92,50 +77,21 @@ export function RelationshipsSection({ item }: { item: Item }) {
                                     if (e.key === 'Enter' && suggestions[0]) add(suggestions[0].id);
                                 }}
                                 placeholder="Link to…"
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: 'var(--text, #1a1a1f)',
-                                    flex: 1,
-                                    font: 'inherit',
-                                    fontSize: 12.5,
-                                    minWidth: 0,
-                                    outline: 'none',
-                                }}
                                 value={query}
                             />
                         </label>
-                        <div style={{ borderTop: '1px solid var(--border, #ececef)', padding: 4 }}>
+                        <div className="border-t border-border p-1">
                             {suggestions.length === 0 ? (
                                 <Empty>No matches</Empty>
                             ) : (
                                 suggestions.map((s) => (
                                     <div
-                                        className={hoverCard}
+                                        className="flex cursor-pointer items-center gap-[7px] rounded-7 border border-transparent px-[7px] py-[5px] text-body text-text2 hover:border-border hover:bg-surface2"
                                         key={s.id}
                                         onClick={() => add(s.id)}
-                                        style={{
-                                            alignItems: 'center',
-                                            border: '1px solid transparent',
-                                            borderRadius: 7,
-                                            color: 'var(--text2, #6b6b76)',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            fontSize: 12.5,
-                                            gap: 7,
-                                            padding: '5px 7px',
-                                        }}
                                     >
                                         <Icon name={s.type} size={12} />
-                                        <span
-                                            style={{
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                        >
-                                            {s.title}
-                                        </span>
+                                        <span className="truncate">{s.title}</span>
                                     </div>
                                 ))
                             )}
@@ -143,21 +99,8 @@ export function RelationshipsSection({ item }: { item: Item }) {
                     </div>
                 ) : (
                     <button
+                        className="flex cursor-pointer items-center justify-center gap-[6px] rounded-9 border border-dashed border-dash bg-transparent px-[9px] py-[7px] font-[inherit] text-body text-faint"
                         onClick={() => setAdding(true)}
-                        style={{
-                            alignItems: 'center',
-                            background: 'transparent',
-                            border: '1px dashed var(--dash, #d2d2dc)',
-                            borderRadius: 9,
-                            color: 'var(--faint, #a8a8b0)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            font: 'inherit',
-                            fontSize: 12.5,
-                            gap: 6,
-                            justifyContent: 'center',
-                            padding: '7px 9px',
-                        }}
                         type="button"
                     >
                         <Plus size={12} />
@@ -166,11 +109,11 @@ export function RelationshipsSection({ item }: { item: Item }) {
                 )}
             </div>
 
-            <SubLabel style={{ marginTop: 14 }}>Linked from</SubLabel>
+            <SubLabel className="mt-[14px]">Linked from</SubLabel>
             {backlinks.length === 0 ? (
                 <Empty>Nothing links here yet</Empty>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <div className="flex flex-col gap-[5px]">
                     {backlinks.map((b) => (
                         <RelationCard item={b} key={b.id} />
                     ))}
@@ -186,59 +129,26 @@ function RelationCard({ item, onRemove }: { item: Item; onRemove?: () => void })
 
     return (
         <div
-            className={hoverCard}
+            className="flex cursor-pointer items-center gap-2 rounded-9 border border-border px-[9px] py-[7px] hover:border-border hover:bg-surface2"
             onClick={() => selectItem(item.id)}
-            style={{
-                alignItems: 'center',
-                border: '1px solid var(--border, #ececef)',
-                borderRadius: 9,
-                cursor: 'pointer',
-                display: 'flex',
-                gap: 8,
-                padding: '7px 9px',
-            }}
         >
             <span
-                style={{
-                    alignItems: 'center',
-                    background: meta.bg,
-                    borderRadius: 6,
-                    color: meta.fg,
-                    display: 'flex',
-                    flex: 'none',
-                    height: 22,
-                    justifyContent: 'center',
-                    width: 22,
-                }}
+                className={cn(
+                    'flex h-[22px] w-[22px] flex-none items-center justify-center rounded-md',
+                    meta.chip,
+                )}
             >
                 <Icon name={item.type} size={12} />
             </span>
-            <span
-                style={{
-                    color: 'var(--text, #1a1a1f)',
-                    flex: 1,
-                    fontSize: 12.5,
-                    fontWeight: 560,
-                    minWidth: 0,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                }}
-            >
+            <span className="min-w-0 flex-1 truncate text-body font-[560] text-text">
                 {item.title}
             </span>
             {onRemove && (
                 <span
+                    className="flex-none cursor-pointer text-title leading-none text-faint"
                     onClick={(e) => {
                         e.stopPropagation();
                         onRemove();
-                    }}
-                    style={{
-                        color: 'var(--faint, #a8a8b0)',
-                        cursor: 'pointer',
-                        flex: 'none',
-                        fontSize: 14,
-                        lineHeight: 1,
                     }}
                     title="Remove link"
                 >
@@ -249,17 +159,6 @@ function RelationCard({ item, onRemove }: { item: Item; onRemove?: () => void })
     );
 }
 
-function SubLabel({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-    return (
-        <div
-            style={{
-                color: 'var(--text3, #9a9aa5)',
-                fontSize: 12,
-                marginBottom: 7,
-                ...style,
-            }}
-        >
-            {children}
-        </div>
-    );
+function SubLabel({ children, className }: { children: React.ReactNode; className?: string }) {
+    return <div className={cn('mb-[7px] text-body-sm text-text3', className)}>{children}</div>;
 }

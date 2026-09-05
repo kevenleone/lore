@@ -30,59 +30,24 @@ export function PropertiesPanel() {
 
     return (
         <div
-            style={{
-                background: 'var(--surface2, #fafafa)',
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%',
-                width: PROPERTIES_WIDTH,
-            }}
+            className="flex h-full flex-col bg-surface2"
+            // Shared with App.tsx's layout, so it stays a constant.
+            style={{ width: PROPERTIES_WIDTH }}
         >
-            <div
-                style={{
-                    alignItems: 'center',
-                    borderBottom: '1px solid var(--border, #ececef)',
-                    display: 'flex',
-                    flex: 'none',
-                    gap: 8,
-                    height: 44,
-                    padding: '0 10px 0 16px',
-                }}
-            >
-                <Settings size={14} style={{ color: 'var(--faint, #a8a8b0)' }} />
-                <span
-                    style={{
-                        color: 'var(--text, #1a1a1f)',
-                        flex: 1,
-                        fontSize: 13,
-                        fontWeight: 620,
-                    }}
-                >
-                    Properties
-                </span>
+            <div className="flex h-11 flex-none items-center gap-2 border-b border-border pr-[10px] pl-4">
+                <Settings className="text-faint" size={14} />
+                <span className="flex-1 text-body-lg font-[620] text-text">Properties</span>
                 <button
                     aria-label="Close properties"
+                    className="flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-7 border-none bg-transparent p-0 text-text3"
                     onClick={toggleProperties}
-                    style={{
-                        alignItems: 'center',
-                        background: 'transparent',
-                        border: 'none',
-                        borderRadius: 7,
-                        color: 'var(--text3, #9a9aa5)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        height: 26,
-                        justifyContent: 'center',
-                        padding: 0,
-                        width: 26,
-                    }}
                     type="button"
                 >
                     <Close size={16} sw={2} />
                 </button>
             </div>
 
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            <div className="min-h-0 flex-1 overflow-y-auto">
                 {item ? (
                     <>
                         <PropertyRows item={item} />
@@ -90,20 +55,11 @@ export function PropertiesPanel() {
                         <CommentsSection item={item} />
                         <InfoSection item={item} meta={itemMeta} />
                         <Section icon={<History size={12} />} title="History">
-                            <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12.5 }}>
-                                No version history yet
-                            </div>
+                            <div className="text-body text-text3">No version history yet</div>
                         </Section>
                     </>
                 ) : (
-                    <div
-                        style={{
-                            color: 'var(--text3, #9a9aa5)',
-                            fontSize: 12.5,
-                            padding: '28px 16px',
-                            textAlign: 'center',
-                        }}
-                    >
+                    <div className="px-4 py-7 text-center text-body text-text3">
                         Select an item to see its properties.
                     </div>
                 )}
