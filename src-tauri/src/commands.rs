@@ -1,11 +1,21 @@
 // Commands and helpers for the Quick Capture window. The window is declared
 // (hidden) in tauri.conf.json; here we toggle/hide it. ⌥Space (registered in
-// lib.rs) and the in-app Capture buttons both route through toggle.
+// lib.rs) and the tray's Quick Capture item both route through toggle.
 
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 
-/// Show the capture window if hidden, hide it if visible. Centers + focuses on show.
+/// ⌥Space, from wherever the user pressed it.
+///
+/// With Lore in front, capture belongs inside the window it is already showing,
+/// so the main window is asked to toggle its capture drawer. The floating panel
+/// is the out-of-app path only — throwing an always-on-top overlay over an app
+/// the user is looking at is the thing this avoids.
 pub fn toggle_capture_window(app: &AppHandle) {
+    if main_window_is_frontmost(app) {
+        let _ = app.emit_to("main", "capture:toggle", ());
+        return;
+    }
+
     if let Some(win) = app.get_webview_window("capture") {
         if win.is_visible().unwrap_or(false) {
             let _ = win.hide();
@@ -17,9 +27,13 @@ pub fn toggle_capture_window(app: &AppHandle) {
     }
 }
 
-#[tauri::command]
-pub fn toggle_capture(app: AppHandle) {
-    toggle_capture_window(&app);
+/// Whether the main window is both on screen and the one taking keystrokes.
+/// Visible alone is not enough: Lore may be sitting behind the app the user is
+/// actually capturing from, and that is exactly when the panel is wanted.
+fn main_window_is_frontmost(app: &AppHandle) -> bool {
+    app.get_webview_window("main")
+        .map(|win| win.is_visible().unwrap_or(false) && win.is_focused().unwrap_or(false))
+        .unwrap_or(false)
 }
 
 /// Brings the main window forward on the full Focus surface. The popover calls
@@ -27,8 +41,6 @@ pub fn toggle_capture(app: AppHandle) {
 /// Rust can raise it.
 #[tauri::command]
 pub fn open_focus_mode(app: AppHandle) {
-    use tauri::Emitter;
-
     crate::focus_tray::hide_panel(&app);
     show_main(&app);
     let _ = app.emit_to("main", "focus:mode", ());
@@ -91,7 +103,6 @@ pub fn hide_main(app: &AppHandle) {
 pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     use tauri::menu::{MenuBuilder, MenuItem};
     use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-    use tauri::Emitter;
 
     use crate::focus_tray::{self, FocusTray, TRAY_ID};
 

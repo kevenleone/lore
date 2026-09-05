@@ -28,7 +28,6 @@ pub fn run() {
         .manage(sidecar::SidecarState::default())
         .manage(focus_tray::FocusTray::default())
         .invoke_handler(tauri::generate_handler![
-            commands::toggle_capture,
             commands::hide_capture,
             commands::open_focus_mode,
             focus_tray::focus_snapshot,

@@ -10,6 +10,7 @@ import { useEffect, useRef } from 'react';
 
 import { DRAWER_MS, drawerIn, drawerOut, scrimIn, scrimOut } from './App.css';
 import { CalendarView } from './components/calendar/CalendarView';
+import { CaptureDrawer } from './components/capture/CaptureDrawer';
 import { FocusMode } from './components/focus/FocusMode';
 import { FocusPopover } from './components/focus/FocusPopover';
 import { useFocusTimer } from './components/focus/useFocusTimer';
@@ -21,7 +22,6 @@ import { Sidebar, SIDEBAR_WIDTH } from './components/kb/Sidebar';
 import { TitleBar } from './components/kb/TitleBar';
 import { Onboarding } from './components/onboarding/Onboarding';
 import { SettingsModal } from './components/settings/SettingsModal';
-import { openCaptureWindow } from './lib/capture';
 import { useMountTransition } from './lib/useMountTransition';
 import { useStore } from './store/useStore';
 import { applyTokens, effectiveTheme, resolveAccent } from './theme/tokens';
@@ -34,7 +34,9 @@ export default function App() {
     const textSize = useStore((s) => s.prefs.textSize);
     const sidebarVisible = useStore((s) => s.sidebarVisible);
     const reduceMotion = useStore((s) => s.prefs.switches.motion);
+    const captureOpen = useStore((s) => s.captureOpen);
     const chatOpen = useStore((s) => s.chatOpen);
+    const closeCapture = useStore((s) => s.closeCapture);
     const closeOpenItem = useStore((s) => s.closeOpenItem);
     const focusModeOpen = useStore((s) => s.focusModeOpen);
     const focusPopoverOpen = useStore((s) => s.focusPopoverOpen);
@@ -44,8 +46,10 @@ export default function App() {
     // The per-item override wins over the saved preference — that is what the
     // drawer's expand button sets.
     const openAs = useStore((s) => s.openAs ?? s.prefs.openMode);
+    const openCapture = useStore((s) => s.openCapture);
     const setMainView = useStore((s) => s.setMainView);
     const settingsOpen = useStore((s) => s.settingsOpen);
+    const toggleCapture = useStore((s) => s.toggleCapture);
     const toggleFocus = useStore((s) => s.toggleFocus);
     const viewMode = useStore((s) => s.prefs.viewMode);
     const rootRef = useRef<HTMLDivElement>(null);
@@ -67,14 +71,16 @@ export default function App() {
                 e.preventDefault();
                 setMainView('calendar');
             } else if (e.key === 'Escape') {
-                // Both ways of opening an item from Cards or Table are dismissible,
-                // so Escape has to reach them; nothing else claims it here.
-                closeOpenItem();
+                // The capture drawer lies over everything else, so it is the first
+                // thing Escape takes away; under it, both ways of opening an item
+                // from Cards or Table are dismissible too.
+                if (captureOpen) closeCapture();
+                else closeOpenItem();
             }
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [closeOpenItem, setMainView, toggleFocus]);
+    }, [captureOpen, closeCapture, closeOpenItem, setMainView, toggleFocus]);
 
     // Paint the token set for the effective theme, and repaint when the OS
     // switches while Appearance is on Auto.
@@ -89,19 +95,22 @@ export default function App() {
         return () => mq.removeEventListener('change', paint);
     }, [appearance]);
 
-    // Refresh when the Quick Capture window saves a new item.
+    // Refresh when the Quick Capture window saves a new item, and take over
+    // ⌥Space while this window is in front — Rust routes the shortcut here
+    // rather than to the floating panel whenever the main window has focus.
     useEffect(() => {
-        let unlisten: (() => void) | undefined;
+        const unlisteners: (() => void)[] = [];
         (async () => {
             try {
                 const { listen } = await import('@tauri-apps/api/event');
-                unlisten = await listen('item:created', () => void refresh());
+                unlisteners.push(await listen('item:created', () => void refresh()));
+                unlisteners.push(await listen('capture:toggle', () => toggleCapture()));
             } catch {
                 // Outside Tauri — no event bus.
             }
         })();
-        return () => unlisten?.();
-    }, [refresh]);
+        return () => unlisteners.forEach((off) => off());
+    }, [refresh, toggleCapture]);
 
     const theme = effectiveTheme(appearance);
     // List keeps a permanent detail column; Cards and Table open an item over or
@@ -142,7 +151,7 @@ export default function App() {
                     zoom: textSize,
                 }}
             >
-                <TitleBar onCapture={openCaptureWindow} />
+                <TitleBar onCapture={openCapture} />
                 <Notice />
                 <div style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
                     {/*
@@ -163,10 +172,10 @@ export default function App() {
                             width: sidebarVisible ? SIDEBAR_WIDTH : 0,
                         }}
                     >
-                        <Sidebar onCapture={openCaptureWindow} />
+                        <Sidebar onCapture={openCapture} />
                     </div>
                     {mainView === 'calendar' ? (
-                        <CalendarView onCapture={openCaptureWindow} />
+                        <CalendarView onCapture={openCapture} />
                     ) : (
                         <>
                             {/*
@@ -247,6 +256,13 @@ export default function App() {
 
                     {/* Covers the body, not the title bar — the timer chip stays reachable. */}
                     {focusModeOpen && <FocusMode />}
+
+                    {/*
+                     * Last in the body, and above the item drawer's z-indexes: a
+                     * capture started while something else is open lies over it
+                     * rather than fighting it for the same edge.
+                     */}
+                    <CaptureDrawer />
                 </div>
             </div>
 
