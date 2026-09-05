@@ -3,13 +3,11 @@
 
 import { useState } from 'react';
 
+import { cn } from '../../lib/cn';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
-import { hoverChip } from '../../theme/util.css';
 import { Close, Send, Sparkle } from '../common/glyphs';
 import { Icon } from '../common/Icon';
-
-const AC = 'var(--ac, #5b5bd6)';
 
 export function AskLoreChat() {
     const messages = useStore((s) => s.chat);
@@ -27,107 +25,41 @@ export function AskLoreChat() {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div className="flex h-full flex-col">
             {/* header */}
-            <div
-                style={{
-                    alignItems: 'center',
-                    borderBottom: '1px solid var(--border, #ececef)',
-                    display: 'flex',
-                    flex: 'none',
-                    gap: 11,
-                    padding: '15px 20px',
-                }}
-            >
-                <span
-                    style={{
-                        alignItems: 'center',
-                        background: 'var(--ac-tint, #eeeef2)',
-                        borderRadius: 8,
-                        color: AC,
-                        display: 'flex',
-                        height: 28,
-                        justifyContent: 'center',
-                        width: 28,
-                    }}
-                >
+            <div className="flex flex-none items-center gap-[11px] border-b border-border px-5 py-[15px]">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-tint text-accent">
                     <Sparkle />
                 </span>
-                <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 680 }}>Ask Lore</div>
-                    <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12 }}>
+                <div className="flex-1">
+                    <div className="text-title font-[680]">Ask Lore</div>
+                    <div className="text-body-sm text-text3">
                         Answers grounded in your knowledge base
                     </div>
                 </div>
-                <span
-                    onClick={toggleChat}
-                    style={{ color: 'var(--faint, #a8a8b0)', cursor: 'pointer', display: 'flex' }}
-                >
+                <span className="flex cursor-pointer text-faint" onClick={toggleChat}>
                     <Close />
                 </span>
             </div>
 
             {/* messages */}
-            <div
-                style={{
-                    display: 'flex',
-                    flex: 1,
-                    flexDirection: 'column',
-                    gap: 16,
-                    overflow: 'auto',
-                    padding: '22px 24px',
-                }}
-            >
+            <div className="flex flex-1 flex-col gap-4 overflow-auto px-6 py-[22px]">
                 {messages.map((m) =>
                     m.role === 'user' ? (
                         <div
+                            className="max-w-[78%] self-end rounded-[15px_15px_4px_15px] bg-accent px-[15px] py-[10px] text-title leading-[1.5] text-white"
                             key={m.id}
-                            style={{
-                                alignSelf: 'flex-end',
-                                background: AC,
-                                borderRadius: '15px 15px 4px 15px',
-                                color: '#fff',
-                                fontSize: 14,
-                                lineHeight: 1.5,
-                                maxWidth: '78%',
-                                padding: '10px 15px',
-                            }}
                         >
                             {m.text}
                         </div>
                     ) : (
-                        <div key={m.id} style={{ alignSelf: 'flex-start', maxWidth: '88%' }}>
-                            <div
-                                style={{
-                                    background: 'var(--sel, #f4f4f6)',
-                                    borderRadius: '15px 15px 15px 4px',
-                                    color: 'var(--text, #1a1a1f)',
-                                    fontSize: 14,
-                                    lineHeight: 1.55,
-                                    padding: '12px 16px',
-                                }}
-                            >
+                        <div className="max-w-[88%] self-start" key={m.id}>
+                            <div className="rounded-[15px_15px_15px_4px] bg-sel p-4 py-3 text-title leading-[1.55] text-text">
                                 {m.text}
                             </div>
                             {m.sources && m.sources.length > 0 && (
-                                <div
-                                    style={{
-                                        alignItems: 'center',
-                                        display: 'flex',
-                                        flexWrap: 'wrap',
-                                        gap: 7,
-                                        marginTop: 9,
-                                    }}
-                                >
-                                    <span
-                                        style={{
-                                            color: 'var(--faint, #a8a8b0)',
-                                            fontSize: 10.5,
-                                            fontWeight: 600,
-                                            letterSpacing: '.05em',
-                                            textTransform: 'uppercase',
-                                        }}
-                                    >
+                                <div className="mt-[9px] flex flex-wrap items-center gap-[7px]">
+                                    <span className="text-micro font-semibold tracking-[.05em] text-faint uppercase">
                                         Sources
                                     </span>
                                     {m.sources.map((src) => {
@@ -136,34 +68,15 @@ export function AskLoreChat() {
                                         const meta = typeMeta(item.type);
                                         return (
                                             <span
-                                                className={hoverChip}
+                                                className="inline-flex cursor-pointer items-center gap-[6px] rounded-lg border border-border bg-surface px-[9px] py-1 text-body-sm text-text2 hover:border-border hover:bg-surface2"
                                                 key={src.itemId}
                                                 onClick={() => selectItem(src.itemId)}
-                                                style={{
-                                                    alignItems: 'center',
-                                                    background: 'var(--surface, #fff)',
-                                                    border: '1px solid var(--border, #e4e4ea)',
-                                                    borderRadius: 8,
-                                                    color: 'var(--text2, #6b6b76)',
-                                                    cursor: 'pointer',
-                                                    display: 'inline-flex',
-                                                    fontSize: 12,
-                                                    gap: 6,
-                                                    padding: '4px 9px',
-                                                }}
                                             >
                                                 <span
-                                                    style={{
-                                                        alignItems: 'center',
-                                                        background: meta.bg,
-                                                        borderRadius: 5,
-                                                        color: meta.fg,
-                                                        display: 'flex',
-                                                        flex: 'none',
-                                                        height: 18,
-                                                        justifyContent: 'center',
-                                                        width: 18,
-                                                    }}
+                                                    className={cn(
+                                                        'flex h-[18px] w-[18px] flex-none items-center justify-center rounded-5',
+                                                        meta.chip,
+                                                    )}
                                                 >
                                                     <Icon name={item.type} size={13} />
                                                 </span>
@@ -179,48 +92,19 @@ export function AskLoreChat() {
             </div>
 
             {/* input */}
-            <div
-                style={{
-                    alignItems: 'center',
-                    borderTop: '1px solid var(--border, #ececef)',
-                    display: 'flex',
-                    flex: 'none',
-                    gap: 10,
-                    padding: '14px 20px',
-                }}
-            >
+            <div className="flex flex-none items-center gap-[10px] border-t border-border px-5 py-[14px]">
                 <input
+                    className="flex-1 rounded-11 border-none bg-surface3 px-[14px] py-[11px] text-subhead text-text outline-none"
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') submit();
                     }}
                     placeholder="Ask about anything you've saved…"
-                    style={{
-                        background: 'var(--surface3, #f1f1f3)',
-                        border: 'none',
-                        borderRadius: 11,
-                        color: 'var(--text, #1a1a1f)',
-                        flex: 1,
-                        fontSize: 13.5,
-                        outline: 'none',
-                        padding: '11px 14px',
-                    }}
                     value={draft}
                 />
                 <span
+                    className="flex h-[38px] w-[38px] flex-none cursor-pointer items-center justify-center rounded-11 bg-accent text-white"
                     onClick={submit}
-                    style={{
-                        alignItems: 'center',
-                        background: AC,
-                        borderRadius: 11,
-                        color: '#fff',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flex: 'none',
-                        height: 38,
-                        justifyContent: 'center',
-                        width: 38,
-                    }}
                 >
                     <Send />
                 </span>
