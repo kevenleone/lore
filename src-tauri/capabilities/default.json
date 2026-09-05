@@ -16,7 +16,9 @@
         "sql:default",
         "sql:allow-execute",
         "global-shortcut:default",
-        "dialog:allow-open"
+        "dialog:allow-open",
+        "notification:default",
+        "core:window:allow-request-user-attention"
     ],
     "windows": ["main", "capture", "focus"]
 }

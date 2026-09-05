@@ -11,6 +11,8 @@
 // `shell:` permission, so nothing in the renderer can start a process.
 // `dialog` is granted to the webview, but only `dialog:allow-open`: picking a
 // folder is the one filesystem decision the user makes directly.
+// `notification` is what tells the user a focus interval ended while they were
+// looking at something else.
 
 mod commands;
 mod focus_tray;
@@ -25,6 +27,7 @@ pub fn run() {
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .manage(sidecar::SidecarState::default())
         .manage(focus_tray::FocusTray::default())
         .invoke_handler(tauri::generate_handler![
