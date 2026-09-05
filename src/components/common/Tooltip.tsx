@@ -7,8 +7,6 @@
 
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
-import { bubble } from './Tooltip.css';
-
 export interface TooltipProps {
     children: ReactNode;
     /** Shortcut for the action, drawn as a key cap after the label. */
@@ -37,6 +35,7 @@ export function Tooltip({ children, keys, label }: TooltipProps) {
 
     return (
         <span
+            className="relative inline-flex"
             onBlur={hide}
             onFocus={() => setShown(true)}
             // A click is the answer to the question the tooltip was asking.
@@ -46,23 +45,23 @@ export function Tooltip({ children, keys, label }: TooltipProps) {
                 timer.current = setTimeout(() => setShown(true), DELAY_MS);
             }}
             onMouseLeave={hide}
-            style={{ display: 'inline-flex', position: 'relative' }}
         >
             {children}
             {shown && (
-                <span className={bubble} role="tooltip" style={{ padding: '5px 9px' }}>
+                <span
+                    // The bubble hangs outside its trigger; anything it covers must stay
+                    // clickable, or a tooltip under the pointer would swallow the click.
+                    //
+                    // The centring stays in `transform` rather than Tailwind's
+                    // `-translate-x-1/2`, which compiles to the `translate` property and
+                    // would compose with the keyframe's own transform instead of
+                    // replacing it.
+                    className="pointer-events-none absolute top-[calc(100%+7px)] left-1/2 z-[60] [transform:translateX(-50%)] animate-tooltip-in rounded-lg border border-border bg-surface px-[9px] py-[5px] text-body-sm font-medium whitespace-nowrap text-text shadow-float"
+                    role="tooltip"
+                >
                     {label}
                     {keys && (
-                        <span
-                            style={{
-                                color: 'var(--text3, #9a9aa5)',
-                                fontFamily: 'ui-monospace,Menlo,monospace',
-                                fontSize: 11,
-                                marginLeft: 7,
-                            }}
-                        >
-                            {keys}
-                        </span>
+                        <span className="ml-[7px] font-mono text-caption text-text3">{keys}</span>
                     )}
                 </span>
             )}
