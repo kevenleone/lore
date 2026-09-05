@@ -5,15 +5,16 @@
 import type { Item } from '../../store/types';
 
 import { hasBanner } from '../../lib/banner';
+import { cn } from '../../lib/cn';
 import { formatRelative } from '../../lib/format';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
 import { Icon } from '../common/Icon';
 import { ItemBanner } from './ItemBanner';
 import { subtitle } from './itemText';
-import { listRow, tagRow, tagRowCompact } from './ListPane.css';
 
-const AC = 'var(--ac, #5b5bd6)';
+/** Compact hides the tag row until its own row is hovered — hence `group`. */
+const TAG_ROW = 'mt-[6px] flex flex-wrap gap-[5px]';
 
 export function ListRows({ items }: { items: Item[] }) {
     const selectedId = useStore((s) => s.selectedId);
@@ -22,7 +23,11 @@ export function ListRows({ items }: { items: Item[] }) {
 
     // "List density" (Settings → Look & Feel): Compact also hides the tag row
     // until the row is hovered, exactly as the setting's description promises.
-    const rowPadding = { Compact: '7px 14px', Cozy: '11px 14px', Roomy: '16px 14px' }[density];
+    const rowPadding = {
+        Compact: 'px-[14px] py-[7px]',
+        Cozy: 'px-[14px] py-[11px]',
+        Roomy: 'px-[14px] py-[16px]',
+    }[density];
 
     return (
         <>
@@ -31,109 +36,52 @@ export function ListRows({ items }: { items: Item[] }) {
                 const selected = item.id === selectedId;
                 return (
                     <div
-                        className={listRow}
+                        className={cn(
+                            'group flex cursor-pointer items-start gap-3 border-b border-border',
+                            rowPadding,
+                            selected && 'bg-accent-tint shadow-[inset_2px_0_0_var(--ac)]',
+                        )}
                         key={item.id}
                         onClick={() => selectItem(item.id)}
-                        style={{
-                            alignItems: 'flex-start',
-                            borderBottom: '1px solid var(--border, #ececef)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            gap: 12,
-                            padding: rowPadding,
-                            ...(selected
-                                ? {
-                                      background: 'var(--ac-tint, #eeeef2)',
-                                      boxShadow: `inset 2px 0 0 ${AC}`,
-                                  }
-                                : {}),
-                        }}
                     >
                         {hasBanner(item) ? (
-                            <span
-                                style={{
-                                    background: 'var(--surface3, #f1f1f3)',
-                                    borderRadius: 7,
-                                    flex: 'none',
-                                    height: 38,
-                                    marginTop: 1,
-                                    overflow: 'hidden',
-                                    position: 'relative',
-                                    width: 56,
-                                }}
-                            >
+                            <span className="relative mt-px h-[38px] w-[56px] flex-none overflow-hidden rounded-7 bg-surface3">
                                 <ItemBanner item={item} />
                             </span>
                         ) : (
                             <span
-                                style={{
-                                    alignItems: 'center',
-                                    background: meta.bg,
-                                    borderRadius: 8,
-                                    color: meta.fg,
-                                    display: 'flex',
-                                    flex: 'none',
-                                    height: 32,
-                                    justifyContent: 'center',
-                                    marginTop: 1,
-                                    width: 32,
-                                }}
+                                className={cn(
+                                    'mt-px flex h-8 w-8 flex-none items-center justify-center rounded-lg',
+                                    meta.chip,
+                                )}
                             >
                                 <Icon name={item.type} />
                             </span>
                         )}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <div
-                                style={{
-                                    color: 'var(--text, #1a1a1f)',
-                                    fontSize: 13.5,
-                                    fontWeight: 600,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
+                        <div className="min-w-0 flex-1">
+                            <div className="truncate text-subhead font-semibold text-text">
                                 {item.title}
                             </div>
-                            <div
-                                style={{
-                                    color: 'var(--text3, #9a9aa5)',
-                                    fontSize: 12,
-                                    marginTop: 1,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
+                            <div className="mt-px truncate text-body-sm text-text3">
                                 {subtitle(item)}
                             </div>
-                            <div className={density === 'Compact' ? tagRowCompact : tagRow}>
+                            <div
+                                className={cn(
+                                    TAG_ROW,
+                                    density === 'Compact' && 'hidden group-hover:flex',
+                                )}
+                            >
                                 {item.tags.map((tag) => (
                                     <span
+                                        className="rounded-5 bg-surface3 px-[5px] py-px font-mono text-[10px] text-text3"
                                         key={tag}
-                                        style={{
-                                            background: 'var(--surface3, #f1f1f3)',
-                                            borderRadius: 5,
-                                            color: 'var(--text3, #9a9aa5)',
-                                            fontFamily: 'ui-monospace,Menlo,monospace',
-                                            fontSize: 10,
-                                            padding: '1px 5px',
-                                        }}
                                     >
                                         #{tag}
                                     </span>
                                 ))}
                             </div>
                         </div>
-                        <span
-                            style={{
-                                color: 'var(--faint, #a8a8b0)',
-                                flex: 'none',
-                                fontSize: 11,
-                                marginTop: 1,
-                                whiteSpace: 'nowrap',
-                            }}
-                        >
+                        <span className="mt-px flex-none text-caption whitespace-nowrap text-faint">
                             {formatRelative(item.createdAt)}
                         </span>
                     </div>

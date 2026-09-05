@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { SortOrder } from '../../store/types';
 
+import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 import {
     activeFilterCount,
@@ -69,121 +70,65 @@ export function ListPane() {
     const filterCount = activeFilterCount(filters);
     // A filter that is on must stay visible, or it silently shortens the list.
     const showFilters = filtersOpen || filterCount > 0;
-    let filterColor = 'var(--faint, #a8a8b0)';
-    if (showFilters) filterColor = 'var(--text, #1a1a1f)';
-    if (filterCount > 0) filterColor = 'var(--ac, #5b5bd6)';
+    let filterColor = 'text-faint';
+    if (showFilters) filterColor = 'text-text';
+    if (filterCount > 0) filterColor = 'text-accent';
 
     return (
         <div
-            style={{
-                borderRight: '1px solid var(--border, #ececef)',
-                display: 'flex',
-                flexDirection: 'column',
-                minWidth: 0,
-                ...(isList ? { flex: 'none', width: LIST_PANE_WIDTH } : { flex: 1 }),
-            }}
+            className={cn(
+                'flex min-w-0 flex-col border-r border-border',
+                isList ? 'flex-none' : 'flex-1',
+            )}
+            // The List column's width is shared with App.tsx's layout, so it
+            // stays a constant rather than becoming a class.
+            style={isList ? { width: LIST_PANE_WIDTH } : undefined}
         >
-            <div
-                style={{
-                    alignItems: 'center',
-                    borderBottom: '1px solid var(--border, #ececef)',
-                    display: 'flex',
-                    flex: 'none',
-                    gap: 10,
-                    padding: '11px 16px',
-                }}
-            >
-                <span style={{ fontSize: 15, fontWeight: 680 }}>
-                    {viewTitle(view, collections)}
-                </span>
-                <span
-                    style={{
-                        background: 'var(--surface3, #f1f1f3)',
-                        borderRadius: 20,
-                        color: 'var(--faint, #a8a8b0)',
-                        fontSize: 12,
-                        fontVariantNumeric: 'tabular-nums',
-                        padding: '1px 8px',
-                    }}
-                >
+            <div className="flex flex-none items-center gap-[10px] border-b border-border px-4 py-[11px]">
+                <span className="text-title-lg font-[680]">{viewTitle(view, collections)}</span>
+                <span className="rounded-[20px] bg-surface3 px-2 py-px text-body-sm text-faint tabular-nums">
                     {filtered.length}
                 </span>
-                <span
-                    style={{
-                        alignItems: 'center',
-                        display: 'flex',
-                        gap: 8,
-                        marginLeft: 'auto',
-                    }}
-                >
+                <span className="ml-auto flex items-center gap-2">
                     {!isList && <OpenModePicker />}
                     <span
                         aria-label="Filter"
                         aria-pressed={showFilters}
+                        className={cn('flex cursor-pointer items-center gap-[3px]', filterColor)}
                         onClick={() => setFiltersOpen((o) => !o)}
-                        style={{
-                            alignItems: 'center',
-                            color: filterColor,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            gap: 3,
-                        }}
                         title="Filter"
                     >
                         <Filter />
                         {filterCount > 0 && (
-                            <span style={{ fontSize: 11, fontWeight: 650 }}>{filterCount}</span>
+                            <span className="text-caption font-[650]">{filterCount}</span>
                         )}
                     </span>
                     <ViewModePicker />
-                    <div ref={sortRef} style={{ position: 'relative' }}>
+                    <div className="relative" ref={sortRef}>
                         <span
+                            className={cn(
+                                'flex cursor-pointer',
+                                sortOpen ? 'text-text' : 'text-faint',
+                            )}
                             onClick={() => setSortOpen((o) => !o)}
-                            style={{
-                                color: sortOpen ? 'var(--text, #1a1a1f)' : 'var(--faint, #a8a8b0)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                            }}
                             title={`Sort: ${SORT_LABELS[sort]}`}
                         >
                             <Sort />
                         </span>
                         {sortOpen && (
-                            <div
-                                style={{
-                                    background: 'var(--surface, #fff)',
-                                    border: '1px solid var(--border, #ececef)',
-                                    borderRadius: 10,
-                                    boxShadow: '0 12px 30px -10px rgba(24,24,48,.3)',
-                                    minWidth: 150,
-                                    padding: 5,
-                                    position: 'absolute',
-                                    right: 0,
-                                    top: 26,
-                                    zIndex: 20,
-                                }}
-                            >
+                            <div className="absolute top-[26px] right-0 z-20 min-w-[150px] rounded-10 border border-border bg-surface p-[5px] shadow-[0_12px_30px_-10px_rgba(24,24,48,.3)]">
                                 {(Object.keys(SORT_LABELS) as SortOrder[]).map((key) => (
                                     <div
+                                        className={cn(
+                                            'cursor-pointer rounded-7 px-[10px] py-[7px] text-body-lg',
+                                            key === sort
+                                                ? 'bg-accent-tint font-semibold text-accent'
+                                                : 'bg-transparent font-normal text-text2',
+                                        )}
                                         key={key}
                                         onClick={() => {
                                             setSort(key);
                                             setSortOpen(false);
-                                        }}
-                                        style={{
-                                            background:
-                                                key === sort
-                                                    ? 'var(--ac-tint, #eeeef2)'
-                                                    : 'transparent',
-                                            borderRadius: 7,
-                                            color:
-                                                key === sort
-                                                    ? 'var(--ac, #5b5bd6)'
-                                                    : 'var(--text2, #6b6b76)',
-                                            cursor: 'pointer',
-                                            fontSize: 13,
-                                            fontWeight: key === sort ? 600 : 400,
-                                            padding: '7px 10px',
                                         }}
                                     >
                                         {SORT_LABELS[key]}
@@ -197,21 +142,12 @@ export function ListPane() {
 
             {showFilters && <FilterBar />}
 
-            <div style={{ flex: 1, overflow: 'auto' }}>
+            <div className="flex-1 overflow-auto">
                 {filtered.length === 0 && (
-                    <div
-                        style={{
-                            color: 'var(--text3, #9a9aa5)',
-                            fontSize: 13,
-                            lineHeight: 1.6,
-                            padding: '28px 20px',
-                            textAlign: 'center',
-                        }}
-                    >
+                    <div className="px-5 py-7 text-center text-body-lg leading-[1.6] text-text3">
                         {search && (
                             <>
-                                Nothing matches{' '}
-                                <strong style={{ color: 'var(--text2, #6b6b76)' }}>{search}</strong>
+                                Nothing matches <strong className="text-text2">{search}</strong>
                                 {searching && ' yet…'}
                             </>
                         )}
