@@ -47,6 +47,9 @@
     --color-white: #fff;
     --color-black: #000;
 
+    /* Destructive actions. The one design colour that is not theme-dependent. */
+    --color-danger: #b4442f;
+
     --color-surface: var(--surface);
     --color-surface2: var(--surface2);
     --color-surface3: var(--surface3);
