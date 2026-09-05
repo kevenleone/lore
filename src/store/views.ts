@@ -3,13 +3,30 @@
 // detail-pane visibility booleans from a plain item/collection list, so they
 // are trivially unit-testable.
 
-import type { Collection, Item, SortOrder, TagCount, View } from './types';
+import type { Collection, Filters, Item, SortOrder, TagCount, View } from './types';
 
 export interface ViewCounts {
     all: number;
     inbox: number;
     starred: number;
     today: number;
+}
+
+/** How many filter facets are set — the badge on the Filter button. */
+export function activeFilterCount(filters: Filters): number {
+    let count = filters.categories.length + filters.collectionIds.length + filters.tags.length;
+    if (filters.from) count++;
+    if (filters.to) count++;
+    return count;
+}
+
+/**
+ * Narrow a list with the filter bar's state, preserving the incoming order.
+ * Runs after `filterByView` and alongside the search query; see `Filters`.
+ */
+export function applyFilters(items: Item[], filters: Filters): Item[] {
+    if (!hasActiveFilters(filters)) return items;
+    return items.filter((item) => matchesFilters(item, filters));
 }
 
 export function collectionCount(items: Item[], collectionId: string): number {
@@ -20,6 +37,38 @@ export function collectionCount(items: Item[], collectionId: string): number {
 export function filterByView(items: Item[], view: View, sort: SortOrder = 'newest'): Item[] {
     const filtered = items.filter((i) => matchesView(i, view));
     return sortItems(filtered, sort);
+}
+
+export function hasActiveFilters(filters: Filters): boolean {
+    return activeFilterCount(filters) > 0;
+}
+
+/**
+ * The local calendar day an ISO timestamp falls on, as `YYYY-MM-DD`. Date
+ * filters are picked from a calendar the user reads in their own timezone, so
+ * comparing the UTC prefix of `createdAt` would put a late-evening capture on
+ * the wrong day.
+ */
+export function localDateKey(iso: string): string {
+    const d = new Date(iso);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${month}-${day}`;
+}
+
+export function matchesFilters(item: Item, filters: Filters): boolean {
+    if (filters.categories.length > 0 && !filters.categories.includes(item.type)) return false;
+    if (filters.collectionIds.length > 0) {
+        if (!item.collectionId || !filters.collectionIds.includes(item.collectionId)) return false;
+    }
+    if (filters.tags.length > 0 && !filters.tags.some((tag) => item.tags.includes(tag))) {
+        return false;
+    }
+
+    const day = filters.from || filters.to ? localDateKey(item.createdAt) : '';
+    if (filters.from && day < filters.from) return false;
+    if (filters.to && day > filters.to) return false;
+    return true;
 }
 
 /**

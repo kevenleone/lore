@@ -26,6 +26,9 @@ import {
     type ChatMessage,
     type Collection,
     type Durations,
+    EMPTY_FILTERS,
+    type FilterFacet,
+    type Filters,
     type FocusSession,
     type FocusState,
     type Item,
@@ -82,11 +85,12 @@ interface StoreState {
     chat: ChatMessage[];
     chatOpen: boolean;
 
+    clearFilters: () => void;
+
     closeCapture: () => void;
 
     /** Puts an item opened from Cards or Table away again. */
     closeOpenItem: () => void;
-
     closeSettings: () => void;
     collections: Collection[];
     createCollection: (input: NewCollection) => Promise<void>;
@@ -108,6 +112,8 @@ interface StoreState {
      * the user chose.
      */
     expandOpenItem: () => void;
+    /** Filter-bar state, applied on top of `view` and `search`. */
+    filters: Filters;
     finishOnboarding: (mode: 'account' | 'anonymous', email?: string) => void;
     /** The running (or paused) focus interval — `Lore Settings` frames 1e/1f. */
     focus: FocusState;
@@ -178,8 +184,9 @@ interface StoreState {
 
     setAiAssist: (on: boolean) => void;
     setAppearance: (appearance: Appearance) => void;
-    setFocusTask: (id: null | string) => void;
+    setFilters: (patch: Partial<Filters>) => void;
 
+    setFocusTask: (id: null | string) => void;
     setMainView: (view: MainView) => void;
     // onboarding actions
     setOnboardingStep: (step: OnboardingStep) => void;
@@ -211,6 +218,8 @@ interface StoreState {
     tickFocus: () => void;
     toggleCapture: () => void;
     toggleChat: () => void;
+    /** Adds or removes one value from a multi-select filter facet. */
+    toggleFilter: <F extends FilterFacet>(facet: F, value: Filters[F][number]) => void;
     /** Starts or pauses the current interval — the ⌥⇧F shortcut and both surfaces. */
     toggleFocus: () => void;
     toggleFocusMode: () => void;
@@ -549,12 +558,16 @@ export const useStore = create<StoreState>((set, get) => ({
     chat: SEED_CHAT,
 
     chatOpen: false,
+    clearFilters() {
+        set({ filters: EMPTY_FILTERS });
+    },
     closeCapture() {
         set({ captureOpen: false });
     },
     closeOpenItem() {
         set({ openAs: null, openId: null });
     },
+
     closeSettings() {
         set({ settingsOpen: false });
     },
@@ -604,6 +617,8 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     /* ---------------- focus timer ---------------- */
+
+    filters: EMPTY_FILTERS,
 
     finishOnboarding(mode, email) {
         const auth: Auth =
@@ -779,6 +794,10 @@ export const useStore = create<StoreState>((set, get) => ({
 
     /* ---------------- settings ---------------- */
 
+    setFilters(patch) {
+        set((s) => ({ filters: { ...s.filters, ...patch } }));
+    },
+
     setFocusTask(id) {
         set((s) => ({ focus: { ...s.focus, taskId: id } }));
     },
@@ -786,7 +805,6 @@ export const useStore = create<StoreState>((set, get) => ({
     setMainView(view) {
         set({ mainView: view });
     },
-
     setOnboardingStep(step) {
         set({ onboardingStep: step });
     },
@@ -800,6 +818,7 @@ export const useStore = create<StoreState>((set, get) => ({
         set((s) => ({ prefs: { ...s.prefs, [key]: value } }));
         persist(get());
     },
+
     setSearch(q) {
         set({ search: q });
         runSearch(get, q);
@@ -865,6 +884,7 @@ export const useStore = create<StoreState>((set, get) => ({
             chatOpen: false,
             collections: [],
             detail: null,
+            filters: EMPTY_FILTERS,
             hydrated: false,
             items: [],
             openAs: null,
@@ -917,6 +937,16 @@ export const useStore = create<StoreState>((set, get) => ({
 
     toggleChat() {
         set((s) => ({ chatOpen: !s.chatOpen }));
+    },
+
+    toggleFilter(facet, value) {
+        set((s) => {
+            const current = s.filters[facet] as string[];
+            const next = current.includes(value)
+                ? current.filter((v) => v !== value)
+                : [...current, value];
+            return { filters: { ...s.filters, [facet]: next } };
+        });
     },
 
     toggleFocus() {

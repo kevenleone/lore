@@ -1,6 +1,6 @@
 // The library pane: the filtered item list for the current view (further
-// narrowed by the ⌘K search box), in whichever of the three layouts is
-// selected — List, Cards or Table.
+// narrowed by the ⌘K search box and the filter row), in whichever of the three
+// layouts is selected — List, Cards or Table.
 //
 // List keeps a permanent detail column beside it, so the pane is a fixed 438px
 // column. Cards and Table need the room, so they take the whole area and the
@@ -11,9 +11,16 @@ import { useEffect, useRef, useState } from 'react';
 import type { SortOrder } from '../../store/types';
 
 import { useStore } from '../../store/useStore';
-import { filterByView, SORT_LABELS, viewTitle } from '../../store/views';
-import { Sort } from '../common/glyphs';
+import {
+    activeFilterCount,
+    applyFilters,
+    filterByView,
+    SORT_LABELS,
+    viewTitle,
+} from '../../store/views';
+import { Filter, Sort } from '../common/glyphs';
 import { CardGrid } from './CardGrid';
+import { FilterBar } from './FilterBar';
 import { matchesSearch } from './itemText';
 import { ListRows } from './ListRows';
 import { TableView } from './TableView';
@@ -34,7 +41,9 @@ export function ListPane() {
     const searching = useStore((s) => s.searching);
     const sort = useStore((s) => s.sort);
     const setSort = useStore((s) => s.setSort);
+    const filters = useStore((s) => s.filters);
     const [sortOpen, setSortOpen] = useState(false);
+    const [filtersOpen, setFiltersOpen] = useState(false);
     const sortRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -46,7 +55,7 @@ export function ListPane() {
         return () => window.removeEventListener('mousedown', onDown);
     }, [sortOpen]);
 
-    let filtered = filterByView(items, view, sort);
+    let filtered = applyFilters(filterByView(items, view, sort), filters);
     if (search) {
         // The index searches full bodies; the client-side filter is the fallback
         // for queries too short to be worth a round-trip.
@@ -57,6 +66,12 @@ export function ListPane() {
     }
 
     const isList = viewMode === 'list';
+    const filterCount = activeFilterCount(filters);
+    // A filter that is on must stay visible, or it silently shortens the list.
+    const showFilters = filtersOpen || filterCount > 0;
+    let filterColor = 'var(--faint, #a8a8b0)';
+    if (showFilters) filterColor = 'var(--text, #1a1a1f)';
+    if (filterCount > 0) filterColor = 'var(--ac, #5b5bd6)';
 
     return (
         <div
@@ -102,6 +117,24 @@ export function ListPane() {
                     }}
                 >
                     {!isList && <OpenModePicker />}
+                    <span
+                        aria-label="Filter"
+                        aria-pressed={showFilters}
+                        onClick={() => setFiltersOpen((o) => !o)}
+                        style={{
+                            alignItems: 'center',
+                            color: filterColor,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            gap: 3,
+                        }}
+                        title="Filter"
+                    >
+                        <Filter />
+                        {filterCount > 0 && (
+                            <span style={{ fontSize: 11, fontWeight: 650 }}>{filterCount}</span>
+                        )}
+                    </span>
                     <ViewModePicker />
                     <div ref={sortRef} style={{ position: 'relative' }}>
                         <span
@@ -162,6 +195,8 @@ export function ListPane() {
                 </span>
             </div>
 
+            {showFilters && <FilterBar />}
+
             <div style={{ flex: 1, overflow: 'auto' }}>
                 {filtered.length === 0 && (
                     <div
@@ -173,15 +208,17 @@ export function ListPane() {
                             textAlign: 'center',
                         }}
                     >
-                        {search ? (
+                        {search && (
                             <>
                                 Nothing matches{' '}
                                 <strong style={{ color: 'var(--text2, #6b6b76)' }}>{search}</strong>
                                 {searching && ' yet…'}
                             </>
-                        ) : (
-                            'Nothing here yet.'
                         )}
+                        {!search &&
+                            (filterCount > 0
+                                ? 'Nothing matches these filters.'
+                                : 'Nothing here yet.')}
                     </div>
                 )}
                 {viewMode === 'cards' && <CardGrid items={filtered} />}

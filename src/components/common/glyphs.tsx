@@ -92,6 +92,14 @@ export function FileGlyph({ size = 20, style, sw = 1.7 }: GlyphProps) {
     );
 }
 
+export function Filter({ size = 14, style, sw = 1.9 }: GlyphProps) {
+    return (
+        <Stroke size={size} style={style} sw={sw}>
+            <polygon points="3 5 21 5 14 13 14 20 10 18 10 13" />
+        </Stroke>
+    );
+}
+
 export function Globe({ size = 13, style, sw = 1.8 }: GlyphProps) {
     return (
         <Stroke size={size} style={style} sw={sw}>

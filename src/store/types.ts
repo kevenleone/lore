@@ -19,6 +19,26 @@ export interface Collection {
     name: string;
 }
 
+/** The multi-select facets of `Filters` — the ones the bar toggles as chips. */
+export type FilterFacet = 'categories' | 'collectionIds' | 'tags';
+
+/**
+ * The library filter bar's state, applied on top of the current `View` and the
+ * search query. Every field is a widening choice within itself and a narrowing
+ * one against the others: an item matches when it has *one of* the chosen tags
+ * *and* one of the chosen categories *and* so on. Empty means "no constraint".
+ */
+export interface Filters {
+    /** Item types, shown in the bar as "Category". */
+    categories: ItemType[];
+    collectionIds: string[];
+    /** Local calendar day (`YYYY-MM-DD`), inclusive. Matched on `createdAt`. */
+    from: null | string;
+    tags: string[];
+    /** Local calendar day (`YYYY-MM-DD`), inclusive. */
+    to: null | string;
+}
+
 export type IconName = 'calendar' | 'file' | 'hash' | 'inbox' | 'layers' | 'star' | ItemType;
 
 export interface Item {
@@ -78,6 +98,14 @@ export interface ItemFlags {
 }
 
 export type ItemType = 'code' | 'image' | 'link' | 'note' | 'task';
+
+export const EMPTY_FILTERS: Filters = {
+    categories: [],
+    collectionIds: [],
+    from: null,
+    tags: [],
+    to: null,
+};
 
 export interface TagCount {
     count: number;
