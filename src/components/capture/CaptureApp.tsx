@@ -7,13 +7,13 @@
 // the frontmost window. With Lore in front, the shortcut opens `CaptureDrawer`
 // in the main window instead.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { setWorkspace } from '../../data';
 import { hideCapture } from '../../lib/captureActions';
 import { onWorkspaceChanged } from '../../lib/workspace';
 import { loadPersisted } from '../../store/persisted';
-import { applyTokens, effectiveTheme, resolveAccent } from '../../theme/tokens';
+import { effectiveTheme, paintTheme } from '../../theme/tokens';
 import { CommandBar } from './CommandBar';
 import { Composer } from './Composer';
 
@@ -22,7 +22,6 @@ type Mode = 'A' | 'B';
 
 export function CaptureApp() {
     const [mode, setMode] = useState<Mode>('A');
-    const rootRef = useRef<HTMLDivElement>(null);
     // This window has its own JS context, so it reads the shared preferences
     // straight from storage rather than through the knowledge-base store.
     const [prefs, setPrefs] = useState(() => loadPersisted().prefs);
@@ -77,17 +76,15 @@ export function CaptureApp() {
 
     const theme = effectiveTheme(prefs.appearance);
     useEffect(() => {
-        if (rootRef.current) applyTokens(rootRef.current, theme);
-    }, [theme]);
+        paintTheme(theme, prefs.accent);
+    }, [prefs.accent, theme]);
 
     return (
         <div
             onMouseDown={(e) => {
                 if (e.target === e.currentTarget) void hideCapture();
             }}
-            ref={rootRef}
             style={{
-                ['--ac' as string]: resolveAccent(prefs.accent, theme),
                 alignItems: 'center',
                 background: 'transparent',
                 boxSizing: 'border-box',

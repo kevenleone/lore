@@ -110,6 +110,18 @@ export function applyTokens(el: HTMLElement, theme: 'dark' | 'light'): void {
 }
 
 /**
+ * Paints a theme and its accent onto the document root.
+ *
+ * Everything resolves `var(--surface)` and friends against this element, so it
+ * is the single place a window's appearance is decided — including `body` and
+ * the scrollbars, which sit outside the React tree.
+ */
+export function paintTheme(theme: 'dark' | 'light', accent: string): void {
+    applyTokens(document.documentElement, theme);
+    document.documentElement.style.setProperty('--ac', resolveAccent(accent, theme));
+}
+
+/**
  * The design lifts a too-dark accent on a dark ground so it stays legible —
  * Graphite (#393A4A) becomes Slate blue (#7d80a0).
  */
