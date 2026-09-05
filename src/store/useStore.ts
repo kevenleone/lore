@@ -71,8 +71,16 @@ interface StoreState {
     aiAssist: boolean;
     auth: Auth;
     bumpDuration: (key: keyof Durations, delta: number) => void;
+    /**
+     * True while the in-window capture drawer is open. The floating capture
+     * window is the out-of-app path (⌥Space with Lore in the background); every
+     * capture started from inside the window happens here instead.
+     */
+    captureOpen: boolean;
     chat: ChatMessage[];
     chatOpen: boolean;
+
+    closeCapture: () => void;
 
     /** Puts an item opened from Cards or Table away again. */
     closeOpenItem: () => void;
@@ -127,6 +135,7 @@ interface StoreState {
      * the preference. Cleared with `openId`, so it never outlives its item.
      */
     openAs: null | OpenMode;
+    openCapture: () => void;
     /**
      * The item Cards or Table has opened, or null. List mode never sets it —
      * there the detail pane is a permanent column, so there is nothing to open.
@@ -198,6 +207,7 @@ interface StoreState {
     tagOrder: string[];
     /** Recomputes the countdown from the clock, and rolls over at zero. */
     tickFocus: () => void;
+    toggleCapture: () => void;
     toggleChat: () => void;
     /** Starts or pauses the current interval — the ⌥⇧F shortcut and both surfaces. */
     toggleFocus: () => void;
@@ -523,9 +533,13 @@ export const useStore = create<StoreState>((set, get) => ({
         }));
         persist(get());
     },
+    captureOpen: false,
     chat: SEED_CHAT,
 
     chatOpen: false,
+    closeCapture() {
+        set({ captureOpen: false });
+    },
     closeOpenItem() {
         set({ openAs: null, openId: null });
     },
@@ -626,6 +640,9 @@ export const useStore = create<StoreState>((set, get) => ({
 
     onboardingStep: 'signin',
     openAs: null,
+    openCapture() {
+        set({ captureOpen: true, focusPopoverOpen: false });
+    },
     openId: null,
     openSettings(pane) {
         set({ settingsOpen: true, ...(pane ? { settingsPane: pane } : {}) });
@@ -880,6 +897,10 @@ export const useStore = create<StoreState>((set, get) => ({
             return;
         }
         finishInterval(get, set);
+    },
+
+    toggleCapture() {
+        set((s) => ({ captureOpen: !s.captureOpen, focusPopoverOpen: false }));
     },
 
     toggleChat() {

@@ -542,7 +542,7 @@ const SHORTCUT_GROUPS = [
     {
         name: 'Global',
         rows: [
-            { keys: ['⌥', 'Space'], label: 'Quick capture' },
+            { keys: ['⌥', 'Space'], label: 'Quick capture (from any app)' },
             { keys: ['⌥', '⇧', 'C'], label: 'Capture the current browser tab' },
             { keys: ['⌥', '⇧', 'S'], label: 'Capture selected text' },
             { keys: ['⌥', '⇧', 'F'], label: 'Start or pause a focus session' },
@@ -570,6 +570,7 @@ const SHORTCUT_GROUPS = [
             { keys: ['⌘', '⇧', 'C'], label: 'Share' },
             { keys: ['↑', '↓'], label: 'Next / previous item' },
             { keys: ['⌘', '3'], label: 'Calendar view' },
+            { keys: ['⌥', 'Space'], label: 'Capture drawer' },
         ],
     },
 ];

@@ -1,7 +1,8 @@
-// The detail drawer's entrance and exit, as keyframes rather than a two-state
-// transition. The panel's resting style is the open position, so a run that is
-// throttled away (hidden window) leaves it open rather than stranded off-screen;
-// only the exit needs `forwards`, and it is unmounted right after.
+// Drawer entrance and exit — the item detail drawer and the capture drawer —
+// as keyframes rather than a two-state transition. The panel's resting style is
+// the open position, so a run that is throttled away (hidden window) leaves it
+// open rather than stranded off-screen; only the exit needs `forwards`, and it
+// is unmounted right after.
 
 import { keyframes, style } from '@vanilla-extract/css';
 

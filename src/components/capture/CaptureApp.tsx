@@ -2,6 +2,10 @@
 // style). Only the floating card is visible; clicking the empty backdrop or
 // losing focus dismisses it. Hosts both capture directions (A command bar,
 // B composer) behind a small toggle.
+//
+// This window is the out-of-app path: ⌥Space reaches it only when Lore is not
+// the frontmost window. With Lore in front, the shortcut opens `CaptureDrawer`
+// in the main window instead.
 
 import { useEffect, useRef, useState } from 'react';
 

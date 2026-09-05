@@ -1,5 +1,10 @@
 // Direction B — Composer. Pick a type, add structured content, accept/dismiss
 // AI tag suggestions, choose a collection, then save.
+//
+// The same form serves both capture surfaces: the floating quick-capture window
+// (`panel`) and the in-window capture drawer (`drawer`). Only the frame around
+// it differs — the panel is a card that sizes to its content, the drawer fills
+// the height it is given and scrolls between fixed tabs and footer.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -11,6 +16,27 @@ import { hideCapture, hostOf, saveCapture } from '../../lib/captureActions';
 import { fetchLinkMetadata, type LinkMetadata } from '../../lib/linkMetadata';
 import { Check, ChevronDown, FileGlyph, Globe } from '../common/glyphs';
 import { Icon } from '../common/Icon';
+
+export type CaptureChrome = 'drawer' | 'panel';
+
+export interface ComposerProps {
+    chrome?: CaptureChrome;
+    /**
+     * Whether the surface has stopped moving and may take focus.
+     *
+     * The drawer withholds it for the length of its slide. Focusing a field
+     * while the panel is still a full width off the right edge makes the engine
+     * bring it into view the only way it can — by dragging everything else
+     * sideways by exactly that width, which is what the whole window appears to
+     * do until the slide lands. The floating panel does not move, so it passes
+     * nothing and focuses at once.
+     */
+    focusReady?: boolean;
+    /** Dismisses the surface. Defaults to hiding the quick-capture window. */
+    onCancel?: () => void;
+    /** Persists the item. Defaults to the window's save-and-dismiss. */
+    onSave?: (input: NewItem) => Promise<void>;
+}
 
 const AC = 'var(--ac, #5b5bd6)';
 
@@ -30,7 +56,13 @@ const SECTION_LABEL: React.CSSProperties = {
     textTransform: 'uppercase',
 };
 
-export function Composer() {
+export function Composer({
+    chrome = 'panel',
+    focusReady = true,
+    onCancel = hideCapture,
+    onSave,
+}: ComposerProps) {
+    const inDrawer = chrome === 'drawer';
     const [tab, setTab] = useState<ItemType>('link');
     const [value, setValue] = useState('');
     const [tags, setTags] = useState<string[]>([]);
@@ -86,6 +118,19 @@ export function Composer() {
 
     const activeCollection = collections.find((c) => c.id === collectionId) ?? null;
     const collRef = useRef<HTMLDivElement>(null);
+    const fieldRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+    // One ref for all five tabs: each renders its own field, so only ever one of
+    // them is mounted, and a plain assignment lets it be typed for both.
+    const setFieldRef = (el: HTMLInputElement | HTMLTextAreaElement | null) => {
+        fieldRef.current = el;
+    };
+
+    // The tab's own field takes focus — on open once the surface is settled, and
+    // again whenever a different tab swaps a new field in. `preventScroll` is
+    // belt to `focusReady`'s braces: nothing should need scrolling to by then.
+    useEffect(() => {
+        if (focusReady) fieldRef.current?.focus({ preventScroll: true });
+    }, [focusReady, tab]);
 
     // Close the collection dropdown when clicking elsewhere.
     useEffect(() => {
@@ -107,6 +152,14 @@ export function Composer() {
         } catch (e) {
             setError(e instanceof Error ? e.message : String(e));
         }
+    };
+
+    // The footer promises ⏎, so the single-line fields honour it. The note and
+    // code textareas keep Enter for newlines.
+    const onFieldKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        void save();
     };
 
     const doSave = async () => {
@@ -134,17 +187,24 @@ export function Composer() {
         } else {
             item = { ...item, body: text, title: text.split('\n')[0].slice(0, 80) };
         }
-        await saveCapture(item);
+        await (onSave ? onSave(item) : saveCapture(item));
     };
 
     return (
         <div
             style={{
                 background: 'var(--surface, #fff)',
-                border: '1px solid var(--border, #ececef)',
-                borderRadius: 16,
-                boxShadow: 'var(--float-shadow)',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0,
                 overflow: 'hidden',
+                ...(inDrawer
+                    ? { height: '100%' }
+                    : {
+                          border: '1px solid var(--border, #ececef)',
+                          borderRadius: 16,
+                          boxShadow: 'var(--float-shadow)',
+                      }),
             }}
         >
             {/* type tabs */}
@@ -152,6 +212,7 @@ export function Composer() {
                 style={{
                     borderBottom: '1px solid var(--border-soft, #f0f0f2)',
                     display: 'flex',
+                    flex: 'none',
                     gap: 5,
                     overflow: 'hidden',
                     padding: '9px 11px',
@@ -188,7 +249,14 @@ export function Composer() {
                 })}
             </div>
 
-            <div style={{ padding: '15px 16px' }}>
+            <div
+                style={{
+                    flex: inDrawer ? 1 : 'none',
+                    minHeight: 0,
+                    overflowY: inDrawer ? 'auto' : 'visible',
+                    padding: '15px 16px',
+                }}
+            >
                 {/* per-type content */}
                 {tab === 'link' && (
                     <>
@@ -214,9 +282,10 @@ export function Composer() {
                                 <Globe size={16} />
                             </span>
                             <input
-                                autoFocus
                                 onChange={(e) => setValue(e.target.value)}
+                                onKeyDown={onFieldKeyDown}
                                 placeholder="https://…"
+                                ref={setFieldRef}
                                 style={{
                                     background: 'transparent',
                                     border: 'none',
@@ -319,9 +388,9 @@ export function Composer() {
                 )}
                 {tab === 'note' && (
                     <textarea
-                        autoFocus
                         onChange={(e) => setValue(e.target.value)}
                         placeholder="Write a note…"
+                        ref={setFieldRef}
                         style={{
                             border: '1px solid var(--border, #e4e4ea)',
                             borderRadius: 12,
@@ -360,9 +429,10 @@ export function Composer() {
                             }}
                         />
                         <input
-                            autoFocus
                             onChange={(e) => setValue(e.target.value)}
+                            onKeyDown={onFieldKeyDown}
                             placeholder="What needs doing?"
+                            ref={setFieldRef}
                             style={{
                                 background: 'transparent',
                                 border: 'none',
@@ -378,9 +448,9 @@ export function Composer() {
                 )}
                 {tab === 'code' && (
                     <textarea
-                        autoFocus
                         onChange={(e) => setValue(e.target.value)}
                         placeholder="Paste a snippet…"
+                        ref={setFieldRef}
                         style={{
                             background: 'var(--surface2, #fafafa)',
                             border: '1px solid var(--border, #e4e4ea)',
@@ -439,6 +509,7 @@ export function Composer() {
                         </div>
                         <input
                             onChange={(e) => setValue(e.target.value)}
+                            onKeyDown={onFieldKeyDown}
                             placeholder="Title (optional)"
                             style={{
                                 border: '1px solid var(--border, #ececef)',
@@ -494,8 +565,15 @@ export function Composer() {
                             onBlur={() => addTag(tagDraft)}
                             onChange={(e) => setTagDraft(e.target.value)}
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter') addTag(tagDraft);
+                                // Both keys mean "the tag", not "the capture" —
+                                // the window listener must not also close the
+                                // surface out from under it.
+                                if (e.key === 'Enter') {
+                                    e.stopPropagation();
+                                    addTag(tagDraft);
+                                }
                                 if (e.key === 'Escape') {
+                                    e.stopPropagation();
                                     setAddingTag(false);
                                     setTagDraft('');
                                 }
@@ -642,16 +720,20 @@ export function Composer() {
                     background: 'var(--surface2, #fafafa)',
                     borderTop: '1px solid var(--border-soft, #f0f0f2)',
                     display: 'flex',
+                    flex: 'none',
                     justifyContent: 'space-between',
                     padding: '11px 16px',
                 }}
             >
                 <span style={{ color: error ? '#c0392b' : '#9a9aa5', fontSize: 12 }}>
-                    {error ?? '⌥Space to toggle · drag files to attach'}
+                    {error ??
+                        (inDrawer
+                            ? 'esc to close · drag files to attach'
+                            : '⌥Space to toggle · drag files to attach')}
                 </span>
                 <span style={{ alignItems: 'center', display: 'flex', gap: 8 }}>
                     <span
-                        onClick={() => void hideCapture()}
+                        onClick={onCancel}
                         style={{
                             borderRadius: 8,
                             color: 'var(--text2, #6b6b76)',
