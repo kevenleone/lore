@@ -29,11 +29,13 @@ import {
     type Item,
     type MainView,
     type OnboardingStep,
+    type OpenMode,
     type Prefs,
     type SettingsPane,
     type SortOrder,
     type Switches,
     type View,
+    type ViewMode,
 } from './types';
 import { queueItems } from './views';
 
@@ -71,6 +73,9 @@ interface StoreState {
     bumpDuration: (key: keyof Durations, delta: number) => void;
     chat: ChatMessage[];
     chatOpen: boolean;
+
+    /** Puts an item opened from Cards or Table away again. */
+    closeOpenItem: () => void;
 
     closeSettings: () => void;
     collections: Collection[];
@@ -111,6 +116,11 @@ interface StoreState {
     migrationNotice: null | string;
     onboarded: boolean;
     onboardingStep: OnboardingStep;
+    /**
+     * The item Cards or Table has opened, or null. List mode never sets it —
+     * there the detail pane is a permanent column, so there is nothing to open.
+     */
+    openId: null | string;
     // settings actions
     openSettings: (pane?: SettingsPane) => void;
     openWorkspacePicker: () => Promise<void>;
@@ -151,6 +161,7 @@ interface StoreState {
     setMainView: (view: MainView) => void;
     // onboarding actions
     setOnboardingStep: (step: OnboardingStep) => void;
+    setOpenMode: (mode: OpenMode) => void;
     setPref: <K extends keyof Prefs>(key: K, value: Prefs[K]) => void;
     setSearch: (q: string) => void;
     setSettingsPane: (pane: SettingsPane) => void;
@@ -158,6 +169,7 @@ interface StoreState {
     // settings sheet
     settingsOpen: boolean;
     settingsPane: SettingsPane;
+    setViewMode: (mode: ViewMode) => void;
     sidebarVisible: boolean;
     signOut: () => void;
     /** Ends the current interval early and moves to the next one. */
@@ -503,6 +515,9 @@ export const useStore = create<StoreState>((set, get) => ({
     chat: SEED_CHAT,
 
     chatOpen: false,
+    closeOpenItem() {
+        set({ openId: null });
+    },
     closeSettings() {
         set({ settingsOpen: false });
     },
@@ -523,6 +538,7 @@ export const useStore = create<StoreState>((set, get) => ({
         const current = queue.findIndex((i) => i.id === get().focus.taskId);
         get().setFocusTask(queue[(current + 1) % queue.length].id);
     },
+
     async deleteCollection(id) {
         await getRepository().deleteCollection(id);
         // If we were viewing the removed collection, fall back to All Items.
@@ -589,11 +605,12 @@ export const useStore = create<StoreState>((set, get) => ({
         if (get().selectedId === id) set({ detail: item });
     },
     mainView: 'library',
-
     migrationNotice: null,
 
     onboarded: persisted.onboarded,
+
     onboardingStep: 'signin',
+    openId: null,
     openSettings(pane) {
         set({ settingsOpen: true, ...(pane ? { settingsPane: pane } : {}) });
     },
@@ -663,11 +680,21 @@ export const useStore = create<StoreState>((set, get) => ({
     selectItem(id) {
         // Opening an item always means the library — the calendar and the chat
         // are both places you leave to look at one.
-        set({ chatOpen: false, detail: null, mainView: 'library', selectedId: id });
+        //
+        // Cards and Table have no standing detail column, so choosing an item is
+        // also what opens it, as a drawer or a page. List already shows it.
+        const opens = get().prefs.viewMode !== 'list';
+        set({
+            chatOpen: false,
+            detail: null,
+            mainView: 'library',
+            openId: opens ? id : null,
+            selectedId: id,
+        });
         void get().loadDetail(id);
     },
     selectView(kind, val = null) {
-        set({ chatOpen: false, mainView: 'library', view: { kind, val } });
+        set({ chatOpen: false, mainView: 'library', openId: null, view: { kind, val } });
     },
     async sendChat(question) {
         const text = question.trim();
@@ -711,6 +738,12 @@ export const useStore = create<StoreState>((set, get) => ({
     setOnboardingStep(step) {
         set({ onboardingStep: step });
     },
+    setOpenMode(mode) {
+        // Whatever is open was opened the old way; close it rather than teleport
+        // it from a drawer into a page.
+        set({ openId: null });
+        get().setPref('openMode', mode);
+    },
     setPref(key, value) {
         set((s) => ({ prefs: { ...s.prefs, [key]: value } }));
         persist(get());
@@ -730,6 +763,11 @@ export const useStore = create<StoreState>((set, get) => ({
     settingsOpen: false,
 
     settingsPane: 'general',
+
+    setViewMode(mode) {
+        set({ openId: null });
+        get().setPref('viewMode', mode);
+    },
 
     sidebarVisible: true,
 
@@ -777,6 +815,7 @@ export const useStore = create<StoreState>((set, get) => ({
             detail: null,
             hydrated: false,
             items: [],
+            openId: null,
             search: '',
             searchResults: null,
             selectedId: null,
