@@ -157,7 +157,6 @@ export function FocusPanel() {
     return (
         <div
             className={panelWindow}
-            data-frameless
             ref={rootRef}
             style={{ ['--ac' as string]: resolveAccent(prefs.accent, theme) }}
         >

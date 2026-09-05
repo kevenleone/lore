@@ -13,17 +13,18 @@ export const blinkCaret = keyframes({
 
 globalStyle('*', { boxSizing: 'border-box' });
 
+// Nothing in Lore scrolls the page itself: every pane, sheet and drawer is
+// sized to the window and scrolls its own content. Saying so here keeps the
+// document from ever being scrolled out from under the app — a drawer sliding
+// in from off-screen briefly overflows to the right, and an engine that scrolls
+// to reach a focused field inside it would drag the whole window sideways. It
+// also covers the frameless windows, which are sized to their content and must
+// not become scrollable over a one-pixel rounding difference.
 globalStyle('html, body, #root', {
     height: '100%',
     margin: 0,
-    padding: 0,
-});
-
-// The frameless windows are sized to their content; if a rounding difference
-// makes it one pixel too tall, the page must not become scrollable — a popover
-// that slides under the pointer is worse than one that clips a hairline.
-globalStyle('body:has(> #root > [data-frameless])', {
     overflow: 'hidden',
+    padding: 0,
 });
 
 globalStyle('body', {
