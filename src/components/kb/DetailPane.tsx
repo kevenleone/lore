@@ -5,26 +5,34 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import type { OpenMode } from '../../store/types';
+
 import { formatSavedDate } from '../../lib/format';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
 import { collectionFor, detailFlags, relatedItems, viewTitle } from '../../store/views';
-import { Back, Close, External, Globe, StarOutline, Trash } from '../common/glyphs';
+import { Back, Close, Expand, External, Globe, StarOutline, Trash } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 import { AiSummaryCard } from './AiSummaryCard';
 import { RelatedCards } from './RelatedCards';
 
 const AC = 'var(--ac, #5b5bd6)';
 
-export function DetailPane() {
+interface DetailPaneProps {
+    /**
+     * The bar above the body, when the pane was opened from Cards or Table.
+     * Passed down rather than read from the store so it survives the drawer's
+     * exit animation, which outlives the state that started it.
+     */
+    chrome?: OpenMode;
+}
+
+export function DetailPane({ chrome }: DetailPaneProps) {
     const items = useStore((s) => s.items);
     const collections = useStore((s) => s.collections);
     const view = useStore((s) => s.view);
-    // Set only by Cards and Table; List shows the pane permanently and has
-    // nothing to close.
-    const openId = useStore((s) => s.openId);
-    const openMode = useStore((s) => s.prefs.openMode);
     const closeOpenItem = useStore((s) => s.closeOpenItem);
+    const expandOpenItem = useStore((s) => s.expandOpenItem);
     const selectedId = useStore((s) => s.selectedId);
     const detail = useStore((s) => s.detail);
     const renameItemFile = useStore((s) => s.renameItemFile);
@@ -68,8 +76,7 @@ export function DetailPane() {
         return <div style={{ background: 'var(--surface, #fff)', flex: 1 }} />;
     }
 
-    const opened = openId !== null;
-    const asPage = opened && openMode === 'page';
+    const asPage = chrome === 'page';
 
     const meta = typeMeta(sel.type);
     const coll = collectionFor(sel, collections);
@@ -141,7 +148,7 @@ export function DetailPane() {
 
     return (
         <div style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}>
-            {opened && (
+            {chrome && (
                 <div
                     style={{
                         alignItems: 'center',
@@ -174,6 +181,30 @@ export function DetailPane() {
                         {asPage ? <Back /> : <Close size={15} sw={2} />}
                         {asPage ? `Back to ${viewTitle(view, collections)}` : 'Close'}
                     </button>
+                    {chrome === 'drawer' && (
+                        <button
+                            aria-label="Open full screen"
+                            onClick={expandOpenItem}
+                            style={{
+                                alignItems: 'center',
+                                background: 'transparent',
+                                border: 'none',
+                                borderRadius: 7,
+                                color: 'var(--text3, #9a9aa5)',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                height: 28,
+                                justifyContent: 'center',
+                                marginLeft: 'auto',
+                                padding: 0,
+                                width: 28,
+                            }}
+                            title="Open full screen"
+                            type="button"
+                        >
+                            <Expand size={15} />
+                        </button>
+                    )}
                 </div>
             )}
             <div
