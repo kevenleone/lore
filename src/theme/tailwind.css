@@ -74,6 +74,14 @@
     --color-accent-tint: var(--ac-tint);
     --color-accent-border: var(--ac-border);
 
+    /* The three vault lanes on the onboarding card. */
+    --color-lane-starter-bg: var(--lane-starter-bg);
+    --color-lane-starter-fg: var(--lane-starter-fg);
+    --color-lane-empty-bg: var(--lane-empty-bg);
+    --color-lane-empty-fg: var(--lane-empty-fg);
+    --color-lane-open-bg: var(--lane-open-bg);
+    --color-lane-open-fg: var(--lane-open-fg);
+
     /* Per-type chips (link / note / task / code / image). */
     --color-type-link-bg: var(--type-link-bg);
     --color-type-link-fg: var(--type-link-fg);

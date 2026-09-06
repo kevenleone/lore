@@ -1,6 +1,6 @@
 // Glyphs introduced by the Lore Settings and Onboarding designs: the settings
-// rail's ten pane icons, the device icons in the Sync pane, and the identity
-// providers on the onboarding card. Shared chrome glyphs stay in glyphs.tsx.
+// rail's pane icons and the vault-lane icons on the onboarding card. Shared
+// chrome glyphs stay in glyphs.tsx.
 
 import type { CSSProperties } from 'react';
 
@@ -15,6 +15,7 @@ const PATHS = {
     chevronUp: '<polyline points="6 14 12 8 18 14"></polyline>',
     close: '<line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line>',
     cloud: '<path d="M17.4 19.4a4.4 4.4 0 0 0 .5-8.76A6 6 0 0 0 6.2 10.6a3.9 3.9 0 0 0 .3 8.8z"></path><path d="M12 16.6v-5.2"></path><path d="M9.9 13.5 12 11.4l2.1 2.1"></path>',
+    folder: '<path d="M3 7h6l2 2h10v9H3z"></path>',
     gear: '<circle cx="12" cy="12" r="3.4"></circle><path d="M12 2.6v3M12 18.4v3M4.6 7.2l2.6 1.5M16.8 15.3l2.6 1.5M4.6 16.8l2.6-1.5M16.8 8.7l2.6-1.5"></path>',
     globe: '<circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"></path>',
     info: '<circle cx="12" cy="12" r="8.8"></circle><line x1="12" y1="11" x2="12" y2="16.4"></line><line x1="12" y1="7.7" x2="12.01" y2="7.7"></line>',
@@ -34,6 +35,7 @@ const PATHS = {
     sparkle:
         '<path d="M12 2.9l1.6 4.8a3 3 0 0 0 1.9 1.9l4.8 1.6-4.8 1.6a3 3 0 0 0-1.9 1.9L12 19.5l-1.6-4.8a3 3 0 0 0-1.9-1.9L3.7 11.2l4.8-1.6a3 3 0 0 0 1.9-1.9z"></path>',
     timer: '<circle cx="12" cy="13.6" r="7.6"></circle><path d="M12 9.8v4l2.4 1.8"></path><path d="M9.2 2.6h5.6"></path><path d="M12 2.6v2.4"></path>',
+    unpack: '<path d="M12 3v10"></path><path d="M8.5 6.5 12 3l3.5 3.5"></path><path d="M5 15v5h14v-5"></path>',
     user: '<circle cx="12" cy="8" r="3.6"></circle><path d="M4.8 20.4a7.4 7.4 0 0 1 14.4 0"></path>',
 } as const;
 
@@ -44,50 +46,6 @@ interface GlyphProps {
     size?: number;
     style?: CSSProperties;
     sw?: number;
-}
-
-/** Apple's monochrome mark — inherits `currentColor` so it works on any button. */
-export function AppleIcon({ size = 16 }: { size?: number }) {
-    return (
-        <svg
-            fill="currentColor"
-            height={size}
-            style={{ display: 'block', flex: 'none' }}
-            viewBox="0 0 24 24"
-            width={size}
-        >
-            <path d="M16.4 12.7c0-2.5 2-3.7 2.1-3.8-1.1-1.7-2.9-1.9-3.6-1.9-1.5-.2-3 .9-3.8.9s-2-.9-3.3-.9c-1.7 0-3.2 1-4.1 2.5-1.7 3-.4 7.5 1.3 10 .8 1.2 1.8 2.5 3.1 2.5 1.2-.1 1.7-.8 3.2-.8s1.9.8 3.2.8 2.2-1.2 3-2.4c.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.4-.9-2.4-3.6zM14 4.9c.7-.8 1.1-2 1-3.2-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.3z" />
-        </svg>
-    );
-}
-
-/** Google's four-colour G — fixed brand colours, never tinted. */
-export function GoogleIcon({ size = 16 }: { size?: number }) {
-    return (
-        <svg
-            height={size}
-            style={{ display: 'block', flex: 'none' }}
-            viewBox="0 0 48 48"
-            width={size}
-        >
-            <path
-                d="M45.1 24.5c0-1.6-.1-2.8-.4-4H24v7.3h12.1c-.2 1.9-1.6 4.9-4.5 6.9l6.9 5.3c4.1-3.8 6.6-9.4 6.6-15.5z"
-                fill="#4285F4"
-            />
-            <path
-                d="M24 46c5.9 0 10.9-2 14.5-5.3l-6.9-5.3c-1.8 1.3-4.3 2.2-7.6 2.2-5.8 0-10.7-3.8-12.5-9.1l-7.1 5.5C8.1 41.1 15.4 46 24 46z"
-                fill="#34A853"
-            />
-            <path
-                d="M11.5 28.5c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.7-4.5l-7.1-5.5C2.8 17 2 20.4 2 24s.8 7 2.3 10z"
-                fill="#FBBC05"
-            />
-            <path
-                d="M24 9.5c4.1 0 6.9 1.8 8.5 3.3l6.2-6C34.9 3.4 29.9 1 24 1 15.4 1 8.1 5.9 4.3 13l7.1 5.5C13.3 13.3 18.2 9.5 24 9.5z"
-                fill="#EA4335"
-            />
-        </svg>
-    );
 }
 
 export function SettingsIcon({ name, size = 15, style, sw = 1.75 }: GlyphProps) {

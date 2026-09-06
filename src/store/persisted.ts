@@ -3,12 +3,11 @@
 // exists this module is the only thing that has to change — the store reads and
 // writes through `loadPersisted` / `savePersisted` and nothing else.
 
-import { type Auth, DEFAULT_PREFS, DEFAULT_SWITCHES, type FocusSession, type Prefs } from './types';
+import { DEFAULT_PREFS, DEFAULT_SWITCHES, type FocusSession, type Prefs } from './types';
 
 const KEY = 'lore.prefs.v1';
 
 export interface Persisted {
-    auth: Auth;
     /**
      * Finished focus intervals, so the calendar can draw where attention went
      * across launches. Trimmed to the most recent `MAX_SESSIONS`.
@@ -39,7 +38,6 @@ export interface WorkspaceRef {
 }
 
 export const DEFAULT_PERSISTED: Persisted = {
-    auth: { email: null, mode: null, name: null },
     focusSessions: [],
     migratedAt: null,
     onboarded: false,
@@ -60,7 +58,6 @@ export function loadPersisted(): Persisted {
         // Merge field-by-field so a preference added in a later version still gets
         // its default instead of coming back undefined.
         return {
-            auth: { ...DEFAULT_PERSISTED.auth, ...saved.auth },
             focusSessions: saved.focusSessions ?? [],
             migratedAt: saved.migratedAt ?? null,
             onboarded: saved.onboarded ?? false,
