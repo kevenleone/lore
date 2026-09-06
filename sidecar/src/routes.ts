@@ -5,6 +5,7 @@ import type { Item } from '@lore/types';
 
 import { Elysia } from 'elysia';
 
+import { gitStatus, initGit } from './git';
 import { fetchLinkMetadata } from './linkMetadata';
 import { ATTACHMENTS_DIR, hashColor } from './vault';
 import { Workspace, WorkspaceNotOpen } from './workspace';
@@ -56,6 +57,32 @@ export function routes(workspace: Workspace) {
             })
 
             .post('/workspace/reindex', () => workspace.reconcile())
+
+            /* ---------------- git ---------------- */
+
+            /*
+             * Both take the folder as a parameter rather than acting on the open
+             * workspace: onboarding offers Git before any vault is open, and the
+             * recents list asks about folders it has not opened at all.
+             */
+
+            .post('/git/status', ({ body, set }) => {
+                const { path } = body as { path?: string };
+                if (!path) {
+                    set.status = 400;
+                    return { error: 'path_required' };
+                }
+                return gitStatus(path);
+            })
+
+            .post('/git/init', ({ body, set }) => {
+                const { path } = body as { path?: string };
+                if (!path) {
+                    set.status = 400;
+                    return { error: 'path_required' };
+                }
+                return initGit(path);
+            })
 
             /**
              * One-shot import from the legacy SQLite store. Collections are created
