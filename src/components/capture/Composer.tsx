@@ -70,6 +70,14 @@ const DEADLINES: { days: number; label: string }[] = [
     { days: 7, label: 'Next week' },
 ];
 
+/** Where an image capture gets its file: picked off disk, or fetched from a URL. */
+type ImageSource = 'file' | 'url';
+
+const IMAGE_SOURCES: { label: string; value: ImageSource }[] = [
+    { label: 'Upload', value: 'file' },
+    { label: 'URL', value: 'url' },
+];
+
 const PRIORITY_LABELS: Record<Priority, string> = {
     high: 'High',
     low: 'Low',
@@ -114,7 +122,10 @@ export function Composer({
     const [subtaskDraft, setSubtaskDraft] = useState('');
 
     // Image-only fields.
+    const [imageSource, setImageSource] = useState<ImageSource>('file');
     const [file, setFile] = useState<File | null>(null);
+    const [imageUrl, setImageUrl] = useState('');
+    const [imageUrlBroken, setImageUrlBroken] = useState(false);
     const [preview, setPreview] = useState<null | string>(null);
     const [dragging, setDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -197,11 +208,11 @@ export function Composer({
     };
 
     // The tab's own field takes focus — on open once the surface is settled, and
-    // again whenever a different tab swaps a new field in. `preventScroll` is
+    // again whenever a different tab (or image source) swaps a new field in. `preventScroll` is
     // belt to `focusReady`'s braces: nothing should need scrolling to by then.
     useEffect(() => {
         if (focusReady) fieldRef.current?.focus({ preventScroll: true });
-    }, [focusReady, tab]);
+    }, [focusReady, tab, imageSource]);
 
     // Close the collection dropdown when clicking elsewhere.
     useEffect(() => {
@@ -215,10 +226,10 @@ export function Composer({
 
     // An image capture *is* its file. The tab used to accept a bare title, which
     // saved an item with no picture in it at all.
-    const canSave = useMemo(
-        () => (tab === 'image' ? !!file : value.trim().length > 0),
-        [tab, value, file],
-    );
+    const canSave = useMemo(() => {
+        if (tab !== 'image') return value.trim().length > 0;
+        return imageSource === 'url' ? imageUrl.trim().length > 0 : !!file;
+    }, [tab, value, file, imageSource, imageUrl]);
 
     const save = async () => {
         if (!canSave || saving) return;
@@ -275,8 +286,19 @@ export function Composer({
         } else if (tab === 'image') {
             // The store answers with the reference the item holds: a vault-relative
             // path for the vault, an object URL for the in-memory preview.
-            const image = await getRepository().uploadAttachment?.(file!);
-            item = { ...item, image, title: text || file!.name };
+            const repository = getRepository();
+            const source = imageSource === 'url' ? imageUrl.trim() : null;
+            const image = source
+                ? await repository.uploadAttachmentFromUrl?.(source)
+                : await repository.uploadAttachment?.(file!);
+            item = {
+                ...item,
+                image,
+                title: text || (source ? urlFileName(source) : file!.name),
+                // The page it came from, kept for provenance — the file itself now
+                // lives in the vault.
+                url: source ?? undefined,
+            };
         } else {
             item = { ...item, body: text, title: text.split('\n')[0].slice(0, 80) };
         }
@@ -548,53 +570,112 @@ export function Composer({
                 )}
                 {tab === 'image' && (
                     <>
-                        <div
-                            className={cn(
-                                'flex cursor-pointer flex-col items-center gap-[9px] rounded-xl border-[1.5px] border-dashed p-[34px] text-center',
-                                dragging ? 'border-accent bg-accent-tint' : 'border-dash',
-                            )}
-                            onClick={() => fileInputRef.current?.click()}
-                            onDragLeave={() => setDragging(false)}
-                            onDragOver={(e) => {
-                                // Without this the browser navigates to the file
-                                // instead of letting the drop land here.
-                                e.preventDefault();
-                                setDragging(true);
-                            }}
-                            onDrop={(e) => {
-                                e.preventDefault();
-                                setDragging(false);
-                                pickFile(e.dataTransfer.files[0]);
-                            }}
-                        >
-                            {preview && file?.type.startsWith('image/') ? (
-                                <img
-                                    alt={file.name}
-                                    className="max-h-[150px] w-full rounded-lg object-contain"
-                                    draggable={false}
-                                    src={preview}
-                                />
-                            ) : (
-                                <span className="flex h-11 w-11 items-center justify-center rounded-11 bg-type-image-bg text-type-image-fg">
-                                    <FileGlyph />
+                        <div className="mb-3 flex items-center gap-[7px]">
+                            {IMAGE_SOURCES.map((source) => (
+                                <span
+                                    className={cn(
+                                        CHIP,
+                                        imageSource === source.value ? CHIP_ON : CHIP_OFF,
+                                    )}
+                                    key={source.value}
+                                    onClick={() => setImageSource(source.value)}
+                                >
+                                    {source.label}
                                 </span>
-                            )}
-                            <div className="text-title font-[560] text-text2">
-                                {file ? file.name : 'Drag files & images here'}
-                            </div>
-                            <div className="text-body text-text3">
-                                {file
-                                    ? 'Click to choose a different file'
-                                    : 'or click to browse — PNG, PDF, screenshots'}
-                            </div>
+                            ))}
                         </div>
-                        <input
-                            accept="image/*,.pdf"
-                            className="hidden"
-                            onChange={(e) => pickFile(e.target.files?.[0])}
-                            ref={fileInputRef}
-                            type="file"
-                        />
+                        {imageSource === 'url' ? (
+                            <>
+                                <div className="flex items-center gap-[9px] rounded-10 border border-border px-3 py-[10px] text-title text-text">
+                                    <span className="flex flex-none text-faint">
+                                        <Globe size={16} />
+                                    </span>
+                                    <input
+                                        className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-text outline-none"
+                                        onChange={(e) => {
+                                            setImageUrl(e.target.value);
+                                            setImageUrlBroken(false);
+                                        }}
+                                        onKeyDown={onFieldKeyDown}
+                                        placeholder="https://…/image.png"
+                                        ref={setFieldRef}
+                                        value={imageUrl}
+                                    />
+                                </div>
+                                {imageUrl.trim() && (
+                                    <div className="mt-3 flex flex-col items-center gap-[9px] rounded-xl border border-border p-[14px] text-center">
+                                        {imageUrlBroken ? (
+                                            <span className="text-body text-text3">
+                                                Nothing loads from that URL yet — Lore will still
+                                                try to fetch it when you save.
+                                            </span>
+                                        ) : (
+                                            <img
+                                                alt=""
+                                                className="max-h-[150px] w-full rounded-lg object-contain"
+                                                draggable={false}
+                                                onError={() => setImageUrlBroken(true)}
+                                                src={imageUrl.trim()}
+                                            />
+                                        )}
+                                    </div>
+                                )}
+                                <div className="mt-2 text-body text-text3">
+                                    The file is downloaded into your vault, so it outlives the page
+                                    it came from.
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div
+                                    className={cn(
+                                        'flex cursor-pointer flex-col items-center gap-[9px] rounded-xl border-[1.5px] border-dashed p-[34px] text-center',
+                                        dragging ? 'border-accent bg-accent-tint' : 'border-dash',
+                                    )}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    onDragLeave={() => setDragging(false)}
+                                    onDragOver={(e) => {
+                                        // Without this the browser navigates to the file
+                                        // instead of letting the drop land here.
+                                        e.preventDefault();
+                                        setDragging(true);
+                                    }}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        setDragging(false);
+                                        pickFile(e.dataTransfer.files[0]);
+                                    }}
+                                >
+                                    {preview && file?.type.startsWith('image/') ? (
+                                        <img
+                                            alt={file.name}
+                                            className="max-h-[150px] w-full rounded-lg object-contain"
+                                            draggable={false}
+                                            src={preview}
+                                        />
+                                    ) : (
+                                        <span className="flex h-11 w-11 items-center justify-center rounded-11 bg-type-image-bg text-type-image-fg">
+                                            <FileGlyph />
+                                        </span>
+                                    )}
+                                    <div className="text-title font-[560] text-text2">
+                                        {file ? file.name : 'Drag files & images here'}
+                                    </div>
+                                    <div className="text-body text-text3">
+                                        {file
+                                            ? 'Click to choose a different file'
+                                            : 'or click to browse — PNG, PDF, screenshots'}
+                                    </div>
+                                </div>
+                                <input
+                                    accept="image/*,.pdf"
+                                    className="hidden"
+                                    onChange={(e) => pickFile(e.target.files?.[0])}
+                                    ref={fileInputRef}
+                                    type="file"
+                                />
+                            </>
+                        )}
                         <input
                             className="mt-3 w-full rounded-lg border border-border px-[10px] py-[6px] font-[inherit] text-body-lg text-text outline-none"
                             onChange={(e) => setValue(e.target.value)}
@@ -743,4 +824,14 @@ export function Composer({
 /** A day the deadline chips jump to, as `YYYY-MM-DD` in the user's own zone. */
 function dayFromNow(days: number): string {
     return localDateKey(addDays(new Date(), days).toISOString());
+}
+
+/** The basename a URL implies, for titling an image captured from the web. */
+function urlFileName(raw: string): string {
+    try {
+        const { hostname, pathname } = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+        return decodeURIComponent(pathname.split('/').filter(Boolean).pop() ?? '') || hostname;
+    } catch {
+        return raw;
+    }
 }
