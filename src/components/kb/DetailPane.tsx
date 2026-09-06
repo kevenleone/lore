@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { OpenMode } from '../../store/types';
 
+import { useAssetSrc } from '../../lib/assetSrc';
 import { cn } from '../../lib/cn';
 import { formatSavedDate } from '../../lib/format';
 import { typeMeta } from '../../store/typeMeta';
@@ -61,6 +62,8 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const [tagDraft, setTagDraft] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(false);
     const tagInputRef = useRef<HTMLInputElement>(null);
+    // Above the `!sel` return: a hook cannot run conditionally.
+    const previewSrc = useAssetSrc(sel?.image);
 
     useEffect(() => {
         setEditingTitle(false);
@@ -314,12 +317,12 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                 </div>
 
                 {/* image preview — only when there is an image */}
-                {flags.showPreview && sel.image && (
+                {flags.showPreview && previewSrc && (
                     <img
                         alt={sel.title}
                         className="mt-5 mb-1 block h-[204px] w-full rounded-[13px] border border-border object-cover"
                         draggable={false}
-                        src={sel.image}
+                        src={previewSrc}
                     />
                 )}
 

@@ -170,6 +170,16 @@ export class VaultRepository implements KnowledgeRepository {
         );
     }
 
+    /** Copies the file into `attachments/`; the item stores the path it answers. */
+    async uploadAttachment(file: File): Promise<string> {
+        const body = new FormData();
+        body.append('file', file);
+        const { path } = await this.call(() =>
+            request<{ path: string }>('/attachments', { body, method: 'POST' }),
+        );
+        return path;
+    }
+
     /**
      * Every call goes through here so a restarted engine recovers on its own.
      *

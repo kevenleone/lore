@@ -30,6 +30,18 @@ export class SidecarUnavailable extends Error {
     }
 }
 
+/**
+ * A readable URL for a vault-relative attachment path, token included — an
+ * `<img src>` cannot set headers either. Resolved at render rather than stored,
+ * because the engine restarts on a new port.
+ */
+export async function attachmentUrl(relPath: string): Promise<string> {
+    const { token, url } = await endpoint();
+    const rest = relPath.replace(/^attachments\//, '');
+    const encoded = rest.split('/').map(encodeURIComponent).join('/');
+    return `${url}/attachments/${encoded}?token=${encodeURIComponent(token)}`;
+}
+
 export function endpoint(): Promise<Endpoint> {
     if (!cached)
         cached = discover().catch((e) => {
@@ -74,11 +86,14 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
 
 async function attempt<T>(path: string, init: RequestInit): Promise<T> {
     const { token, url } = await endpoint();
+    // FormData sets its own Content-Type, boundary included; forcing JSON on it
+    // would make the body unparseable on the other end.
+    const json = !!init.body && !(init.body instanceof FormData);
     const res = await fetch(`${url}${path}`, {
         ...init,
         headers: {
             Authorization: `Bearer ${token}`,
-            ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+            ...(json ? { 'Content-Type': 'application/json' } : {}),
             ...init.headers,
         },
     });
