@@ -29,6 +29,19 @@ export async function broadcastWorkspaceChange(path: null | string): Promise<voi
     }
 }
 
+/**
+ * The user's home directory, for shortening paths to `~/…`. Null outside Tauri,
+ * where there is no home to resolve against.
+ */
+export async function homeDirectory(): Promise<null | string> {
+    try {
+        const { homeDir } = await import('@tauri-apps/api/path');
+        return (await homeDir()).replace(/\/+$/, '');
+    } catch {
+        return null;
+    }
+}
+
 /** Listens for a workspace change from another window. */
 export async function onWorkspaceChanged(
     handler: (path: null | string) => void,
@@ -60,6 +73,26 @@ export function rememberWorkspace(recents: readonly WorkspaceRef[], path: string
         path,
     };
     return [entry, ...recents.filter((r) => r.path !== path)].slice(0, MAX_RECENTS);
+}
+
+/**
+ * Where a brand-new vault is offered, per `Lore Onboarding.dc.html`:
+ * `~/Documents/Lore Vault`. Null outside Tauri — the browser preview has no
+ * filesystem to put one in.
+ */
+export async function suggestedVaultPath(): Promise<null | string> {
+    try {
+        const { documentDir, join } = await import('@tauri-apps/api/path');
+        return await join(await documentDir(), 'Lore Vault');
+    } catch {
+        return null;
+    }
+}
+
+/** `/Users/x/Documents/Lore Vault` → `~/Documents/Lore Vault`. */
+export function tildePath(path: string, home: null | string): string {
+    if (!home || !path.startsWith(`${home}/`)) return path;
+    return `~${path.slice(home.length)}`;
 }
 
 /** The folder's own name, which is what the switcher shows. */

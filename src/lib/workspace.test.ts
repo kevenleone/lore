@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { WorkspaceRef } from '../store/persisted';
 
-import { rememberWorkspace, workspaceName } from './workspace';
+import { rememberWorkspace, tildePath, workspaceName } from './workspace';
 
 const ref = (path: string, at = '2026-01-01T00:00:00.000Z'): WorkspaceRef => ({
     lastOpenedAt: at,
@@ -46,5 +46,29 @@ describe('rememberWorkspace', () => {
         const before = Date.now();
         const [entry] = rememberWorkspace([], '/x');
         expect(new Date(entry.lastOpenedAt).getTime()).toBeGreaterThanOrEqual(before - 1000);
+    });
+});
+
+describe('tildePath', () => {
+    it('shortens a path under the home directory', () => {
+        expect(tildePath('/Users/x/Documents/Lore Vault', '/Users/x')).toBe(
+            '~/Documents/Lore Vault',
+        );
+    });
+
+    it('leaves a path outside the home directory alone', () => {
+        expect(tildePath('/Volumes/Archive/Notes', '/Users/x')).toBe('/Volumes/Archive/Notes');
+    });
+
+    it('leaves the home directory itself alone — `~` is not a folder name', () => {
+        expect(tildePath('/Users/x', '/Users/x')).toBe('/Users/x');
+    });
+
+    it('does not treat a sibling with a shared prefix as being inside home', () => {
+        expect(tildePath('/Users/xavier/Notes', '/Users/x')).toBe('/Users/xavier/Notes');
+    });
+
+    it('passes the path through when there is no home to resolve against', () => {
+        expect(tildePath('/Users/x/Notes', null)).toBe('/Users/x/Notes');
     });
 });

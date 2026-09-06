@@ -182,25 +182,11 @@ export const DEFAULT_ACCENT: Accent = '#393A4A';
 export type AiMode = 'cloud' | 'local';
 
 /* ------------------------------------------------------------------ *
- * Onboarding / account
+ * Onboarding
  * ------------------------------------------------------------------ */
 
 /** Light/dark/system preference. `theme/tokens.ts` resolves `auto` at runtime. */
 export type Appearance = 'auto' | 'dark' | 'light';
-
-export interface Auth {
-    /** Address the magic link went to, or the signed-in account's address. */
-    email: null | string;
-    mode: AuthMode;
-    /** Display name, once an account exists. */
-    name: null | string;
-}
-
-/**
- * How this install is signed in. `null` means onboarding has not finished —
- * `Lore Onboarding.dc.html` runs until the user picks a lane.
- */
-export type AuthMode = 'account' | 'anonymous' | null;
 
 /* ------------------------------------------------------------------ *
  * Settings
@@ -210,29 +196,23 @@ export type Density = 'Compact' | 'Cozy' | 'Roomy';
 
 export type NotificationStyle = 'Alert' | 'Banner';
 
-/** Which card the onboarding sheet is showing. */
-export type OnboardingStep = 'anon' | 'magic' | 'signin';
+/**
+ * Which card the onboarding sheet is showing: the three ways in, the
+ * new-vault form, or the existing-folder list.
+ */
+export type OnboardingStep = 'create' | 'open' | 'pick';
+
 /**
  * Where an item goes when it is opened from Cards or Table. Neither view keeps
  * a permanent detail column, so opening one has to put it somewhere: over the
  * grid as a drawer, or in place of it as a full page.
  */
 export type OpenMode = 'drawer' | 'page';
-/** The ten panes in the settings sheet's rail, in order. */
+/** The panes in the settings sheet's rail, in order. */
 export type SettingsPane =
-    | 'about'
-    | 'account'
-    | 'cal'
-    | 'capture'
-    | 'focus'
-    | 'general'
-    | 'keys'
-    | 'look'
-    | 'notif'
-    | 'sync';
+    'about' | 'cal' | 'capture' | 'focus' | 'general' | 'keys' | 'look' | 'notif' | 'vault';
 /** List sort order. */
 export type SortOrder = 'newest' | 'oldest' | 'title';
-
 /** Every boolean switch in the settings sheet, keyed as in the design. */
 export interface Switches {
     attachNotes: boolean;
@@ -254,8 +234,6 @@ export interface Switches {
     dock: boolean;
     dueTasks: boolean;
     dupe: boolean;
-    // Sync
-    e2e: boolean;
     focusEnd: boolean;
     // General
     launch: boolean;
@@ -268,10 +246,18 @@ export interface Switches {
     // Calendar
     showTasks: boolean;
     sounds: boolean;
-    syncErr: boolean;
-    // Account
+    // Vault
     touchid: boolean;
-    wifi: boolean;
+}
+
+/** What onboarding decided about the vault, handed to `finishOnboarding`. */
+export interface VaultSetup {
+    /** Run `git init` in the folder once it exists. */
+    git: boolean;
+    /** The folder to hold the vault; null keeps the default one beside app data. */
+    path: null | string;
+    /** Write the sample library, for the "start from a starter vault" lane. */
+    starter: boolean;
 }
 
 /** How the library pane lays its items out. */
@@ -295,7 +281,6 @@ export const DEFAULT_SWITCHES: Switches = {
     dock: false,
     dueTasks: true,
     dupe: true,
-    e2e: true,
     focusEnd: true,
     launch: true,
     logFocus: false,
@@ -306,9 +291,7 @@ export const DEFAULT_SWITCHES: Switches = {
     showFocus: true,
     showTasks: true,
     sounds: false,
-    syncErr: true,
     touchid: true,
-    wifi: false,
 };
 
 /** Focus-timer interval lengths, in minutes. */

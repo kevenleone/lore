@@ -4,7 +4,7 @@
 // reference `var(--ac)` / `var(--surface)` exactly as the prototypes did.
 //
 // Before any of that is reachable, `Lore Onboarding` covers the window until
-// the user has either signed in or chosen a local vault.
+// the user has chosen a folder to hold their vault.
 
 import { useEffect } from 'react';
 

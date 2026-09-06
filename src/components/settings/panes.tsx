@@ -1,4 +1,5 @@
-// The ten settings panes from `Lore Settings.dc.html`. Controls backed by real
+// The settings panes from `Lore Settings.dc.html`, less the account and sync
+// ones — Lore is offline, so neither has anything to show. Controls backed by real
 // app state (accent, appearance, density, AI location, the switch set) write
 // through the store and persist; the rest render the design's copy against
 // placeholder figures until there is a backend to read them from.
@@ -20,7 +21,7 @@ import {
 } from '../../store/types';
 import { useStore } from '../../store/useStore';
 import { LoreMark } from '../common/LoreMark';
-import { SettingsIcon, type SettingsIconName } from '../common/settingsGlyphs';
+import { SettingsIcon } from '../common/settingsGlyphs';
 import { CALENDAR_ACCOUNTS } from './calendarAccounts';
 import {
     Chooser,
@@ -41,7 +42,7 @@ const CHOICE_CARD =
 const ABOUT_LINK =
     'text-body cursor-pointer rounded-lg border border-border bg-surface px-[10px] py-[6px] font-[inherit] text-text2 hover:bg-hover hover:text-text';
 
-/** The bordered cards the Account and Storage panes are built from. */
+/** The bordered cards the Storage meter and About rows are built from. */
 const CARD = 'rounded-xl border border-border px-4 py-[14px]';
 
 export function GeneralPane() {
@@ -137,93 +138,42 @@ const STORAGE_SEGMENTS = [
     { color: '#c9c9d2', label: 'Search index', share: 0.19, size: '340 MB' },
 ];
 
-export function AccountPane() {
-    const auth = useStore((s) => s.auth);
-    const signOut = useStore((s) => s.signOut);
+export function VaultPane() {
+    const workspacePath = useStore((s) => s.workspacePath);
+    const openWorkspacePicker = useStore((s) => s.openWorkspacePicker);
     const setStep = useStore((s) => s.setOnboardingStep);
     const touchid = useSwitch('touchid');
 
-    // Anonymous installs get the upgrade path instead of an account card.
-    if (auth.mode !== 'account') {
-        return (
-            <>
-                <div className="flex items-start gap-[13px] rounded-xl border border-dashed border-dash px-[18px] py-4">
-                    <span className="mt-[2px] inline-flex text-text2">
-                        <SettingsIcon name="lock" size={18} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                        <div className="text-subhead font-semibold">Local vault — no account</div>
-                        <div className="mt-[3px] text-body leading-[1.5] text-text3">
-                            Signing in uploads this vault once. Nothing is re-entered, and
-                            everything you have captured so far comes with you.
-                        </div>
-                    </div>
-                </div>
-                <div className="mt-[14px]">
-                    <PillButton
-                        className="border-accent bg-accent text-white"
-                        onClick={() => {
-                            // Send the user back through the onboarding sheet's sign-in lane.
-                            setStep('signin');
-                            useStore.setState({ onboarded: false, settingsOpen: false });
-                        }}
-                    >
-                        Sign in and sync this vault
-                    </PillButton>
-                </div>
-
-                <SectionLabel>Security</SectionLabel>
-                <Row
-                    desc="Applies after five minutes of inactivity."
-                    title="Require Touch ID to open Lore"
-                >
-                    <Toggle label="Require Touch ID" on={touchid.on} onChange={touchid.onChange} />
-                </Row>
-
-                <SectionLabel>Your data</SectionLabel>
-                <div className="mt-2 flex gap-2">
-                    <PillButton>Export everything as Markdown</PillButton>
-                    <PillButton tone="danger">Delete local vault</PillButton>
-                </div>
-            </>
-        );
-    }
-
-    const email = auth.email ?? 'rowan@shaw.studio';
-    const name = auth.name ?? 'Rowan Shaw';
-    const initials = name
-        .split(' ')
-        .map((p) => p[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase();
-
     return (
         <>
-            <div className={cn(CARD, 'flex items-center gap-[14px]')}>
-                <span className="flex h-[42px] w-[42px] flex-none items-center justify-center rounded-full bg-accent text-title-lg font-[640] text-white">
-                    {initials}
+            <div className="flex items-start gap-[13px] rounded-xl border border-dashed border-dash px-[18px] py-4">
+                <span className="mt-[2px] inline-flex text-text2">
+                    <SettingsIcon name="folder" size={18} />
                 </span>
                 <div className="min-w-0 flex-1">
-                    <div className="text-title font-[640]">{name}</div>
-                    <div className="mt-px text-body text-text3">{email}</div>
+                    <div className="text-subhead font-semibold">Local vault — no account</div>
+                    <div className="mt-[3px] text-body leading-[1.5] text-text3">
+                        Lore runs entirely on this Mac. There is nothing to sign into: the vault is
+                        a folder of files you own, and nothing leaves the device.
+                    </div>
+                    <div className="mt-[10px] truncate font-mono text-body-sm text-text2">
+                        {workspacePath ?? 'The default vault, beside Lore’s own data'}
+                    </div>
                 </div>
-                <PillButton onClick={signOut}>Sign out</PillButton>
             </div>
-
-            <div className={cn(CARD, 'mt-[10px] flex items-center gap-[14px]')}>
-                <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                        <span className="text-subhead font-[640]">Lore Pro</span>
-                        <span className="rounded-md bg-type-task-bg px-[7px] py-[2px] text-caption font-semibold text-type-task-fg">
-                            Active
-                        </span>
-                    </div>
-                    <div className="mt-[3px] text-body text-text3">
-                        $8/month · renews 14 October 2026 · unlimited AI summaries, 5 devices
-                    </div>
-                </div>
-                <PillButton>Change plan</PillButton>
+            <div className="mt-[14px] flex gap-2">
+                <PillButton onClick={() => void openWorkspacePicker()}>
+                    Open another folder…
+                </PillButton>
+                <PillButton
+                    onClick={() => {
+                        // Back through the onboarding sheet, at its vault picker.
+                        setStep('pick');
+                        useStore.setState({ onboarded: false, settingsOpen: false });
+                    }}
+                >
+                    Set up a new vault
+                </PillButton>
             </div>
 
             <SectionLabel>Security</SectionLabel>
@@ -233,24 +183,18 @@ export function AccountPane() {
             >
                 <Toggle label="Require Touch ID" on={touchid.on} onChange={touchid.onChange} />
             </Row>
-            <Row last title="Two-factor authentication">
-                <PillButton>
-                    <SettingsIcon name="check" size={13} sw={2.4} />
-                    On · authenticator app
-                </PillButton>
-            </Row>
 
             <SectionLabel>Your data</SectionLabel>
             <div className="mt-2 flex gap-2">
                 <PillButton>Export everything as Markdown</PillButton>
-                <PillButton tone="danger">Delete account</PillButton>
+                <PillButton tone="danger">Delete local vault</PillButton>
             </div>
         </>
     );
 }
 
 /* ------------------------------------------------------------------ *
- * Account
+ * Vault
  * ------------------------------------------------------------------ */
 
 function StorageMeter() {
@@ -532,13 +476,7 @@ export function NotifPane() {
                 name="dueTasks"
                 title="Task reminders"
             />
-            <SwitchRow name="focusEnd" title="Focus session end" />
-            <SwitchRow
-                desc="Only when something needs your attention."
-                last
-                name="syncErr"
-                title="Sync problems"
-            />
+            <SwitchRow last name="focusEnd" title="Focus session end" />
 
             <SectionLabel>Delivery</SectionLabel>
             <Row title="Style">
@@ -552,7 +490,7 @@ export function NotifPane() {
                 <Toggle label="Play a sound" on={sounds.on} onChange={sounds.onChange} />
             </Row>
             <SwitchRow
-                desc="22:00 – 07:30 · nothing but sync problems gets through."
+                desc="22:00 – 07:30 · nothing but task reminders gets through."
                 last
                 name="quiet"
                 title="Quiet hours"
@@ -645,112 +583,6 @@ export function CapturePane() {
                     <span className="text-subhead font-[640] tabular-nums">412</span>
                 </Row>
             </div>
-        </>
-    );
-}
-
-/* ------------------------------------------------------------------ *
- * Sync
- * ------------------------------------------------------------------ */
-
-const DEVICES: { icon: SettingsIconName; meta: string; name: string; on: boolean; tag: string }[] =
-    [
-        {
-            icon: 'laptop',
-            meta: 'This Mac · macOS 15.4 · synced just now',
-            name: 'Rowan’s MacBook Pro',
-            on: true,
-            tag: 'Current',
-        },
-        {
-            icon: 'phone',
-            meta: 'Lore 2.4.1 · synced 12 minutes ago',
-            name: 'iPhone 16 Pro',
-            on: false,
-            tag: 'Active',
-        },
-        {
-            icon: 'globe',
-            meta: 'Web session · signed in 3 days ago',
-            name: 'lore.app on Safari',
-            on: false,
-            tag: 'Sign out',
-        },
-    ];
-
-export function SyncPane() {
-    const items = useStore((s) => s.items);
-    const anonymous = useStore((s) => s.auth.mode !== 'account');
-    const e2e = useSwitch('e2e');
-    const wifi = useSwitch('wifi');
-
-    if (anonymous) {
-        return (
-            <div className="flex items-start gap-[13px] rounded-xl border border-dashed border-dash px-[18px] py-4">
-                <span className="mt-[2px] inline-flex text-text2">
-                    <SettingsIcon name="noSync" size={18} />
-                </span>
-                <div className="min-w-0 flex-1">
-                    <div className="text-subhead font-semibold">Sync is off</div>
-                    <div className="mt-[3px] text-body leading-[1.5] text-text3">
-                        This vault lives only on this Mac. Sign in from the Account pane to sync it
-                        to web and mobile — the {items.length} item{items.length === 1 ? '' : 's'}{' '}
-                        you already have upload once and nothing is re-entered.
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <>
-            <div className={cn(CARD, 'flex items-center gap-[13px]')}>
-                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-type-task-bg text-type-task-fg">
-                    <SettingsIcon name="check" size={16} sw={2.2} />
-                </span>
-                <div className="min-w-0 flex-1">
-                    <div className="text-subhead font-[640]">Everything is synced</div>
-                    <div className="mt-px text-body text-text3">
-                        Last checked 40 seconds ago · {items.length} items
-                    </div>
-                </div>
-                <PillButton>Sync now</PillButton>
-            </div>
-
-            <SectionLabel>Devices</SectionLabel>
-            {DEVICES.map((d) => (
-                <div
-                    className="flex items-center gap-3 border-b border-border-soft py-[11px]"
-                    key={d.name}
-                >
-                    <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-surface3 text-text2">
-                        <SettingsIcon name={d.icon} size={16} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                        <div className="text-body-lg font-semibold">{d.name}</div>
-                        <div className="mt-px text-body-sm text-text3">{d.meta}</div>
-                    </div>
-                    <span
-                        className={cn(
-                            'flex-none rounded-7 px-[9px] py-[3px] text-body-sm',
-                            d.on ? 'bg-type-task-bg text-type-task-fg' : 'bg-surface3 text-text3',
-                        )}
-                    >
-                        {d.tag}
-                    </span>
-                </div>
-            ))}
-
-            <SectionLabel>Options</SectionLabel>
-            <Row
-                desc="Summaries are generated before upload, so search still works."
-                title="End-to-end encryption"
-            >
-                <Toggle label="End-to-end encryption" on={e2e.on} onChange={e2e.onChange} />
-            </Row>
-            <Row last title="Sync files on Wi-Fi only">
-                <Toggle label="Sync files on Wi-Fi only" on={wifi.on} onChange={wifi.onChange} />
-            </Row>
         </>
     );
 }
@@ -920,20 +752,16 @@ const ABOUT_LINKS = [
 
 export function AboutPane() {
     const items = useStore((s) => s.items);
-    const auth = useStore((s) => s.auth);
+    const workspacePath = useStore((s) => s.workspacePath);
     const aiMode = useStore((s) => s.prefs.aiMode);
 
     const meta = [
-        { k: 'Library', v: `~/Library/Lore · ${items.length} items` },
-        {
-            k: 'Sync account',
-            v: auth.mode === 'account' ? (auth.email ?? '—') : 'Local vault (no account)',
-        },
+        { k: 'Vault', v: `${workspacePath ?? 'Default vault'} · ${items.length} items` },
+        { k: 'Account', v: 'None — Lore runs offline' },
         {
             k: 'Local model',
             v: aiMode === 'local' ? 'lore-summarize-3b (1.9 GB)' : 'Not downloaded',
         },
-        { k: 'Licence', v: auth.mode === 'account' ? 'Pro · seat 1 of 1' : 'Free · local only' },
     ];
 
     return (
@@ -952,7 +780,7 @@ export function AboutPane() {
                 </div>
                 <p className="mx-auto mt-4 mb-0 max-w-[420px] text-body leading-[1.6] text-text2">
                     Lore is made by a team of four in Lisbon and Copenhagen. It keeps your library
-                    on your own machine and syncs it encrypted.
+                    on your own machine, as plain files, and never sends it anywhere.
                 </p>
             </div>
 

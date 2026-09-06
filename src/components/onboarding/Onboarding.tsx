@@ -1,118 +1,153 @@
-// `Lore Onboarding.dc.html` — the first-launch sheet. Three states share one
-// card: sign in (Apple / Google / email link), the local-vault explainer, and
-// the "check your inbox" waiting state. The card floats over a scrim covering
-// the whole window, so nothing behind it is reachable until a lane is chosen.
+// `Lore Onboarding.dc.html` — the first-launch sheet. Lore is offline: there is
+// no account, no sign-in and nothing to connect, so the only decision is which
+// folder on this Mac holds the vault. Three states share one card: the picker,
+// the new-vault form (with the optional Git toggle), and the list of folders
+// this Mac has opened before.
 //
-// Identity providers and mail delivery are not wired up yet; picking one lands
-// in the same place as the local vault, with `auth.mode` recording which lane
-// the user took.
+// The card floats over a scrim covering the whole window, so nothing behind it
+// is reachable until a vault is chosen.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+
+import type { SettingsIconName } from '../common/settingsGlyphs';
 
 import { cn } from '../../lib/cn';
+import { isVaultTracked } from '../../lib/vaultGit';
+import {
+    homeDirectory,
+    pickWorkspaceFolder,
+    suggestedVaultPath,
+    tildePath,
+} from '../../lib/workspace';
 import { useStore } from '../../store/useStore';
 import { LoreMark, WORDMARK_FONT } from '../common/LoreMark';
-import { AppleIcon, GoogleIcon, SettingsIcon } from '../common/settingsGlyphs';
+import { SettingsIcon } from '../common/settingsGlyphs';
 
 const BUTTON_BASE =
-    'text-title flex h-[42px] w-full cursor-pointer items-center justify-center gap-[9px] rounded-10 font-[inherit]';
-
-/** Apple / Google rows — the design brightens them on hover. */
-const SOCIAL_BUTTON = cn(BUTTON_BASE, 'hover:brightness-[1.35]');
+    'text-title flex h-[42px] w-full cursor-pointer items-center justify-center gap-2 rounded-10 font-[inherit]';
 
 /** Accent-filled call to action. */
 const PRIMARY_BUTTON = cn(
     BUTTON_BASE,
-    'gap-2 border-none bg-accent font-semibold text-white not-disabled:hover:brightness-[1.18] disabled:cursor-not-allowed disabled:opacity-45',
+    'border-none bg-accent font-semibold text-white not-disabled:hover:brightness-[1.18] disabled:cursor-not-allowed disabled:opacity-45',
 );
 
-/** Outlined secondary action (Resend link). */
+/** Outlined secondary action — "Browse for a folder…". */
 const GHOST_BUTTON = cn(
     BUTTON_BASE,
-    'gap-2 border border-dash bg-surface font-[560] text-text hover:bg-surface2',
+    'border border-dash bg-surface font-[560] text-text hover:bg-surface2',
 );
 
 /** Text-only "back" affordance under the primary action. */
 const QUIET_BUTTON =
     'text-subhead mt-[6px] flex h-[38px] w-full cursor-pointer items-center justify-center rounded-10 border-none bg-transparent font-[inherit] text-text2 hover:bg-sel hover:text-text';
 
-/** The dashed "continue without an account" card. */
-const ANON_CARD_ROW =
-    'flex cursor-pointer items-start gap-[11px] rounded-11 border border-dashed border-dash px-[13px] py-3 hover:border-accent hover:bg-surface2';
-
 const COPY = {
-    anon: {
-        body: 'Lore will run entirely on this Mac. Nothing leaves the device unless you sign in later.',
-        title: 'Local vault',
+    create: {
+        body: 'Lore creates the folder structure and index. You can move the folder later.',
+        title: 'New vault',
     },
-    magic: {
-        body: 'We sent a sign-in link. Open it on this Mac to finish setting up Lore.',
-        title: 'Check your inbox',
+    open: {
+        body: 'Point Lore at a folder you already have. Existing notes are indexed in place.',
+        title: 'Open a vault',
     },
-    signin: {
-        body: 'Sign in to sync your knowledge base across every device, or keep it local to this Mac.',
+    pick: {
+        body: 'Pick a folder to hold your vault. Everything lives there as plain files on this Mac.',
         title: 'Welcome to Lore',
     },
 } as const;
 
-/** The three promises the anonymous lane makes, with their own icon colours. */
-const ANON_FACTS = [
-    {
-        body: '~/Library/Application Support/Lore — encrypted with your login keychain.',
-        color: '#4d855f',
-        icon: 'screen',
-        title: 'Stored on this Mac',
-    },
-    {
-        body: 'Summaries and tagging use the local model. Cloud AI stays off until you sign in.',
-        color: 'var(--ac)',
-        icon: 'spark4',
-        title: 'AI runs on-device',
-    },
-    {
-        body: 'Public links, mobile capture, and team collections need an account.',
-        color: '#9e7b46',
-        icon: 'noSync',
-        title: 'No sync, no sharing',
-    },
-] as const;
-
-const EMAIL_RE = /^[^@\s]+@[^@\s.]+\.[^@\s]+$/;
-
-interface SignInProps {
-    email: string;
-    emailRef: React.RefObject<HTMLInputElement | null>;
-    emailValid: boolean;
-    onAnonymous: () => void;
-    onMagicLink: () => void;
-    onProvider: (provider: 'apple' | 'google') => void;
-    setEmail: (v: string) => void;
+interface Lane {
+    body: string;
+    /** The chip's colours, as the design's own violet / blue / green. */
+    chip: string;
+    icon: SettingsIconName;
+    starter: boolean;
+    step: 'create' | 'open';
+    title: string;
 }
+
+/** The three ways in, in the order the design lists them. */
+const LANES: Lane[] = [
+    {
+        body: 'A small set of notes and folders that shows how Lore is organised.',
+        chip: 'bg-lane-starter-bg text-lane-starter-fg',
+        icon: 'unpack',
+        starter: true,
+        step: 'create',
+        title: 'Start from a starter vault',
+    },
+    {
+        body: 'A new folder with Lore defaults and nothing else in it.',
+        chip: 'bg-lane-empty-bg text-lane-empty-fg',
+        icon: 'plus',
+        starter: false,
+        step: 'create',
+        title: 'Create an empty vault',
+    },
+    {
+        body: 'Choose a folder of files you already keep on this Mac.',
+        chip: 'bg-lane-open-bg text-lane-open-fg',
+        icon: 'folder',
+        starter: false,
+        step: 'open',
+        title: 'Open an existing vault',
+    },
+];
 
 export function Onboarding() {
     const step = useStore((s) => s.onboardingStep);
     const setStep = useStore((s) => s.setOnboardingStep);
-    const requestMagicLink = useStore((s) => s.requestMagicLink);
     const finish = useStore((s) => s.finishOnboarding);
-    const sentTo = useStore((s) => s.auth.email);
+    const recents = useStore((s) => s.recentWorkspaces);
+    const workspaceError = useStore((s) => s.workspaceError);
 
-    const [email, setEmail] = useState('');
-    const emailRef = useRef<HTMLInputElement>(null);
-    const emailValid = EMAIL_RE.test(email.trim());
+    const [home, setHome] = useState<null | string>(null);
+    const [path, setPath] = useState<null | string>(null);
+    const [starter, setStarter] = useState(false);
+    const [git, setGit] = useState(false);
+    const [busy, setBusy] = useState(false);
 
-    // The email field is the primary target on the sign-in card.
+    // The suggested location is `~/Documents/Lore Vault`; both resolve to null
+    // in the browser preview, where the card is a mock with no vault behind it.
     useEffect(() => {
-        if (step === 'signin') emailRef.current?.focus();
-    }, [step]);
+        let live = true;
+        void (async () => {
+            const [resolvedHome, suggested] = await Promise.all([
+                homeDirectory(),
+                suggestedVaultPath(),
+            ]);
+            if (!live) return;
+            setHome(resolvedHome);
+            setPath((current) => current ?? suggested);
+        })();
+        return () => {
+            live = false;
+        };
+    }, []);
+
+    const enter = (lane: Lane) => {
+        setStarter(lane.starter);
+        setStep(lane.step);
+    };
+
+    const commit = async (setup: { git: boolean; path: null | string; starter: boolean }) => {
+        setBusy(true);
+        try {
+            await finish(setup);
+        } finally {
+            setBusy(false);
+        }
+    };
 
     const copy = COPY[step];
 
     return (
         <div className="absolute inset-0 z-100 flex items-center justify-center bg-[radial-gradient(125%_120%_at_72%_8%,#dadce6_0%,#c8cad7_46%,#b9bbcb_100%)]">
             <div
-                aria-label="Set up Lore"
+                aria-label="Choose a vault"
                 aria-modal="true"
-                className="max-h-[calc(100%-60px)] w-[428px] overflow-y-auto rounded-2xl border border-border bg-surface text-text shadow-float"
+                className="max-h-[calc(100%-60px)] w-[452px] overflow-y-auto rounded-2xl border border-border bg-surface text-text shadow-float"
                 role="dialog"
             >
                 <div className="px-[34px] pt-[26px] pb-[30px]">
@@ -130,37 +165,46 @@ export function Onboarding() {
                         {copy.body}
                     </p>
 
-                    {step === 'signin' && (
-                        <SignInCard
-                            email={email}
-                            emailRef={emailRef}
-                            emailValid={emailValid}
-                            onAnonymous={() => setStep('anon')}
-                            onMagicLink={() => requestMagicLink(email.trim())}
-                            onProvider={(provider) => finish('account', `${provider}-account`)}
-                            setEmail={setEmail}
+                    {step === 'pick' && <PickCard onEnter={enter} />}
+
+                    {step === 'create' && (
+                        <CreateCard
+                            busy={busy}
+                            git={git}
+                            home={home}
+                            onBack={() => setStep('pick')}
+                            onChoose={async () => {
+                                const picked = await pickWorkspaceFolder();
+                                if (picked) setPath(picked);
+                            }}
+                            onCreate={() => void commit({ git, path, starter })}
+                            onToggleGit={() => setGit((on) => !on)}
+                            path={path}
                         />
                     )}
 
-                    {step === 'anon' && (
-                        <AnonymousCard
-                            onBack={() => setStep('signin')}
-                            onStart={() => finish('anonymous')}
+                    {step === 'open' && (
+                        <OpenCard
+                            busy={busy}
+                            home={home}
+                            onBack={() => setStep('pick')}
+                            onBrowse={async () => {
+                                const picked = await pickWorkspaceFolder();
+                                if (picked)
+                                    await commit({ git: false, path: picked, starter: false });
+                            }}
+                            onOpen={(recentPath) =>
+                                void commit({ git: false, path: recentPath, starter: false })
+                            }
+                            recents={recents}
                         />
                     )}
 
-                    {step === 'magic' && (
-                        <MagicLinkCard
-                            email={sentTo ?? email}
-                            onBack={() => setStep('signin')}
-                            onResend={() => requestMagicLink(sentTo ?? email)}
-                        />
+                    {workspaceError !== null && (
+                        <p className="mt-[14px] mb-0 text-center text-body leading-[1.5] text-pretty text-danger">
+                            {workspaceError}
+                        </p>
                     )}
-
-                    <p className="mt-[18px] mb-0 text-center text-label leading-[1.5] text-pretty text-faint">
-                        By continuing you agree to the <Legal href="#terms">Terms</Legal> and{' '}
-                        <Legal href="#privacy">Privacy Policy</Legal>.
-                    </p>
                 </div>
             </div>
         </div>
@@ -168,189 +212,247 @@ export function Onboarding() {
 }
 
 /* ------------------------------------------------------------------ *
- * State 1 — sign in
+ * State 1 — the vault picker
  * ------------------------------------------------------------------ */
 
-function AnonymousCard({ onBack, onStart }: { onBack: () => void; onStart: () => void }) {
-    return (
-        <>
-            <div className="mt-[22px] flex flex-col gap-px overflow-hidden rounded-xl border border-border">
-                {ANON_FACTS.map((f) => (
-                    <div
-                        className="flex items-start gap-[11px] border-b border-border-soft bg-surface2 px-[15px] py-[13px]"
-                        key={f.title}
-                    >
-                        <span
-                            className="mt-px inline-flex"
-                            // Each fact carries its own accent colour.
-                            style={{ color: f.color }}
-                        >
-                            <SettingsIcon name={f.icon} size={17} sw={1.7} />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                            <span className="block text-body-lg font-semibold">{f.title}</span>
-                            <span className="mt-[2px] block text-body leading-[1.45] text-text3">
-                                {f.body}
-                            </span>
-                        </span>
-                    </div>
-                ))}
-            </div>
-
-            <button className={cn(PRIMARY_BUTTON, 'mt-4')} onClick={onStart} type="button">
-                Start a local vault
-            </button>
-            <button className={QUIET_BUTTON} onClick={onBack} type="button">
-                Back to sign in
-            </button>
-        </>
-    );
-}
-
-function Divider() {
-    return (
-        <div className="my-[18px] flex items-center gap-3">
-            <span className="h-px flex-1 bg-border" />
-            <span className="text-caption tracking-[.08em] text-faint uppercase">or</span>
-            <span className="h-px flex-1 bg-border" />
-        </div>
-    );
-}
-
-function Legal({ children, href }: { children: React.ReactNode; href: string }) {
-    return (
-        <a className="text-text2 no-underline" href={href}>
-            {children}
-        </a>
-    );
-}
-
-/* ------------------------------------------------------------------ *
- * State 2 — anonymous / local vault
- * ------------------------------------------------------------------ */
-
-function MagicLinkCard({
-    email,
+function CreateCard({
+    busy,
+    git,
+    home,
     onBack,
-    onResend,
+    onChoose,
+    onCreate,
+    onToggleGit,
+    path,
 }: {
-    email: string;
+    busy: boolean;
+    git: boolean;
+    home: null | string;
     onBack: () => void;
-    onResend: () => void;
+    onChoose: () => void;
+    onCreate: () => void;
+    onToggleGit: () => void;
+    path: null | string;
 }) {
     return (
-        <>
-            <div className="mt-[22px] rounded-xl border border-border bg-surface2 p-4 text-center">
-                <div className="font-mono text-body text-text">{email}</div>
-                <div className="mt-[6px] text-body leading-[1.5] text-text3">
-                    The link is valid for 15 minutes and signs in this Mac only.
-                </div>
+        <div className="mt-[22px]">
+            <div className="text-label font-[680] tracking-[.07em] text-faint uppercase">
+                Vault location
             </div>
-
-            <button className={cn(GHOST_BUTTON, 'mt-4')} onClick={onResend} type="button">
-                Resend link
-            </button>
-            <button className={QUIET_BUTTON} onClick={onBack} type="button">
-                Use a different method
-            </button>
-        </>
-    );
-}
-
-/* ------------------------------------------------------------------ *
- * State 3 — magic link sent
- * ------------------------------------------------------------------ */
-
-function SignInCard({
-    email,
-    emailRef,
-    emailValid,
-    onAnonymous,
-    onMagicLink,
-    onProvider,
-    setEmail,
-}: SignInProps) {
-    const [focused, setFocused] = useState(true);
-
-    return (
-        <>
-            <div className="mt-6 flex flex-col gap-[9px]">
-                <button
-                    className={cn(SOCIAL_BUTTON, 'border-none bg-black font-[590] text-white')}
-                    onClick={() => onProvider('apple')}
-                    type="button"
-                >
-                    <AppleIcon />
-                    Continue with Apple
-                </button>
-                <button
-                    className={cn(
-                        SOCIAL_BUTTON,
-                        'border border-dash bg-surface font-[560] text-text',
-                    )}
-                    onClick={() => onProvider('google')}
-                    type="button"
-                >
-                    <GoogleIcon />
-                    Continue with Google
-                </button>
-            </div>
-
-            <Divider />
-
-            <label
-                className={cn(
-                    'flex h-[42px] cursor-text items-center gap-[10px] rounded-10 border px-[13px]',
-                    focused
-                        ? 'border-accent shadow-[0_0_0_3px_rgba(57,58,74,.10)]'
-                        : 'border-dash shadow-none',
-                )}
-            >
+            <div className="mt-2 flex h-[42px] items-center gap-[10px] rounded-10 border border-dash pr-[6px] pl-[13px]">
                 <span className="inline-flex text-text3">
-                    <SettingsIcon name="mail" size={16} sw={1.7} />
+                    <SettingsIcon name="folder" size={17} sw={1.7} />
                 </span>
-                <input
-                    className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title text-text outline-none"
-                    onBlur={() => setFocused(false)}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onFocus={() => setFocused(true)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' && emailValid) onMagicLink();
-                    }}
-                    placeholder="you@company.com"
-                    ref={emailRef}
-                    type="email"
-                    value={email}
-                />
-            </label>
+                <span className="min-w-0 flex-1 truncate font-mono text-body-sm text-text">
+                    {path === null
+                        ? 'The default vault, beside Lore’s own data'
+                        : tildePath(path, home)}
+                </span>
+                <button
+                    className="inline-flex h-[30px] cursor-pointer items-center rounded-lg border border-border bg-sel px-3 font-[inherit] text-body font-[560] text-text hover:bg-hover"
+                    onClick={onChoose}
+                    type="button"
+                >
+                    Choose…
+                </button>
+            </div>
 
             <button
-                className={cn(PRIMARY_BUTTON, 'mt-[9px]')}
-                disabled={!emailValid}
-                onClick={onMagicLink}
+                aria-pressed={git}
+                className={cn(
+                    'mt-[14px] flex w-full cursor-pointer items-start gap-3 rounded-xl border px-[14px] py-[13px] text-left font-[inherit]',
+                    git ? 'border-accent bg-surface2' : 'border-border bg-surface',
+                )}
+                onClick={onToggleGit}
                 type="button"
             >
-                Email me a sign-in link
-            </button>
-
-            <div className="mt-[22px] mb-[18px] h-px bg-border-soft" />
-
-            <div className={ANON_CARD_ROW} onClick={onAnonymous}>
-                <span className="mt-px inline-flex text-text2">
-                    <SettingsIcon name="lock" size={17} sw={1.7} />
+                <span
+                    className={cn(
+                        'mt-px inline-flex h-[22px] w-[38px] flex-none justify-start rounded-full p-[2px]',
+                        git ? 'justify-end bg-accent' : 'justify-start bg-track-off',
+                    )}
+                >
+                    <span className="h-[18px] w-[18px] rounded-full bg-knob shadow-[0_1px_2px_rgba(0,0,0,.2)]" />
                 </span>
                 <span className="min-w-0 flex-1">
                     <span className="block text-subhead font-semibold">
-                        Continue without an account
+                        Track this vault with Git
                     </span>
                     <span className="mt-[2px] block text-body leading-[1.45] text-text3">
-                        Everything stays in a local vault on this Mac. No sync, no email.
+                        {git
+                            ? 'Lore will run git init here and write a .gitignore for its index.'
+                            : 'Optional. Version history in the vault folder, no remote required.'}
                     </span>
                 </span>
-                <span className="mt-[3px] inline-flex text-dash">
-                    <SettingsIcon name="chevronRight" size={15} sw={1.7} />
-                </span>
-            </div>
+            </button>
+
+            <button
+                className={cn(PRIMARY_BUTTON, 'mt-4')}
+                disabled={busy}
+                onClick={onCreate}
+                type="button"
+            >
+                {busy ? 'Creating…' : 'Create vault'}
+            </button>
+            <button className={QUIET_BUTTON} disabled={busy} onClick={onBack} type="button">
+                Back
+            </button>
+        </div>
+    );
+}
+
+/* ------------------------------------------------------------------ *
+ * State 2 — create a vault
+ * ------------------------------------------------------------------ */
+
+function OpenCard({
+    busy,
+    home,
+    onBack,
+    onBrowse,
+    onOpen,
+    recents,
+}: {
+    busy: boolean;
+    home: null | string;
+    onBack: () => void;
+    onBrowse: () => void;
+    onOpen: (path: string) => void;
+    recents: readonly { name: string; path: string }[];
+}) {
+    const tracked = useTrackedVaults(recents);
+
+    return (
+        <>
+            {recents.length > 0 && (
+                <div className="mt-[22px] flex flex-col gap-px overflow-hidden rounded-xl border border-border">
+                    {recents.map((recent) => (
+                        <button
+                            className="flex cursor-pointer items-start gap-[11px] border-b border-border-soft bg-surface2 px-[15px] py-[13px] text-left font-[inherit] hover:bg-hover"
+                            disabled={busy}
+                            key={recent.path}
+                            onClick={() => onOpen(recent.path)}
+                            type="button"
+                        >
+                            <span className="mt-[2px] inline-flex text-text3">
+                                <SettingsIcon name="folder" size={17} sw={1.7} />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                                <span className="block text-body-lg font-semibold">
+                                    {recent.name}
+                                </span>
+                                <span className="mt-[3px] block truncate font-mono text-label text-text3">
+                                    {tildePath(recent.path, home)}
+                                </span>
+                            </span>
+                            <span
+                                className={cn(
+                                    'mt-[2px] flex-none rounded-full px-2 py-[3px] text-caption font-[620] tracking-[.03em]',
+                                    tracked[recent.path]
+                                        ? 'bg-type-task-bg text-type-task-fg'
+                                        : 'bg-sel text-text3',
+                                )}
+                            >
+                                {tracked[recent.path] ? 'Git' : 'Plain'}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            <button
+                className={cn(GHOST_BUTTON, 'mt-4')}
+                disabled={busy}
+                onClick={onBrowse}
+                type="button"
+            >
+                Browse for a folder…
+            </button>
+            <button className={QUIET_BUTTON} disabled={busy} onClick={onBack} type="button">
+                Back
+            </button>
         </>
     );
+}
+
+/* ------------------------------------------------------------------ *
+ * State 3 — open an existing vault
+ * ------------------------------------------------------------------ */
+
+function PickCard({ onEnter }: { onEnter: (lane: Lane) => void }) {
+    return (
+        <>
+            <div className="mt-[22px] mb-[18px] h-px bg-border-soft" />
+            <div className="flex flex-col gap-[9px]">
+                {LANES.map((lane, index) => (
+                    <button
+                        className={cn(
+                            'flex w-full cursor-pointer items-start gap-[13px] rounded-xl border px-[14px] py-[13px] text-left font-[inherit] hover:border-accent-border hover:bg-surface2',
+                            // The design rests on the first lane, which is the one
+                            // most people want.
+                            index === 0 ? 'border-border bg-surface2' : 'border-border bg-surface',
+                        )}
+                        key={lane.title}
+                        onClick={() => onEnter(lane)}
+                        type="button"
+                    >
+                        <span
+                            className={cn(
+                                'inline-flex h-[38px] w-[38px] flex-none items-center justify-center rounded-10',
+                                lane.chip,
+                            )}
+                        >
+                            <SettingsIcon name={lane.icon} size={18} sw={1.7} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                            <span className="block text-subhead font-[620]">{lane.title}</span>
+                            <span className="mt-[2px] block text-body leading-[1.45] text-text3">
+                                {lane.body}
+                            </span>
+                        </span>
+                        <span className="mt-[9px] inline-flex text-dash">
+                            <SettingsIcon name="chevronRight" size={15} sw={1.7} />
+                        </span>
+                    </button>
+                ))}
+            </div>
+            <p className="mt-5 mb-0 text-center text-body leading-[1.5] text-faint">
+                New to Lore?{' '}
+                <a className="text-text2 no-underline hover:text-text" href="#guide">
+                    Read the vault primer ↗
+                </a>
+            </p>
+        </>
+    );
+}
+
+/**
+ * Which recent folders are already Git repositories, so the rows can say so.
+ *
+ * Answered by looking for `.git` on disk rather than by remembering what Lore
+ * itself set up: a vault the user put under version control on their own is
+ * tracked too, and the row would otherwise lie about it.
+ */
+function useTrackedVaults(recents: readonly { path: string }[]): Record<string, boolean> {
+    const [tracked, setTracked] = useState<Record<string, boolean>>({});
+
+    const paths = recents.map((r) => r.path).join('\n');
+
+    useEffect(() => {
+        let live = true;
+        void (async () => {
+            const entries = await Promise.all(
+                paths
+                    .split('\n')
+                    .filter(Boolean)
+                    .map(async (path) => [path, await isVaultTracked(path)] as const),
+            );
+            if (live) setTracked(Object.fromEntries(entries));
+        })();
+        return () => {
+            live = false;
+        };
+    }, [paths]);
+
+    return tracked;
 }

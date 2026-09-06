@@ -13,7 +13,6 @@ import { SettingsIcon, type SettingsIconName } from '../common/settingsGlyphs';
 import { ICON_BUTTON } from './controls';
 import {
     AboutPane,
-    AccountPane,
     CalendarPane,
     CapturePane,
     FocusPane,
@@ -21,7 +20,7 @@ import {
     KeysPane,
     LookPane,
     NotifPane,
-    SyncPane,
+    VaultPane,
 } from './panes';
 
 /** A pane entry in the left rail. */
@@ -37,12 +36,11 @@ interface PaneDef {
 
 const PANES: PaneDef[] = [
     { Body: GeneralPane, icon: 'gear', id: 'general', label: 'General' },
-    { Body: AccountPane, icon: 'user', id: 'account', label: 'Account' },
+    { Body: VaultPane, icon: 'folder', id: 'vault', label: 'Vault' },
     { Body: LookPane, icon: 'palette', id: 'look', label: 'Look & Feel' },
     { Body: KeysPane, icon: 'keyboard', id: 'keys', label: 'Keyboard Shortcuts' },
     { Body: NotifPane, icon: 'bell', id: 'notif', label: 'Notifications' },
     { Body: CapturePane, icon: 'sparkle', id: 'capture', label: 'Capture & AI' },
-    { Body: SyncPane, icon: 'cloud', id: 'sync', label: 'Sync' },
     { Body: FocusPane, icon: 'timer', id: 'focus', label: 'Focus & Timer' },
     { Body: CalendarPane, icon: 'calendar', id: 'cal', label: 'Calendar' },
     { Body: AboutPane, icon: 'info', id: 'about', label: 'About' },

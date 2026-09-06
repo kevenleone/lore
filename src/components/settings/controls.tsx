@@ -65,7 +65,7 @@ export function KeyCap({ children }: { children: ReactNode }) {
     );
 }
 
-/** Outlined action button (Sync now, Change plan, Reveal in Finder…). */
+/** Outlined action button (Reveal in Finder, Export as Markdown…). */
 export function PillButton({
     children,
     className,

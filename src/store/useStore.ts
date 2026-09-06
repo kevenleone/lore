@@ -17,12 +17,12 @@ import { formatTime } from '../lib/calendar';
 import { primeChime } from '../lib/focusChime';
 import { ensureNotificationPermission, notifyIntervalEnd } from '../lib/focusNotify';
 import { nextPhase, phaseSeconds, remainingSeconds } from '../lib/focusTimer';
+import { initVaultGit } from '../lib/vaultGit';
 import { broadcastWorkspaceChange, pickWorkspaceFolder, rememberWorkspace } from '../lib/workspace';
 import { loadPersisted, savePersisted } from './persisted';
 import { SEED_CHAT, SEED_COLLECTIONS, SEED_ITEMS } from './seed';
 import {
     type Accent,
-    type Auth,
     type ChatMessage,
     type Collection,
     type Durations,
@@ -41,6 +41,7 @@ import {
     type SettingsPane,
     type SortOrder,
     type Switches,
+    type VaultSetup,
     type View,
     type ViewMode,
 } from './types';
@@ -78,7 +79,6 @@ interface StoreState {
     addComment: (id: string, body: string) => Promise<void>;
     addTag: (id: string, tag: string) => Promise<void>;
     aiAssist: boolean;
-    auth: Auth;
     bumpDuration: (key: keyof Durations, delta: number) => void;
     /**
      * True while the in-window capture drawer is open. The floating capture
@@ -118,7 +118,12 @@ interface StoreState {
     expandOpenItem: () => void;
     /** Filter-bar state, applied on top of `view` and `search`. */
     filters: Filters;
-    finishOnboarding: (mode: 'account' | 'anonymous', email?: string) => void;
+    /**
+     * Opens the vault the user picked and dismisses the sheet. Resolves to false
+     * when the folder could not be opened, in which case the sheet stays up with
+     * `workspaceError` explaining why.
+     */
+    finishOnboarding: (setup: VaultSetup) => Promise<boolean>;
     /** The running (or paused) focus interval — `Lore Settings` frames 1e/1f. */
     focus: FocusState;
     /** True while the full Focus surface (frame 1f) covers the window. */
@@ -171,7 +176,6 @@ interface StoreState {
     removeTag: (id: string, tag: string) => Promise<void>;
 
     renameItemFile: (id: string, stem: string) => Promise<void>;
-    requestMagicLink: (email: string) => void;
     /** Puts the current interval back to its full length, still paused. */
     resetFocusInterval: () => void;
     /** Item id → ISO time it sits at on the calendar. */
@@ -211,7 +215,6 @@ interface StoreState {
     settingsPane: SettingsPane;
     setViewMode: (mode: ViewMode) => void;
     sidebarVisible: boolean;
-    signOut: () => void;
     /** Ends the current interval early and moves to the next one. */
     skipFocusInterval: () => void;
 
@@ -450,17 +453,10 @@ function persist(
         migratedAt?: null | string;
     } & Pick<
         StoreState,
-        | 'auth'
-        | 'focusSessions'
-        | 'onboarded'
-        | 'prefs'
-        | 'recentWorkspaces'
-        | 'schedule'
-        | 'workspacePath'
+        'focusSessions' | 'onboarded' | 'prefs' | 'recentWorkspaces' | 'schedule' | 'workspacePath'
     >,
 ): void {
     savePersisted({
-        auth: s.auth,
         focusSessions: s.focusSessions,
         migratedAt: s.migratedAt ?? persisted.migratedAt,
         onboarded: s.onboarded,
@@ -575,7 +571,6 @@ export const useStore = create<StoreState>((set, get) => ({
         await get().updateItem(id, { tags: [...item.tags, clean] });
     },
     aiAssist: true,
-    auth: persisted.auth,
     bumpDuration(key, delta) {
         set((s) => ({
             prefs: {
@@ -658,13 +653,43 @@ export const useStore = create<StoreState>((set, get) => ({
 
     filters: EMPTY_FILTERS,
 
-    finishOnboarding(mode, email) {
-        const auth: Auth =
-            mode === 'account'
-                ? { email: email ?? get().auth.email, mode, name: get().auth.name }
-                : { email: null, mode, name: null };
-        set({ auth, onboarded: true });
+    async finishOnboarding({ git, path, starter }) {
+        set({ workspaceError: null });
+
+        if (path !== null && path !== get().workspacePath) {
+            await get().switchWorkspace(path);
+            // The switch rolls the path back and records why, so a folder Lore
+            // cannot read leaves the sheet up rather than dropping the user into
+            // an empty window.
+            if (get().workspaceError) return false;
+        }
+
+        // Only ever into a vault that came up empty — writing the sample library
+        // over someone's existing notes would be unforgivable.
+        if (starter && get().items.length === 0) {
+            try {
+                await seedDefaultVault();
+                await get().refresh();
+            } catch (e) {
+                console.error('lore: could not write the starter vault', e);
+            }
+        }
+
+        if (git && path !== null) {
+            try {
+                await initVaultGit(path);
+            } catch (e) {
+                // The vault is open and usable; only the tracking failed, so say so
+                // rather than refusing the whole setup.
+                set({
+                    workspaceError: `The vault opened, but Git could not be set up: ${e instanceof Error ? e.message : String(e)}`,
+                });
+            }
+        }
+
+        set({ onboarded: true });
         persist(get());
+        return true;
     },
     focus: {
         endsAt: null,
@@ -717,7 +742,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     onboarded: persisted.onboarded,
 
-    onboardingStep: 'signin',
+    onboardingStep: 'pick',
     openAs: null,
     openCapture() {
         set({ captureOpen: true, focusPopoverOpen: false });
@@ -762,11 +787,6 @@ export const useStore = create<StoreState>((set, get) => ({
         if (!repo.renameItem) return;
         await repo.renameItem(id, stem);
         await get().refresh();
-    },
-
-    requestMagicLink(email) {
-        // No mail is sent yet — the waiting card is the whole behaviour for now.
-        set((s) => ({ auth: { ...s.auth, email }, onboardingStep: 'magic' }));
     },
 
     resetFocusInterval() {
@@ -902,12 +922,6 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     sidebarVisible: true,
-
-    signOut() {
-        // Drops the account but keeps the local vault and every preference.
-        set({ auth: { email: null, mode: 'anonymous', name: null } });
-        persist(get());
-    },
 
     skipFocusInterval() {
         finishInterval(get, set, 'skipped');
