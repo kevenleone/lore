@@ -46,9 +46,9 @@ jobs:
               with:
                   ref: ${{ inputs.ref }}
 
+            # No version pin: the action reads packageManager from package.json,
+            # which must stay the only place the pnpm version is declared.
             - uses: pnpm/action-setup@v4
-              with:
-                  version: 10
 
             - uses: actions/setup-node@v4
               with:
@@ -115,9 +115,9 @@ jobs:
                     patchelf \
                     rpm
 
+            # No version pin: the action reads packageManager from package.json,
+            # which must stay the only place the pnpm version is declared.
             - uses: pnpm/action-setup@v4
-              with:
-                  version: 10
 
             - uses: actions/setup-node@v4
               with:
@@ -166,9 +166,9 @@ jobs:
               with:
                   ref: ${{ inputs.ref }}
 
+            # No version pin: the action reads packageManager from package.json,
+            # which must stay the only place the pnpm version is declared.
             - uses: pnpm/action-setup@v4
-              with:
-                  version: 10
 
             - uses: actions/setup-node@v4
               with:
