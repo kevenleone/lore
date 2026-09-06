@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.1.1](https://github.com/kevenleone/lore/compare/v1.1.0...v1.1.1) (2026-09-06)
+
+
+### Refactoring
+
+* build the settings controls from Tailwind utilities ([7d638b3](https://github.com/kevenleone/lore/commit/7d638b3a520ae24ab9337149d4ed861191bfff52))
+* draw Ask Lore with Tailwind and retire util.css.ts ([9fcf8cc](https://github.com/kevenleone/lore/commit/9fcf8ccf05fdeba467336f6857755bf920a82aa1))
+* draw the calendar, onboarding and app shell with Tailwind ([e0d93de](https://github.com/kevenleone/lore/commit/e0d93de3927939e3f839761336864bbaee7a97a3))
+* draw the capture surfaces with Tailwind ([6595ebf](https://github.com/kevenleone/lore/commit/6595ebfebdb1bf9f112f28335516847b02ac2aaf))
+* draw the cards, banners and view pickers with Tailwind ([988b174](https://github.com/kevenleone/lore/commit/988b1747bbf7114e7bac83d3a3394eec54a6f2d4))
+* draw the detail pane and collections with Tailwind ([7e46c6b](https://github.com/kevenleone/lore/commit/7e46c6b15623dd7c716470fcab3b0a9d57b40404))
+* draw the focus surfaces with Tailwind ([9742758](https://github.com/kevenleone/lore/commit/9742758224a26aade7f482e83a4671affa071c87))
+* draw the list, table and their rows with Tailwind ([7082907](https://github.com/kevenleone/lore/commit/7082907d3478de904ef992c3b4e90b9d7444653a))
+* draw the properties panel with Tailwind ([69cccdb](https://github.com/kevenleone/lore/commit/69cccdb6ed4b8ed9d5417fdeb35f024c32ac083e))
+* draw the settings sheet and panes with Tailwind ([b57cc08](https://github.com/kevenleone/lore/commit/b57cc08133d34fcdac7134376cb8babd0b71f62c))
+* draw the sidebar with Tailwind utilities ([48d5116](https://github.com/kevenleone/lore/commit/48d5116a3fe4ac37ad9854b13b1399bebebbdd94))
+* draw the title bar, filters and workspace switcher with Tailwind ([13a6e2f](https://github.com/kevenleone/lore/commit/13a6e2fc8913315422c71630aa086d302009f05c))
+* draw the tooltip with Tailwind utilities ([fdd93c1](https://github.com/kevenleone/lore/commit/fdd93c12889ea41743660a191a40edffe8004cff))
+* paint the theme tokens onto the document root ([c6ca5ec](https://github.com/kevenleone/lore/commit/c6ca5ec14aedde2dc03314a8ca64d6e9f0e5f85e))
+
+
+### Documentation
+
+* add screenshots rendered from the design sources ([9245b35](https://github.com/kevenleone/lore/commit/9245b3514dfe05f49abee7e6a564c00f82254040))
+* record the styling conventions Tailwind introduced ([6c51484](https://github.com/kevenleone/lore/commit/6c514849bba431eb4e43493ec3b4296267e9693f))
+* rewrite the README around the design mocks ([310831a](https://github.com/kevenleone/lore/commit/310831a1459814d9eb1c9a5be633f305d368ddcb))
+
+
+### Build System
+
+* set up Tailwind CSS v4 over the existing theme tokens ([bf5dd70](https://github.com/kevenleone/lore/commit/bf5dd70ec58f960bf0c3d6590784fd2c41dd72f7))
+
 ## [1.1.0](https://github.com/kevenleone/lore/compare/v1.0.0...v1.1.0) (2026-09-05)
 
 ### Features
