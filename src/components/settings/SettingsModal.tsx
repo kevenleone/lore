@@ -6,9 +6,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { SettingsPane } from '../../store/types';
 
+import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 import { LoreMark } from '../common/LoreMark';
 import { SettingsIcon, type SettingsIconName } from '../common/settingsGlyphs';
+import { ICON_BUTTON } from './controls';
 import {
     AboutPane,
     AccountPane,
@@ -21,7 +23,10 @@ import {
     NotifPane,
     SyncPane,
 } from './panes';
-import { iconButton, navItem, scrim, sheet } from './SettingsModal.css';
+
+/** A pane entry in the left rail. */
+const NAV_ITEM =
+    'text-body-lg flex w-full cursor-pointer items-center gap-[10px] rounded-lg border-none bg-transparent px-2 py-[6px] text-left font-[inherit] hover:bg-hover';
 
 interface PaneDef {
     Body: () => React.JSX.Element;
@@ -72,133 +77,71 @@ export function SettingsModal() {
 
     return (
         <>
-            <div className={scrim} onClick={close} />
+            <div
+                className="absolute inset-0 z-20 animate-scrim-fade-in bg-scrim backdrop-blur-[2px]"
+                onClick={close}
+            />
             <div
                 aria-label="Lore settings"
                 aria-modal="true"
-                className={sheet}
+                // The centring stays in `transform` so the entrance keyframe,
+                // which animates the same property, replaces it rather than
+                // composing with a `translate` utility.
+                className="absolute top-1/2 left-1/2 z-30 flex h-[min(700px,calc(100%-64px))] w-[min(1000px,calc(100%-64px))] [transform:translate(-50%,-50%)] animate-sheet-in overflow-hidden rounded-2xl border border-border bg-surface text-text shadow-sheet"
                 ref={sheetRef}
                 role="dialog"
                 tabIndex={-1}
             >
                 {/* ---- rail ---- */}
-                <div
-                    style={{
-                        background: 'var(--surface2, #fafafa)',
-                        borderRight: '1px solid var(--border, #ececef)',
-                        display: 'flex',
-                        flex: 'none',
-                        flexDirection: 'column',
-                        padding: '14px 10px 10px',
-                        width: 232,
-                    }}
-                >
-                    <label
-                        style={{
-                            alignItems: 'center',
-                            background: 'var(--surface3, #f1f1f3)',
-                            borderRadius: 8,
-                            color: 'var(--text3, #9a9aa5)',
-                            display: 'flex',
-                            fontSize: 12.5,
-                            gap: 8,
-                            marginBottom: 12,
-                            padding: '6px 9px',
-                        }}
-                    >
+                <div className="flex w-[232px] flex-none flex-col border-r border-border bg-surface2 px-[10px] pt-[14px] pb-[10px]">
+                    <label className="mb-3 flex items-center gap-2 rounded-lg bg-surface3 px-[9px] py-[6px] text-body text-text3">
                         <SettingsIcon name="search" size={14} sw={1.9} />
                         <input
+                            className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-text outline-none"
                             onChange={(e) => setFilter(e.target.value)}
                             placeholder="Search settings"
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'var(--text, #1a1a1f)',
-                                flex: 1,
-                                font: 'inherit',
-                                minWidth: 0,
-                                outline: 'none',
-                            }}
                             value={filter}
                         />
                     </label>
 
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 1,
-                            overflow: 'auto',
-                        }}
-                    >
+                    <div className="flex flex-col gap-px overflow-auto">
                         {visible.map((p) => {
                             const on = p.id === pane;
                             return (
                                 <button
                                     aria-current={on ? 'page' : undefined}
-                                    className={navItem}
+                                    className={cn(
+                                        NAV_ITEM,
+                                        on
+                                            ? 'bg-accent-tint font-semibold text-accent'
+                                            : 'text-text2',
+                                    )}
                                     key={p.id}
                                     onClick={() => setPane(p.id)}
-                                    style={
-                                        on
-                                            ? {
-                                                  background: 'var(--ac-tint, #eeeef2)',
-                                                  color: 'var(--ac)',
-                                                  fontWeight: 600,
-                                              }
-                                            : { color: 'var(--text2, #3b3b44)' }
-                                    }
                                     type="button"
                                 >
                                     <span
-                                        style={{
-                                            alignItems: 'center',
-                                            borderRadius: 7,
-                                            display: 'flex',
-                                            flex: 'none',
-                                            height: 24,
-                                            justifyContent: 'center',
-                                            width: 24,
-                                            ...(on
-                                                ? { background: 'var(--ac)', color: '#fff' }
-                                                : {
-                                                      background: 'var(--surface3, #f1f1f3)',
-                                                      color: 'var(--text2, #6b6b76)',
-                                                  }),
-                                        }}
+                                        className={cn(
+                                            'flex h-6 w-6 flex-none items-center justify-center rounded-7',
+                                            on ? 'bg-accent text-white' : 'bg-surface3 text-text2',
+                                        )}
                                     >
                                         <SettingsIcon name={p.icon} size={15} />
                                     </span>
-                                    <span style={{ flex: 1 }}>{p.label}</span>
+                                    <span className="flex-1">{p.label}</span>
                                 </button>
                             );
                         })}
                         {visible.length === 0 && (
-                            <div
-                                style={{
-                                    color: 'var(--text3, #9a9aa5)',
-                                    fontSize: 12.5,
-                                    padding: '8px 9px',
-                                }}
-                            >
+                            <div className="px-[9px] py-2 text-body text-text3">
                                 No matching settings.
                             </div>
                         )}
                     </div>
 
-                    <div style={{ flex: 1, minHeight: 12 }} />
-                    <div
-                        style={{
-                            alignItems: 'center',
-                            borderTop: '1px solid var(--border, #ececef)',
-                            color: 'var(--text3, #9a9aa5)',
-                            display: 'flex',
-                            fontSize: 11.5,
-                            gap: 9,
-                            padding: '9px 10px',
-                        }}
-                    >
-                        <span style={{ color: 'var(--text2, #6b6b76)', display: 'inline-flex' }}>
+                    <div className="min-h-3 flex-1" />
+                    <div className="flex items-center gap-[9px] border-t border-border px-[10px] py-[9px] text-label text-text3">
+                        <span className="inline-flex text-text2">
                             <LoreMark size={13} />
                         </span>
                         <span>Lore 2.4.1 · up to date</span>
@@ -206,33 +149,22 @@ export function SettingsModal() {
                 </div>
 
                 {/* ---- pane ---- */}
-                <div style={{ display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0 }}>
-                    <div
-                        style={{
-                            alignItems: 'center',
-                            borderBottom: '1px solid var(--border, #ececef)',
-                            display: 'flex',
-                            flex: 'none',
-                            gap: 12,
-                            height: 52,
-                            padding: '0 20px 0 26px',
-                        }}
-                    >
-                        <span style={{ fontSize: 14, fontWeight: 680, letterSpacing: '-.005em' }}>
+                <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="flex h-[52px] flex-none items-center gap-3 border-b border-border pr-5 pl-[26px]">
+                        <span className="text-title font-[680] tracking-[-.005em]">
                             {active.label}
                         </span>
                         <button
                             aria-label="Close settings"
-                            className={iconButton}
+                            className={cn(ICON_BUTTON, 'ml-auto h-7 w-7')}
                             onClick={close}
-                            style={{ marginLeft: 'auto' }}
                             type="button"
                         >
                             <SettingsIcon name="close" size={17} sw={1.9} />
                         </button>
                     </div>
 
-                    <div style={{ flex: 1, overflow: 'auto', padding: '24px 26px 30px' }}>
+                    <div className="flex-1 overflow-auto px-[26px] pt-6 pb-[30px]">
                         <active.Body />
                     </div>
                 </div>
