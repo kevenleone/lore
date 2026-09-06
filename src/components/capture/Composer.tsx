@@ -284,19 +284,16 @@ export function Composer({
                 title: text.slice(0, 80),
             };
         } else if (tab === 'image') {
-            // The store answers with the reference the item holds: a vault-relative
-            // path for the vault, an object URL for the in-memory preview.
-            const repository = getRepository();
             const source = imageSource === 'url' ? imageUrl.trim() : null;
-            const image = source
-                ? await repository.uploadAttachmentFromUrl?.(source)
-                : await repository.uploadAttachment?.(file!);
+            // A URL is kept as a live reference — the item points at the original,
+            // so it reflects whatever the source is showing now. An uploaded file
+            // has no origin to point at, so the store copies it into the vault and
+            // answers with the reference the item holds instead.
+            const image = source ?? (await getRepository().uploadAttachment?.(file!));
             item = {
                 ...item,
                 image,
                 title: text || (source ? urlFileName(source) : file!.name),
-                // The page it came from, kept for provenance — the file itself now
-                // lives in the vault.
                 url: source ?? undefined,
             };
         } else {
@@ -606,8 +603,8 @@ export function Composer({
                                     <div className="mt-3 flex flex-col items-center gap-[9px] rounded-xl border border-border p-[14px] text-center">
                                         {imageUrlBroken ? (
                                             <span className="text-body text-text3">
-                                                Nothing loads from that URL yet — Lore will still
-                                                try to fetch it when you save.
+                                                Nothing loads from that URL. Saving still keeps the
+                                                link, but check it resolves.
                                             </span>
                                         ) : (
                                             <img
@@ -621,8 +618,8 @@ export function Composer({
                                     </div>
                                 )}
                                 <div className="mt-2 text-body text-text3">
-                                    The file is downloaded into your vault, so it outlives the page
-                                    it came from.
+                                    Kept as a live reference — the image updates with the source,
+                                    and goes with it if the page disappears.
                                 </div>
                             </>
                         ) : (

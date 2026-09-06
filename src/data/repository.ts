@@ -59,13 +59,6 @@ export interface KnowledgeRepository {
      * for the in-memory store. Optional: only stores that own files can do it.
      */
     uploadAttachment?(file: File): Promise<string>;
-
-    /**
-     * The same, for a file the user addressed by URL rather than picked: the
-     * store fetches it and keeps a copy, so the item does not depend on the
-     * page it came from staying up.
-     */
-    uploadAttachmentFromUrl?(url: string): Promise<string>;
 }
 export type NewCollection = Omit<Collection, 'id'>;
 
