@@ -14,6 +14,35 @@ XXX
 
 XXX
 
+## Styling
+
+Tailwind CSS v4 is the only styling system. `src/theme/tailwind.css` is the
+single stylesheet, imported by all three window entries. Two things differ from
+a stock Tailwind setup, both deliberately:
+
+- **Every length is px, not rem.** `--spacing` is `4px`, so the numbers are
+  Tailwind's own — `p-4` is still 16px and snippets from the docs translate —
+  but they resolve in px. `App.tsx` scales the whole tree with `zoom` for the
+  Text size preference, and px keeps that arithmetic predictable. (Measured in
+  Chromium, `rem` and `px` do scale identically under `zoom`; the px choice
+  means the answer never has to be re-derived for another engine.) The type and
+  radius scales are px for the same reason.
+- **There is no `dark:` variant, and there must not be one.** The colour tokens
+  in `src/theme/tokens.ts` flip wholesale between `LIGHT_TOKENS` and
+  `DARK_TOKENS`, so `bg-surface` is already correct in both themes. If you need
+  a colour that differs by theme, add the key to **both** token maps and bridge
+  it in the `@theme inline` block — do not reach for `dark:`.
+
+Other conventions:
+
+- Compose conditional classes with `cn()` from `src/lib/cn.ts`, never by
+  hand-building a ternary that repeats the base classes.
+- Colours come from tokens (`bg-surface`, `text-text2`, `border-border`) with no
+  hex fallback — `theme/bootstrap.ts` paints the tokens before the first render.
+- An inline `style` is right only for values a class genuinely cannot carry: a
+  computed length, a colour the user picked, or a layout constant shared with JS.
+  Say which in a comment.
+
 ## Code Style
 
 - `interface` for object shapes, `type` for unions/aliases
