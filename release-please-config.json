@@ -24,6 +24,5 @@
             "package-name": "lore",
             "release-type": "node"
         }
-    },
-    "separate-pull-requests": false
+    }
 }
