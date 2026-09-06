@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.2.0](https://github.com/kevenleone/lore/compare/v1.1.1...v1.2.0) (2026-09-06)
+
+
+### Features
+
+* **capture:** add an Upload/URL switch to the Image tab ([071c240](https://github.com/kevenleone/lore/commit/071c240416012111feb29088a8ac70065f65aac6))
+* **capture:** copy captured files into the vault's attachments folder ([e71ad8e](https://github.com/kevenleone/lore/commit/e71ad8e71d073cbf728e8714c07a2b4a907ff641))
+* **capture:** download an image addressed by URL into the vault ([eaf2330](https://github.com/kevenleone/lore/commit/eaf2330dc4f585ae7c3908eda90ba2c4fb19fa9e))
+* **capture:** give tasks a deadline, a priority and subtasks ([f9ff2ad](https://github.com/kevenleone/lore/commit/f9ff2ad875a5b3d8e7846b3a3500cab48531038f))
+* **capture:** keep an image URL as a live reference ([d1768f3](https://github.com/kevenleone/lore/commit/d1768f3431469dd989de21e28d533812c2041425))
+* **capture:** make the Task and Image forms real ([9605ba5](https://github.com/kevenleone/lore/commit/9605ba55bc7f58b647b95ea1d808a477e1270bd5))
+* **capture:** open the capture drawer with CMD+N ([7cb96d3](https://github.com/kevenleone/lore/commit/7cb96d3e80f258cf4a18807504c3dd810d3283b5))
+* **kb:** show a task's subtasks as a checklist you can tick ([24dbee3](https://github.com/kevenleone/lore/commit/24dbee31d4a18422ee09a394771646ec4b365f8f))
+* **onboarding:** replace sign-in with a vault picker ([a6925c7](https://github.com/kevenleone/lore/commit/a6925c707216e9fb641d7f9389689f026f1d376a))
+* **vault:** add optional Git tracking for a vault folder ([b95ade0](https://github.com/kevenleone/lore/commit/b95ade09cc27bc8e57d3454891efb59fadb1bc47))
+
+
+### Bug Fixes
+
+* **kb:** keep checkbox markers out of the list preview ([7026c3f](https://github.com/kevenleone/lore/commit/7026c3ffc453918e94acebef212fb111ca3c5ed5))
+* **kb:** read the body of a freshly captured item ([d411e78](https://github.com/kevenleone/lore/commit/d411e7827fa354613bde4af27e8fc78352d51a27))
+
+
+### Refactoring
+
+* **capture:** drop the decorative checkbox beside the task title ([48b58c1](https://github.com/kevenleone/lore/commit/48b58c1cb2346ddecbf21426ed8b5c26db9f19b3))
+
 ## [1.1.1](https://github.com/kevenleone/lore/compare/v1.1.0...v1.1.1) (2026-09-06)
 
 
