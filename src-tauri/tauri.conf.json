@@ -54,7 +54,9 @@
     },
     "bundle": {
         "active": true,
-        "externalBin": ["binaries/lore-sidecar"],
+        "externalBin": [
+            "binaries/lore-sidecar"
+        ],
         "icon": [
             "icons/32x32.png",
             "icons/128x128.png",
@@ -66,5 +68,5 @@
     },
     "identifier": "com.lore.app",
     "productName": "Lore",
-    "version": "1.1.0"
+    "version": "1.1.1"
 }

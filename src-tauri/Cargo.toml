@@ -1,6 +1,6 @@
 [package]
 name = "lore"
-version = "1.1.0" # x-release-please-version
+version = "1.1.1" # x-release-please-version
 description = "Lore — offline-first knowledge base with quick capture"
 authors = ["you"]
 edition = "2021"
