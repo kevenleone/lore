@@ -151,6 +151,12 @@
     --animate-scrim-fade-in: fade-in 140ms ease;
     --animate-sheet-in: sheet-in 160ms cubic-bezier(0.2, 0.8, 0.3, 1);
 
+    /* Ported from Focus.css.ts. */
+    --animate-pop-in: pop-in 140ms cubic-bezier(0.2, 0.8, 0.3, 1);
+    --animate-pop-in-fast: pop-in 120ms cubic-bezier(0.2, 0.8, 0.3, 1);
+    --animate-surface-in: fade-in 160ms ease;
+    --animate-ring-pulse: ring-pulse 1.8s ease-in-out infinite;
+
     @keyframes drawer-in {
         from {
             transform: translateX(100%);
@@ -194,6 +200,25 @@
         to {
             opacity: 1;
             transform: translate(-50%, -50%) scale(1);
+        }
+    }
+    @keyframes pop-in {
+        from {
+            opacity: 0;
+            transform: translateY(-6px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    @keyframes ring-pulse {
+        0%,
+        100% {
+            opacity: 0.55;
+        }
+        50% {
+            opacity: 1;
         }
     }
     @keyframes tooltip-in {

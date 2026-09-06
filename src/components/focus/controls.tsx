@@ -4,30 +4,28 @@
 // They take props rather than reading the store: the popover also runs inside
 // the menu-bar window, which has no store to read.
 
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 import type { Item } from '../../store/types';
 
+import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 import { Check, Pause, Play, Plus, Restart, SkipForward, Stop } from '../common/glyphs';
-import { queueRow, transportButton } from './Focus.css';
+
+/** Transport and queue-add buttons share this shell. */
+const TRANSPORT_BUTTON =
+    'inline-flex cursor-pointer items-center justify-center rounded-11 border-none bg-surface3 p-0 font-[inherit] text-text2 hover:brightness-[.96]';
 
 /** The small round "+" that puts a captured item into the queue. */
 export function AddToQueueButton({ label, onClick }: { label: string; onClick: () => void }) {
     return (
         <button
             aria-label={label}
-            className={transportButton}
+            className={cn(
+                TRANSPORT_BUTTON,
+                'h-5 w-5 flex-none rounded-md border border-border bg-transparent',
+            )}
             onClick={onClick}
-            style={{
-                background: 'transparent',
-                border: '1px solid var(--border, #e4e4ea)',
-                borderRadius: 6,
-                color: 'var(--text2, #6b6b76)',
-                flex: 'none',
-                height: 20,
-                width: 20,
-            }}
             title={label}
             type="button"
         >
@@ -37,17 +35,10 @@ export function AddToQueueButton({ label, onClick }: { label: string; onClick: (
 }
 
 /** Small uppercase caption used above every block in both surfaces. */
-export function FocusLabel({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+export function FocusLabel({ children, className }: { children: ReactNode; className?: string }) {
     return (
         <div
-            style={{
-                color: 'var(--faint, #a8a8b0)',
-                fontSize: 10.5,
-                fontWeight: 680,
-                letterSpacing: '.07em',
-                textTransform: 'uppercase',
-                ...style,
-            }}
+            className={cn('text-micro font-[680] tracking-[.07em] text-faint uppercase', className)}
         >
             {children}
         </div>
@@ -71,63 +62,45 @@ export function QueueRow({ item }: { item: Item }) {
 
     return (
         <div
-            className={queueRow}
+            className={cn(
+                'flex items-start gap-[10px] rounded-10 border px-[11px] py-[10px] hover:bg-hover',
+                active
+                    ? 'border-accent-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,.05)]'
+                    : 'border-transparent bg-transparent',
+                done ? 'cursor-default' : 'cursor-pointer',
+            )}
             onClick={() => !done && setFocusTask(item.id)}
-            style={{
-                background: active ? 'var(--surface, #fff)' : 'transparent',
-                border: `1px solid ${active ? 'var(--ac-border, #dedee5)' : 'transparent'}`,
-                cursor: done ? 'default' : 'pointer',
-                ...(active ? { boxShadow: '0 1px 3px rgba(0,0,0,.05)' } : null),
-            }}
         >
             <button
                 aria-checked={done}
                 aria-label={item.title}
+                className={cn(
+                    'mt-px flex h-[17px] w-[17px] flex-none cursor-pointer items-center justify-center rounded-5 border-[1.5px] p-0',
+                    done
+                        ? 'border-accent bg-accent text-white'
+                        : 'border-dash bg-transparent text-transparent',
+                )}
                 onClick={(e) => {
                     e.stopPropagation();
                     void updateItem(item.id, { flags: { ...item.flags, done: !done } });
                 }}
                 role="checkbox"
-                style={{
-                    alignItems: 'center',
-                    borderRadius: 5,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flex: 'none',
-                    height: 17,
-                    justifyContent: 'center',
-                    marginTop: 1,
-                    padding: 0,
-                    width: 17,
-                    ...(done
-                        ? {
-                              background: 'var(--ac)',
-                              border: '1.5px solid var(--ac)',
-                              color: '#fff',
-                          }
-                        : {
-                              background: 'transparent',
-                              border: '1.5px solid var(--dash, #d2d2dc)',
-                              color: 'transparent',
-                          }),
-                }}
                 type="button"
             >
                 <Check size={11} sw={3.2} />
             </button>
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="min-w-0 flex-1">
                 <div
-                    style={{
-                        fontSize: 12.5,
-                        lineHeight: 1.4,
-                        ...(done
-                            ? { color: 'var(--text3, #9a9aa5)', textDecoration: 'line-through' }
-                            : { color: 'var(--text, #1a1a1f)', fontWeight: active ? 620 : 560 }),
-                    }}
+                    className={cn(
+                        'text-body leading-[1.4]',
+                        done
+                            ? 'text-text3 line-through'
+                            : cn('text-text', active ? 'font-[620]' : 'font-[560]'),
+                    )}
                 >
                     {item.title}
                 </div>
-                <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 11, marginTop: 2 }}>
+                <div className="mt-[2px] text-caption text-text3">
                     {[collection, item.flags.today && !done ? 'due today' : null]
                         .filter(Boolean)
                         .join(' · ') || 'Task'}
@@ -148,16 +121,13 @@ export function SessionPips({
     total: number;
 }) {
     return (
-        <span style={{ alignItems: 'center', display: 'flex', gap: 5 }}>
+        <span className="flex items-center gap-[5px]">
             {Array.from({ length: total }, (_, i) => (
                 <span
+                    className={cn('rounded-full', i < done ? 'bg-accent' : 'bg-surface3')}
                     key={i}
-                    style={{
-                        background: i < done ? 'var(--ac)' : 'var(--surface3, #e6e6ea)',
-                        borderRadius: '50%',
-                        height: size,
-                        width: size,
-                    }}
+                    // The pip size is a prop: the two surfaces draw it differently.
+                    style={{ height: size, width: size }}
                 />
             ))}
         </span>
@@ -187,10 +157,10 @@ export function Transport({
     size?: number;
 }) {
     return (
-        <div style={{ alignItems: 'center', display: 'flex', gap: 9 }}>
+        <div className="flex items-center gap-[9px]">
             <button
                 aria-label="Start this interval over"
-                className={transportButton}
+                className={TRANSPORT_BUTTON}
                 onClick={onReset}
                 style={{ height: size, width: size }}
                 type="button"
@@ -198,17 +168,13 @@ export function Transport({
                 <Restart size={size * 0.4} />
             </button>
             <button
-                className={transportButton}
+                className={cn(TRANSPORT_BUTTON, 'w-auto gap-2 bg-accent font-[620] text-white')}
                 onClick={onToggle}
+                // Everything here scales with the `size` prop.
                 style={{
-                    background: 'var(--ac)',
-                    color: '#fff',
                     fontSize: size * 0.355,
-                    fontWeight: 620,
-                    gap: 8,
                     height: size,
                     padding: `0 ${size * 0.53}px`,
-                    width: 'auto',
                 }}
                 type="button"
             >
@@ -217,7 +183,7 @@ export function Transport({
             </button>
             <button
                 aria-label="Skip to the next interval"
-                className={transportButton}
+                className={TRANSPORT_BUTTON}
                 onClick={onSkip}
                 style={{ height: size, width: size }}
                 type="button"
@@ -227,7 +193,7 @@ export function Transport({
             {onStop && (
                 <button
                     aria-label="Stop the session"
-                    className={transportButton}
+                    className={TRANSPORT_BUTTON}
                     onClick={onStop}
                     style={{ height: size, width: size }}
                     title="Stop the session"
