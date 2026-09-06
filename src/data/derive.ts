@@ -4,6 +4,8 @@
 
 import type { Item } from '../store/types';
 
+import { parseSubtasks, stripSubtasks } from '../lib/subtasks';
+
 const SNIPPET_MAX = 200;
 
 /** Best-effort hostname, mirroring `hostOf` in lib/captureActions. */
@@ -24,7 +26,22 @@ export function deriveSnippet(
     item: Pick<Item, 'body' | 'description' | 'type' | 'url'>,
 ): string | undefined {
     const body = item.body?.trim();
-    if (body) return body.split('\n')[0].slice(0, SNIPPET_MAX);
+    if (body) {
+        // A task's body may open with its checklist. Previewing that verbatim put
+        // raw `- [ ]` markers in the list, so the prose wins and the checklist
+        // falls back to a count.
+        const prose = stripSubtasks(body);
+        if (prose) return prose.split('\n')[0].slice(0, SNIPPET_MAX);
+        const subtasks = parseSubtasks(body);
+        if (subtasks.length) {
+            const done = subtasks.filter((t) => t.done).length;
+            return `${done}/${subtasks.length} subtasks · ${subtasks[0].text}`.slice(
+                0,
+                SNIPPET_MAX,
+            );
+        }
+        return body.split('\n')[0].slice(0, SNIPPET_MAX);
+    }
     if (item.type === 'link') return item.description?.trim() || item.url || undefined;
     return undefined;
 }
