@@ -5,15 +5,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import type { Subtask } from '../../lib/subtasks';
 import type { OpenMode } from '../../store/types';
 
 import { useAssetSrc } from '../../lib/assetSrc';
 import { cn } from '../../lib/cn';
 import { formatSavedDate } from '../../lib/format';
+import { joinBody, parseSubtasks, stripSubtasks, toggleSubtask } from '../../lib/subtasks';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
 import { collectionFor, detailFlags, relatedItems, viewTitle } from '../../store/views';
-import { Back, Close, Expand, External, Globe, StarOutline, Trash } from '../common/glyphs';
+import { Back, Check, Close, Expand, External, Globe, StarOutline, Trash } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 import { AiSummaryCard } from './AiSummaryCard';
 import { RelatedCards } from './RelatedCards';
@@ -60,6 +62,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const [bodyDraft, setBodyDraft] = useState('');
     const [addingTag, setAddingTag] = useState(false);
     const [tagDraft, setTagDraft] = useState('');
+    const [subtaskDraft, setSubtaskDraft] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(false);
     const tagInputRef = useRef<HTMLInputElement>(null);
     // Above the `!sel` return: a hook cannot run conditionally.
@@ -70,6 +73,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
         setEditingBody(false);
         setAddingTag(false);
         setTagDraft('');
+        setSubtaskDraft('');
         setConfirmDelete(false);
     }, [sel?.id]);
 
@@ -96,8 +100,31 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     // editor for it is a separate change — this keeps today's behaviour exactly.
     const bodyField: 'body' | 'description' | null =
         flags.detIsCode || flags.detIsText ? 'body' : sel.type === 'link' ? 'description' : null;
+
+    // A task's body is prose *plus* a `- [ ]` checklist. The two get separate
+    // editors — free text here, checkboxes below — so the prose textarea never
+    // shows raw Markdown the checklist UI is already responsible for.
+    const isTask = sel.type === 'task';
+    const subtasks = isTask ? parseSubtasks(sel.body) : [];
+    const prose = isTask ? stripSubtasks(sel.body) : (sel.body ?? '');
     const bodyValue =
-        bodyField === 'body' ? sel.body : bodyField === 'description' ? sel.description : undefined;
+        bodyField === 'body'
+            ? isTask
+                ? prose
+                : sel.body
+            : bodyField === 'description'
+              ? sel.description
+              : undefined;
+
+    /** Every checklist edit rewrites the whole body, prose included. */
+    const writeSubtasks = (next: readonly Subtask[]) => {
+        void updateItem(sel.id, { body: joinBody(prose, next) || undefined });
+    };
+    const commitSubtask = () => {
+        const text = subtaskDraft.trim();
+        setSubtaskDraft('');
+        if (text) writeSubtasks([...subtasks, { done: false, text }]);
+    };
 
     const commitTitle = () => {
         const next = titleDraft.trim();
@@ -112,7 +139,10 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const commitBody = () => {
         setEditingBody(false);
         if (bodyDraft === (bodyValue ?? '')) return;
-        if (bodyField === 'body') void updateItem(sel.id, { body: bodyDraft });
+        if (bodyField === 'body')
+            void updateItem(sel.id, {
+                body: (isTask ? joinBody(bodyDraft, subtasks) : bodyDraft) || undefined,
+            });
         else if (bodyField === 'description') void updateItem(sel.id, { description: bodyDraft });
     };
 
@@ -352,11 +382,14 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     </pre>
                 ) : flags.detIsText ? (
                     <p
-                        className="mt-[18px] mb-1 cursor-text text-title-lg leading-[1.65] text-text2"
+                        className={cn(
+                            'mt-[18px] mb-1 cursor-text text-title-lg leading-[1.65]',
+                            bodyValue ? 'text-text2' : 'text-faint',
+                        )}
                         onClick={startBody}
                         title="Click to edit"
                     >
-                        {sel.body}
+                        {bodyValue || 'Add content…'}
                     </p>
                 ) : sel.type === 'link' ? (
                     <p
@@ -370,6 +403,82 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                         {sel.description || 'Add a description…'}
                     </p>
                 ) : null}
+
+                {/* subtasks — a task's checklist, editable in place */}
+                {isTask && (
+                    <div className="mt-6">
+                        <div className="flex items-center gap-[9px]">
+                            <span className={SECTION_LABEL}>Subtasks</span>
+                            {subtasks.length > 0 && (
+                                <span className="font-mono text-caption text-text3">
+                                    {subtasks.filter((t) => t.done).length}/{subtasks.length}
+                                </span>
+                            )}
+                        </div>
+                        <div className="mt-[10px] flex flex-col gap-[2px]">
+                            {subtasks.map((subtask, index) => (
+                                <div
+                                    className="group flex items-start gap-[10px] rounded-7 px-2 py-[5px] hover:bg-hover"
+                                    key={`${index}-${subtask.text}`}
+                                >
+                                    <span
+                                        className={cn(
+                                            'mt-[3px] flex h-[16px] w-[16px] flex-none cursor-pointer items-center justify-center rounded-[5px] border',
+                                            subtask.done
+                                                ? 'border-accent bg-accent text-white'
+                                                : 'border-border text-transparent',
+                                        )}
+                                        onClick={() =>
+                                            writeSubtasks(toggleSubtask(subtasks, index))
+                                        }
+                                    >
+                                        <Check size={11} sw={3} />
+                                    </span>
+                                    <span
+                                        className={cn(
+                                            'flex-1 cursor-pointer text-title leading-[1.5]',
+                                            subtask.done ? 'text-text3 line-through' : 'text-text2',
+                                        )}
+                                        onClick={() =>
+                                            writeSubtasks(toggleSubtask(subtasks, index))
+                                        }
+                                    >
+                                        {subtask.text}
+                                    </span>
+                                    <span
+                                        aria-label="Remove subtask"
+                                        className="mt-[3px] flex-none cursor-pointer text-faint opacity-0 group-hover:opacity-100"
+                                        onClick={() =>
+                                            writeSubtasks(subtasks.filter((_, j) => j !== index))
+                                        }
+                                    >
+                                        <Close size={13} sw={2} />
+                                    </span>
+                                </div>
+                            ))}
+                            <div className="flex items-center gap-[10px] px-2 py-[5px]">
+                                <span className="h-[16px] w-[16px] flex-none rounded-[5px] border border-dashed border-dash" />
+                                <input
+                                    className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title text-text outline-none placeholder:text-text3"
+                                    onBlur={commitSubtask}
+                                    onChange={(e) => setSubtaskDraft(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        // Enter adds the subtask and keeps the field
+                                        // focused, so a list goes in without reaching
+                                        // for the mouse between lines.
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            commitSubtask();
+                                        }
+                                        if (e.key === 'Escape') setSubtaskDraft('');
+                                    }}
+                                    placeholder="Add a subtask…"
+                                    value={subtaskDraft}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {flags.showSummary && sel.summary && (
                     <AiSummaryCard
