@@ -180,6 +180,17 @@ export class VaultRepository implements KnowledgeRepository {
         return path;
     }
 
+    /** Downloads the URL into `attachments/` and answers with the stored path. */
+    async uploadAttachmentFromUrl(url: string): Promise<string> {
+        const { path } = await this.call(() =>
+            request<{ path: string }>('/attachments/from-url', {
+                body: JSON.stringify({ url }),
+                method: 'POST',
+            }),
+        );
+        return path;
+    }
+
     /**
      * Every call goes through here so a restarted engine recovers on its own.
      *

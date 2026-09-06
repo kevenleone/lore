@@ -124,6 +124,11 @@ export class MemoryRepository implements KnowledgeRepository {
         return URL.createObjectURL(file);
     }
 
+    /** Nothing to download into, so the preview just points at the URL. */
+    async uploadAttachmentFromUrl(url: string): Promise<string> {
+        return url;
+    }
+
     private live(): Item[] {
         // `snippet` / `domain` are derived, never stored — same rule as every
         // other repository, so tests exercise the real shape.

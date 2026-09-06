@@ -6,6 +6,7 @@ import type { Item } from '@lore/types';
 import { Elysia } from 'elysia';
 
 import { fetchLinkMetadata } from './linkMetadata';
+import { fetchRemoteFile, RemoteFileError } from './remoteFile';
 import { ATTACHMENTS_DIR, hashColor } from './vault';
 import { Workspace, WorkspaceNotOpen } from './workspace';
 
@@ -189,6 +190,34 @@ export function routes(workspace: Workspace) {
                 const path = await workspace.current.vault.writeAttachment(file.name, bytes);
                 set.status = 201;
                 return { path };
+            })
+
+            /**
+             * The same thing for a file the user addressed by URL: the engine
+             * downloads it and stores a copy, so an image captured from the web
+             * survives the page it came from going away.
+             */
+            .post('/attachments/from-url', async ({ body, set }) => {
+                const { url } = body as { url?: string };
+                if (!url?.trim()) {
+                    set.status = 400;
+                    return { error: 'url_required' };
+                }
+                try {
+                    const file = await fetchRemoteFile(url);
+                    const path = await workspace.current.vault.writeAttachment(
+                        file.filename,
+                        file.bytes,
+                    );
+                    set.status = 201;
+                    return { path };
+                } catch (e) {
+                    if (!(e instanceof RemoteFileError)) throw e;
+                    // The user typed this URL; the reason is what tells them what
+                    // to fix, so it goes back rather than a bare 500.
+                    set.status = 422;
+                    return { error: e.reason };
+                }
             })
 
             /**
