@@ -130,7 +130,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                     <Plus />
                     Capture
                     <span className="rounded-5 bg-white/22 px-[6px] py-px font-mono text-micro">
-                        ⌥Space
+                        ⌘N
                     </span>
                 </span>
             </div>

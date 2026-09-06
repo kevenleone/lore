@@ -63,13 +63,18 @@ export default function App() {
         void hydrate();
     }, [hydrate]);
 
-    // The two window shortcuts the new surfaces claim, as listed in Settings →
-    // Keyboard Shortcuts. ⌘K lives with the search box it focuses.
+    // The window shortcuts the new surfaces claim, as listed in Settings →
+    // Keyboard Shortcuts. ⌘K lives with the search box it focuses. ⌘N is the
+    // in-window capture: ⌥Space is the global one, for when Lore is behind
+    // something else, and Rust routes it here as `capture:toggle`.
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.altKey && e.shiftKey && e.code === 'KeyF') {
                 e.preventDefault();
                 toggleFocus();
+            } else if ((e.metaKey || e.ctrlKey) && !e.altKey && e.code === 'KeyN') {
+                e.preventDefault();
+                toggleCapture();
             } else if ((e.metaKey || e.ctrlKey) && e.altKey && e.code === 'KeyI') {
                 e.preventDefault();
                 toggleProperties();
@@ -86,7 +91,15 @@ export default function App() {
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [captureOpen, closeCapture, closeOpenItem, setMainView, toggleFocus, toggleProperties]);
+    }, [
+        captureOpen,
+        closeCapture,
+        closeOpenItem,
+        setMainView,
+        toggleCapture,
+        toggleFocus,
+        toggleProperties,
+    ]);
 
     // Paint the token set for the effective theme, and repaint when the OS
     // switches while Appearance is on Auto.

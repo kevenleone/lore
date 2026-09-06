@@ -469,7 +469,7 @@ const SHORTCUT_GROUPS = [
             { keys: ['⌘', '⇧', 'C'], label: 'Share' },
             { keys: ['↑', '↓'], label: 'Next / previous item' },
             { keys: ['⌘', '3'], label: 'Calendar view' },
-            { keys: ['⌥', 'Space'], label: 'Capture drawer' },
+            { keys: ['⌘', 'N'], label: 'Capture drawer' },
         ],
     },
 ];
