@@ -384,20 +384,23 @@ export function Composer({
                 )}
                 {tab === 'task' && (
                     <>
+                        {/*
+                         * No checkbox beside the title: nothing can tick it — you
+                         * do not capture a task that is already done — and next to
+                         * the real ones under Subtasks a decorative one reads as a
+                         * control. The tab's own icon already says "task".
+                         */}
                         <div className="rounded-xl border border-border p-[14px]">
-                            <div className="flex items-start gap-[11px]">
-                                <span className="mt-px h-5 w-5 flex-none rounded-md border-2 border-border" />
-                                <input
-                                    className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title-lg text-text outline-none"
-                                    onChange={(e) => setValue(e.target.value)}
-                                    onKeyDown={onFieldKeyDown}
-                                    placeholder="What needs doing?"
-                                    ref={setFieldRef}
-                                    value={value}
-                                />
-                            </div>
+                            <input
+                                className="w-full border-none bg-transparent font-[inherit] text-title-lg text-text outline-none"
+                                onChange={(e) => setValue(e.target.value)}
+                                onKeyDown={onFieldKeyDown}
+                                placeholder="What needs doing?"
+                                ref={setFieldRef}
+                                value={value}
+                            />
                             <textarea
-                                className="mt-[9px] min-h-[52px] w-full resize-y border-none bg-transparent pl-[31px] font-[inherit] text-body-lg leading-[1.55] text-text2 outline-none"
+                                className="mt-[9px] min-h-[52px] w-full resize-y border-none bg-transparent font-[inherit] text-body-lg leading-[1.55] text-text2 outline-none"
                                 onChange={(e) => setDescription(e.target.value)}
                                 placeholder="Add a description…"
                                 value={description}
