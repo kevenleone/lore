@@ -8,12 +8,12 @@
 
 import type { FocusSnapshot } from './focusSnapshot';
 
+import { cn } from '../../lib/cn';
 import { elapsedFraction, formatClock } from '../../lib/focusTimer';
 import { ChevronDown, Expand } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 import { SettingsIcon } from '../common/settingsGlyphs';
 import { FocusLabel, SessionPips, Transport } from './controls';
-import { expandButton } from './Focus.css';
 import { completedSessions, phaseLabel } from './focusSnapshot';
 
 const RADIUS = 58;
@@ -46,7 +46,7 @@ export function FocusPanelBody({
         <>
             <button
                 aria-label="Open Focus mode"
-                className={expandButton}
+                className="absolute top-2 right-2 z-1 flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-7 border-none bg-transparent p-0 text-faint hover:bg-hover"
                 onClick={actions.onOpenFocusMode}
                 title="Open Focus mode"
                 type="button"
@@ -54,18 +54,11 @@ export function FocusPanelBody({
                 <Expand size={14} />
             </button>
 
-            <div
-                style={{
-                    alignItems: 'center',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '22px 20px 18px',
-                }}
-            >
-                <div style={{ height: 132, position: 'relative', width: 132 }}>
+            <div className="flex flex-col items-center px-5 pt-[22px] pb-[18px]">
+                <div className="relative h-[132px] w-[132px]">
                     <svg
+                        className="block [transform:rotate(-90deg)]"
                         height={132}
-                        style={{ display: 'block', transform: 'rotate(-90deg)' }}
                         viewBox="0 0 132 132"
                         width={132}
                     >
@@ -78,6 +71,7 @@ export function FocusPanelBody({
                             strokeWidth="9"
                         />
                         <circle
+                            className="transition-[stroke-dasharray] duration-300 ease-linear"
                             cx="66"
                             cy="66"
                             fill="none"
@@ -86,56 +80,29 @@ export function FocusPanelBody({
                             strokeDasharray={`${CIRCUMFERENCE - swept} ${CIRCUMFERENCE}`}
                             strokeLinecap="round"
                             strokeWidth="9"
-                            style={{ transition: 'stroke-dasharray .3s linear' }}
                         />
                     </svg>
-                    <div
-                        style={{
-                            alignItems: 'center',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 3,
-                            inset: 0,
-                            justifyContent: 'center',
-                            position: 'absolute',
-                        }}
-                    >
-                        <span
-                            style={{
-                                fontSize: 30,
-                                fontVariantNumeric: 'tabular-nums',
-                                fontWeight: 600,
-                                letterSpacing: '-.03em',
-                                lineHeight: 1,
-                            }}
-                        >
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-[3px]">
+                        <span className="text-[30px] leading-none font-semibold tracking-[-.03em] tabular-nums">
                             {formatClock(remainingSec)}
                         </span>
-                        <span
-                            style={{
-                                color: 'var(--text3, #9a9aa5)',
-                                fontSize: 11,
-                                fontWeight: 640,
-                                letterSpacing: '.06em',
-                                textTransform: 'uppercase',
-                            }}
-                        >
+                        <span className="text-caption font-[640] tracking-[.06em] text-text3 uppercase">
                             {phaseLabel(snapshot.phase)}
                         </span>
                     </div>
                 </div>
 
-                <div style={{ alignItems: 'center', display: 'flex', gap: 5, marginTop: 16 }}>
+                <div className="mt-4 flex items-center gap-[5px]">
                     <SessionPips
                         done={completedSessions(snapshot)}
                         total={snapshot.totalSessions}
                     />
-                    <span style={{ color: 'var(--text3, #9a9aa5)', fontSize: 11.5, marginLeft: 6 }}>
+                    <span className="ml-[6px] text-label text-text3">
                         Session {snapshot.sessionIndex} of {snapshot.totalSessions}
                     </span>
                 </div>
 
-                <div style={{ marginTop: 18 }}>
+                <div className="mt-[18px]">
                     <Transport
                         onReset={actions.onReset}
                         onSkip={actions.onSkip}
@@ -146,124 +113,49 @@ export function FocusPanelBody({
                 </div>
             </div>
 
-            <div
-                style={{ borderTop: '1px solid var(--border-soft, #f0f0f2)', padding: '13px 16px' }}
-            >
+            <div className="border-t border-border-soft px-4 py-[13px]">
                 <FocusLabel>Working on</FocusLabel>
                 {snapshot.taskTitle ? (
                     <button
                         // The design's chevron opens a picker; until there is one
                         // this steps through the queue.
+                        className={cn(
+                            'mt-[9px] flex w-full items-center gap-[10px] border-none bg-transparent p-0 text-left font-[inherit] text-[inherit]',
+                            canCycle ? 'cursor-pointer' : 'cursor-default',
+                        )}
                         onClick={actions.onNextTask}
-                        style={{
-                            alignItems: 'center',
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'inherit',
-                            cursor: canCycle ? 'pointer' : 'default',
-                            display: 'flex',
-                            font: 'inherit',
-                            gap: 10,
-                            marginTop: 9,
-                            padding: 0,
-                            textAlign: 'left',
-                            width: '100%',
-                        }}
                         type="button"
                     >
-                        <span
-                            style={{
-                                alignItems: 'center',
-                                background: 'var(--type-task-bg, #e8f2ec)',
-                                borderRadius: 8,
-                                color: 'var(--type-task-fg, #4d855f)',
-                                display: 'flex',
-                                flex: 'none',
-                                height: 28,
-                                justifyContent: 'center',
-                                width: 28,
-                            }}
-                        >
+                        <span className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-type-task-bg text-type-task-fg">
                             <Icon name="task" size={15} />
                         </span>
-                        <span style={{ flex: 1, minWidth: 0 }}>
-                            <span
-                                style={{
-                                    display: 'block',
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
+                        <span className="min-w-0 flex-1">
+                            <span className="block truncate text-body-lg font-semibold">
                                 {snapshot.taskTitle}
                             </span>
-                            <span
-                                style={{
-                                    color: 'var(--text3, #9a9aa5)',
-                                    display: 'block',
-                                    fontSize: 11.5,
-                                    marginTop: 1,
-                                }}
-                            >
+                            <span className="mt-px block text-label text-text3">
                                 {snapshot.taskMeta ?? 'Task'}
                             </span>
                         </span>
                         {canCycle && (
-                            <span style={{ color: 'var(--faint, #c4c4cc)', display: 'flex' }}>
+                            <span className="flex text-faint">
                                 <ChevronDown size={15} />
                             </span>
                         )}
                     </button>
                 ) : (
-                    <div
-                        style={{
-                            color: 'var(--text3, #9a9aa5)',
-                            fontSize: 12.5,
-                            lineHeight: 1.5,
-                            marginTop: 8,
-                        }}
-                    >
+                    <div className="mt-2 text-body leading-[1.5] text-text3">
                         Nothing in Today yet — flag a task and it shows up here.
                     </div>
                 )}
             </div>
 
-            <div
-                style={{
-                    alignItems: 'center',
-                    background: 'var(--surface2, #fafafa)',
-                    borderTop: '1px solid var(--border-soft, #f0f0f2)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    padding: '10px 16px',
-                }}
-            >
-                <span
-                    style={{
-                        alignItems: 'center',
-                        color: 'var(--text3, #9a9aa5)',
-                        display: 'inline-flex',
-                        fontSize: 11.5,
-                        gap: 7,
-                    }}
-                >
+            <div className="flex items-center justify-between border-t border-border-soft bg-surface2 px-4 py-[10px]">
+                <span className="inline-flex items-center gap-[7px] text-label text-text3">
                     <SettingsIcon name="info" size={13} sw={1.8} />
                     Do Not Disturb is {snapshot.dnd ? 'on' : 'off'}
                 </span>
-                <span
-                    style={{
-                        background: 'var(--kbd-bg, #fff)',
-                        border: '1px solid var(--kbd-border, #e2e2e7)',
-                        borderBottomWidth: 2,
-                        borderRadius: 5,
-                        color: 'var(--text2, #6b6b76)',
-                        fontFamily: 'ui-monospace,Menlo,monospace',
-                        fontSize: 10.5,
-                        padding: '1px 6px',
-                    }}
-                >
+                <span className="rounded-5 border border-b-2 border-kbd-border bg-kbd-bg px-[6px] py-px font-mono text-micro text-text2">
                     ⌥⇧F
                 </span>
             </div>

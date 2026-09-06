@@ -5,7 +5,6 @@
 import { useEffect, useRef } from 'react';
 
 import { useStore } from '../../store/useStore';
-import { popover } from './Focus.css';
 import { FocusPanelBody } from './FocusPanelBody';
 import { useFocusSnapshot } from './useFocusSnapshot';
 
@@ -35,7 +34,10 @@ export function FocusPopover() {
     }, [close]);
 
     return (
-        <div className={popover} ref={ref}>
+        <div
+            className="absolute top-[52px] right-[14px] z-40 w-[332px] animate-pop-in overflow-hidden rounded-[15px] border border-border bg-surface shadow-float"
+            ref={ref}
+        >
             <FocusPanelBody
                 actions={{
                     onNextTask: cycleFocusTask,

@@ -14,8 +14,8 @@ import type { FocusSnapshot } from './focusSnapshot';
 
 import { loadPersisted } from '../../store/persisted';
 import { effectiveTheme, paintTheme } from '../../theme/tokens';
-import { PANEL_MARGIN, panelSurface, panelWindow } from './Focus.css';
 import { FocusPanelBody } from './FocusPanelBody';
+import { PANEL_MARGIN } from './layout';
 import { TICK_MS } from './useFocusTimer';
 
 const EMPTY: FocusSnapshot = {
@@ -154,9 +154,19 @@ export function FocusPanel() {
         })();
     }, []);
 
+    // The gap is padding on a wrapper that is only as tall as its contents, not a
+    // margin on the card: a margin inside the full-height `#root` adds to the
+    // document instead of fitting inside it, which made the popover scroll its
+    // own contents by exactly that gap.
     return (
-        <div className={panelWindow} ref={rootRef}>
-            <div className={panelSurface} ref={cardRef}>
+        <div className="h-auto w-full" ref={rootRef} style={{ padding: PANEL_MARGIN }}>
+            <div
+                // A popover is chrome, not a document: dragging across it should
+                // not leave half its labels selected. The shadow is kept inside
+                // PANEL_MARGIN on every side, offset included.
+                className="relative animate-pop-in-fast overflow-hidden rounded-[15px] border border-border bg-surface font-sans text-text shadow-[0_8px_24px_-6px_rgba(20,20,40,.38),0_2px_6px_rgba(0,0,0,.10)] select-none"
+                ref={cardRef}
+            >
                 <FocusPanelBody
                     actions={{
                         onNextTask: () => send('focus:next-task'),
