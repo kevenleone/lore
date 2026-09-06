@@ -613,7 +613,11 @@ export const useStore = create<StoreState>((set, get) => ({
     async createItem(input) {
         const item = await getRepository().createItem(input);
         await get().refresh();
-        set({ selectedId: item.id });
+        // `refresh` fills the list, whose rows carry no body. Selecting without
+        // also clearing and re-reading `detail` left the pane rendering the
+        // bodyless list row, so a captured note or task opened blank.
+        set({ detail: null, itemMeta: null, selectedId: item.id });
+        void get().loadDetail(item.id);
         return item;
     },
     cycleFocusTask() {
