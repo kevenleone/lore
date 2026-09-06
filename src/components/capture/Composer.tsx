@@ -9,19 +9,36 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { NewItem } from '../../data/repository';
-import type { Collection, ItemType } from '../../store/types';
+import type { Subtask } from '../../lib/subtasks';
+import type { Collection, ItemType, Priority } from '../../store/types';
 
 import { getRepository } from '../../data';
-import { hideCapture, hostOf, saveCapture } from '../../lib/captureActions';
+import { addDays } from '../../lib/calendar';
+import {
+    hideCapture,
+    hostOf,
+    lastCollectionId,
+    rememberCollectionId,
+    saveCapture,
+} from '../../lib/captureActions';
 import { cn } from '../../lib/cn';
 import { fetchLinkMetadata, type LinkMetadata } from '../../lib/linkMetadata';
-import { Check, ChevronDown, FileGlyph, Globe } from '../common/glyphs';
+import { joinBody } from '../../lib/subtasks';
+import { PRIORITIES } from '../../store/types';
+import { localDateKey } from '../../store/views';
+import { Calendar, Check, ChevronDown, Close, FileGlyph, Globe, Plus } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 
 export type CaptureChrome = 'drawer' | 'panel';
 
 export interface ComposerProps {
     chrome?: CaptureChrome;
+    /**
+     * Where to file a capture when the user has not chosen. The drawer passes
+     * the collection the sidebar is showing; the floating window has no sidebar
+     * to read, so it falls through to the last one used.
+     */
+    defaultCollectionId?: null | string;
     /**
      * Whether the surface has stopped moving and may take focus.
      *
@@ -47,10 +64,27 @@ const TABS: { label: string; type: ItemType }[] = [
     { label: 'Image', type: 'image' },
 ];
 
+const DEADLINES: { days: number; label: string }[] = [
+    { days: 0, label: 'Today' },
+    { days: 1, label: 'Tomorrow' },
+    { days: 7, label: 'Next week' },
+];
+
+const PRIORITY_LABELS: Record<Priority, string> = {
+    high: 'High',
+    low: 'Low',
+    normal: 'Normal',
+    urgent: 'Urgent',
+};
+
 const SECTION_LABEL = 'text-micro font-semibold tracking-[.05em] text-faint uppercase';
+const CHIP = 'cursor-pointer rounded-md px-[9px] py-[3px] text-caption';
+const CHIP_ON = 'bg-accent-tint font-semibold text-accent';
+const CHIP_OFF = 'bg-surface3 text-text2';
 
 export function Composer({
     chrome = 'panel',
+    defaultCollectionId = null,
     focusReady = true,
     onCancel = hideCapture,
     onSave,
@@ -62,11 +96,28 @@ export function Composer({
     const [addingTag, setAddingTag] = useState(false);
     const [tagDraft, setTagDraft] = useState('');
     const [collections, setCollections] = useState<Collection[]>([]);
-    const [collectionId, setCollectionId] = useState<string>('design');
+    const [collectionId, setCollectionId] = useState<string>(
+        () => defaultCollectionId ?? lastCollectionId() ?? '',
+    );
     const [collOpen, setCollOpen] = useState(false);
     const [error, setError] = useState<null | string>(null);
+    const [saving, setSaving] = useState(false);
     const [meta, setMeta] = useState<LinkMetadata | null>(null);
     const [fetching, setFetching] = useState(false);
+
+    // Task-only fields.
+    const [description, setDescription] = useState('');
+    const [dueAt, setDueAt] = useState('');
+    const [priority, setPriority] = useState<Priority>('normal');
+    const [today, setToday] = useState(false);
+    const [subtasks, setSubtasks] = useState<Subtask[]>([]);
+    const [subtaskDraft, setSubtaskDraft] = useState('');
+
+    // Image-only fields.
+    const [file, setFile] = useState<File | null>(null);
+    const [preview, setPreview] = useState<null | string>(null);
+    const [dragging, setDragging] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Fetch link metadata as the URL settles (link tab only).
     useEffect(() => {
@@ -92,14 +143,35 @@ export function Composer({
         };
     }, [value, tab]);
 
+    // Where a capture is filed by default: the surface's own answer (the
+    // sidebar's collection), then the last one used, then whatever exists.
     useEffect(() => {
         void getRepository()
             .listCollections()
             .then((c) => {
                 setCollections(c);
-                if (c.length && !c.find((x) => x.id === collectionId)) setCollectionId(c[0].id);
+                if (!c.length) return;
+                const has = (id: null | string): boolean => !!id && c.some((x) => x.id === id);
+                setCollectionId((current) => {
+                    if (has(current)) return current;
+                    if (has(defaultCollectionId)) return defaultCollectionId!;
+                    const last = lastCollectionId();
+                    return has(last) ? last! : c[0].id;
+                });
             });
-    }, []);
+    }, [defaultCollectionId]);
+
+    // The object URL is a live handle on the file; leaking one per picked image
+    // pins the whole blob in memory for as long as the window lives.
+    useEffect(() => {
+        if (!file) {
+            setPreview(null);
+            return;
+        }
+        const url = URL.createObjectURL(file);
+        setPreview(url);
+        return () => URL.revokeObjectURL(url);
+    }, [file]);
 
     const addTag = (raw: string) => {
         const t = raw.trim().replace(/^#/, '').toLowerCase();
@@ -108,6 +180,12 @@ export function Composer({
         if (t && !tags.includes(t)) setTags((a) => [...a, t]);
     };
     const removeTag = (t: string) => setTags((a) => a.filter((x) => x !== t));
+
+    const addSubtask = (raw: string) => {
+        const text = raw.trim();
+        setSubtaskDraft('');
+        if (text) setSubtasks((a) => [...a, { done: false, text }]);
+    };
 
     const activeCollection = collections.find((c) => c.id === collectionId) ?? null;
     const collRef = useRef<HTMLDivElement>(null);
@@ -135,20 +213,29 @@ export function Composer({
         return () => window.removeEventListener('mousedown', onDown);
     }, [collOpen]);
 
-    const canSave = useMemo(() => tab === 'image' || value.trim().length > 0, [tab, value]);
+    // An image capture *is* its file. The tab used to accept a bare title, which
+    // saved an item with no picture in it at all.
+    const canSave = useMemo(
+        () => (tab === 'image' ? !!file : value.trim().length > 0),
+        [tab, value, file],
+    );
 
     const save = async () => {
-        if (!canSave) return;
+        if (!canSave || saving) return;
         try {
             setError(null);
+            setSaving(true);
             await doSave();
+            rememberCollectionId(collectionId);
         } catch (e) {
             setError(e instanceof Error ? e.message : String(e));
+        } finally {
+            setSaving(false);
         }
     };
 
     // The footer promises ⏎, so the single-line fields honour it. The note and
-    // code textareas keep Enter for newlines.
+    // code textareas — and the task's description — keep Enter for newlines.
     const onFieldKeyDown = (e: React.KeyboardEvent) => {
         if (e.key !== 'Enter') return;
         e.preventDefault();
@@ -158,7 +245,7 @@ export function Composer({
     const doSave = async () => {
         const text = value.trim();
         let item: NewItem = {
-            collectionId,
+            collectionId: collectionId || undefined,
             flags: { inbox: true },
             related: [],
             tags: [...tags],
@@ -175,12 +262,29 @@ export function Composer({
                 title: meta?.title || host || text,
                 url: text,
             };
+        } else if (tab === 'task') {
+            const body = joinBody(description, subtasks);
+            item = {
+                ...item,
+                body: body || undefined,
+                dueAt: dueAt || undefined,
+                flags: { inbox: true, today },
+                priority: priority === 'normal' ? undefined : priority,
+                title: text.slice(0, 80),
+            };
         } else if (tab === 'image') {
-            item = { ...item, title: text || 'Untitled image' };
+            // The store answers with the reference the item holds: a vault-relative
+            // path for the vault, an object URL for the in-memory preview.
+            const image = await getRepository().uploadAttachment?.(file!);
+            item = { ...item, image, title: text || file!.name };
         } else {
             item = { ...item, body: text, title: text.split('\n')[0].slice(0, 80) };
         }
         await (onSave ? onSave(item) : saveCapture(item));
+    };
+
+    const pickFile = (picked: File | null | undefined) => {
+        if (picked) setFile(picked);
     };
 
     return (
@@ -279,17 +383,156 @@ export function Composer({
                     />
                 )}
                 {tab === 'task' && (
-                    <div className="flex items-start gap-[11px] rounded-xl border border-border p-[14px]">
-                        <span className="mt-px h-5 w-5 flex-none rounded-md border-2 border-border" />
-                        <input
-                            className="flex-1 border-none bg-transparent font-[inherit] text-title-lg text-text outline-none"
-                            onChange={(e) => setValue(e.target.value)}
-                            onKeyDown={onFieldKeyDown}
-                            placeholder="What needs doing?"
-                            ref={setFieldRef}
-                            value={value}
-                        />
-                    </div>
+                    <>
+                        <div className="rounded-xl border border-border p-[14px]">
+                            <div className="flex items-start gap-[11px]">
+                                <span className="mt-px h-5 w-5 flex-none rounded-md border-2 border-border" />
+                                <input
+                                    className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title-lg text-text outline-none"
+                                    onChange={(e) => setValue(e.target.value)}
+                                    onKeyDown={onFieldKeyDown}
+                                    placeholder="What needs doing?"
+                                    ref={setFieldRef}
+                                    value={value}
+                                />
+                            </div>
+                            <textarea
+                                className="mt-[9px] min-h-[52px] w-full resize-y border-none bg-transparent pl-[31px] font-[inherit] text-body-lg leading-[1.55] text-text2 outline-none"
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Add a description…"
+                                value={description}
+                            />
+                        </div>
+
+                        <div className="mt-[14px] flex flex-wrap items-center gap-[7px]">
+                            <span className={SECTION_LABEL}>Deadline</span>
+                            {DEADLINES.map((choice) => {
+                                const day = dayFromNow(choice.days);
+                                return (
+                                    <span
+                                        className={cn(CHIP, dueAt === day ? CHIP_ON : CHIP_OFF)}
+                                        key={choice.label}
+                                        onClick={() => setDueAt(dueAt === day ? '' : day)}
+                                    >
+                                        {choice.label}
+                                    </span>
+                                );
+                            })}
+                            <span className="inline-flex items-center gap-[5px] rounded-md bg-surface3 px-[9px] py-[3px] text-caption text-text2">
+                                <Calendar size={12} />
+                                <input
+                                    className="border-none bg-transparent font-[inherit] text-caption text-text2 outline-none"
+                                    onChange={(e) => setDueAt(e.target.value)}
+                                    type="date"
+                                    value={dueAt}
+                                />
+                            </span>
+                            {dueAt && (
+                                <span
+                                    className="inline-flex cursor-pointer items-center text-faint"
+                                    onClick={() => setDueAt('')}
+                                    title="Clear the deadline"
+                                >
+                                    <Close size={13} sw={2} />
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="mt-[11px] flex flex-wrap items-center gap-[7px]">
+                            <span className={SECTION_LABEL}>Priority</span>
+                            {PRIORITIES.map((p) => (
+                                <span
+                                    className={cn(CHIP, priority === p ? CHIP_ON : CHIP_OFF)}
+                                    key={p}
+                                    onClick={() => setPriority(p)}
+                                >
+                                    {PRIORITY_LABELS[p]}
+                                </span>
+                            ))}
+                        </div>
+
+                        <div className="mt-[11px] flex items-center gap-2">
+                            <span className={SECTION_LABEL}>Focus</span>
+                            <span
+                                className={cn(
+                                    'inline-flex cursor-pointer items-center gap-[6px] rounded-md px-[9px] py-[3px] text-caption',
+                                    today ? CHIP_ON : CHIP_OFF,
+                                )}
+                                onClick={() => setToday((t) => !t)}
+                            >
+                                <span
+                                    className={cn(
+                                        'flex h-[13px] w-[13px] items-center justify-center rounded-[4px] border',
+                                        today
+                                            ? 'border-accent bg-accent text-white'
+                                            : 'border-dash text-transparent',
+                                    )}
+                                >
+                                    <Check size={9} sw={3} />
+                                </span>
+                                Add to Today
+                            </span>
+                        </div>
+
+                        <div className="mt-[11px] flex flex-wrap items-start gap-2">
+                            <span className={cn(SECTION_LABEL, 'mt-[5px]')}>Subtasks</span>
+                            <div className="flex min-w-[180px] flex-1 flex-col gap-[5px]">
+                                {subtasks.map((subtask, index) => (
+                                    <span
+                                        className="inline-flex items-center gap-[7px] text-body-lg text-text2"
+                                        key={`${index}-${subtask.text}`}
+                                    >
+                                        <span
+                                            className={cn(
+                                                'flex h-[15px] w-[15px] flex-none cursor-pointer items-center justify-center rounded-[4px] border',
+                                                subtask.done
+                                                    ? 'border-accent bg-accent text-white'
+                                                    : 'border-border text-transparent',
+                                            )}
+                                            onClick={() =>
+                                                setSubtasks((a) =>
+                                                    a.map((x, j) =>
+                                                        j === index ? { ...x, done: !x.done } : x,
+                                                    ),
+                                                )
+                                            }
+                                        >
+                                            <Check size={10} sw={3} />
+                                        </span>
+                                        <span
+                                            className={cn(
+                                                subtask.done && 'line-through opacity-60',
+                                            )}
+                                        >
+                                            {subtask.text}
+                                        </span>
+                                        <span
+                                            className="cursor-pointer text-faint"
+                                            onClick={() =>
+                                                setSubtasks((a) => a.filter((_, j) => j !== index))
+                                            }
+                                        >
+                                            <Close size={12} sw={2} />
+                                        </span>
+                                    </span>
+                                ))}
+                                <input
+                                    className="w-full border-none bg-transparent font-[inherit] text-body-lg text-text outline-none placeholder:text-text3"
+                                    onChange={(e) => setSubtaskDraft(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        // Enter here means "this subtask", not "the
+                                        // capture" — the footer's ⏎ must not fire.
+                                        if (e.key !== 'Enter') return;
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        addSubtask(subtaskDraft);
+                                    }}
+                                    placeholder="+ subtask"
+                                    value={subtaskDraft}
+                                />
+                            </div>
+                        </div>
+                    </>
                 )}
                 {tab === 'code' && (
                     <textarea
@@ -301,24 +544,62 @@ export function Composer({
                     />
                 )}
                 {tab === 'image' && (
-                    <div className="flex flex-col items-center gap-[9px] rounded-xl border-[1.5px] border-dashed border-dash p-[34px] text-center">
-                        <span className="flex h-11 w-11 items-center justify-center rounded-11 bg-type-image-bg text-type-image-fg">
-                            <FileGlyph />
-                        </span>
-                        <div className="text-title font-[560] text-text2">
-                            Drag files &amp; images here
-                        </div>
-                        <div className="text-body text-text3">
-                            or click to browse — PNG, PDF, screenshots
+                    <>
+                        <div
+                            className={cn(
+                                'flex cursor-pointer flex-col items-center gap-[9px] rounded-xl border-[1.5px] border-dashed p-[34px] text-center',
+                                dragging ? 'border-accent bg-accent-tint' : 'border-dash',
+                            )}
+                            onClick={() => fileInputRef.current?.click()}
+                            onDragLeave={() => setDragging(false)}
+                            onDragOver={(e) => {
+                                // Without this the browser navigates to the file
+                                // instead of letting the drop land here.
+                                e.preventDefault();
+                                setDragging(true);
+                            }}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                setDragging(false);
+                                pickFile(e.dataTransfer.files[0]);
+                            }}
+                        >
+                            {preview && file?.type.startsWith('image/') ? (
+                                <img
+                                    alt={file.name}
+                                    className="max-h-[150px] w-full rounded-lg object-contain"
+                                    draggable={false}
+                                    src={preview}
+                                />
+                            ) : (
+                                <span className="flex h-11 w-11 items-center justify-center rounded-11 bg-type-image-bg text-type-image-fg">
+                                    <FileGlyph />
+                                </span>
+                            )}
+                            <div className="text-title font-[560] text-text2">
+                                {file ? file.name : 'Drag files & images here'}
+                            </div>
+                            <div className="text-body text-text3">
+                                {file
+                                    ? 'Click to choose a different file'
+                                    : 'or click to browse — PNG, PDF, screenshots'}
+                            </div>
                         </div>
                         <input
-                            className="mt-2 w-[70%] rounded-lg border border-border px-[10px] py-[6px] text-center font-[inherit] text-body-lg outline-none"
+                            accept="image/*,.pdf"
+                            className="hidden"
+                            onChange={(e) => pickFile(e.target.files?.[0])}
+                            ref={fileInputRef}
+                            type="file"
+                        />
+                        <input
+                            className="mt-3 w-full rounded-lg border border-border px-[10px] py-[6px] font-[inherit] text-body-lg text-text outline-none"
                             onChange={(e) => setValue(e.target.value)}
                             onKeyDown={onFieldKeyDown}
                             placeholder="Title (optional)"
                             value={value}
                         />
-                    </div>
+                    </>
                 )}
 
                 {/* tags */}
@@ -362,7 +643,8 @@ export function Composer({
                             className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-dashed border-dash bg-transparent px-[7px] py-[2px] font-mono text-caption text-text3"
                             onClick={() => setAddingTag(true)}
                         >
-                            + tag
+                            <Plus size={9} sw={2.4} />
+                            tag
                         </span>
                     )}
                 </div>
@@ -438,11 +720,13 @@ export function Composer({
                     <span
                         className={cn(
                             'inline-flex items-center gap-[7px] rounded-lg bg-accent px-[14px] py-[7px] text-body-lg font-semibold text-white',
-                            canSave ? 'cursor-pointer opacity-100' : 'cursor-default opacity-55',
+                            canSave && !saving
+                                ? 'cursor-pointer opacity-100'
+                                : 'cursor-default opacity-55',
                         )}
                         onClick={() => void save()}
                     >
-                        Save
+                        {saving ? 'Saving…' : 'Save'}
                         <span className="rounded-5 bg-white/22 px-[6px] py-0 font-mono text-caption">
                             ⏎
                         </span>
@@ -451,4 +735,9 @@ export function Composer({
             </div>
         </div>
     );
+}
+
+/** A day the deadline chips jump to, as `YYYY-MM-DD` in the user's own zone. */
+function dayFromNow(days: number): string {
+    return localDateKey(addDays(new Date(), days).toISOString());
 }
