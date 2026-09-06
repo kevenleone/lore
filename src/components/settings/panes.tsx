@@ -5,6 +5,7 @@
 
 import type { Appearance } from '../../theme/tokens';
 
+import { cn } from '../../lib/cn';
 import {
     type Accent,
     ACCENT_NAMES,
@@ -21,8 +22,27 @@ import { useStore } from '../../store/useStore';
 import { LoreMark } from '../common/LoreMark';
 import { SettingsIcon, type SettingsIconName } from '../common/settingsGlyphs';
 import { CALENDAR_ACCOUNTS } from './calendarAccounts';
-import { Chooser, KeyCap, PillButton, Row, SectionLabel, Segmented, Toggle } from './controls';
-import { aboutLink, choiceCard, pillButton } from './SettingsModal.css';
+import {
+    Chooser,
+    KeyCap,
+    PILL_BUTTON,
+    PillButton,
+    Row,
+    SectionLabel,
+    Segmented,
+    Toggle,
+} from './controls';
+
+/** Card-shaped radio (appearance swatches, AI location). */
+const CHOICE_CARD =
+    'flex cursor-pointer gap-3 rounded-xl bg-transparent px-[14px] py-[13px] text-left font-[inherit] hover:bg-hover';
+
+/** The About pane's link list. */
+const ABOUT_LINK =
+    'text-body cursor-pointer rounded-lg border border-border bg-surface px-[10px] py-[6px] font-[inherit] text-text2 hover:bg-hover hover:text-text';
+
+/** The bordered cards the Account and Storage panes are built from. */
+const CARD = 'rounded-xl border border-border px-4 py-[14px]';
 
 export function GeneralPane() {
     const collections = useStore((s) => s.collections);
@@ -73,7 +93,7 @@ export function GeneralPane() {
 
             <SectionLabel>Storage</SectionLabel>
             <StorageMeter />
-            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+            <div className="mt-[14px] flex gap-2">
                 <PillButton>Reveal library in Finder</PillButton>
                 <PillButton>Clear snapshot cache</PillButton>
             </div>
@@ -127,50 +147,26 @@ export function AccountPane() {
     if (auth.mode !== 'account') {
         return (
             <>
-                <div
-                    style={{
-                        alignItems: 'flex-start',
-                        border: '1px dashed var(--dash, #d2d2dc)',
-                        borderRadius: 12,
-                        display: 'flex',
-                        gap: 13,
-                        padding: '16px 18px',
-                    }}
-                >
-                    <span
-                        style={{
-                            color: 'var(--text2, #6b6b76)',
-                            display: 'inline-flex',
-                            marginTop: 2,
-                        }}
-                    >
+                <div className="flex items-start gap-[13px] rounded-xl border border-dashed border-dash px-[18px] py-4">
+                    <span className="mt-[2px] inline-flex text-text2">
                         <SettingsIcon name="lock" size={18} />
                     </span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 600 }}>
-                            Local vault — no account
-                        </div>
-                        <div
-                            style={{
-                                color: 'var(--text3, #9a9aa5)',
-                                fontSize: 12.5,
-                                lineHeight: 1.5,
-                                marginTop: 3,
-                            }}
-                        >
+                    <div className="min-w-0 flex-1">
+                        <div className="text-subhead font-semibold">Local vault — no account</div>
+                        <div className="mt-[3px] text-body leading-[1.5] text-text3">
                             Signing in uploads this vault once. Nothing is re-entered, and
                             everything you have captured so far comes with you.
                         </div>
                     </div>
                 </div>
-                <div style={{ marginTop: 14 }}>
+                <div className="mt-[14px]">
                     <PillButton
+                        className="border-accent bg-accent text-white"
                         onClick={() => {
                             // Send the user back through the onboarding sheet's sign-in lane.
                             setStep('signin');
                             useStore.setState({ onboarded: false, settingsOpen: false });
                         }}
-                        style={{ background: 'var(--ac)', borderColor: 'var(--ac)', color: '#fff' }}
                     >
                         Sign in and sync this vault
                     </PillButton>
@@ -185,7 +181,7 @@ export function AccountPane() {
                 </Row>
 
                 <SectionLabel>Your data</SectionLabel>
-                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <div className="mt-2 flex gap-2">
                     <PillButton>Export everything as Markdown</PillButton>
                     <PillButton tone="danger">Delete local vault</PillButton>
                 </div>
@@ -204,70 +200,26 @@ export function AccountPane() {
 
     return (
         <>
-            <div
-                style={{
-                    alignItems: 'center',
-                    border: '1px solid var(--border, #e4e4ea)',
-                    borderRadius: 12,
-                    display: 'flex',
-                    gap: 14,
-                    padding: '14px 16px',
-                }}
-            >
-                <span
-                    style={{
-                        alignItems: 'center',
-                        background: 'var(--ac)',
-                        borderRadius: '50%',
-                        color: '#fff',
-                        display: 'flex',
-                        flex: 'none',
-                        fontSize: 15,
-                        fontWeight: 640,
-                        height: 42,
-                        justifyContent: 'center',
-                        width: 42,
-                    }}
-                >
+            <div className={cn(CARD, 'flex items-center gap-[14px]')}>
+                <span className="flex h-[42px] w-[42px] flex-none items-center justify-center rounded-full bg-accent text-title-lg font-[640] text-white">
                     {initials}
                 </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 640 }}>{name}</div>
-                    <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12.5, marginTop: 1 }}>
-                        {email}
-                    </div>
+                <div className="min-w-0 flex-1">
+                    <div className="text-title font-[640]">{name}</div>
+                    <div className="mt-px text-body text-text3">{email}</div>
                 </div>
                 <PillButton onClick={signOut}>Sign out</PillButton>
             </div>
 
-            <div
-                style={{
-                    alignItems: 'center',
-                    border: '1px solid var(--border, #e4e4ea)',
-                    borderRadius: 12,
-                    display: 'flex',
-                    gap: 14,
-                    marginTop: 10,
-                    padding: '14px 16px',
-                }}
-            >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ alignItems: 'center', display: 'flex', gap: 8 }}>
-                        <span style={{ fontSize: 13.5, fontWeight: 640 }}>Lore Pro</span>
-                        <span
-                            style={{
-                                background: '#e8f2ec',
-                                borderRadius: 6,
-                                color: '#4d855f',
-                                fontSize: 11,
-                                fontWeight: 600,
-                                padding: '2px 7px',
-                            }}
-                        >
+            <div className={cn(CARD, 'mt-[10px] flex items-center gap-[14px]')}>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                        <span className="text-subhead font-[640]">Lore Pro</span>
+                        <span className="rounded-md bg-type-task-bg px-[7px] py-[2px] text-caption font-semibold text-type-task-fg">
                             Active
                         </span>
                     </div>
-                    <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12.5, marginTop: 3 }}>
+                    <div className="mt-[3px] text-body text-text3">
                         $8/month · renews 14 October 2026 · unlimited AI summaries, 5 devices
                     </div>
                 </div>
@@ -289,7 +241,7 @@ export function AccountPane() {
             </Row>
 
             <SectionLabel>Your data</SectionLabel>
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <div className="mt-2 flex gap-2">
                 <PillButton>Export everything as Markdown</PillButton>
                 <PillButton tone="danger">Delete account</PillButton>
             </div>
@@ -303,57 +255,26 @@ export function AccountPane() {
 
 function StorageMeter() {
     return (
-        <div
-            style={{
-                border: '1px solid var(--border, #e4e4ea)',
-                borderRadius: 12,
-                marginTop: 8,
-                padding: '14px 16px',
-            }}
-        >
-            <div
-                style={{ alignItems: 'baseline', display: 'flex', justifyContent: 'space-between' }}
-            >
-                <span style={{ fontSize: 13.5, fontWeight: 600 }}>Local library</span>
-                <span style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12.5 }}>
-                    1.84 GB of 5 GB
-                </span>
+        <div className={cn(CARD, 'mt-2')}>
+            <div className="flex items-baseline justify-between">
+                <span className="text-subhead font-semibold">Local library</span>
+                <span className="text-body text-text3">1.84 GB of 5 GB</span>
             </div>
-            <div
-                style={{
-                    background: 'var(--surface3, #f1f1f3)',
-                    borderRadius: 5,
-                    display: 'flex',
-                    gap: 2,
-                    height: 8,
-                    margin: '10px 0',
-                    overflow: 'hidden',
-                }}
-            >
+            <div className="my-[10px] flex h-2 gap-[2px] overflow-hidden rounded-5 bg-surface3">
                 {STORAGE_SEGMENTS.map((s) => (
+                    // Each segment's colour and share are data, not design.
                     <span key={s.label} style={{ background: s.color, flex: s.share }} />
                 ))}
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+            <div className="flex flex-wrap gap-4">
                 {STORAGE_SEGMENTS.map((s) => (
                     <span
+                        className="inline-flex items-center gap-[6px] text-body-sm text-text3"
                         key={s.label}
-                        style={{
-                            alignItems: 'center',
-                            color: 'var(--text3, #9a9aa5)',
-                            display: 'inline-flex',
-                            fontSize: 12,
-                            gap: 6,
-                        }}
                     >
                         <span
-                            style={{
-                                background: s.color,
-                                borderRadius: 3,
-                                flex: 'none',
-                                height: 8,
-                                width: 8,
-                            }}
+                            className="h-2 w-2 flex-none rounded-[3px]"
+                            style={{ background: s.color }}
                         />
                         {s.label} {s.size}
                     </span>
@@ -396,38 +317,34 @@ export function LookPane() {
     return (
         <>
             <SectionLabel first>Appearance</SectionLabel>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 4 }}>
+            <div className="mb-1 flex gap-[10px]">
                 {APPEARANCES.map((a) => {
                     const active = appearance === a.id;
                     return (
                         <button
                             aria-pressed={active}
+                            className={cn(
+                                'flex flex-1 cursor-pointer flex-col gap-[9px] rounded-xl border-[1.5px] p-[11px] font-[inherit] text-[inherit]',
+                                active
+                                    ? 'border-accent bg-accent-tint'
+                                    : 'border-border bg-transparent',
+                            )}
                             key={a.id}
                             onClick={() => setAppearance(a.id)}
-                            style={{
-                                background: active ? 'var(--ac-tint, #eeeef2)' : 'transparent',
-                                border: `1.5px solid ${active ? 'var(--ac)' : 'var(--border, #e4e4ea)'}`,
-                                borderRadius: 12,
-                                color: 'inherit',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                flex: 1,
-                                flexDirection: 'column',
-                                fontFamily: 'inherit',
-                                gap: 9,
-                                padding: 11,
-                            }}
                             type="button"
                         >
                             <span
-                                style={{
-                                    background: a.swatch,
-                                    border: '1px solid var(--swatch-border, rgba(0,0,0,.07))',
-                                    borderRadius: 8,
-                                    height: 52,
-                                }}
+                                className="h-[52px] rounded-lg border border-swatch-border"
+                                // The swatch previews the theme itself, so it is a
+                                // literal colour rather than a token.
+                                style={{ background: a.swatch }}
                             />
-                            <span style={{ fontSize: 12.5, fontWeight: active ? 600 : 500 }}>
+                            <span
+                                className={cn(
+                                    'text-body',
+                                    active ? 'font-semibold' : 'font-medium',
+                                )}
+                            >
                                 {a.label}
                             </span>
                         </button>
@@ -436,45 +353,26 @@ export function LookPane() {
             </div>
 
             <SectionLabel>Accent</SectionLabel>
-            <div style={{ alignItems: 'center', display: 'flex', gap: 10, marginBottom: 4 }}>
+            <div className="mb-1 flex items-center gap-[10px]">
                 {ACCENTS.map((hex) => {
                     const active = accent === hex;
                     return (
                         <button
                             aria-label={ACCENT_NAMES[hex]}
                             aria-pressed={active}
+                            className="flex h-7 w-7 flex-none cursor-pointer items-center justify-center rounded-full border-[1.5px] bg-transparent p-0 shadow-[inset_0_0_0_2px_var(--surface)]"
                             key={hex}
                             onClick={() => setAccent(hex as Accent)}
-                            style={{
-                                alignItems: 'center',
-                                background: 'transparent',
-                                border: `1.5px solid ${active ? hex : 'transparent'}`,
-                                borderRadius: '50%',
-                                boxShadow: 'inset 0 0 0 2px var(--surface, #fff)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                flex: 'none',
-                                height: 28,
-                                justifyContent: 'center',
-                                padding: 0,
-                                width: 28,
-                            }}
+                            // The ring and the dot are the accent being offered,
+                            // so both are literal colours.
+                            style={{ borderColor: active ? hex : 'transparent' }}
                             type="button"
                         >
-                            <span
-                                style={{
-                                    background: hex,
-                                    borderRadius: '50%',
-                                    height: 20,
-                                    width: 20,
-                                }}
-                            />
+                            <span className="h-5 w-5 rounded-full" style={{ background: hex }} />
                         </button>
                     );
                 })}
-                <span style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12.5, marginLeft: 4 }}>
-                    {ACCENT_NAMES[accent]}
-                </span>
+                <span className="ml-1 text-body text-text3">{ACCENT_NAMES[accent]}</span>
             </div>
 
             <SectionLabel>Library</SectionLabel>
@@ -505,19 +403,19 @@ export function LookPane() {
                 />
             </Row>
             <Row title="Text size">
-                <div style={{ alignItems: 'center', display: 'flex', flex: 'none', gap: 10 }}>
-                    <span style={{ color: 'var(--text3, #9a9aa5)', fontSize: 11 }}>A</span>
+                <div className="flex flex-none items-center gap-[10px]">
+                    <span className="text-caption text-text3">A</span>
                     <input
                         aria-label="Text size"
+                        className="w-[120px] accent-accent"
                         max={1.2}
                         min={0.9}
                         onChange={(e) => setPref('textSize', Number(e.target.value))}
                         step={0.05}
-                        style={{ accentColor: 'var(--ac)', width: 120 }}
                         type="range"
                         value={textSize}
                     />
-                    <span style={{ color: 'var(--text3, #9a9aa5)', fontSize: 16 }}>A</span>
+                    <span className="text-[16px] text-text3">A</span>
                 </div>
             </Row>
             <Row title="Show counts in the sidebar">
@@ -579,20 +477,8 @@ const SHORTCUT_GROUPS = [
 export function KeysPane() {
     return (
         <>
-            <div style={{ alignItems: 'center', display: 'flex', gap: 10, marginBottom: 20 }}>
-                <div
-                    style={{
-                        alignItems: 'center',
-                        background: 'var(--surface3, #f1f1f3)',
-                        borderRadius: 8,
-                        color: 'var(--text3, #9a9aa5)',
-                        display: 'flex',
-                        flex: 1,
-                        fontSize: 12.5,
-                        gap: 8,
-                        padding: '7px 10px',
-                    }}
-                >
+            <div className="mb-5 flex items-center gap-[10px]">
+                <div className="flex flex-1 items-center gap-2 rounded-lg bg-surface3 px-[10px] py-[7px] text-body text-text3">
                     <SettingsIcon name="search" size={14} sw={1.9} />
                     <span>Filter shortcuts</span>
                 </div>
@@ -600,24 +486,18 @@ export function KeysPane() {
             </div>
 
             {SHORTCUT_GROUPS.map((g) => (
-                <div key={g.name} style={{ marginBottom: 22 }}>
+                <div className="mb-[22px]" key={g.name}>
                     <SectionLabel first>{g.name}</SectionLabel>
                     {g.rows.map((r, i) => (
                         <div
+                            className={cn(
+                                'flex items-center gap-4 border-b border-border-soft py-[9px]',
+                                i === g.rows.length - 1 && 'border-b-0',
+                            )}
                             key={r.label}
-                            style={{
-                                alignItems: 'center',
-                                borderBottom:
-                                    i === g.rows.length - 1
-                                        ? 'none'
-                                        : '1px solid var(--border-soft, #f0f0f2)',
-                                display: 'flex',
-                                gap: 16,
-                                padding: '9px 0',
-                            }}
                         >
-                            <span style={{ flex: 1, fontSize: 13, minWidth: 0 }}>{r.label}</span>
-                            <span style={{ display: 'flex', flex: 'none', gap: 4 }}>
+                            <span className="min-w-0 flex-1 text-body-lg">{r.label}</span>
+                            <span className="flex flex-none gap-1">
                                 {r.keys.map((k, ki) => (
                                     <KeyCap key={ki}>{k}</KeyCap>
                                 ))}
@@ -719,58 +599,39 @@ export function CapturePane() {
             <SwitchRow last name="dupe" title="Warn me about duplicates" />
 
             <SectionLabel>Where the AI runs</SectionLabel>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+            <div className="mt-2 flex flex-col gap-2">
                 {AI_MODES.map((m) => {
                     const active = aiMode === m.id;
                     return (
                         <button
                             aria-pressed={active}
-                            className={choiceCard}
+                            className={cn(
+                                CHOICE_CARD,
+                                'items-start border-[1.5px] text-[inherit]',
+                                active
+                                    ? 'border-accent bg-accent-tint'
+                                    : 'border-border bg-transparent',
+                            )}
                             key={m.id}
                             onClick={() => setPref('aiMode', m.id)}
-                            style={{
-                                alignItems: 'flex-start',
-                                background: active ? 'var(--ac-tint, #eeeef2)' : 'transparent',
-                                border: `1.5px solid ${active ? 'var(--ac)' : 'var(--border, #e4e4ea)'}`,
-                                color: 'inherit',
-                            }}
                             type="button"
                         >
                             <span
-                                style={{
-                                    alignItems: 'center',
-                                    border: `1.5px solid ${active ? 'var(--ac)' : 'var(--dash, #d2d2dc)'}`,
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    flex: 'none',
-                                    height: 17,
-                                    justifyContent: 'center',
-                                    marginTop: 1,
-                                    width: 17,
-                                }}
+                                className={cn(
+                                    'mt-px flex h-[17px] w-[17px] flex-none items-center justify-center rounded-full border-[1.5px]',
+                                    active ? 'border-accent' : 'border-dash',
+                                )}
                             >
                                 <span
-                                    style={{
-                                        background: active ? 'var(--ac)' : 'transparent',
-                                        borderRadius: '50%',
-                                        height: 9,
-                                        width: 9,
-                                    }}
+                                    className={cn(
+                                        'h-[9px] w-[9px] rounded-full',
+                                        active ? 'bg-accent' : 'bg-transparent',
+                                    )}
                                 />
                             </span>
-                            <span style={{ flex: 1, minWidth: 0 }}>
-                                <span style={{ display: 'block', fontSize: 13.5, fontWeight: 600 }}>
-                                    {m.label}
-                                </span>
-                                <span
-                                    style={{
-                                        color: 'var(--text3, #9a9aa5)',
-                                        display: 'block',
-                                        fontSize: 12.5,
-                                        lineHeight: 1.5,
-                                        marginTop: 2,
-                                    }}
-                                >
+                            <span className="min-w-0 flex-1">
+                                <span className="block text-subhead font-semibold">{m.label}</span>
+                                <span className="mt-[2px] block text-body leading-[1.5] text-text3">
                                     {m.desc}
                                 </span>
                             </span>
@@ -779,17 +640,9 @@ export function CapturePane() {
                 })}
             </div>
 
-            <div style={{ marginTop: 8 }}>
+            <div className="mt-2">
                 <Row desc="Unlimited on Pro." last title="Summaries used this month">
-                    <span
-                        style={{
-                            fontSize: 13.5,
-                            fontVariantNumeric: 'tabular-nums',
-                            fontWeight: 640,
-                        }}
-                    >
-                        412
-                    </span>
+                    <span className="text-subhead font-[640] tabular-nums">412</span>
                 </Row>
             </div>
         </>
@@ -833,31 +686,13 @@ export function SyncPane() {
 
     if (anonymous) {
         return (
-            <div
-                style={{
-                    alignItems: 'flex-start',
-                    border: '1px dashed var(--dash, #d2d2dc)',
-                    borderRadius: 12,
-                    display: 'flex',
-                    gap: 13,
-                    padding: '16px 18px',
-                }}
-            >
-                <span
-                    style={{ color: 'var(--text2, #6b6b76)', display: 'inline-flex', marginTop: 2 }}
-                >
+            <div className="flex items-start gap-[13px] rounded-xl border border-dashed border-dash px-[18px] py-4">
+                <span className="mt-[2px] inline-flex text-text2">
                     <SettingsIcon name="noSync" size={18} />
                 </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 600 }}>Sync is off</div>
-                    <div
-                        style={{
-                            color: 'var(--text3, #9a9aa5)',
-                            fontSize: 12.5,
-                            lineHeight: 1.5,
-                            marginTop: 3,
-                        }}
-                    >
+                <div className="min-w-0 flex-1">
+                    <div className="text-subhead font-semibold">Sync is off</div>
+                    <div className="mt-[3px] text-body leading-[1.5] text-text3">
                         This vault lives only on this Mac. Sign in from the Account pane to sync it
                         to web and mobile — the {items.length} item{items.length === 1 ? '' : 's'}{' '}
                         you already have upload once and nothing is re-entered.
@@ -869,34 +704,13 @@ export function SyncPane() {
 
     return (
         <>
-            <div
-                style={{
-                    alignItems: 'center',
-                    border: '1px solid var(--border, #e4e4ea)',
-                    borderRadius: 12,
-                    display: 'flex',
-                    gap: 13,
-                    padding: '14px 16px',
-                }}
-            >
-                <span
-                    style={{
-                        alignItems: 'center',
-                        background: '#e8f2ec',
-                        borderRadius: '50%',
-                        color: '#4d855f',
-                        display: 'flex',
-                        flex: 'none',
-                        height: 32,
-                        justifyContent: 'center',
-                        width: 32,
-                    }}
-                >
+            <div className={cn(CARD, 'flex items-center gap-[13px]')}>
+                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-type-task-bg text-type-task-fg">
                     <SettingsIcon name="check" size={16} sw={2.2} />
                 </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 640 }}>Everything is synced</div>
-                    <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12.5, marginTop: 1 }}>
+                <div className="min-w-0 flex-1">
+                    <div className="text-subhead font-[640]">Everything is synced</div>
+                    <div className="mt-px text-body text-text3">
                         Last checked 40 seconds ago · {items.length} items
                     </div>
                 </div>
@@ -906,49 +720,21 @@ export function SyncPane() {
             <SectionLabel>Devices</SectionLabel>
             {DEVICES.map((d) => (
                 <div
+                    className="flex items-center gap-3 border-b border-border-soft py-[11px]"
                     key={d.name}
-                    style={{
-                        alignItems: 'center',
-                        borderBottom: '1px solid var(--border-soft, #f0f0f2)',
-                        display: 'flex',
-                        gap: 12,
-                        padding: '11px 0',
-                    }}
                 >
-                    <span
-                        style={{
-                            alignItems: 'center',
-                            background: 'var(--surface3, #f1f1f3)',
-                            borderRadius: 8,
-                            color: 'var(--text2, #6b6b76)',
-                            display: 'flex',
-                            flex: 'none',
-                            height: 30,
-                            justifyContent: 'center',
-                            width: 30,
-                        }}
-                    >
+                    <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-surface3 text-text2">
                         <SettingsIcon name={d.icon} size={16} />
                     </span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{d.name}</div>
-                        <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12, marginTop: 1 }}>
-                            {d.meta}
-                        </div>
+                    <div className="min-w-0 flex-1">
+                        <div className="text-body-lg font-semibold">{d.name}</div>
+                        <div className="mt-px text-body-sm text-text3">{d.meta}</div>
                     </div>
                     <span
-                        style={{
-                            borderRadius: 7,
-                            flex: 'none',
-                            fontSize: 12,
-                            padding: '3px 9px',
-                            ...(d.on
-                                ? { background: '#e8f2ec', color: '#4d855f' }
-                                : {
-                                      background: 'var(--surface3, #f1f1f3)',
-                                      color: 'var(--text3, #9a9aa5)',
-                                  }),
-                        }}
+                        className={cn(
+                            'flex-none rounded-7 px-[9px] py-[3px] text-body-sm',
+                            d.on ? 'bg-type-task-bg text-type-task-fg' : 'bg-surface3 text-text3',
+                        )}
                     >
                         {d.tag}
                     </span>
@@ -990,34 +776,22 @@ export function CalendarPane() {
             <SectionLabel first>Connected calendars</SectionLabel>
             {CALENDAR_ACCOUNTS.map((c) => (
                 <div
+                    className="flex items-center gap-3 border-b border-border-soft py-[11px]"
                     key={c.key}
-                    style={{
-                        alignItems: 'center',
-                        borderBottom: '1px solid var(--border-soft, #f0f0f2)',
-                        display: 'flex',
-                        gap: 12,
-                        padding: '11px 0',
-                    }}
                 >
                     <span
-                        style={{
-                            background: c.color,
-                            borderRadius: 3,
-                            flex: 'none',
-                            height: 10,
-                            width: 10,
-                        }}
+                        className="h-[10px] w-[10px] flex-none rounded-[3px]"
+                        // The calendar's own colour, as the provider reports it.
+                        style={{ background: c.color }}
                     />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</div>
-                        <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12, marginTop: 1 }}>
-                            {c.meta}
-                        </div>
+                    <div className="min-w-0 flex-1">
+                        <div className="text-body-lg font-semibold">{c.name}</div>
+                        <div className="mt-px text-body-sm text-text3">{c.meta}</div>
                     </div>
                     <Toggle label={c.name} on={switches[c.key]} onChange={() => toggle(c.key)} />
                 </div>
             ))}
-            <div style={{ marginTop: 12 }}>
+            <div className="mt-3">
                 <PillButton>
                     <SettingsIcon name="plus" size={13} sw={2.2} />
                     Add a calendar account
@@ -1056,59 +830,25 @@ export function FocusPane() {
 
     return (
         <>
-            <p
-                style={{
-                    color: 'var(--text3, #9a9aa5)',
-                    fontSize: 12.5,
-                    lineHeight: 1.5,
-                    margin: '0 0 16px',
-                }}
-            >
+            <p className="mt-0 mb-4 text-body leading-[1.5] text-text3">
                 The timer itself lives in the menu bar. These are its defaults.
             </p>
 
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div className="flex gap-[10px]">
                 {DURATION_LABELS.map((d) => (
                     <div
+                        className="flex-1 rounded-xl border border-border px-[14px] py-[13px]"
                         key={d.key}
-                        style={{
-                            border: '1px solid var(--border, #e4e4ea)',
-                            borderRadius: 12,
-                            flex: 1,
-                            padding: '13px 14px',
-                        }}
                     >
-                        <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12.5 }}>
-                            {d.label}
-                        </div>
-                        <div
-                            style={{
-                                alignItems: 'center',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                marginTop: 6,
-                            }}
-                        >
-                            <span
-                                style={{
-                                    fontSize: 24,
-                                    fontVariantNumeric: 'tabular-nums',
-                                    fontWeight: 620,
-                                }}
-                            >
+                        <div className="text-body text-text3">{d.label}</div>
+                        <div className="mt-[6px] flex items-center justify-between">
+                            <span className="text-[24px] font-[620] tabular-nums">
                                 {durations[d.key]}
-                                <span
-                                    style={{
-                                        color: 'var(--text3, #9a9aa5)',
-                                        fontSize: 12,
-                                        fontWeight: 500,
-                                        marginLeft: 4,
-                                    }}
-                                >
+                                <span className="ml-1 text-body-sm font-medium text-text3">
                                     min
                                 </span>
                             </span>
-                            <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <span className="flex flex-col gap-[2px]">
                                 <StepButton
                                     label={`Increase ${d.label}`}
                                     onClick={() => bump(d.key, 1)}
@@ -1157,9 +897,8 @@ function StepButton({ label, onClick, up }: { label: string; onClick: () => void
     return (
         <button
             aria-label={label}
-            className={pillButton}
+            className={cn(PILL_BUTTON, 'px-[6px] py-[2px]')}
             onClick={onClick}
-            style={{ padding: '2px 6px' }}
             type="button"
         >
             <SettingsIcon name={up ? 'chevronUp' : 'chevronDown'} size={11} sw={2.6} />
@@ -1199,77 +938,40 @@ export function AboutPane() {
 
     return (
         <>
-            <div style={{ padding: '8px 0 22px', textAlign: 'center' }}>
-                <span style={{ color: 'var(--text, #1a1a1f)', display: 'inline-flex' }}>
+            <div className="pt-2 pb-[22px] text-center">
+                <span className="inline-flex text-text">
                     <LoreMark size={58} />
                 </span>
-                <div style={{ fontSize: 17, fontWeight: 660, marginTop: 12 }}>Lore</div>
-                <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12.5, marginTop: 3 }}>
+                <div className="mt-3 text-[17px] font-[660]">Lore</div>
+                <div className="mt-[3px] text-body text-text3">
                     Version 2.4.1 (build 2418) · Apple silicon
                 </div>
-                <div
-                    style={{
-                        alignItems: 'center',
-                        background: '#e8f2ec',
-                        borderRadius: 8,
-                        color: '#4d855f',
-                        display: 'inline-flex',
-                        fontSize: 12.5,
-                        gap: 6,
-                        marginTop: 10,
-                        padding: '4px 10px',
-                    }}
-                >
+                <div className="mt-[10px] inline-flex items-center gap-[6px] rounded-lg bg-type-task-bg px-[10px] py-1 text-body text-type-task-fg">
                     <SettingsIcon name="check" size={13} sw={2.4} />
                     You&rsquo;re up to date
                 </div>
-                <p
-                    style={{
-                        color: 'var(--text2, #6b6b76)',
-                        fontSize: 12.5,
-                        lineHeight: 1.6,
-                        margin: '16px auto 0',
-                        maxWidth: 420,
-                    }}
-                >
+                <p className="mx-auto mt-4 mb-0 max-w-[420px] text-body leading-[1.6] text-text2">
                     Lore is made by a team of four in Lisbon and Copenhagen. It keeps your library
                     on your own machine and syncs it encrypted.
                 </p>
             </div>
 
-            <div
-                style={{
-                    borderBottom: '1px solid var(--border-soft, #f0f0f2)',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 8,
-                    justifyContent: 'center',
-                    paddingBottom: 22,
-                }}
-            >
+            <div className="flex flex-wrap justify-center gap-2 border-b border-border-soft pb-[22px]">
                 {ABOUT_LINKS.map((l) => (
-                    <button className={aboutLink} key={l} type="button">
+                    <button className={ABOUT_LINK} key={l} type="button">
                         {l}
                     </button>
                 ))}
             </div>
 
-            <div style={{ paddingTop: 8 }}>
+            <div className="pt-2">
                 {meta.map((m) => (
                     <div
+                        className="flex gap-4 border-b border-border-soft py-[9px] text-body"
                         key={m.k}
-                        style={{
-                            borderBottom: '1px solid var(--border-soft, #f0f0f2)',
-                            display: 'flex',
-                            fontSize: 12.5,
-                            gap: 16,
-                            padding: '9px 0',
-                        }}
                     >
-                        <span style={{ color: 'var(--text3, #9a9aa5)', flex: 'none', width: 130 }}>
-                            {m.k}
-                        </span>
-                        <span style={{ flex: 1, minWidth: 0 }}>{m.v}</span>
+                        <span className="w-[130px] flex-none text-text3">{m.k}</span>
+                        <span className="min-w-0 flex-1">{m.v}</span>
                     </div>
                 ))}
             </div>
