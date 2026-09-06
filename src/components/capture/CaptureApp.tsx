@@ -11,13 +11,12 @@ import { useEffect, useState } from 'react';
 
 import { setWorkspace } from '../../data';
 import { hideCapture } from '../../lib/captureActions';
+import { cn } from '../../lib/cn';
 import { onWorkspaceChanged } from '../../lib/workspace';
 import { loadPersisted } from '../../store/persisted';
 import { effectiveTheme, paintTheme } from '../../theme/tokens';
 import { CommandBar } from './CommandBar';
 import { Composer } from './Composer';
-
-const AC = 'var(--ac, #5b5bd6)';
 type Mode = 'A' | 'B';
 
 export function CaptureApp() {
@@ -81,35 +80,13 @@ export function CaptureApp() {
 
     return (
         <div
+            className="flex h-full flex-col items-center gap-3 overflow-hidden bg-transparent px-7 py-[26px]"
             onMouseDown={(e) => {
                 if (e.target === e.currentTarget) void hideCapture();
             }}
-            style={{
-                alignItems: 'center',
-                background: 'transparent',
-                boxSizing: 'border-box',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-                height: '100%',
-                overflow: 'hidden',
-                padding: '26px 28px',
-            }}
         >
             {/* direction toggle — a floating segmented control */}
-            <div
-                style={{
-                    backdropFilter: 'blur(20px)',
-                    background: 'var(--surface-glass, rgba(255,255,255,.82))',
-                    border: '1px solid var(--border, #ececef)',
-                    borderRadius: 9,
-                    boxShadow: '0 6px 18px -6px rgba(24,24,48,.35)',
-                    display: 'flex',
-                    gap: 3,
-                    padding: 3,
-                    WebkitBackdropFilter: 'blur(20px)',
-                }}
-            >
+            <div className="flex gap-[3px] rounded-9 border border-border bg-surface-glass p-[3px] shadow-[0_6px_18px_-6px_rgba(24,24,48,.35)] backdrop-blur-[20px]">
                 <Toggle active={mode === 'A'} onClick={() => setMode('A')}>
                     Command bar
                 </Toggle>
@@ -118,7 +95,7 @@ export function CaptureApp() {
                 </Toggle>
             </div>
 
-            <div style={{ maxWidth: 560, width: '100%' }}>
+            <div className="w-full max-w-[560px]">
                 {mode === 'A' ? <CommandBar key={sessionKey} /> : <Composer key={sessionKey} />}
             </div>
         </div>
@@ -136,16 +113,11 @@ function Toggle({
 }) {
     return (
         <span
+            className={cn(
+                'cursor-pointer rounded-7 px-3 py-[5px] text-body-sm',
+                active ? 'bg-accent font-semibold text-white' : 'font-medium text-text2',
+            )}
             onClick={onClick}
-            style={{
-                background: active ? AC : 'transparent',
-                borderRadius: 7,
-                color: active ? '#fff' : 'var(--text2, #6b6b76)',
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: active ? 600 : 500,
-                padding: '5px 12px',
-            }}
         >
             {children}
         </span>

@@ -8,7 +8,6 @@
 
 import { useEffect } from 'react';
 
-import { DRAWER_MS, drawerIn, drawerOut, scrimIn, scrimOut } from './App.css';
 import { CalendarView } from './components/calendar/CalendarView';
 import { CaptureDrawer } from './components/capture/CaptureDrawer';
 import { FocusMode } from './components/focus/FocusMode';
@@ -23,6 +22,7 @@ import { Sidebar, SIDEBAR_WIDTH } from './components/kb/Sidebar';
 import { TitleBar } from './components/kb/TitleBar';
 import { Onboarding } from './components/onboarding/Onboarding';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { DRAWER_MS } from './lib/motion';
 import { useMountTransition } from './lib/useMountTransition';
 import { useStore } from './store/useStore';
 import { effectiveTheme, paintTheme } from './theme/tokens';
@@ -124,8 +124,16 @@ export default function App() {
     const drawer = useMountTransition(asDrawer && !chatOpen, DRAWER_MS, reduceMotion);
     // Reduce Motion drops both runs; otherwise the class picks the direction, and
     // the panel's own style is the open position it animates to and from.
-    const drawerClass = reduceMotion ? undefined : drawer.open ? drawerIn : drawerOut;
-    const scrimClass = reduceMotion ? undefined : drawer.open ? scrimIn : scrimOut;
+    const drawerClass = reduceMotion
+        ? undefined
+        : drawer.open
+          ? 'animate-drawer-in'
+          : 'animate-drawer-out';
+    const scrimClass = reduceMotion
+        ? undefined
+        : drawer.open
+          ? 'animate-scrim-in'
+          : 'animate-scrim-out';
 
     return (
         <div

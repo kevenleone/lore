@@ -13,6 +13,7 @@ import type { Collection, ItemType } from '../../store/types';
 
 import { getRepository } from '../../data';
 import { hideCapture, hostOf, saveCapture } from '../../lib/captureActions';
+import { cn } from '../../lib/cn';
 import { fetchLinkMetadata, type LinkMetadata } from '../../lib/linkMetadata';
 import { Check, ChevronDown, FileGlyph, Globe } from '../common/glyphs';
 import { Icon } from '../common/Icon';
@@ -38,8 +39,6 @@ export interface ComposerProps {
     onSave?: (input: NewItem) => Promise<void>;
 }
 
-const AC = 'var(--ac, #5b5bd6)';
-
 const TABS: { label: string; type: ItemType }[] = [
     { label: 'Link', type: 'link' },
     { label: 'Note', type: 'note' },
@@ -48,13 +47,7 @@ const TABS: { label: string; type: ItemType }[] = [
     { label: 'Image', type: 'image' },
 ];
 
-const SECTION_LABEL: React.CSSProperties = {
-    color: 'var(--faint, #a8a8b0)',
-    fontSize: 10.5,
-    fontWeight: 600,
-    letterSpacing: '.05em',
-    textTransform: 'uppercase',
-};
+const SECTION_LABEL = 'text-micro font-semibold tracking-[.05em] text-faint uppercase';
 
 export function Composer({
     chrome = 'panel',
@@ -192,55 +185,23 @@ export function Composer({
 
     return (
         <div
-            style={{
-                background: 'var(--surface, #fff)',
-                display: 'flex',
-                flexDirection: 'column',
-                minHeight: 0,
-                overflow: 'hidden',
-                ...(inDrawer
-                    ? { height: '100%' }
-                    : {
-                          border: '1px solid var(--border, #ececef)',
-                          borderRadius: 16,
-                          boxShadow: 'var(--float-shadow)',
-                      }),
-            }}
+            className={cn(
+                'flex min-h-0 flex-col overflow-hidden bg-surface',
+                inDrawer ? 'h-full' : 'rounded-2xl border border-border shadow-float',
+            )}
         >
             {/* type tabs */}
-            <div
-                style={{
-                    borderBottom: '1px solid var(--border-soft, #f0f0f2)',
-                    display: 'flex',
-                    flex: 'none',
-                    gap: 5,
-                    overflow: 'hidden',
-                    padding: '9px 11px',
-                }}
-            >
+            <div className="flex flex-none gap-[5px] overflow-hidden border-b border-border-soft px-[11px] py-[9px]">
                 {TABS.map((t) => {
                     const active = tab === t.type;
                     return (
                         <div
+                            className={cn(
+                                'flex cursor-pointer items-center gap-[6px] rounded-lg px-[11px] py-[7px] text-body-lg whitespace-nowrap',
+                                active ? 'bg-accent-tint font-[590] text-accent' : 'text-text2',
+                            )}
                             key={t.type}
                             onClick={() => setTab(t.type)}
-                            style={{
-                                alignItems: 'center',
-                                borderRadius: 8,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                fontSize: 13,
-                                gap: 6,
-                                padding: '7px 11px',
-                                whiteSpace: 'nowrap',
-                                ...(active
-                                    ? {
-                                          background: 'var(--ac-tint, #eeeef2)',
-                                          color: AC,
-                                          fontWeight: 590,
-                                      }
-                                    : { color: 'var(--text2, #6b6b76)' }),
-                            }}
                         >
                             <Icon name={t.type} size={15} />
                             <span>{t.label}</span>
@@ -250,135 +211,56 @@ export function Composer({
             </div>
 
             <div
-                style={{
-                    flex: inDrawer ? 1 : 'none',
-                    minHeight: 0,
-                    overflowY: inDrawer ? 'auto' : 'visible',
-                    padding: '15px 16px',
-                }}
+                className={cn(
+                    'min-h-0 px-4 py-[15px]',
+                    inDrawer ? 'flex-1 overflow-y-auto' : 'flex-none overflow-y-visible',
+                )}
             >
                 {/* per-type content */}
                 {tab === 'link' && (
                     <>
-                        <div
-                            style={{
-                                alignItems: 'center',
-                                border: '1px solid var(--border, #e4e4ea)',
-                                borderRadius: 10,
-                                color: 'var(--text, #1a1a1f)',
-                                display: 'flex',
-                                fontSize: 14,
-                                gap: 9,
-                                padding: '10px 12px',
-                            }}
-                        >
-                            <span
-                                style={{
-                                    color: 'var(--faint, #a8a8b0)',
-                                    display: 'flex',
-                                    flex: 'none',
-                                }}
-                            >
+                        <div className="flex items-center gap-[9px] rounded-10 border border-border px-3 py-[10px] text-title text-text">
+                            <span className="flex flex-none text-faint">
                                 <Globe size={16} />
                             </span>
                             <input
+                                className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-text outline-none"
                                 onChange={(e) => setValue(e.target.value)}
                                 onKeyDown={onFieldKeyDown}
                                 placeholder="https://…"
                                 ref={setFieldRef}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: 'var(--text, #1a1a1f)',
-                                    flex: 1,
-                                    font: 'inherit',
-                                    minWidth: 0,
-                                    outline: 'none',
-                                }}
                                 value={value}
                             />
                             {fetching && (
-                                <span
-                                    style={{
-                                        color: 'var(--text3, #9a9aa5)',
-                                        flex: 'none',
-                                        fontSize: 11,
-                                    }}
-                                >
-                                    fetching…
-                                </span>
+                                <span className="flex-none text-caption text-text3">fetching…</span>
                             )}
                             {!fetching && meta && (
-                                <span
-                                    style={{
-                                        alignItems: 'center',
-                                        background: '#e8f2ec',
-                                        borderRadius: 6,
-                                        color: '#4d855f',
-                                        display: 'inline-flex',
-                                        flex: 'none',
-                                        fontSize: 11,
-                                        gap: 4,
-                                        padding: '2px 7px',
-                                    }}
-                                >
+                                <span className="inline-flex flex-none items-center gap-1 rounded-md bg-type-task-bg px-[7px] py-[2px] text-caption text-type-task-fg">
                                     <Check size={12} sw={2.4} />
                                     fetched
                                 </span>
                             )}
                         </div>
                         {meta && (
-                            <div
-                                style={{
-                                    border: '1px solid var(--border, #ececef)',
-                                    borderRadius: 12,
-                                    marginTop: 12,
-                                    overflow: 'hidden',
-                                }}
-                            >
+                            <div className="mt-3 overflow-hidden rounded-xl border border-border">
                                 {meta.image && (
                                     <img
                                         alt=""
+                                        className="block h-[118px] w-full object-cover"
                                         draggable={false}
                                         src={meta.image}
-                                        style={{
-                                            display: 'block',
-                                            height: 118,
-                                            objectFit: 'cover',
-                                            width: '100%',
-                                        }}
                                     />
                                 )}
-                                <div style={{ padding: '12px 14px' }}>
-                                    <div style={{ fontSize: 14.5, fontWeight: 620 }}>
+                                <div className="px-[14px] py-3">
+                                    <div className="text-[14.5px] font-[620]">
                                         {meta.title || hostOf(value)}
                                     </div>
-                                    <div
-                                        style={{
-                                            alignItems: 'center',
-                                            color: 'var(--text3, #9a9aa5)',
-                                            display: 'flex',
-                                            fontSize: 12.5,
-                                            gap: 5,
-                                            marginTop: 3,
-                                        }}
-                                    >
+                                    <div className="mt-[3px] flex items-center gap-[5px] text-body text-text3">
                                         <Globe size={12} />
                                         {hostOf(value)}
                                     </div>
                                     {meta.description && (
-                                        <div
-                                            style={{
-                                                color: 'var(--text2, #6b6b76)',
-                                                display: '-webkit-box',
-                                                fontSize: 13,
-                                                lineHeight: 1.55,
-                                                marginTop: 10,
-                                                overflow: 'hidden',
-                                                WebkitBoxOrient: 'vertical',
-                                                WebkitLineClamp: 3,
-                                            }}
-                                        >
+                                        <div className="mt-[10px] line-clamp-3 text-body-lg leading-[1.55] text-text2">
                                             {meta.description}
                                         </div>
                                     )}
@@ -389,180 +271,73 @@ export function Composer({
                 )}
                 {tab === 'note' && (
                     <textarea
+                        className="min-h-[150px] w-full resize-y rounded-xl border border-border px-[14px] py-[13px] font-[inherit] text-[14.5px] leading-[1.6] text-text outline-none"
                         onChange={(e) => setValue(e.target.value)}
                         placeholder="Write a note…"
                         ref={setFieldRef}
-                        style={{
-                            border: '1px solid var(--border, #e4e4ea)',
-                            borderRadius: 12,
-                            color: 'var(--text, #1a1a1f)',
-                            font: 'inherit',
-                            fontSize: 14.5,
-                            lineHeight: 1.6,
-                            minHeight: 150,
-                            outline: 'none',
-                            padding: '13px 14px',
-                            resize: 'vertical',
-                            width: '100%',
-                        }}
                         value={value}
                     />
                 )}
                 {tab === 'task' && (
-                    <div
-                        style={{
-                            alignItems: 'flex-start',
-                            border: '1px solid var(--border, #e4e4ea)',
-                            borderRadius: 12,
-                            display: 'flex',
-                            gap: 11,
-                            padding: 14,
-                        }}
-                    >
-                        <span
-                            style={{
-                                border: '2px solid var(--border, #e4e4ea)',
-                                borderRadius: 6,
-                                flex: 'none',
-                                height: 20,
-                                marginTop: 1,
-                                width: 20,
-                            }}
-                        />
+                    <div className="flex items-start gap-[11px] rounded-xl border border-border p-[14px]">
+                        <span className="mt-px h-5 w-5 flex-none rounded-md border-2 border-border" />
                         <input
+                            className="flex-1 border-none bg-transparent font-[inherit] text-title-lg text-text outline-none"
                             onChange={(e) => setValue(e.target.value)}
                             onKeyDown={onFieldKeyDown}
                             placeholder="What needs doing?"
                             ref={setFieldRef}
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'var(--text, #1a1a1f)',
-                                flex: 1,
-                                font: 'inherit',
-                                fontSize: 15,
-                                outline: 'none',
-                            }}
                             value={value}
                         />
                     </div>
                 )}
                 {tab === 'code' && (
                     <textarea
+                        className="min-h-[150px] w-full resize-y rounded-xl border border-border bg-surface2 p-[14px] font-mono text-body leading-[1.7] text-text2 outline-none"
                         onChange={(e) => setValue(e.target.value)}
                         placeholder="Paste a snippet…"
                         ref={setFieldRef}
-                        style={{
-                            background: 'var(--surface2, #fafafa)',
-                            border: '1px solid var(--border, #e4e4ea)',
-                            borderRadius: 12,
-                            color: 'var(--text2, #6b6b76)',
-                            fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace',
-                            fontSize: 12.5,
-                            lineHeight: 1.7,
-                            minHeight: 150,
-                            outline: 'none',
-                            padding: 14,
-                            resize: 'vertical',
-                            width: '100%',
-                        }}
                         value={value}
                     />
                 )}
                 {tab === 'image' && (
-                    <div
-                        style={{
-                            alignItems: 'center',
-                            border: '1.5px dashed var(--dash, #d2d2dc)',
-                            borderRadius: 12,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 9,
-                            padding: 34,
-                            textAlign: 'center',
-                        }}
-                    >
-                        <span
-                            style={{
-                                alignItems: 'center',
-                                background: '#f7ecef',
-                                borderRadius: 11,
-                                color: '#a86b7c',
-                                display: 'flex',
-                                height: 44,
-                                justifyContent: 'center',
-                                width: 44,
-                            }}
-                        >
+                    <div className="flex flex-col items-center gap-[9px] rounded-xl border-[1.5px] border-dashed border-dash p-[34px] text-center">
+                        <span className="flex h-11 w-11 items-center justify-center rounded-11 bg-type-image-bg text-type-image-fg">
                             <FileGlyph />
                         </span>
-                        <div
-                            style={{
-                                color: 'var(--text2, #6b6b76)',
-                                fontSize: 14,
-                                fontWeight: 560,
-                            }}
-                        >
+                        <div className="text-title font-[560] text-text2">
                             Drag files &amp; images here
                         </div>
-                        <div style={{ color: 'var(--text3, #9a9aa5)', fontSize: 12.5 }}>
+                        <div className="text-body text-text3">
                             or click to browse — PNG, PDF, screenshots
                         </div>
                         <input
+                            className="mt-2 w-[70%] rounded-lg border border-border px-[10px] py-[6px] text-center font-[inherit] text-body-lg outline-none"
                             onChange={(e) => setValue(e.target.value)}
                             onKeyDown={onFieldKeyDown}
                             placeholder="Title (optional)"
-                            style={{
-                                border: '1px solid var(--border, #ececef)',
-                                borderRadius: 8,
-                                font: 'inherit',
-                                fontSize: 13,
-                                marginTop: 8,
-                                outline: 'none',
-                                padding: '6px 10px',
-                                textAlign: 'center',
-                                width: '70%',
-                            }}
                             value={value}
                         />
                     </div>
                 )}
 
                 {/* tags */}
-                <div
-                    style={{
-                        alignItems: 'center',
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: 7,
-                        marginTop: 14,
-                    }}
-                >
-                    <span style={SECTION_LABEL}>Tags</span>
+                <div className="mt-[14px] flex flex-wrap items-center gap-[7px]">
+                    <span className={SECTION_LABEL}>Tags</span>
                     {tags.map((t) => (
                         <span
+                            className="inline-flex cursor-pointer items-center gap-[5px] rounded-md bg-accent-tint px-2 py-[3px] font-mono text-caption text-accent"
                             key={t}
                             onClick={() => removeTag(t)}
-                            style={{
-                                alignItems: 'center',
-                                background: 'var(--ac-tint, #eeeef2)',
-                                borderRadius: 6,
-                                color: AC,
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                fontFamily: 'ui-monospace,Menlo,monospace',
-                                fontSize: 11,
-                                gap: 5,
-                                padding: '3px 8px',
-                            }}
                         >
                             #{t}
-                            <span style={{ opacity: 0.55 }}>×</span>
+                            <span className="opacity-55">×</span>
                         </span>
                     ))}
                     {addingTag ? (
                         <input
                             autoFocus
+                            className="w-[70px] rounded-md border border-accent bg-transparent px-[7px] py-[2px] font-mono text-caption text-accent outline-none"
                             onBlur={() => addTag(tagDraft)}
                             onChange={(e) => setTagDraft(e.target.value)}
                             onKeyDown={(e) => {
@@ -580,35 +355,12 @@ export function Composer({
                                 }
                             }}
                             placeholder="tag"
-                            style={{
-                                background: 'transparent',
-                                border: `1px solid ${AC}`,
-                                borderRadius: 6,
-                                color: AC,
-                                fontFamily: 'ui-monospace,Menlo,monospace',
-                                fontSize: 11,
-                                outline: 'none',
-                                padding: '2px 7px',
-                                width: 70,
-                            }}
                             value={tagDraft}
                         />
                     ) : (
                         <span
+                            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-dashed border-dash bg-transparent px-[7px] py-[2px] font-mono text-caption text-text3"
                             onClick={() => setAddingTag(true)}
-                            style={{
-                                alignItems: 'center',
-                                background: 'transparent',
-                                border: '1px dashed var(--dash, #d2d2dc)',
-                                borderRadius: 6,
-                                color: 'var(--text3, #9a9aa5)',
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                fontFamily: 'ui-monospace,Menlo,monospace',
-                                fontSize: 11,
-                                gap: 4,
-                                padding: '2px 7px',
-                            }}
                         >
                             + tag
                         </span>
@@ -617,93 +369,47 @@ export function Composer({
 
                 {/* collection — custom dropdown (a native <select> would steal focus and
             dismiss the capture window) */}
-                <div style={{ alignItems: 'center', display: 'flex', gap: 8, marginTop: 11 }}>
-                    <span style={SECTION_LABEL}>Collection</span>
-                    <div ref={collRef} style={{ position: 'relative' }}>
+                <div className="mt-[11px] flex items-center gap-2">
+                    <span className={SECTION_LABEL}>Collection</span>
+                    <div className="relative" ref={collRef}>
                         <span
+                            className="inline-flex cursor-pointer items-center gap-[7px] rounded-lg bg-sel px-[10px] py-[5px] text-body-lg text-text2"
                             onClick={() => setCollOpen((o) => !o)}
-                            style={{
-                                alignItems: 'center',
-                                background: 'var(--sel, #f4f4f6)',
-                                borderRadius: 8,
-                                color: 'var(--text2, #6b6b76)',
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                fontSize: 13,
-                                gap: 7,
-                                padding: '5px 10px',
-                            }}
                         >
                             <span
-                                style={{
-                                    background: activeCollection?.color ?? '#c4c4cc',
-                                    borderRadius: '50%',
-                                    height: 9,
-                                    width: 9,
-                                }}
+                                className="h-[9px] w-[9px] rounded-full"
+                                // The collection's own colour, which the user picks.
+                                style={{ background: activeCollection?.color ?? '#c4c4cc' }}
                             />
                             {activeCollection?.name ?? 'Unfiled'}
-                            <span style={{ color: 'var(--faint, #a8a8b0)', display: 'flex' }}>
+                            <span className="flex text-faint">
                                 <ChevronDown />
                             </span>
                         </span>
                         {collOpen && (
-                            <div
-                                style={{
-                                    background: 'var(--surface, #fff)',
-                                    border: '1px solid var(--border, #ececef)',
-                                    borderRadius: 10,
-                                    boxShadow: '0 14px 34px -10px rgba(24,24,48,.32)',
-                                    left: 0,
-                                    maxHeight: 220,
-                                    minWidth: 180,
-                                    overflow: 'auto',
-                                    padding: 5,
-                                    position: 'absolute',
-                                    top: 32,
-                                    zIndex: 30,
-                                }}
-                            >
+                            <div className="absolute top-8 left-0 z-30 max-h-[220px] min-w-[180px] overflow-auto rounded-10 border border-border bg-surface p-[5px] shadow-[0_14px_34px_-10px_rgba(24,24,48,.32)]">
                                 {collections.length === 0 && (
-                                    <div
-                                        style={{
-                                            color: 'var(--text3, #9a9aa5)',
-                                            fontSize: 12.5,
-                                            padding: '7px 10px',
-                                        }}
-                                    >
+                                    <div className="px-[10px] py-[7px] text-body text-text3">
                                         No collections yet
                                     </div>
                                 )}
                                 {collections.map((c) => (
                                     <div
+                                        className={cn(
+                                            'flex cursor-pointer items-center gap-2 rounded-7 px-[10px] py-[7px] text-body-lg',
+                                            c.id === collectionId
+                                                ? 'bg-accent-tint font-semibold text-accent'
+                                                : 'bg-transparent font-normal text-text2',
+                                        )}
                                         key={c.id}
                                         onClick={() => {
                                             setCollectionId(c.id);
                                             setCollOpen(false);
                                         }}
-                                        style={{
-                                            alignItems: 'center',
-                                            background:
-                                                c.id === collectionId ? '#f0f0fb' : 'transparent',
-                                            borderRadius: 7,
-                                            color: c.id === collectionId ? AC : '#3b3b44',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            fontSize: 13,
-                                            fontWeight: c.id === collectionId ? 600 : 400,
-                                            gap: 8,
-                                            padding: '7px 10px',
-                                        }}
                                     >
                                         <span
-                                            style={{
-                                                background: c.color,
-                                                borderRadius: '50%',
-                                                flex: 'none',
-                                                height: 9,
-                                                width: 9,
-                                            }}
+                                            className="h-[9px] w-[9px] flex-none rounded-full"
+                                            style={{ background: c.color }}
                                         />
                                         {c.name}
                                     </div>
@@ -715,62 +421,29 @@ export function Composer({
             </div>
 
             {/* footer */}
-            <div
-                style={{
-                    alignItems: 'center',
-                    background: 'var(--surface2, #fafafa)',
-                    borderTop: '1px solid var(--border-soft, #f0f0f2)',
-                    display: 'flex',
-                    flex: 'none',
-                    justifyContent: 'space-between',
-                    padding: '11px 16px',
-                }}
-            >
-                <span style={{ color: error ? '#c0392b' : '#9a9aa5', fontSize: 12 }}>
+            <div className="flex flex-none items-center justify-between border-t border-border-soft bg-surface2 px-4 py-[11px]">
+                <span className={cn('text-body-sm', error ? 'text-[#c0392b]' : 'text-text3')}>
                     {error ??
                         (inDrawer
                             ? 'esc to close · drag files to attach'
                             : '⌥Space to toggle · drag files to attach')}
                 </span>
-                <span style={{ alignItems: 'center', display: 'flex', gap: 8 }}>
+                <span className="flex items-center gap-2">
                     <span
+                        className="cursor-pointer rounded-lg px-3 py-[6px] text-body-lg text-text2"
                         onClick={onCancel}
-                        style={{
-                            borderRadius: 8,
-                            color: 'var(--text2, #6b6b76)',
-                            cursor: 'pointer',
-                            fontSize: 13,
-                            padding: '6px 12px',
-                        }}
                     >
                         Cancel
                     </span>
                     <span
+                        className={cn(
+                            'inline-flex items-center gap-[7px] rounded-lg bg-accent px-[14px] py-[7px] text-body-lg font-semibold text-white',
+                            canSave ? 'cursor-pointer opacity-100' : 'cursor-default opacity-55',
+                        )}
                         onClick={() => void save()}
-                        style={{
-                            alignItems: 'center',
-                            background: AC,
-                            borderRadius: 8,
-                            color: '#fff',
-                            cursor: canSave ? 'pointer' : 'default',
-                            display: 'inline-flex',
-                            fontSize: 13,
-                            fontWeight: 600,
-                            gap: 7,
-                            opacity: canSave ? 1 : 0.55,
-                            padding: '7px 14px',
-                        }}
                     >
                         Save
-                        <span
-                            style={{
-                                background: 'rgba(255,255,255,.22)',
-                                borderRadius: 5,
-                                fontFamily: 'ui-monospace,Menlo,monospace',
-                                fontSize: 11,
-                                padding: '0px 6px',
-                            }}
-                        >
+                        <span className="rounded-5 bg-white/22 px-[6px] py-0 font-mono text-caption">
                             ⏎
                         </span>
                     </span>

@@ -8,12 +8,11 @@ import type { NewItem } from '../../data/repository';
 import type { ItemType } from '../../store/types';
 
 import { captureAi, hideCapture, hostOf, saveCapture } from '../../lib/captureActions';
+import { cn } from '../../lib/cn';
 import { fetchLinkMetadata, type LinkMetadata } from '../../lib/linkMetadata';
 import { typeMeta } from '../../store/typeMeta';
 import { Globe, Sparkle } from '../common/glyphs';
 import { Icon } from '../common/Icon';
-
-const AC = 'var(--ac, #5b5bd6)';
 
 const COLLECTION_FOR: Partial<Record<ItemType, string>> = {
     code: 'design',
@@ -95,65 +94,33 @@ export function CommandBar() {
     const showPreview = type === 'link' && (fetching || !!meta);
 
     return (
-        <div
-            style={{
-                background: 'var(--surface, #fff)',
-                border: '1px solid var(--border, #ececef)',
-                borderRadius: 16,
-                boxShadow: 'var(--float-shadow)',
-                overflow: 'hidden',
-            }}
-        >
+        <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-float">
             {/* input row */}
-            <div style={{ alignItems: 'center', display: 'flex', gap: 13, padding: '17px 18px' }}>
+            <div className="flex items-center gap-[13px] px-[18px] py-[17px]">
                 <span
-                    style={{
-                        alignItems: 'center',
-                        background: meta_.bg,
-                        borderRadius: 7,
-                        color: meta_.fg,
-                        display: 'flex',
-                        flex: 'none',
-                        height: 25,
-                        justifyContent: 'center',
-                        width: 25,
-                    }}
+                    className={cn(
+                        'flex h-[25px] w-[25px] flex-none items-center justify-center rounded-7',
+                        meta_.chip,
+                    )}
                 >
                     <Icon name={type} size={15} />
                 </span>
                 <input
                     autoFocus
+                    className="min-w-0 flex-1 border-none bg-transparent text-[15.5px] text-text outline-none"
                     onChange={(e) => setText(e.target.value)}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') void save();
                         if (e.key === 'Escape') void hideCapture();
                     }}
                     placeholder="Capture a link, note, task, or code…"
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text, #1a1a1f)',
-                        flex: 1,
-                        font: 'inherit',
-                        fontSize: 15.5,
-                        minWidth: 0,
-                        outline: 'none',
-                    }}
                     value={text}
                 />
                 <span
-                    style={{
-                        alignItems: 'center',
-                        background: meta_.bg,
-                        borderRadius: 6,
-                        color: meta_.fg,
-                        display: 'inline-flex',
-                        flex: 'none',
-                        fontSize: 11,
-                        fontWeight: 600,
-                        gap: 5,
-                        padding: '3px 8px',
-                    }}
+                    className={cn(
+                        'inline-flex flex-none items-center gap-[5px] rounded-md px-2 py-[3px] text-caption font-semibold',
+                        meta_.chip,
+                    )}
                 >
                     <Icon name={type} size={12} />
                     {meta_.label}
@@ -163,76 +130,27 @@ export function CommandBar() {
             {/* link preview */}
             {showPreview && (
                 <>
-                    <div style={{ background: 'var(--hover, #f0f0f2)', height: 1 }} />
-                    <div
-                        style={{
-                            alignItems: 'flex-start',
-                            display: 'flex',
-                            gap: 13,
-                            padding: '14px 18px',
-                        }}
-                    >
-                        <div
-                            style={{
-                                alignItems: 'center',
-                                background:
-                                    'repeating-linear-gradient(45deg,var(--surface3,#f3f3f6),var(--surface3,#f3f3f6) 6px,var(--border-soft,#ededf1) 6px,var(--border-soft,#ededf1) 12px)',
-                                borderRadius: 9,
-                                color: 'var(--faint, #a8a8b0)',
-                                display: 'flex',
-                                flex: 'none',
-                                height: 46,
-                                justifyContent: 'center',
-                                overflow: 'hidden',
-                                width: 46,
-                            }}
-                        >
+                    <div className="h-px bg-hover" />
+                    <div className="flex items-start gap-[13px] px-[18px] py-[14px]">
+                        <div className="flex h-[46px] w-[46px] flex-none items-center justify-center overflow-hidden rounded-9 bg-[repeating-linear-gradient(45deg,var(--surface3),var(--surface3)_6px,var(--border-soft)_6px,var(--border-soft)_12px)] text-faint">
                             {meta?.image ? (
                                 <img
                                     alt=""
+                                    className="h-full w-full object-cover"
                                     draggable={false}
                                     src={meta.image}
-                                    style={{ height: '100%', objectFit: 'cover', width: '100%' }}
                                 />
                             ) : (
                                 <Globe size={18} />
                             )}
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <div
-                                style={{
-                                    color: 'var(--text, #1a1a1f)',
-                                    fontSize: 14.5,
-                                    fontWeight: 620,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
+                        <div className="min-w-0 flex-1">
+                            <div className="truncate text-[14.5px] font-[620] text-text">
                                 {fetching && !meta ? 'Fetching…' : meta?.title || hostOf(text)}
                             </div>
-                            <div
-                                style={{
-                                    color: 'var(--text3, #9a9aa5)',
-                                    fontSize: 12.5,
-                                    marginTop: 2,
-                                }}
-                            >
-                                {hostOf(text)}
-                            </div>
+                            <div className="mt-[2px] text-body text-text3">{hostOf(text)}</div>
                             {meta?.description && (
-                                <div
-                                    style={{
-                                        color: 'var(--text2, #6b6b76)',
-                                        display: '-webkit-box',
-                                        fontSize: 13,
-                                        lineHeight: 1.5,
-                                        marginTop: 9,
-                                        overflow: 'hidden',
-                                        WebkitBoxOrient: 'vertical',
-                                        WebkitLineClamp: 2,
-                                    }}
-                                >
+                                <div className="mt-[9px] line-clamp-2 text-body-lg leading-[1.5] text-text2">
                                     {meta.description}
                                 </div>
                             )}
@@ -244,42 +162,16 @@ export function CommandBar() {
             {/* AI tags */}
             {tags.length > 0 && (
                 <>
-                    <div style={{ background: 'var(--hover, #f0f0f2)', height: 1 }} />
-                    <div
-                        style={{
-                            alignItems: 'center',
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: 7,
-                            padding: '12px 18px',
-                        }}
-                    >
-                        <span
-                            style={{
-                                alignItems: 'center',
-                                color: 'var(--faint, #a8a8b0)',
-                                display: 'inline-flex',
-                                fontSize: 10.5,
-                                fontWeight: 600,
-                                gap: 4,
-                                letterSpacing: '.05em',
-                                textTransform: 'uppercase',
-                            }}
-                        >
-                            <Sparkle size={11} style={{ color: AC }} />
+                    <div className="h-px bg-hover" />
+                    <div className="flex flex-wrap items-center gap-[7px] px-[18px] py-3">
+                        <span className="inline-flex items-center gap-1 text-micro font-semibold tracking-[.05em] text-faint uppercase">
+                            <Sparkle className="text-accent" size={11} />
                             AI tags
                         </span>
                         {tags.map((t) => (
                             <span
+                                className="rounded-md bg-accent-tint px-[7px] py-[2px] font-mono text-caption text-accent"
                                 key={t}
-                                style={{
-                                    background: 'var(--ac-tint, #eeeef2)',
-                                    borderRadius: 6,
-                                    color: AC,
-                                    fontFamily: 'ui-monospace,Menlo,monospace',
-                                    fontSize: 11,
-                                    padding: '2px 7px',
-                                }}
                             >
                                 #{t}
                             </span>
@@ -289,65 +181,25 @@ export function CommandBar() {
             )}
 
             {/* footer */}
-            <div
-                style={{
-                    alignItems: 'center',
-                    background: 'var(--surface2, #fafafa)',
-                    borderTop: '1px solid var(--border-soft, #f0f0f2)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    padding: '11px 18px',
-                }}
-            >
+            <div className="flex items-center justify-between border-t border-border-soft bg-surface2 px-[18px] py-[11px]">
                 {error ? (
-                    <span style={{ color: '#c0392b', fontSize: 12 }}>{error}</span>
+                    <span className="text-body-sm text-[#c0392b]">{error}</span>
                 ) : (
-                    <span
-                        style={{
-                            alignItems: 'center',
-                            color: 'var(--text3, #9a9aa5)',
-                            display: 'inline-flex',
-                            fontSize: 12,
-                            gap: 7,
-                        }}
-                    >
-                        <Sparkle size={13} style={{ color: AC }} />
-                        Filed to{' '}
-                        <strong style={{ color: 'var(--text2, #6b6b76)', fontWeight: 600 }}>
-                            {filedTo}
-                        </strong>
+                    <span className="inline-flex items-center gap-[7px] text-body-sm text-text3">
+                        <Sparkle className="text-accent" size={13} />
+                        Filed to <strong className="font-semibold text-text2">{filedTo}</strong>
                     </span>
                 )}
-                <span style={{ alignItems: 'center', display: 'flex', gap: 7 }}>
+                <span className="flex items-center gap-[7px]">
                     <span
+                        className="cursor-pointer rounded-md border border-b-2 border-kbd-border bg-surface px-[7px] py-[2px] font-mono text-caption text-text2"
                         onClick={() => void hideCapture()}
-                        style={{
-                            background: 'var(--surface, #fff)',
-                            border: '1px solid var(--kbd-border, #e2e2e7)',
-                            borderBottomWidth: 2,
-                            borderRadius: 6,
-                            color: 'var(--text2, #6b6b76)',
-                            cursor: 'pointer',
-                            fontFamily: 'ui-monospace,Menlo,monospace',
-                            fontSize: 11,
-                            padding: '2px 7px',
-                        }}
                     >
                         esc
                     </span>
                     <span
+                        className="cursor-pointer rounded-md border border-b-2 border-black/12 bg-accent px-2 py-[2px] font-mono text-caption text-white"
                         onClick={() => void save()}
-                        style={{
-                            background: AC,
-                            border: '1px solid rgba(0,0,0,.12)',
-                            borderBottomWidth: 2,
-                            borderRadius: 6,
-                            color: '#fff',
-                            cursor: 'pointer',
-                            fontFamily: 'ui-monospace,Menlo,monospace',
-                            fontSize: 11,
-                            padding: '2px 8px',
-                        }}
                     >
                         ⏎ Save
                     </span>

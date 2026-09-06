@@ -14,7 +14,8 @@ import { useEffect, useState } from 'react';
 
 import type { NewItem } from '../../data/repository';
 
-import { DRAWER_MS, drawerIn, drawerOut, scrimIn, scrimOut } from '../../App.css';
+import { cn } from '../../lib/cn';
+import { DRAWER_MS } from '../../lib/motion';
 import { useMountTransition } from '../../lib/useMountTransition';
 import { useStore } from '../../store/useStore';
 import { Close } from '../common/glyphs';
@@ -59,79 +60,32 @@ export function CaptureDrawer() {
          * takes the whole window along. Nothing here is meant to be seen outside
          * the body area anyway.
          */
-        <div
-            style={{
-                inset: 0,
-                overflow: 'hidden',
-                pointerEvents: 'none',
-                position: 'absolute',
-                zIndex: 40,
-            }}
-        >
+        <div className="pointer-events-none absolute inset-0 z-40 overflow-hidden">
             <div
-                className={reduceMotion ? undefined : open ? scrimIn : scrimOut}
+                className={cn(
+                    'pointer-events-auto absolute inset-0 cursor-pointer bg-scrim',
+                    !reduceMotion && (open ? 'animate-scrim-in' : 'animate-scrim-out'),
+                )}
                 onClick={closeCapture}
-                style={{
-                    background: 'var(--scrim, rgba(20,20,30,.36))',
-                    cursor: 'pointer',
-                    inset: 0,
-                    pointerEvents: 'auto',
-                    position: 'absolute',
-                }}
             />
             <div
-                className={reduceMotion ? undefined : open ? drawerIn : drawerOut}
-                style={{
-                    background: 'var(--surface, #fff)',
-                    borderLeft: '1px solid var(--border, #ececef)',
-                    bottom: 0,
-                    boxShadow: 'var(--float-shadow)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    minHeight: 0,
-                    pointerEvents: 'auto',
-                    position: 'absolute',
-                    right: 0,
-                    top: 0,
-                    width: 496,
-                    zIndex: 1,
-                }}
+                className={cn(
+                    'pointer-events-auto absolute top-0 right-0 bottom-0 z-1 flex min-h-0 w-[496px] flex-col border-l border-border bg-surface shadow-float',
+                    !reduceMotion && (open ? 'animate-drawer-in' : 'animate-drawer-out'),
+                )}
             >
-                <div
-                    style={{
-                        alignItems: 'center',
-                        background: 'var(--surface2, #fafafa)',
-                        borderBottom: '1px solid var(--border, #ececef)',
-                        display: 'flex',
-                        flex: 'none',
-                        gap: 8,
-                        padding: '9px 12px',
-                    }}
-                >
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>Capture</span>
+                <div className="flex flex-none items-center gap-2 border-b border-border bg-surface2 px-3 py-[9px]">
+                    <span className="text-body-lg font-semibold">Capture</span>
                     <button
                         aria-label="Close capture"
+                        className="ml-auto inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-7 border-none bg-transparent p-0 text-text3"
                         onClick={closeCapture}
-                        style={{
-                            alignItems: 'center',
-                            background: 'transparent',
-                            border: 'none',
-                            borderRadius: 7,
-                            color: 'var(--text3, #9a9aa5)',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            height: 28,
-                            justifyContent: 'center',
-                            marginLeft: 'auto',
-                            padding: 0,
-                            width: 28,
-                        }}
                         type="button"
                     >
                         <Close size={15} sw={2} />
                     </button>
                 </div>
-                <div style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}>
+                <div className="flex min-h-0 flex-1 flex-col">
                     <Composer
                         chrome="drawer"
                         focusReady={settled}
