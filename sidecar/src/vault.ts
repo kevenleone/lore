@@ -6,6 +6,8 @@ import type { Collection } from '@lore/types';
 import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 
+import { slugify } from './slug';
+
 export const LORE_DIR = '.lore';
 export const TRASH_DIR = `${LORE_DIR}/trash`;
 export const COLLECTIONS_FILE = `${LORE_DIR}/collections.json`;
@@ -97,6 +99,14 @@ export class Vault {
         return safeJoin(this.root, relPath);
     }
 
+    /** Raw bytes of a file in `attachments/`. */
+    async readAttachment(relPath: string): Promise<Uint8Array> {
+        if (!relPath.startsWith(`${ATTACHMENTS_DIR}/`)) {
+            throw new Error(`not an attachment: ${relPath}`);
+        }
+        return readFile(this.path(relPath));
+    }
+
     async readCollectionsFile(): Promise<Record<string, { color?: string; order?: number }>> {
         try {
             const raw = await this.readText(COLLECTIONS_FILE);
@@ -145,6 +155,20 @@ export class Vault {
         } catch {
             return { tagOrder: [] };
         }
+    }
+
+    /**
+     * Copies a captured file into `attachments/` under a slugged, collision-free
+     * name, and answers with its vault-relative path. The path is what goes on
+     * the item: a URL would carry the sidecar's port, which changes every launch.
+     */
+    async writeAttachment(filename: string, bytes: Uint8Array): Promise<string> {
+        const dir = this.path(ATTACHMENTS_DIR);
+        await mkdir(dir, { recursive: true });
+        const taken = new Set(await readdir(dir));
+        const rel = `${ATTACHMENTS_DIR}/${uniqueAttachmentName(filename, taken)}`;
+        await writeFile(this.path(rel), bytes);
+        return rel;
     }
 
     async writeCollectionsFile(collections: readonly Collection[]): Promise<void> {
@@ -216,6 +240,28 @@ export function safeJoin(root: string, relPath: string): string {
 export function stemOf(relPath: string): string {
     const base = relPath.slice(relPath.lastIndexOf('/') + 1);
     return base.endsWith('.md') ? base.slice(0, -3) : base;
+}
+
+/**
+ * A slugged `name.ext` that no file in `taken` already uses. The extension is
+ * kept verbatim (lowercased) because it is what decides the served MIME type.
+ */
+export function uniqueAttachmentName(filename: string, taken: ReadonlySet<string>): string {
+    const base = filename.slice(filename.lastIndexOf('/') + 1);
+    const dot = base.lastIndexOf('.');
+    const ext =
+        dot > 0
+            ? base
+                  .slice(dot)
+                  .toLowerCase()
+                  .replace(/[^.a-z0-9]/g, '')
+            : '';
+    const stem = slugify(dot > 0 ? base.slice(0, dot) : base) || 'attachment';
+    if (!taken.has(`${stem}${ext}`)) return `${stem}${ext}`;
+    for (let n = 2; n < 1000; n += 1) {
+        if (!taken.has(`${stem}-${n}${ext}`)) return `${stem}-${n}${ext}`;
+    }
+    return `${stem}-${Date.now().toString(36)}${ext}`;
 }
 
 export { join, resolve };

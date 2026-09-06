@@ -375,3 +375,88 @@ describe('migration fidelity', () => {
         expect(new Date(created.createdAt).getTime()).toBeGreaterThanOrEqual(before - 1000);
     });
 });
+
+describe('attachment routes', () => {
+    beforeEach(openVault);
+
+    async function upload(name: string, bytes: Uint8Array) {
+        const form = new FormData();
+        form.append('file', new File([bytes], name));
+        const res = await app.handle(
+            new Request('http://127.0.0.1/attachments', {
+                body: form,
+                headers: { authorization: `Bearer ${TOKEN}`, origin: 'tauri://localhost' },
+                method: 'POST',
+            }),
+        );
+        return { body: (await res.json()) as { path: string }, status: res.status };
+    }
+
+    const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]);
+
+    it('copies a file into attachments/ and serves it back', async () => {
+        const created = await upload('Screen Shot.PNG', PNG);
+        expect(created.status).toBe(201);
+        expect(created.body.path).toBe('attachments/screen-shot.png');
+
+        const res = await app.handle(
+            new Request(`http://127.0.0.1/${created.body.path}`, {
+                headers: { authorization: `Bearer ${TOKEN}`, origin: 'tauri://localhost' },
+            }),
+        );
+        expect(res.status).toBe(200);
+        expect(res.headers.get('content-type')).toBe('image/png');
+        expect(new Uint8Array(await res.arrayBuffer())).toEqual(PNG);
+    });
+
+    it('never overwrites an attachment that is already there', async () => {
+        const first = await upload('shot.png', PNG);
+        const second = await upload('shot.png', PNG);
+        expect(first.body.path).toBe('attachments/shot.png');
+        expect(second.body.path).toBe('attachments/shot-2.png');
+    });
+
+    it('serves a read to a token in the query, since <img> cannot set headers', async () => {
+        const { body } = await upload('shot.png', PNG);
+        const res = await app.handle(new Request(`http://127.0.0.1/${body.path}?token=${TOKEN}`));
+        expect(res.status).toBe(200);
+    });
+
+    it('refuses a read with no token at all', async () => {
+        const { body } = await upload('shot.png', PNG);
+        const res = await app.handle(new Request(`http://127.0.0.1/${body.path}`));
+        expect(res.status).toBe(401);
+    });
+
+    it('refuses an upload authorised only by the query token', async () => {
+        const form = new FormData();
+        form.append('file', new File([PNG], 'shot.png'));
+        const res = await app.handle(
+            new Request(`http://127.0.0.1/attachments?token=${TOKEN}`, {
+                body: form,
+                method: 'POST',
+            }),
+        );
+        expect(res.status).toBe(401);
+    });
+
+    it('refuses a path that climbs out of attachments/', async () => {
+        const res = await app.handle(
+            new Request('http://127.0.0.1/attachments/..%2F..%2Fetc%2Fpasswd', {
+                headers: { authorization: `Bearer ${TOKEN}`, origin: 'tauri://localhost' },
+            }),
+        );
+        expect(res.status).toBe(404);
+    });
+
+    it('rejects a request with no file part', async () => {
+        const res = await app.handle(
+            new Request('http://127.0.0.1/attachments', {
+                body: new FormData(),
+                headers: { authorization: `Bearer ${TOKEN}`, origin: 'tauri://localhost' },
+                method: 'POST',
+            }),
+        );
+        expect(res.status).toBe(400);
+    });
+});

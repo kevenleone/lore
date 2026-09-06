@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react';
 
 import type { Item } from '../../store/types';
 
+import { useAssetSrc } from '../../lib/assetSrc';
 import { bannerPalette, bannerSeed, bannerStyle } from '../../lib/banner';
 import { useStore } from '../../store/useStore';
 
@@ -24,8 +25,9 @@ export function ItemBanner({ chip, item }: ItemBannerProps) {
     const [loadedSrc, setLoadedSrc] = useState<null | string>(null);
     const seed = bannerSeed(item);
     const palette = useMemo(() => bannerPalette(seed), [seed]);
+    const src = useAssetSrc(item.image);
 
-    const loaded = !!item.image && loadedSrc === item.image;
+    const loaded = !!src && loadedSrc === src;
     const fade = reduceMotion ? undefined : 'opacity .45s ease';
 
     return (
@@ -37,14 +39,14 @@ export function ItemBanner({ chip, item }: ItemBannerProps) {
                     transition: fade,
                 }}
             />
-            {item.image && (
+            {src && (
                 <img
                     alt=""
                     className="absolute inset-0 h-full w-full object-cover"
                     draggable={false}
                     loading="lazy"
-                    onLoad={() => setLoadedSrc(item.image ?? null)}
-                    src={item.image}
+                    onLoad={() => setLoadedSrc(src)}
+                    src={src}
                     style={{
                         filter: loaded ? 'none' : 'blur(6px)',
                         opacity: loaded ? 1 : 0,

@@ -116,6 +116,14 @@ export class MemoryRepository implements KnowledgeRepository {
         return withDerived(item);
     }
 
+    /**
+     * No files to copy into, so the preview keeps the blob alive for as long as
+     * the page lives. `assetSrc` passes an object URL through untouched.
+     */
+    async uploadAttachment(file: File): Promise<string> {
+        return URL.createObjectURL(file);
+    }
+
     private live(): Item[] {
         // `snippet` / `domain` are derived, never stored — same rule as every
         // other repository, so tests exercise the real shape.

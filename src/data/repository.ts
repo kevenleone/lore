@@ -52,6 +52,13 @@ export interface KnowledgeRepository {
     updateCollection(id: string, patch: CollectionPatch): Promise<Collection>;
 
     updateItem(id: string, patch: ItemPatch): Promise<Item>;
+
+    /**
+     * Copies a captured file into the store and answers with the reference an
+     * item's `image` holds — a vault-relative path for the vault, an object URL
+     * for the in-memory store. Optional: only stores that own files can do it.
+     */
+    uploadAttachment?(file: File): Promise<string>;
 }
 export type NewCollection = Omit<Collection, 'id'>;
 

@@ -86,13 +86,17 @@ function corsHeaders(origin: null | string): Record<string, string> {
 /**
  * Bearer check.
  *
- * `/events` is the exception: it is consumed by `EventSource`, which cannot set
- * request headers, so it carries the token as a query parameter instead. That
- * is a localhost URL which never leaves the machine.
+ * Two paths are the exception, both because the browser API that consumes them
+ * cannot set request headers: `/events` (`EventSource`) and reading an
+ * attachment (`<img src>`). They carry the token as a query parameter instead.
+ * These are localhost URLs which never leave the machine, and the origin
+ * allowlist above still applies to both.
  */
 function isAuthorized(request: Request, url: URL, token: string): boolean {
     const header = request.headers.get('authorization');
     if (header === `Bearer ${token}`) return true;
-    if (url.pathname === '/events' && url.searchParams.get('token') === token) return true;
-    return false;
+    if (url.searchParams.get('token') !== token) return false;
+    if (url.pathname === '/events') return true;
+    // Reading only — an upload still has to carry the header.
+    return request.method === 'GET' && url.pathname.startsWith('/attachments/');
 }
