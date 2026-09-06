@@ -22,13 +22,7 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
-/*
- * Preflight is deliberately not imported yet. It resets `button` background and
- * cursor and zeroes every border width, which would repaint the components that
- * have not been migrated off inline styles. It goes in as its own commit once
- * the last one is converted.
- */
-/* @import 'tailwindcss/preflight.css' layer(base); */
+@import 'tailwindcss/preflight.css' layer(base);
 
 /*
  * `inline` is load-bearing, not a style choice. The theme tokens are written
@@ -234,16 +228,21 @@
 }
 
 /*
- * Ported from theme/global.css.ts. None of this is expressible as a utility —
- * the scrollbar rules in particular have no Tailwind equivalent. The bare
- * `var(--text)` with no fallback is safe because theme/bootstrap.ts paints the
- * tokens onto :root before React's first render.
+ * Ported from theme/global.css.ts, minus what preflight above now covers. None
+ * of this is expressible as a utility — the scrollbar rules in particular have
+ * no Tailwind equivalent. The bare `var(--text)` with no fallback is safe
+ * because theme/bootstrap.ts paints the tokens onto :root before the first
+ * render.
  */
 @layer base {
-    *,
-    ::before,
-    ::after {
-        box-sizing: border-box;
+    /*
+     * Preflight sets `line-height: 1.5` on the root. The design was drawn
+     * against the browser default, and 1.5 grows every row that does not name
+     * its own leading — a list row goes from 78px to 85px. Components that want
+     * a specific value still say so with `leading-*`.
+     */
+    html {
+        line-height: normal;
     }
 
     /* Nothing in Lore scrolls the page itself: every pane, sheet and drawer is
@@ -267,6 +266,12 @@
         font-family: var(--font-sans);
         text-rendering: optimizeLegibility;
         -webkit-font-smoothing: antialiased;
+    }
+
+    /* Preflight gives buttons `cursor: default`; every button in Lore is a
+       pointer target. */
+    button:not(:disabled) {
+        cursor: pointer;
     }
 
     ::-webkit-scrollbar {
