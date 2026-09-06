@@ -9,16 +9,36 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 import { LoreMark, WORDMARK_FONT } from '../common/LoreMark';
 import { AppleIcon, GoogleIcon, SettingsIcon } from '../common/settingsGlyphs';
-import {
-    anonCardRow,
-    ghostButton,
-    primaryButton,
-    quietButton,
-    socialButton,
-} from './Onboarding.css';
+
+const BUTTON_BASE =
+    'text-title flex h-[42px] w-full cursor-pointer items-center justify-center gap-[9px] rounded-10 font-[inherit]';
+
+/** Apple / Google rows — the design brightens them on hover. */
+const SOCIAL_BUTTON = cn(BUTTON_BASE, 'hover:brightness-[1.35]');
+
+/** Accent-filled call to action. */
+const PRIMARY_BUTTON = cn(
+    BUTTON_BASE,
+    'gap-2 border-none bg-accent font-semibold text-white not-disabled:hover:brightness-[1.18] disabled:cursor-not-allowed disabled:opacity-45',
+);
+
+/** Outlined secondary action (Resend link). */
+const GHOST_BUTTON = cn(
+    BUTTON_BASE,
+    'gap-2 border border-dash bg-surface font-[560] text-text hover:bg-surface2',
+);
+
+/** Text-only "back" affordance under the primary action. */
+const QUIET_BUTTON =
+    'text-subhead mt-[6px] flex h-[38px] w-full cursor-pointer items-center justify-center rounded-10 border-none bg-transparent font-[inherit] text-text2 hover:bg-sel hover:text-text';
+
+/** The dashed "continue without an account" card. */
+const ANON_CARD_ROW =
+    'flex cursor-pointer items-start gap-[11px] rounded-11 border border-dashed border-dash px-[13px] py-3 hover:border-accent hover:bg-surface2';
 
 const COPY = {
     anon: {
@@ -88,60 +108,25 @@ export function Onboarding() {
     const copy = COPY[step];
 
     return (
-        <div
-            style={{
-                alignItems: 'center',
-                background:
-                    'radial-gradient(125% 120% at 72% 8%, #dadce6 0%, #c8cad7 46%, #b9bbcb 100%)',
-                display: 'flex',
-                inset: 0,
-                justifyContent: 'center',
-                position: 'absolute',
-                zIndex: 100,
-            }}
-        >
+        <div className="absolute inset-0 z-100 flex items-center justify-center bg-[radial-gradient(125%_120%_at_72%_8%,#dadce6_0%,#c8cad7_46%,#b9bbcb_100%)]">
             <div
                 aria-label="Set up Lore"
                 aria-modal="true"
+                className="max-h-[calc(100%-60px)] w-[428px] overflow-y-auto rounded-2xl border border-border bg-surface text-text shadow-float"
                 role="dialog"
-                style={{
-                    background: 'var(--surface, #fff)',
-                    border: '1px solid var(--border, #ececef)',
-                    borderRadius: 16,
-                    boxShadow: 'var(--float-shadow)',
-                    color: 'var(--text, #1a1a1f)',
-                    maxHeight: 'calc(100% - 60px)',
-                    overflowY: 'auto',
-                    width: 428,
-                }}
             >
-                <div style={{ padding: '26px 34px 30px' }}>
-                    <div style={{ color: 'var(--ac)', display: 'flex', justifyContent: 'center' }}>
+                <div className="px-[34px] pt-[26px] pb-[30px]">
+                    <div className="flex justify-center text-accent">
                         <LoreMark size={34} />
                     </div>
                     <h2
-                        style={{
-                            fontFamily: WORDMARK_FONT,
-                            fontSize: 31,
-                            fontWeight: 400,
-                            letterSpacing: '-.01em',
-                            lineHeight: 1.15,
-                            margin: '16px 0 0',
-                            textAlign: 'center',
-                        }}
+                        className="mt-4 mb-0 text-center text-[31px] leading-[1.15] font-normal tracking-[-.01em]"
+                        // The wordmark's face is the mark's own, not the UI font.
+                        style={{ fontFamily: WORDMARK_FONT }}
                     >
                         {copy.title}
                     </h2>
-                    <p
-                        style={{
-                            color: 'var(--text2, #6b6b76)',
-                            fontSize: 13.5,
-                            lineHeight: 1.55,
-                            margin: '9px 0 0',
-                            textAlign: 'center',
-                            textWrap: 'pretty',
-                        }}
-                    >
+                    <p className="mt-[9px] mb-0 text-center text-subhead leading-[1.55] text-pretty text-text2">
                         {copy.body}
                     </p>
 
@@ -172,16 +157,7 @@ export function Onboarding() {
                         />
                     )}
 
-                    <p
-                        style={{
-                            color: 'var(--faint, #a8a8b0)',
-                            fontSize: 11.5,
-                            lineHeight: 1.5,
-                            margin: '18px 0 0',
-                            textAlign: 'center',
-                            textWrap: 'pretty',
-                        }}
-                    >
+                    <p className="mt-[18px] mb-0 text-center text-label leading-[1.5] text-pretty text-faint">
                         By continuing you agree to the <Legal href="#terms">Terms</Legal> and{' '}
                         <Legal href="#privacy">Privacy Policy</Legal>.
                     </p>
@@ -198,45 +174,22 @@ export function Onboarding() {
 function AnonymousCard({ onBack, onStart }: { onBack: () => void; onStart: () => void }) {
     return (
         <>
-            <div
-                style={{
-                    border: '1px solid var(--border, #ececef)',
-                    borderRadius: 12,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1,
-                    marginTop: 22,
-                    overflow: 'hidden',
-                }}
-            >
+            <div className="mt-[22px] flex flex-col gap-px overflow-hidden rounded-xl border border-border">
                 {ANON_FACTS.map((f) => (
                     <div
+                        className="flex items-start gap-[11px] border-b border-border-soft bg-surface2 px-[15px] py-[13px]"
                         key={f.title}
-                        style={{
-                            alignItems: 'flex-start',
-                            background: 'var(--surface2, #fafafa)',
-                            borderBottom: '1px solid var(--border-soft, #f0f0f2)',
-                            display: 'flex',
-                            gap: 11,
-                            padding: '13px 15px',
-                        }}
                     >
-                        <span style={{ color: f.color, display: 'inline-flex', marginTop: 1 }}>
+                        <span
+                            className="mt-px inline-flex"
+                            // Each fact carries its own accent colour.
+                            style={{ color: f.color }}
+                        >
                             <SettingsIcon name={f.icon} size={17} sw={1.7} />
                         </span>
-                        <span style={{ flex: 1, minWidth: 0 }}>
-                            <span style={{ display: 'block', fontSize: 13, fontWeight: 600 }}>
-                                {f.title}
-                            </span>
-                            <span
-                                style={{
-                                    color: 'var(--text3, #8a8a95)',
-                                    display: 'block',
-                                    fontSize: 12.5,
-                                    lineHeight: 1.45,
-                                    marginTop: 2,
-                                }}
-                            >
+                        <span className="min-w-0 flex-1">
+                            <span className="block text-body-lg font-semibold">{f.title}</span>
+                            <span className="mt-[2px] block text-body leading-[1.45] text-text3">
                                 {f.body}
                             </span>
                         </span>
@@ -244,15 +197,10 @@ function AnonymousCard({ onBack, onStart }: { onBack: () => void; onStart: () =>
                 ))}
             </div>
 
-            <button
-                className={primaryButton}
-                onClick={onStart}
-                style={{ marginTop: 16 }}
-                type="button"
-            >
+            <button className={cn(PRIMARY_BUTTON, 'mt-4')} onClick={onStart} type="button">
                 Start a local vault
             </button>
-            <button className={quietButton} onClick={onBack} type="button">
+            <button className={QUIET_BUTTON} onClick={onBack} type="button">
                 Back to sign in
             </button>
         </>
@@ -261,26 +209,17 @@ function AnonymousCard({ onBack, onStart }: { onBack: () => void; onStart: () =>
 
 function Divider() {
     return (
-        <div style={{ alignItems: 'center', display: 'flex', gap: 12, margin: '18px 0' }}>
-            <span style={{ background: 'var(--border, #ececef)', flex: 1, height: 1 }} />
-            <span
-                style={{
-                    color: 'var(--faint, #a8a8b0)',
-                    fontSize: 11,
-                    letterSpacing: '.08em',
-                    textTransform: 'uppercase',
-                }}
-            >
-                or
-            </span>
-            <span style={{ background: 'var(--border, #ececef)', flex: 1, height: 1 }} />
+        <div className="my-[18px] flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-caption tracking-[.08em] text-faint uppercase">or</span>
+            <span className="h-px flex-1 bg-border" />
         </div>
     );
 }
 
 function Legal({ children, href }: { children: React.ReactNode; href: string }) {
     return (
-        <a href={href} style={{ color: 'var(--text2, #393A4A)', textDecoration: 'none' }}>
+        <a className="text-text2 no-underline" href={href}>
             {children}
         </a>
     );
@@ -301,46 +240,17 @@ function MagicLinkCard({
 }) {
     return (
         <>
-            <div
-                style={{
-                    background: 'var(--surface2, #fafafa)',
-                    border: '1px solid var(--border, #ececef)',
-                    borderRadius: 12,
-                    marginTop: 22,
-                    padding: 16,
-                    textAlign: 'center',
-                }}
-            >
-                <div
-                    style={{
-                        color: 'var(--text, #2c2c34)',
-                        fontFamily: 'ui-monospace,Menlo,monospace',
-                        fontSize: 12.5,
-                    }}
-                >
-                    {email}
-                </div>
-                <div
-                    style={{
-                        color: 'var(--text3, #8a8a95)',
-                        fontSize: 12.5,
-                        lineHeight: 1.5,
-                        marginTop: 6,
-                    }}
-                >
+            <div className="mt-[22px] rounded-xl border border-border bg-surface2 p-4 text-center">
+                <div className="font-mono text-body text-text">{email}</div>
+                <div className="mt-[6px] text-body leading-[1.5] text-text3">
                     The link is valid for 15 minutes and signs in this Mac only.
                 </div>
             </div>
 
-            <button
-                className={ghostButton}
-                onClick={onResend}
-                style={{ marginTop: 16 }}
-                type="button"
-            >
+            <button className={cn(GHOST_BUTTON, 'mt-4')} onClick={onResend} type="button">
                 Resend link
             </button>
-            <button className={quietButton} onClick={onBack} type="button">
+            <button className={QUIET_BUTTON} onClick={onBack} type="button">
                 Use a different method
             </button>
         </>
@@ -364,25 +274,21 @@ function SignInCard({
 
     return (
         <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 24 }}>
+            <div className="mt-6 flex flex-col gap-[9px]">
                 <button
-                    className={socialButton}
+                    className={cn(SOCIAL_BUTTON, 'border-none bg-black font-[590] text-white')}
                     onClick={() => onProvider('apple')}
-                    style={{ background: '#000', border: 'none', color: '#fff', fontWeight: 590 }}
                     type="button"
                 >
                     <AppleIcon />
                     Continue with Apple
                 </button>
                 <button
-                    className={socialButton}
+                    className={cn(
+                        SOCIAL_BUTTON,
+                        'border border-dash bg-surface font-[560] text-text',
+                    )}
                     onClick={() => onProvider('google')}
-                    style={{
-                        background: 'var(--surface, #fff)',
-                        border: '1px solid var(--dash, #d2d2dc)',
-                        color: 'var(--text, #2c2c34)',
-                        fontWeight: 560,
-                    }}
                     type="button"
                 >
                     <GoogleIcon />
@@ -393,22 +299,18 @@ function SignInCard({
             <Divider />
 
             <label
-                style={{
-                    alignItems: 'center',
-                    border: `1px solid ${focused ? 'var(--ac)' : 'var(--dash, #d2d2dc)'}`,
-                    borderRadius: 10,
-                    boxShadow: focused ? '0 0 0 3px rgba(57,58,74,.10)' : 'none',
-                    cursor: 'text',
-                    display: 'flex',
-                    gap: 10,
-                    height: 42,
-                    padding: '0 13px',
-                }}
+                className={cn(
+                    'flex h-[42px] cursor-text items-center gap-[10px] rounded-10 border px-[13px]',
+                    focused
+                        ? 'border-accent shadow-[0_0_0_3px_rgba(57,58,74,.10)]'
+                        : 'border-dash shadow-none',
+                )}
             >
-                <span style={{ color: 'var(--text3, #9a9aa5)', display: 'inline-flex' }}>
+                <span className="inline-flex text-text3">
                     <SettingsIcon name="mail" size={16} sw={1.7} />
                 </span>
                 <input
+                    className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title text-text outline-none"
                     onBlur={() => setFocused(false)}
                     onChange={(e) => setEmail(e.target.value)}
                     onFocus={() => setFocused(true)}
@@ -417,64 +319,35 @@ function SignInCard({
                     }}
                     placeholder="you@company.com"
                     ref={emailRef}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text, #1a1a1f)',
-                        flex: 1,
-                        font: 'inherit',
-                        fontSize: 14,
-                        minWidth: 0,
-                        outline: 'none',
-                    }}
                     type="email"
                     value={email}
                 />
             </label>
 
             <button
-                className={primaryButton}
+                className={cn(PRIMARY_BUTTON, 'mt-[9px]')}
                 disabled={!emailValid}
                 onClick={onMagicLink}
-                style={{ marginTop: 9 }}
                 type="button"
             >
                 Email me a sign-in link
             </button>
 
-            <div
-                style={{
-                    background: 'var(--border-soft, #f0f0f2)',
-                    height: 1,
-                    margin: '22px 0 18px',
-                }}
-            />
+            <div className="mt-[22px] mb-[18px] h-px bg-border-soft" />
 
-            <div className={anonCardRow} onClick={onAnonymous}>
-                <span
-                    style={{ color: 'var(--text2, #6b6b76)', display: 'inline-flex', marginTop: 1 }}
-                >
+            <div className={ANON_CARD_ROW} onClick={onAnonymous}>
+                <span className="mt-px inline-flex text-text2">
                     <SettingsIcon name="lock" size={17} sw={1.7} />
                 </span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: 'block', fontSize: 13.5, fontWeight: 600 }}>
+                <span className="min-w-0 flex-1">
+                    <span className="block text-subhead font-semibold">
                         Continue without an account
                     </span>
-                    <span
-                        style={{
-                            color: 'var(--text3, #8a8a95)',
-                            display: 'block',
-                            fontSize: 12.5,
-                            lineHeight: 1.45,
-                            marginTop: 2,
-                        }}
-                    >
+                    <span className="mt-[2px] block text-body leading-[1.45] text-text3">
                         Everything stays in a local vault on this Mac. No sync, no email.
                     </span>
                 </span>
-                <span
-                    style={{ color: 'var(--dash, #c4c4cc)', display: 'inline-flex', marginTop: 3 }}
-                >
+                <span className="mt-[3px] inline-flex text-dash">
                     <SettingsIcon name="chevronRight" size={15} sw={1.7} />
                 </span>
             </div>

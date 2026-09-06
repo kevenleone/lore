@@ -25,18 +25,18 @@ import {
     timeAtOffset,
     weekDays,
 } from '../../lib/calendar';
+import { cn } from '../../lib/cn';
 import { startOfDay } from '../../lib/focusTimer';
 import { useStore } from '../../store/useStore';
 import { ChevronRight, Plus } from '../common/glyphs';
 import { CALENDAR_ACCOUNTS } from '../settings/calendarAccounts';
 import { Segmented } from '../settings/controls';
-import {
-    dropTarget,
-    eventBlock,
-    monthCell,
-    toolbarButton,
-    unscheduledCard,
-} from './CalendarView.css';
+/** Square icon button in the toolbar. */
+const TOOLBAR_BUTTON =
+    'inline-flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-7 border-none bg-surface3 p-0 font-[inherit] text-text2 hover:brightness-[.96]';
+
+const MONTH_CELL =
+    'flex min-h-0 min-w-0 flex-col gap-[3px] overflow-hidden border-t border-l border-border px-[7px] py-[6px]';
 
 const SCALES: readonly CalendarScale[] = ['Day', 'Week', 'Month'] as const;
 const GRID_HEIGHT = (DAY_END_HOUR - DAY_START_HOUR) * HOUR_HEIGHT;
@@ -56,41 +56,23 @@ export function CalendarView({ onCapture }: { onCapture: () => void }) {
     };
 
     return (
-        <div
-            style={{
-                background: 'var(--surface, #fff)',
-                display: 'flex',
-                flex: 1,
-                flexDirection: 'column',
-                minWidth: 0,
-            }}
-        >
-            <div
-                style={{
-                    alignItems: 'center',
-                    borderBottom: '1px solid var(--border, #ececef)',
-                    display: 'flex',
-                    flex: 'none',
-                    gap: 12,
-                    height: 46,
-                    padding: '0 14px',
-                }}
-            >
-                <span style={{ fontSize: 15, fontWeight: 680, letterSpacing: '-.01em' }}>
+        <div className="flex min-w-0 flex-1 flex-col bg-surface">
+            <div className="flex h-[46px] flex-none items-center gap-3 border-b border-border px-[14px]">
+                <span className="text-title-lg font-[680] tracking-[-.01em]">
                     {anchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
                 </span>
-                <span style={{ display: 'flex', gap: 4 }}>
+                <span className="flex gap-1">
                     <button
                         aria-label="Previous"
-                        className={toolbarButton}
+                        className={TOOLBAR_BUTTON}
                         onClick={() => step(-1)}
                         type="button"
                     >
-                        <ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} sw={2.2} />
+                        <ChevronRight className="[transform:rotate(180deg)]" size={14} sw={2.2} />
                     </button>
                     <button
                         aria-label="Next"
-                        className={toolbarButton}
+                        className={TOOLBAR_BUTTON}
                         onClick={() => step(1)}
                         type="button"
                     >
@@ -98,46 +80,17 @@ export function CalendarView({ onCapture }: { onCapture: () => void }) {
                     </button>
                 </span>
                 <button
+                    className="cursor-pointer rounded-lg border border-border bg-transparent px-[11px] py-[5px] font-[inherit] text-body text-text2"
                     onClick={() => setAnchor(startOfDay(new Date()))}
-                    style={{
-                        background: 'transparent',
-                        border: '1px solid var(--border, #e4e4ea)',
-                        borderRadius: 8,
-                        color: 'var(--text2, #6b6b76)',
-                        cursor: 'pointer',
-                        font: 'inherit',
-                        fontSize: 12.5,
-                        padding: '5px 11px',
-                    }}
                     type="button"
                 >
                     Today
                 </button>
-                <div
-                    style={{
-                        alignItems: 'center',
-                        display: 'flex',
-                        gap: 10,
-                        marginLeft: 'auto',
-                    }}
-                >
+                <div className="ml-auto flex items-center gap-[10px]">
                     <Segmented onChange={setScale} options={SCALES} value={scale} />
                     <button
+                        className="inline-flex cursor-pointer items-center gap-[7px] rounded-lg border-none bg-accent px-[11px] py-[6px] font-[inherit] text-body font-semibold text-white"
                         onClick={onCapture}
-                        style={{
-                            alignItems: 'center',
-                            background: 'var(--ac)',
-                            border: 'none',
-                            borderRadius: 8,
-                            color: '#fff',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            font: 'inherit',
-                            fontSize: 12.5,
-                            fontWeight: 600,
-                            gap: 7,
-                            padding: '6px 11px',
-                        }}
                         type="button"
                     >
                         <Plus />
@@ -146,7 +99,7 @@ export function CalendarView({ onCapture }: { onCapture: () => void }) {
                 </div>
             </div>
 
-            <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+            <div className="flex min-h-0 flex-1">
                 <CalendarRail />
                 {scale === 'Month' ? <MonthGrid anchor={anchor} /> : <TimeGrid days={days} />}
             </div>
@@ -164,22 +117,10 @@ function CalendarRail() {
     const unscheduled = items.filter((i) => i.type === 'task' && !schedule[i.id]);
 
     return (
-        <div
-            style={{
-                background: 'var(--surface2, #fafafa)',
-                borderRight: '1px solid var(--border, #ececef)',
-                display: 'flex',
-                flex: 'none',
-                flexDirection: 'column',
-                gap: 18,
-                overflow: 'auto',
-                padding: '14px 12px',
-                width: 216,
-            }}
-        >
+        <div className="flex w-[216px] flex-none flex-col gap-[18px] overflow-auto border-r border-border bg-surface2 px-3 py-[14px]">
             <div>
                 <RailLabel>Calendars</RailLabel>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div className="flex flex-col gap-2">
                     {switches.showTasks && (
                         <LegendRow color="var(--type-task-fg, #4d855f)" name="Captured tasks" />
                     )}
@@ -189,14 +130,7 @@ function CalendarRail() {
                     ))}
                 </div>
                 {connected.length > 0 && (
-                    <div
-                        style={{
-                            color: 'var(--text3, #9a9aa5)',
-                            fontSize: 11.5,
-                            lineHeight: 1.5,
-                            marginTop: 10,
-                        }}
-                    >
+                    <div className="mt-[10px] text-label leading-[1.5] text-text3">
                         Connected accounts aren’t syncing yet — nothing from them is drawn.
                     </div>
                 )}
@@ -204,10 +138,10 @@ function CalendarRail() {
 
             <div>
                 <RailLabel>Unscheduled tasks</RailLabel>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div className="flex flex-col gap-[6px]">
                     {unscheduled.map((item) => (
                         <div
-                            className={unscheduledCard}
+                            className="flex cursor-grab items-start gap-2 rounded-9 border border-border bg-surface px-[9px] py-2 hover:border-accent-border active:cursor-grabbing"
                             draggable
                             key={item.id}
                             onDragStart={(e) => {
@@ -215,38 +149,14 @@ function CalendarRail() {
                                 e.dataTransfer.effectAllowed = 'move';
                             }}
                         >
-                            <span
-                                style={{
-                                    background: 'var(--type-task-fg, #4d855f)',
-                                    borderRadius: '50%',
-                                    flex: 'none',
-                                    height: 8,
-                                    marginTop: 4,
-                                    width: 8,
-                                }}
-                            />
-                            <span
-                                style={{
-                                    color: 'var(--text2, #3b3b44)',
-                                    flex: 1,
-                                    fontSize: 12,
-                                    lineHeight: 1.4,
-                                    minWidth: 0,
-                                }}
-                            >
+                            <span className="mt-1 h-2 w-2 flex-none rounded-full bg-type-task-fg" />
+                            <span className="min-w-0 flex-1 text-body-sm leading-[1.4] text-text2">
                                 {item.title}
                             </span>
                         </div>
                     ))}
                 </div>
-                <div
-                    style={{
-                        color: 'var(--text3, #9a9aa5)',
-                        fontSize: 11.5,
-                        lineHeight: 1.5,
-                        marginTop: 10,
-                    }}
-                >
+                <div className="mt-[10px] text-label leading-[1.5] text-text3">
                     {unscheduled.length > 0
                         ? 'Drag one onto the week to give it a time.'
                         : 'Every task has a time. Drag one off the grid to unschedule it.'}
@@ -271,45 +181,34 @@ function EventBlock({
 
     return (
         <div
-            className={eventBlock}
+            className={cn(
+                'absolute right-1 left-1 z-4 flex cursor-pointer overflow-hidden rounded-lg border-l-[2.5px] hover:brightness-[.97]',
+                focus
+                    ? 'border-l-accent bg-[repeating-linear-gradient(45deg,var(--ac-tint),var(--ac-tint)_6px,transparent_6px,transparent_12px)]'
+                    : 'border-l-type-task-fg bg-type-task-bg',
+                compact
+                    ? 'flex-row items-center gap-[6px] px-2 py-[2px]'
+                    : 'flex-col gap-[2px] px-2 py-[6px]',
+            )}
             onClick={onOpen}
             onDoubleClick={onUnschedule}
-            style={{
-                alignItems: compact ? 'center' : undefined,
-                background: focus
-                    ? 'repeating-linear-gradient(45deg, var(--ac-tint, #eeeef2), var(--ac-tint, #eeeef2) 6px, transparent 6px, transparent 12px)'
-                    : 'var(--type-task-bg, #e8f2ec)',
-                borderLeft: `2.5px solid ${focus ? 'var(--ac)' : 'var(--type-task-fg, #4d855f)'}`,
-                flexDirection: compact ? 'row' : 'column',
-                gap: compact ? 6 : 2,
-                height,
-                padding: compact ? '2px 8px' : '6px 8px',
-                top,
-            }}
+            // Geometry comes from the event's own time and duration.
+            style={{ height, top }}
             title={event.kind === 'task' ? 'Click to open · double-click to unschedule' : undefined}
         >
             <span
-                style={{
-                    color: focus ? 'var(--text2, #3b3b44)' : 'var(--type-task-fg, #4d855f)',
-                    fontSize: 11.5,
-                    fontWeight: 640,
-                    lineHeight: 1.3,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                }}
+                className={cn(
+                    'truncate text-label leading-[1.3] font-[640]',
+                    focus ? 'text-text2' : 'text-type-task-fg',
+                )}
             >
                 {event.title}
             </span>
             <span
-                style={{
-                    color: focus ? 'var(--text2, #3b3b44)' : 'var(--type-task-fg, #4d855f)',
-                    flex: 'none',
-                    fontSize: 10.5,
-                    fontVariantNumeric: 'tabular-nums',
-                    opacity: 0.72,
-                    whiteSpace: 'nowrap',
-                }}
+                className={cn(
+                    'flex-none text-micro whitespace-nowrap tabular-nums opacity-72',
+                    focus ? 'text-text2' : 'text-type-task-fg',
+                )}
             >
                 {event.time}
             </span>
@@ -320,25 +219,17 @@ function EventBlock({
 function LegendRow({ color, muted, name }: { color: string; muted?: boolean; name: string }) {
     return (
         <div
-            style={{
-                alignItems: 'center',
-                color: 'var(--text2, #3b3b44)',
-                display: 'flex',
-                fontSize: 12.5,
-                gap: 9,
-                opacity: muted ? 0.55 : 1,
-            }}
+            className={cn(
+                'flex items-center gap-[9px] text-body text-text2',
+                muted ? 'opacity-55' : 'opacity-100',
+            )}
         >
             <span
-                style={{
-                    background: color,
-                    borderRadius: 3,
-                    flex: 'none',
-                    height: 11,
-                    width: 11,
-                }}
+                className="h-[11px] w-[11px] flex-none rounded-[3px]"
+                // The calendar's own colour, as the provider reports it.
+                style={{ background: color }}
             />
-            <span style={{ flex: 1, minWidth: 0 }}>{name}</span>
+            <span className="min-w-0 flex-1">{name}</span>
         </div>
     );
 }
@@ -357,37 +248,18 @@ function MonthGrid({ anchor }: { anchor: Date }) {
     const today = new Date();
 
     return (
-        <div style={{ display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0 }}>
-            <div style={{ borderBottom: '1px solid var(--border, #ececef)', display: 'flex' }}>
+        <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex border-b border-border">
                 {cells.slice(0, 7).map((day) => (
                     <div
+                        className="min-w-0 flex-1 border-l border-border px-[10px] py-[9px] text-label font-[640] tracking-[.05em] text-text3 uppercase"
                         key={day.toISOString()}
-                        style={{
-                            borderLeft: '1px solid var(--border, #ececef)',
-                            color: 'var(--text3, #9a9aa5)',
-                            flex: 1,
-                            fontSize: 11.5,
-                            fontWeight: 640,
-                            letterSpacing: '.05em',
-                            minWidth: 0,
-                            padding: '9px 10px',
-                            textTransform: 'uppercase',
-                        }}
                     >
                         {day.toLocaleDateString(undefined, { weekday: 'short' })}
                     </div>
                 ))}
             </div>
-            <div
-                style={{
-                    display: 'grid',
-                    flex: 1,
-                    gridTemplateColumns: 'repeat(7, 1fr)',
-                    gridTemplateRows: 'repeat(6, 1fr)',
-                    minHeight: 0,
-                    overflow: 'auto',
-                }}
-            >
+            <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 overflow-auto">
                 {cells.map((day) => {
                     const events = eventsForDay({
                         day,
@@ -400,7 +272,7 @@ function MonthGrid({ anchor }: { anchor: Date }) {
                     const outside = day.getMonth() !== anchor.getMonth();
                     return (
                         <div
-                            className={monthCell}
+                            className={cn(MONTH_CELL, outside && 'opacity-45')}
                             key={day.toISOString()}
                             onDragOver={(e) => {
                                 if (!e.dataTransfer.types.includes(DRAG_TYPE)) return;
@@ -416,47 +288,31 @@ function MonthGrid({ anchor }: { anchor: Date }) {
                                 at.setHours(DAY_START_HOUR);
                                 scheduleItem(id, at);
                             }}
-                            style={outside ? { opacity: 0.45 } : undefined}
                         >
                             <span
-                                style={{
-                                    fontSize: 12,
-                                    fontVariantNumeric: 'tabular-nums',
-                                    fontWeight: isSameDay(day, today) ? 700 : 560,
-                                    ...(isSameDay(day, today) ? { color: 'var(--ac)' } : null),
-                                }}
+                                className={cn(
+                                    'text-body-sm tabular-nums',
+                                    isSameDay(day, today) ? 'font-bold text-accent' : 'font-[560]',
+                                )}
                             >
                                 {day.getDate()}
                             </span>
                             {events.slice(0, 3).map((event) => (
                                 <span
+                                    className={cn(
+                                        'cursor-pointer truncate rounded-5 px-[6px] py-[3px] text-micro leading-[1.3] font-semibold',
+                                        event.kind === 'focus'
+                                            ? 'bg-accent-tint text-accent'
+                                            : 'bg-type-task-bg text-type-task-fg',
+                                    )}
                                     key={event.id}
                                     onClick={() => event.itemId && selectItem(event.itemId)}
-                                    style={{
-                                        background:
-                                            event.kind === 'focus'
-                                                ? 'var(--ac-tint, #eeeef2)'
-                                                : 'var(--type-task-bg, #e8f2ec)',
-                                        borderRadius: 5,
-                                        color:
-                                            event.kind === 'focus'
-                                                ? 'var(--ac)'
-                                                : 'var(--type-task-fg, #4d855f)',
-                                        cursor: 'pointer',
-                                        fontSize: 10.5,
-                                        fontWeight: 600,
-                                        lineHeight: 1.3,
-                                        overflow: 'hidden',
-                                        padding: '3px 6px',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                    }}
                                 >
                                     {event.title}
                                 </span>
                             ))}
                             {events.length > 3 && (
-                                <span style={{ color: 'var(--text3, #9a9aa5)', fontSize: 10.5 }}>
+                                <span className="text-micro text-text3">
                                     +{events.length - 3} more
                                 </span>
                             )}
@@ -470,16 +326,7 @@ function MonthGrid({ anchor }: { anchor: Date }) {
 
 function RailLabel({ children }: { children: React.ReactNode }) {
     return (
-        <div
-            style={{
-                color: 'var(--faint, #a8a8b0)',
-                fontSize: 10.5,
-                fontWeight: 680,
-                letterSpacing: '.07em',
-                marginBottom: 9,
-                textTransform: 'uppercase',
-            }}
-        >
+        <div className="mb-[9px] text-micro font-[680] tracking-[.07em] text-faint uppercase">
             {children}
         </div>
     );
@@ -503,49 +350,26 @@ function TimeGrid({ days }: { days: Date[] }) {
         (today.getHours() * 60 + today.getMinutes() - DAY_START_HOUR * 60) * (HOUR_HEIGHT / 60);
 
     return (
-        <div style={{ display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0 }}>
-            <div style={{ borderBottom: '1px solid var(--border, #ececef)', display: 'flex' }}>
-                <span style={{ flex: 'none', width: 56 }} />
+        <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex border-b border-border">
+                <span className="w-[56px] flex-none" />
                 {days.map((day) => {
                     const isToday = isSameDay(day, today);
                     return (
                         <div
+                            className="flex min-w-0 flex-1 items-baseline gap-[7px] border-l border-border px-[10px] pt-[10px] pb-[9px]"
                             key={day.toISOString()}
-                            style={{
-                                alignItems: 'baseline',
-                                borderLeft: '1px solid var(--border, #ececef)',
-                                display: 'flex',
-                                flex: 1,
-                                gap: 7,
-                                minWidth: 0,
-                                padding: '10px 10px 9px',
-                            }}
                         >
-                            <span
-                                style={{
-                                    color: 'var(--text3, #9a9aa5)',
-                                    fontSize: 11.5,
-                                    fontWeight: 640,
-                                    letterSpacing: '.05em',
-                                    textTransform: 'uppercase',
-                                }}
-                            >
+                            <span className="text-label font-[640] tracking-[.05em] text-text3 uppercase">
                                 {day.toLocaleDateString(undefined, { weekday: 'short' })}
                             </span>
                             <span
-                                style={{
-                                    fontSize: 15,
-                                    fontWeight: isToday ? 700 : 600,
-                                    letterSpacing: '-.01em',
-                                    ...(isToday
-                                        ? {
-                                              background: 'var(--ac)',
-                                              borderRadius: 7,
-                                              color: '#fff',
-                                              padding: '1px 7px',
-                                          }
-                                        : { color: 'var(--text, #1a1a1f)' }),
-                                }}
+                                className={cn(
+                                    'text-title-lg tracking-[-.01em]',
+                                    isToday
+                                        ? 'rounded-7 bg-accent px-[7px] py-px font-bold text-white'
+                                        : 'font-semibold text-text',
+                                )}
                             >
                                 {String(day.getDate()).padStart(2, '0')}
                             </span>
@@ -554,27 +378,17 @@ function TimeGrid({ days }: { days: Date[] }) {
                 })}
             </div>
 
-            <div style={{ flex: 1, overflow: 'auto' }}>
-                <div style={{ display: 'flex', minHeight: '100%' }}>
-                    <div style={{ flex: 'none', width: 56 }}>
+            <div className="flex-1 overflow-auto">
+                <div className="flex min-h-full">
+                    <div className="w-[56px] flex-none">
                         {HOUR_LABELS.map((label) => (
                             <div
+                                className="flex justify-end pr-[9px]"
                                 key={label}
-                                style={{
-                                    display: 'flex',
-                                    height: HOUR_HEIGHT,
-                                    justifyContent: 'flex-end',
-                                    paddingRight: 9,
-                                }}
+                                // The row height is the grid's scale constant.
+                                style={{ height: HOUR_HEIGHT }}
                             >
-                                <span
-                                    style={{
-                                        color: 'var(--faint, #a8a8b0)',
-                                        fontSize: 10.5,
-                                        fontVariantNumeric: 'tabular-nums',
-                                        transform: 'translateY(-6px)',
-                                    }}
-                                >
+                                <span className="[transform:translateY(-6px)] text-micro text-faint tabular-nums">
                                     {label}
                                 </span>
                             </div>
@@ -593,7 +407,11 @@ function TimeGrid({ days }: { days: Date[] }) {
                         });
                         return (
                             <div
-                                className={over === index ? dropTarget : undefined}
+                                className={cn(
+                                    'relative min-w-0 flex-1 border-l border-border',
+                                    over === index && 'bg-accent-tint',
+                                    isToday && over !== index && 'bg-sel',
+                                )}
                                 key={day.toISOString()}
                                 onDragLeave={() => setOver((o) => (o === index ? null : o))}
                                 onDragOver={(e) => {
@@ -610,23 +428,12 @@ function TimeGrid({ days }: { days: Date[] }) {
                                     const box = e.currentTarget.getBoundingClientRect();
                                     scheduleItem(id, timeAtOffset(day, e.clientY - box.top));
                                 }}
-                                style={{
-                                    borderLeft: '1px solid var(--border, #ececef)',
-                                    flex: 1,
-                                    minWidth: 0,
-                                    position: 'relative',
-                                    ...(isToday && over !== index
-                                        ? { background: 'var(--sel, #fafafa)' }
-                                        : null),
-                                }}
                             >
                                 {HOUR_LABELS.map((label) => (
                                     <div
+                                        className="border-b border-border-soft"
                                         key={label}
-                                        style={{
-                                            borderBottom: '1px solid var(--border-soft, #f4f4f6)',
-                                            height: HOUR_HEIGHT,
-                                        }}
+                                        style={{ height: HOUR_HEIGHT }}
                                     />
                                 ))}
                                 {events.map((event) => (
@@ -643,26 +450,11 @@ function TimeGrid({ days }: { days: Date[] }) {
                                 ))}
                                 {isToday && nowOffset >= 0 && nowOffset <= GRID_HEIGHT && (
                                     <div
-                                        style={{
-                                            borderTop: '1.5px solid #c4553d',
-                                            left: 0,
-                                            position: 'absolute',
-                                            right: 0,
-                                            top: nowOffset,
-                                            zIndex: 6,
-                                        }}
+                                        className="absolute right-0 left-0 z-6 border-t-[1.5px] border-t-[#c4553d]"
+                                        // Positioned at the current time.
+                                        style={{ top: nowOffset }}
                                     >
-                                        <span
-                                            style={{
-                                                background: '#c4553d',
-                                                borderRadius: '50%',
-                                                height: 8,
-                                                left: -4,
-                                                position: 'absolute',
-                                                top: -4,
-                                                width: 8,
-                                            }}
-                                        />
+                                        <span className="absolute top-[-4px] left-[-4px] h-2 w-2 rounded-full bg-[#c4553d]" />
                                     </div>
                                 )}
                             </div>

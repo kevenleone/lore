@@ -22,6 +22,7 @@ import { Sidebar, SIDEBAR_WIDTH } from './components/kb/Sidebar';
 import { TitleBar } from './components/kb/TitleBar';
 import { Onboarding } from './components/onboarding/Onboarding';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { cn } from './lib/cn';
 import { DRAWER_MS } from './lib/motion';
 import { useMountTransition } from './lib/useMountTransition';
 import { useStore } from './store/useStore';
@@ -137,29 +138,20 @@ export default function App() {
 
     return (
         <div
-            style={{
-                background: 'var(--surface, #fff)',
-                color: 'var(--text, #1a1a1f)',
-                height: '100%',
-                overflow: 'hidden',
-                // Anchors the overlays below, which are deliberately outside the
-                // zoomed subtree.
-                position: 'relative',
-            }}
+            // `relative` anchors the overlays below, which are deliberately
+            // outside the zoomed subtree.
+            className="relative h-full overflow-hidden bg-surface text-text"
         >
             <div
-                style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '100%',
-                    // "Text size" scales the whole tree; every size in the UI is in px,
-                    // so the zoom is applied here rather than through rem units.
-                    zoom: textSize,
-                }}
+                className="flex h-full flex-col"
+                // "Text size" scales the whole tree; every size in the UI is in px
+                // (see theme/tailwind.css), so the zoom is applied here rather than
+                // through rem units.
+                style={{ zoom: textSize }}
             >
                 <TitleBar onCapture={openCapture} />
                 <Notice />
-                <div style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
+                <div className="relative flex min-h-0 flex-1">
                     {/*
                      * The sidebar stays mounted and collapses by width so the pane
                      * slides instead of popping. The clip is on the wrapper and the
@@ -168,15 +160,14 @@ export default function App() {
                      */}
                     <div
                         aria-hidden={!sidebarVisible}
+                        className={cn(
+                            'flex-none overflow-hidden',
+                            !reduceMotion &&
+                                'transition-[width] duration-220 ease-[cubic-bezier(.4,0,.2,1)]',
+                        )}
                         inert={!sidebarVisible}
-                        style={{
-                            flex: 'none',
-                            overflow: 'hidden',
-                            transition: reduceMotion
-                                ? undefined
-                                : 'width .22s cubic-bezier(.4,0,.2,1)',
-                            width: sidebarVisible ? SIDEBAR_WIDTH : 0,
-                        }}
+                        // The collapse animates between two shared constants.
+                        style={{ width: sidebarVisible ? SIDEBAR_WIDTH : 0 }}
                     >
                         <Sidebar onCapture={openCapture} />
                     </div>
@@ -191,29 +182,12 @@ export default function App() {
                              */}
                             {!(asPage || (chatOpen && !listMode)) && <ListPane />}
                             {(listMode || (chatOpen && !listMode)) && (
-                                <div
-                                    style={{
-                                        background: 'var(--surface, #fff)',
-                                        display: 'flex',
-                                        flex: 1,
-                                        flexDirection: 'column',
-                                        minWidth: 0,
-                                    }}
-                                >
+                                <div className="flex min-w-0 flex-1 flex-col bg-surface">
                                     {chatOpen ? <AskLoreChat /> : <DetailPane />}
                                 </div>
                             )}
                             {asPage && !chatOpen && (
-                                <div
-                                    style={{
-                                        background: 'var(--surface, #fff)',
-                                        display: 'flex',
-                                        flex: 1,
-                                        flexDirection: 'column',
-                                        minHeight: 0,
-                                        minWidth: 0,
-                                    }}
-                                >
+                                <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-surface">
                                     <DetailPane chrome="page" />
                                 </div>
                             )}
@@ -226,32 +200,17 @@ export default function App() {
                             {drawer.mounted && !chatOpen && !asPage && (
                                 <>
                                     <div
-                                        className={scrimClass}
+                                        className={cn(
+                                            'absolute inset-0 z-20 cursor-pointer bg-scrim',
+                                            scrimClass,
+                                        )}
                                         onClick={closeOpenItem}
-                                        style={{
-                                            background: 'var(--scrim, rgba(20,20,30,.36))',
-                                            cursor: 'pointer',
-                                            inset: 0,
-                                            position: 'absolute',
-                                            zIndex: 20,
-                                        }}
                                     />
                                     <div
-                                        className={drawerClass}
-                                        style={{
-                                            background: 'var(--surface, #fff)',
-                                            borderLeft: '1px solid var(--border, #ececef)',
-                                            bottom: 0,
-                                            boxShadow: 'var(--float-shadow)',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            minHeight: 0,
-                                            position: 'absolute',
-                                            right: 0,
-                                            top: 0,
-                                            width: 496,
-                                            zIndex: 30,
-                                        }}
+                                        className={cn(
+                                            'absolute top-0 right-0 bottom-0 z-30 flex min-h-0 w-[496px] flex-col border-l border-border bg-surface shadow-float',
+                                            drawerClass,
+                                        )}
                                     >
                                         <DetailPane chrome="drawer" />
                                     </div>
@@ -265,19 +224,17 @@ export default function App() {
                              */}
                             <div
                                 aria-hidden={!propertiesOpen}
+                                className={cn(
+                                    'z-31 flex-none overflow-hidden',
+                                    propertiesOpen
+                                        ? 'border-l border-border'
+                                        : 'border-l-0 border-none',
+                                    !reduceMotion &&
+                                        'transition-[width] duration-220 ease-[cubic-bezier(.4,0,.2,1)]',
+                                )}
                                 inert={!propertiesOpen}
-                                style={{
-                                    borderLeft: propertiesOpen
-                                        ? '1px solid var(--border, #ececef)'
-                                        : 'none',
-                                    flex: 'none',
-                                    overflow: 'hidden',
-                                    transition: reduceMotion
-                                        ? undefined
-                                        : 'width .22s cubic-bezier(.4,0,.2,1)',
-                                    width: propertiesOpen ? PROPERTIES_WIDTH : 0,
-                                    zIndex: 31,
-                                }}
+                                // The collapse animates between two shared constants.
+                                style={{ width: propertiesOpen ? PROPERTIES_WIDTH : 0 }}
                             >
                                 <PropertiesPanel />
                             </div>
