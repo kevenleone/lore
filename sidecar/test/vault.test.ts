@@ -129,6 +129,53 @@ describe('markdown format', () => {
         expect(back.createdAt).toBe('2026-01-01T00:00:00.000Z');
     });
 
+    it('round-trips a task deadline and priority', () => {
+        const item = {
+            ...baseItem({ dueAt: '2026-03-04', priority: 'urgent', type: 'task' }),
+            createdAt: '2026-01-01T00:00:00.000Z',
+            id: 'T1',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+        } as Item;
+        const text = serializeFile(item, []);
+        expect(text).toContain('due: 2026-03-04');
+        expect(text).toContain('priority: urgent');
+
+        const back = toItem(parseFile(text), { id: 'T1', mtime: '', relatedIds: [], stem: 't' });
+        expect(back.dueAt).toBe('2026-03-04');
+        expect(back.priority).toBe('urgent');
+    });
+
+    it('writes no priority key for an ordinary item', () => {
+        const item = {
+            ...baseItem({ priority: 'normal' }),
+            createdAt: '2026-01-01T00:00:00.000Z',
+            id: 'N1',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+        } as Item;
+        expect(serializeFile(item, [])).not.toContain('priority:');
+    });
+
+    it('degrades a hand-written deadline or priority it cannot read', () => {
+        const back = toItem(parseFile('---\ndue: someday\npriority: asap\n---\nx'), {
+            id: 'H1',
+            mtime: '2026-01-01T00:00:00.000Z',
+            relatedIds: [],
+            stem: 'h',
+        });
+        expect(back.dueAt).toBeUndefined();
+        expect(back.priority).toBeUndefined();
+    });
+
+    it('reads an unquoted YAML date, which parses as a Date', () => {
+        const back = toItem(parseFile('---\ndue: 2026-03-04\n---\nx'), {
+            id: 'D1',
+            mtime: '2026-01-01T00:00:00.000Z',
+            relatedIds: [],
+            stem: 'd',
+        });
+        expect(back.dueAt).toBe('2026-03-04');
+    });
+
     it('round-trips comments through the frontmatter', () => {
         const comment = {
             at: '2026-01-03T00:00:00.000Z',

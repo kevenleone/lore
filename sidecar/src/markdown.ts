@@ -4,7 +4,7 @@
 // round-trip control — what gets written back must stay diff-friendly, and
 // unknown keys a user or another tool added must survive being edited in Lore.
 
-import type { Item, ItemComment, ItemFlags, ItemType } from '@lore/types';
+import type { Item, ItemComment, ItemFlags, ItemType, Priority } from '@lore/types';
 
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
@@ -12,6 +12,7 @@ import { newId } from './slug';
 
 const FENCE = '---';
 const ITEM_TYPES: ItemType[] = ['link', 'note', 'task', 'code', 'image'];
+const PRIORITIES: Priority[] = ['low', 'normal', 'high', 'urgent'];
 
 /** Frontmatter keys Lore owns. Anything else is passed through untouched. */
 const KNOWN_KEYS = new Set([
@@ -19,10 +20,12 @@ const KNOWN_KEYS = new Set([
     'created',
     'description',
     'done',
+    'due',
     'id',
     'image',
     'inbox',
     'points',
+    'priority',
     'related',
     'starred',
     'summary',
@@ -102,6 +105,22 @@ const iso = (v: unknown, fallback: string): string => {
 };
 
 /**
+ * A `YYYY-MM-DD` deadline. YAML parses an unquoted date into a `Date`, so both
+ * shapes have to be accepted; anything else a person typed by hand degrades to
+ * "no deadline" rather than making the file unreadable.
+ */
+const day = (v: unknown): string | undefined => {
+    if (v instanceof Date) return v.toISOString().slice(0, 10);
+    const s = str(v);
+    return s && /^\d{4}-\d{2}-\d{2}$/.test(s.slice(0, 10)) ? s.slice(0, 10) : undefined;
+};
+
+const priority = (v: unknown): Priority | undefined => {
+    const s = str(v)?.toLowerCase();
+    return (PRIORITIES as string[]).includes(s ?? '') ? (s as Priority) : undefined;
+};
+
+/**
  * Comments a person may well have typed into the file by hand, so everything but
  * the text itself is optional and filled in here rather than rejected.
  */
@@ -163,6 +182,10 @@ export function serializeFile(
     if (item.flags.today) fm.today = true;
     if (item.flags.starred) fm.starred = true;
     if (item.flags.done) fm.done = true;
+    if (item.dueAt) fm.due = item.dueAt;
+    // `normal` is the absence of a priority, so writing it would put a key on
+    // every ordinary file for no information.
+    if (item.priority && item.priority !== 'normal') fm.priority = item.priority;
     if (item.image) fm.image = item.image;
     if (item.description) fm.description = item.description;
     if (item.summary) fm.summary = item.summary;
@@ -202,10 +225,12 @@ export function toItem(parsed: ParsedFile, ctx: ToItemContext): Item {
         comments: comments.length ? comments : undefined,
         createdAt: created,
         description: str(data.description),
+        dueAt: day(data.due),
         flags,
         id: ctx.id,
         image: str(data.image),
         points: strArray(data.points).length ? strArray(data.points) : undefined,
+        priority: priority(data.priority),
         related: ctx.relatedIds,
         summary: str(data.summary),
         tags: strArray(data.tags).map((t) => t.replace(/^#/, '')),

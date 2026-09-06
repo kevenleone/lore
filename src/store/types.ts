@@ -56,6 +56,12 @@ export interface Item {
     /** A link's own description (e.g. OpenGraph/meta description). */
     description?: string;
     domain?: string;
+    /**
+     * Deadline, as a local calendar day (`YYYY-MM-DD`). Day-granular on purpose:
+     * a due date is a day, while `schedule` is where an item sits on the
+     * calendar's clock. The two are independent.
+     */
+    dueAt?: string;
     flags: ItemFlags;
     id: string;
     /** Preview image URL (e.g. OpenGraph image for links). */
@@ -67,6 +73,8 @@ export interface Item {
      */
     path?: string;
     points?: string[];
+    /** Absent means `'normal'`, so an ordinary item carries no priority at all. */
+    priority?: Priority;
     related: string[];
     /**
      * Derived one-line preview for the list pane — `body`'s first line, or a
@@ -127,6 +135,11 @@ export interface ItemMeta {
 }
 
 export type ItemType = 'code' | 'image' | 'link' | 'note' | 'task';
+
+/** A task's urgency. `'normal'` is the default and is never persisted. */
+export type Priority = 'high' | 'low' | 'normal' | 'urgent';
+
+export const PRIORITIES: Priority[] = ['low', 'normal', 'high', 'urgent'];
 
 export const EMPTY_FILTERS: Filters = {
     categories: [],
