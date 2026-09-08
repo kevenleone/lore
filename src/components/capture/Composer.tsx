@@ -13,6 +13,7 @@ import type { Subtask } from '../../lib/subtasks';
 import type { Collection, ItemType, Priority } from '../../store/types';
 
 import { getRepository } from '../../data';
+import { deriveTitle } from '../../data/plainText';
 import { addDays } from '../../lib/calendar';
 import {
     hideCapture,
@@ -28,6 +29,7 @@ import { PRIORITIES } from '../../store/types';
 import { localDateKey } from '../../store/views';
 import { Calendar, Check, ChevronDown, Close, FileGlyph, Globe, Plus } from '../common/glyphs';
 import { Icon } from '../common/Icon';
+import { CaptureBody } from '../editor/CaptureBody';
 
 export type CaptureChrome = 'drawer' | 'panel';
 
@@ -297,7 +299,7 @@ export function Composer({
                 url: source ?? undefined,
             };
         } else {
-            item = { ...item, body: text, title: text.split('\n')[0].slice(0, 80) };
+            item = { ...item, body: text, title: deriveTitle(text) };
         }
         await (onSave ? onSave(item) : saveCapture(item));
     };
@@ -393,11 +395,12 @@ export function Composer({
                     </>
                 )}
                 {tab === 'note' && (
-                    <textarea
-                        className="min-h-[150px] w-full resize-y rounded-xl border border-border px-[14px] py-[13px] font-[inherit] text-[14.5px] leading-[1.6] text-text outline-none"
-                        onChange={(e) => setValue(e.target.value)}
+                    <CaptureBody
+                        autoFocus
+                        className="min-h-[150px] w-full resize-y overflow-y-auto rounded-xl border border-border px-[14px] py-[13px] font-[inherit] text-[14.5px] leading-[1.6] text-text outline-none"
+                        onChange={setValue}
                         placeholder="Write a note…"
-                        ref={setFieldRef}
+                        textareaRef={setFieldRef}
                         value={value}
                     />
                 )}
@@ -418,9 +421,9 @@ export function Composer({
                                 ref={setFieldRef}
                                 value={value}
                             />
-                            <textarea
-                                className="mt-[9px] min-h-[52px] w-full resize-y border-none bg-transparent font-[inherit] text-body-lg leading-[1.55] text-text2 outline-none"
-                                onChange={(e) => setDescription(e.target.value)}
+                            <CaptureBody
+                                className="mt-[9px] min-h-[52px] w-full resize-y overflow-y-auto border-none bg-transparent font-[inherit] text-body-lg leading-[1.55] text-text2 outline-none"
+                                onChange={setDescription}
                                 placeholder="Add a description…"
                                 value={description}
                             />
