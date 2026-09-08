@@ -5,6 +5,7 @@
 import type { Item } from '../store/types';
 
 import { parseSubtasks, stripSubtasks } from '../lib/subtasks';
+import { firstPlainLine } from './plainText';
 
 const SNIPPET_MAX = 200;
 
@@ -30,8 +31,13 @@ export function deriveSnippet(
         // A task's body may open with its checklist. Previewing that verbatim put
         // raw `- [ ]` markers in the list, so the prose wins and the checklist
         // falls back to a count.
+        // Markdown is stripped so a row reads as prose: `## Notes` and
+        // `**important**` were previously shown with their syntax intact.
         const prose = stripSubtasks(body);
-        if (prose) return prose.split('\n')[0].slice(0, SNIPPET_MAX);
+        if (prose) {
+            const line = firstPlainLine(prose);
+            if (line) return line.slice(0, SNIPPET_MAX);
+        }
         const subtasks = parseSubtasks(body);
         if (subtasks.length) {
             const done = subtasks.filter((t) => t.done).length;
@@ -40,7 +46,7 @@ export function deriveSnippet(
                 SNIPPET_MAX,
             );
         }
-        return body.split('\n')[0].slice(0, SNIPPET_MAX);
+        return firstPlainLine(body).slice(0, SNIPPET_MAX) || undefined;
     }
     if (item.type === 'link') return item.description?.trim() || item.url || undefined;
     return undefined;

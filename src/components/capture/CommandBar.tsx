@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { NewItem } from '../../data/repository';
 import type { ItemType } from '../../store/types';
 
+import { deriveTitle } from '../../data/plainText';
 import { captureAi, hideCapture, hostOf, saveCapture } from '../../lib/captureActions';
 import { cn } from '../../lib/cn';
 import { fetchLinkMetadata, type LinkMetadata } from '../../lib/linkMetadata';
@@ -236,7 +237,7 @@ function buildItem(
         };
     }
     if (type === 'code' || type === 'note' || type === 'task') {
-        return { ...base, body: trimmed, title: trimmed.split('\n')[0].slice(0, 80) };
+        return { ...base, body: trimmed, title: deriveTitle(trimmed) };
     }
     return base;
 }
