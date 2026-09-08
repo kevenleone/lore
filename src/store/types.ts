@@ -168,13 +168,23 @@ export type ViewKind = 'all' | 'collection' | 'inbox' | 'starred' | 'tag' | 'tod
  * Graphite is the brand default; Slate blue is the dark-mode substitute the
  * design swaps in for accents that are too dark on a dark ground.
  */
-export const ACCENTS = ['#393A4A', '#5b5bd6', '#3f8f6a', '#c4553d', '#8a92b8'] as const;
+export const ACCENTS = [
+    '#393A4A',
+    '#5b5bd6',
+    '#3f8f6a',
+    '#237a7a',
+    '#c4553d',
+    '#96661f',
+    '#8a92b8',
+] as const;
 export type Accent = (typeof ACCENTS)[number];
 export const ACCENT_NAMES: Record<Accent, string> = {
+    '#237a7a': 'Teal',
     '#393A4A': 'Graphite',
     '#3f8f6a': 'Fern',
     '#5b5bd6': 'Indigo',
     '#8a92b8': 'Slate blue',
+    '#96661f': 'Ochre',
     '#c4553d': 'Clay',
 };
 export const DEFAULT_ACCENT: Accent = '#393A4A';
