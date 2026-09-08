@@ -7,6 +7,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BodyEditor } from './BodyEditor';
 
 // Vitest runs without `globals`, so cleanup is not registered automatically.
+// The editor is a dynamic import, which can outrun waitFor's 1s default
+// when the full suite saturates the workers.
+const MOUNT_TIMEOUT = { timeout: 10_000 };
+
 afterEach(cleanup);
 
 // ProseMirror measures layout on init; jsdom has no layout engine.
@@ -20,10 +24,13 @@ async function mount(markdown: string, onCommit = vi.fn()) {
     });
     const view = render(
         <StrictMode>
-            <BodyEditor itemId="item-1" onCommit={onCommit} value={markdown} />
+            <BodyEditor itemId="item-1" onCommit={onCommit} raw={false} value={markdown} />
         </StrictMode>,
     );
-    await waitFor(() => expect(view.container.querySelector('.ProseMirror')).not.toBeNull());
+    await waitFor(
+        () => expect(view.container.querySelector('.ProseMirror')).not.toBeNull(),
+        MOUNT_TIMEOUT,
+    );
     spy.mockRestore();
     return { ...view, errors: errors.join('\n'), onCommit };
 }
@@ -93,10 +100,13 @@ describe('BodyEditor', () => {
         expect(container.querySelector('ul')?.className).toMatch(/list-disc/);
     });
 
-    it('offers both editing modes', async () => {
-        const { getByText } = await mount('text\n');
-        expect(getByText('Editor')).toBeTruthy();
-        expect(getByText('Raw')).toBeTruthy();
+    it('shows the raw Markdown when the caller asks for it', () => {
+        const { container } = render(
+            <BodyEditor itemId="item-1" onCommit={vi.fn()} raw value={'# Title\n'} />,
+        );
+        const textarea = container.querySelector('textarea');
+        expect(textarea?.value).toBe('# Title\n');
+        expect(container.querySelector('.ProseMirror')).toBeNull();
     });
 });
 

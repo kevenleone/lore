@@ -6,6 +6,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useStore } from '../../store/useStore';
 import { CaptureBody } from './CaptureBody';
 
+// The editor is a dynamic import, which can outrun waitFor's 1s default
+// when the full suite saturates the workers.
+const MOUNT_TIMEOUT = { timeout: 10_000 };
+
 afterEach(cleanup);
 
 Range.prototype.getBoundingClientRect = () => new DOMRect();
@@ -51,7 +55,10 @@ describe('CaptureBody', () => {
     it('upgrades to the block editor when the flag is on', async () => {
         setBlockEditor(true);
         const { container } = mount('# Heading\n\ntext\n');
-        await waitFor(() => expect(container.querySelector('.ProseMirror')).not.toBeNull());
+        await waitFor(
+            () => expect(container.querySelector('.ProseMirror')).not.toBeNull(),
+            MOUNT_TIMEOUT,
+        );
         expect(container.textContent).toContain('Heading');
         expect(container.querySelector('textarea')).toBeNull();
     });
@@ -59,7 +66,10 @@ describe('CaptureBody', () => {
     it('keeps the field box so the drawer does not grow', async () => {
         setBlockEditor(true);
         const { container } = mount('text\n');
-        await waitFor(() => expect(container.querySelector('.ProseMirror')).not.toBeNull());
+        await waitFor(
+            () => expect(container.querySelector('.ProseMirror')).not.toBeNull(),
+            MOUNT_TIMEOUT,
+        );
         // The stylesheet hangs the editor's height off this wrapper.
         expect(container.querySelector('.lore-capture-body')?.className).toContain('min-h-[150px]');
     });
