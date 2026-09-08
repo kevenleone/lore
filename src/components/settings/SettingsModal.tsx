@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { SettingsPane } from '../../store/types';
 
+import { APP_VERSION } from '../../lib/appInfo';
 import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 import { LoreMark } from '../common/LoreMark';
@@ -142,7 +143,7 @@ export function SettingsModal() {
                         <span className="inline-flex text-text2">
                             <LoreMark size={13} />
                         </span>
-                        <span>Lore 2.4.1 · up to date</span>
+                        <span>Lore {APP_VERSION}</span>
                     </div>
                 </div>
 

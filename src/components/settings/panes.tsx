@@ -6,6 +6,7 @@
 
 import type { Appearance } from '../../theme/tokens';
 
+import { APP_LINKS, APP_VERSION, openExternal } from '../../lib/appInfo';
 import { cn } from '../../lib/cn';
 import {
     type Accent,
@@ -742,26 +743,22 @@ function StepButton({ label, onClick, up }: { label: string; onClick: () => void
  * About
  * ------------------------------------------------------------------ */
 
-const ABOUT_LINKS = [
-    'Release notes',
-    'Keyboard cheat sheet',
-    'Privacy policy',
-    'Contact support',
-    'Acknowledgements',
+const ABOUT_LINKS: { href: string; label: string }[] = [
+    { href: APP_LINKS.readme, label: 'Source on GitHub' },
+    { href: APP_LINKS.releaseNotes, label: 'Release notes' },
+    { href: APP_LINKS.issues, label: 'Report an issue' },
 ];
 
 export function AboutPane() {
     const items = useStore((s) => s.items);
     const workspacePath = useStore((s) => s.workspacePath);
-    const aiMode = useStore((s) => s.prefs.aiMode);
 
     const meta = [
-        { k: 'Vault', v: `${workspacePath ?? 'Default vault'} · ${items.length} items` },
-        { k: 'Account', v: 'None — Lore runs offline' },
-        {
-            k: 'Local model',
-            v: aiMode === 'local' ? 'lore-summarize-3b (1.9 GB)' : 'Not downloaded',
-        },
+        { k: 'Vault', v: `${workspacePath ?? 'The default vault'} · ${items.length} items` },
+        { k: 'Format', v: 'Markdown files with YAML frontmatter' },
+        { k: 'Account', v: 'None — Lore never asks for one' },
+        { k: 'Telemetry', v: 'None' },
+        { k: 'Built with', v: 'Tauri 2 · React 19 · TypeScript' },
     ];
 
     return (
@@ -771,23 +768,23 @@ export function AboutPane() {
                     <LoreMark size={58} />
                 </span>
                 <div className="mt-3 text-[17px] font-[660]">Lore</div>
-                <div className="mt-[3px] text-body text-text3">
-                    Version 2.4.1 (build 2418) · Apple silicon
-                </div>
-                <div className="mt-[10px] inline-flex items-center gap-[6px] rounded-lg bg-type-task-bg px-[10px] py-1 text-body text-type-task-fg">
-                    <SettingsIcon name="check" size={13} sw={2.4} />
-                    You&rsquo;re up to date
-                </div>
+                <div className="mt-[3px] text-body text-text3">Version {APP_VERSION}</div>
                 <p className="mx-auto mt-4 mb-0 max-w-[420px] text-body leading-[1.6] text-text2">
-                    Lore is made by a team of four in Lisbon and Copenhagen. It keeps your library
-                    on your own machine, as plain files, and never sends it anywhere.
+                    Lore is a solo project, built in the open. It keeps your library on your own
+                    machine as plain Markdown files &mdash; no account, no sync service, no
+                    telemetry.
                 </p>
             </div>
 
             <div className="flex flex-wrap justify-center gap-2 border-b border-border-soft pb-[22px]">
                 {ABOUT_LINKS.map((l) => (
-                    <button className={ABOUT_LINK} key={l} type="button">
-                        {l}
+                    <button
+                        className={ABOUT_LINK}
+                        key={l.label}
+                        onClick={() => void openExternal(l.href)}
+                        type="button"
+                    >
+                        {l.label}
                     </button>
                 ))}
             </div>
