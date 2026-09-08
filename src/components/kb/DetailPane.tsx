@@ -24,6 +24,7 @@ import {
     External,
     Globe,
     PanelRight,
+    Source,
     StarOutline,
     Trash,
 } from '../common/glyphs';
@@ -59,6 +60,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const toggleStar = useStore((s) => s.toggleStar);
     const propertiesOpen = useStore((s) => s.prefs.propertiesOpen);
     const toggleProperties = useStore((s) => s.toggleProperties);
+    const rawDefault = useStore((s) => s.prefs.switches.rawMarkdownDefault);
     const deleteItem = useStore((s) => s.deleteItem);
     const updateItem = useStore((s) => s.updateItem);
     const addTag = useStore((s) => s.addTag);
@@ -79,6 +81,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const [tagDraft, setTagDraft] = useState('');
     const [subtaskDraft, setSubtaskDraft] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(false);
+    const [raw, setRaw] = useState(rawDefault);
     const tagInputRef = useRef<HTMLInputElement>(null);
     // Above the `!sel` return: a hook cannot run conditionally.
     const previewSrc = useAssetSrc(sel?.image);
@@ -90,7 +93,8 @@ export function DetailPane({ chrome }: DetailPaneProps) {
         setTagDraft('');
         setSubtaskDraft('');
         setConfirmDelete(false);
-    }, [sel?.id]);
+        setRaw(rawDefault);
+    }, [sel?.id, rawDefault]);
 
     useEffect(() => {
         if (addingTag) tagInputRef.current?.focus();
@@ -256,6 +260,20 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                                 Open
                             </span>
                         )}
+                        {useBlockEditor && (
+                            <button
+                                aria-pressed={raw}
+                                className={cn(
+                                    'inline-flex cursor-pointer border-none bg-none p-1',
+                                    raw ? 'text-accent' : 'text-[#c4c4cc]',
+                                )}
+                                onClick={() => setRaw((current) => !current)}
+                                title={raw ? 'Show the editor' : 'Edit raw Markdown'}
+                                type="button"
+                            >
+                                <Source />
+                            </button>
+                        )}
                         <button
                             aria-pressed={propertiesOpen}
                             className={cn(
@@ -402,6 +420,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                         itemId={sel.id}
                         onCommit={commitBodyMarkdown}
                         placeholder="Add content…"
+                        raw={raw}
                         value={bodyValue ?? ''}
                     />
                 ) : bodyField && editingBody ? (

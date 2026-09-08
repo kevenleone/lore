@@ -1,6 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
-import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 import { RawMarkdownEditor } from './RawMarkdownEditor';
 
@@ -16,6 +15,7 @@ interface BodyEditorProps {
     itemId: string;
     onCommit: (markdown: string) => void;
     placeholder?: string;
+    raw: boolean;
     value: string;
 }
 
@@ -23,12 +23,11 @@ export function BodyEditor({
     itemId,
     onCommit,
     placeholder,
+    raw,
     value,
 }: BodyEditorProps): React.JSX.Element {
-    const rawDefault = useStore((s) => s.prefs.switches.rawMarkdownDefault);
     const setEditorDirty = useStore((s) => s.setEditorDirty);
 
-    const [raw, setRaw] = useState(rawDefault);
     const [draft, setDraft] = useState(value);
 
     // Bumped on re-seed so the block editor rebuilds from the new body.
@@ -78,7 +77,6 @@ export function BodyEditor({
         seededRef.current = value;
         pristineRef.current = true;
         setDraft(value);
-        setRaw(rawDefault);
         setSeed((current) => current + 1);
         return flush;
     }, [itemId]);
@@ -99,10 +97,6 @@ export function BodyEditor({
 
     return (
         <div className="mt-4">
-            <div className="mb-2 flex items-center gap-[2px]">
-                <ModeButton active={!raw} label="Editor" onClick={() => setRaw(false)} />
-                <ModeButton active={raw} label="Raw" onClick={() => setRaw(true)} />
-            </div>
             {raw ? (
                 <RawMarkdownEditor {...shared} />
             ) : (
@@ -111,28 +105,5 @@ export function BodyEditor({
                 </Suspense>
             )}
         </div>
-    );
-}
-
-function ModeButton({
-    active,
-    label,
-    onClick,
-}: {
-    active: boolean;
-    label: string;
-    onClick: () => void;
-}): React.JSX.Element {
-    return (
-        <button
-            className={cn(
-                'cursor-pointer rounded-md border-none px-[7px] py-[3px] font-[inherit] text-caption',
-                active ? 'bg-hover text-text' : 'bg-transparent text-text3 hover:text-text2',
-            )}
-            onClick={onClick}
-            type="button"
-        >
-            {label}
-        </button>
     );
 }

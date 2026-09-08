@@ -297,6 +297,15 @@ export function Sort({ className, size = 16, style, sw = 1.8 }: GlyphProps) {
     );
 }
 
+export function Source({ className, size = 17, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke className={className} size={size} style={style} sw={sw}>
+            <polyline points="9 8 5 12 9 16" />
+            <polyline points="15 8 19 12 15 16" />
+        </Stroke>
+    );
+}
+
 /** Filled four-point sparkle — Lore's AI accent mark. */
 export function Sparkle({ className, size = 16, style }: GlyphProps) {
     return (
