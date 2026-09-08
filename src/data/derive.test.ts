@@ -26,3 +26,25 @@ describe('deriveSnippet', () => {
         expect(deriveSnippet({ type: 'note' })).toBeUndefined();
     });
 });
+
+describe('deriveSnippet strips Markdown', () => {
+    const snippet = (body: string) => deriveSnippet({ body, type: 'note' });
+
+    it('shows a heading as prose', () => {
+        expect(snippet('## Notes\n\nbody')).toBe('Notes');
+    });
+
+    it('drops emphasis and link syntax', () => {
+        expect(snippet('**Important**: see [the docs](https://example.com)')).toBe(
+            'Important: see the docs',
+        );
+    });
+
+    it('skips a leading blank line rather than returning empty', () => {
+        expect(snippet('\n\nreal content')).toBe('real content');
+    });
+
+    it('reads a wikilink as its target', () => {
+        expect(snippet('Related to [[some note|that note]]')).toBe('Related to that note');
+    });
+});

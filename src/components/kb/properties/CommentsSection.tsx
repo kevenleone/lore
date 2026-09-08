@@ -1,7 +1,7 @@
 // Comments on an item. They live in the file's own frontmatter, so they travel
 // with the note into Obsidian, git and anything else that reads the vault.
 
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 
 import type { Item } from '../../../store/types';
 
@@ -9,6 +9,11 @@ import { cn } from '../../../lib/cn';
 import { formatSavedDate } from '../../../lib/format';
 import { useStore } from '../../../store/useStore';
 import { Message } from '../../common/glyphs';
+// The Markdown parser is ~34 kB gzipped and comments live behind a panel
+// toggle, so it loads with the panel rather than with the window.
+const MarkdownView = lazy(async () => ({
+    default: (await import('../../common/MarkdownView')).MarkdownView,
+}));
 import { Empty, Section } from './controls';
 
 export function CommentsSection({ item }: { item: Item }) {
@@ -50,8 +55,14 @@ export function CommentsSection({ item }: { item: Item }) {
                                     ×
                                 </span>
                             </div>
-                            <div className="text-body leading-[1.55] whitespace-pre-wrap text-text2">
-                                {comment.body}
+                            <div className="text-body leading-[1.55] text-text2">
+                                <Suspense
+                                    fallback={
+                                        <div className="whitespace-pre-wrap">{comment.body}</div>
+                                    }
+                                >
+                                    <MarkdownView markdown={comment.body} />
+                                </Suspense>
                             </div>
                         </div>
                     ))}
