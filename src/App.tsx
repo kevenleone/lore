@@ -143,23 +143,13 @@ export default function App() {
         : drawer.open
           ? 'animate-drawer-in'
           : 'animate-drawer-out';
-    /*
-     * Properties describe the open item, so the panel belongs on screen only
-     * while that item is — otherwise closing a drawer left a panel behind
-     * describing something no longer visible. The preference is untouched, so
-     * reopening an item brings the panel back the way the user left it.
-     */
+    // The panel describes the open item, so it is only on screen while one is.
     const detailVisible = !chatOpen && (listMode || asPage || drawer.mounted);
     const showProperties = propertiesOpen && detailVisible;
     /*
-     * Whether the panel floats over the content or takes a column beside it.
-     *
-     * This follows the view mode, never the drawer's mounted state. Keying it
-     * to the drawer meant that on close the flag flipped the moment the drawer
-     * unmounted, while the panel still had its full width and 220ms of collapse
-     * left — so it briefly became a flex column, squeezed the table, and let it
-     * snap back. List and page put the panel in flow because their content
-     * genuinely should make room for it; Cards and Table never do.
+     * Follows the view mode, never the drawer's mounted state: that flips
+     * mid-close, while the panel still has its width and a collapse to
+     * animate, and the panel briefly becomes a column that squeezes the table.
      */
     const overlayProperties = !listMode && !asPage;
 
@@ -246,11 +236,8 @@ export default function App() {
                                                 'transition-[right] duration-220 ease-[cubic-bezier(.4,0,.2,1)]',
                                             drawerClass,
                                         )}
-                                        // The drawer is absolute and the panel is in
-                                        // flow, so without this they occupy the same
-                                        // edge and the panel paints over the drawer.
-                                        // Inset by the panel's width instead, and
-                                        // travel with it as it opens and closes.
+                                        // Both claim the right edge; without this
+                                        // the panel paints over the drawer.
                                         style={{ right: showProperties ? PROPERTIES_WIDTH : 0 }}
                                     >
                                         <DetailPane chrome="drawer" />
@@ -267,15 +254,8 @@ export default function App() {
                                 aria-hidden={!showProperties}
                                 className={cn(
                                     'z-31 overflow-hidden',
-                                    /*
-                                     * A drawer lays over the list, so the list must
-                                     * not reflow when the panel opens beside it —
-                                     * taking width out of the flex row reran the
-                                     * table's column layout behind the scrim. Over a
-                                     * drawer the panel overlays too; everywhere else
-                                     * it is a column and shrinking the content is
-                                     * exactly what should happen.
-                                     */
+                                    // A drawer lays over the list, so the panel must
+                                    // too, or the list reflows behind the scrim.
                                     overlayProperties
                                         ? 'absolute top-0 right-0 bottom-0'
                                         : 'flex-none',

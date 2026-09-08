@@ -301,15 +301,9 @@
     }
 }
 
-/*
- * ProseMirror's structural rules. Everything a block *looks* like is a Tailwind
- * class on its node view; what is left here is the handful of things a utility
- * cannot express — how the editable region handles whitespace and where the
- * caret goes — plus the placeholder, which needs a pseudo-element.
- *
- * Colours are tokens, so both themes are already correct and there is no
- * `dark:` variant, per the rules at the top of this file.
- */
+/* What a Tailwind class cannot carry: whitespace handling, the caret, a
+ * pseudo-element placeholder, and sizes that vary by heading level. Everything
+ * else about the editor's appearance is a class in markdown/schema.ts. */
 @layer components {
     .lore-editor .ProseMirror {
         outline: none;
@@ -317,7 +311,6 @@
         word-wrap: break-word;
     }
 
-    /* The gap cursor, for placing a caret beside an atom such as unknownBlock. */
     .lore-editor .ProseMirror-gapcursor:after {
         border-top: 1px solid var(--text);
     }
@@ -330,12 +323,6 @@
         pointer-events: none;
     }
 
-    /*
-     * Heading sizes and the checkbox row are the two things a single utility
-     * class cannot carry: one varies per level, the other styles a structure
-     * Tiptap renders inside the node. Everything else about the editor's
-     * appearance is a Tailwind class in markdown/schema.ts.
-     */
     .lore-editor .ProseMirror :is(h1, h2, h3, h4) {
         color: var(--text);
         font-weight: 600;
@@ -374,16 +361,11 @@
         text-decoration: line-through;
     }
 
-    /*
-     * In the capture drawer the editor stands in for a textarea, so it inherits
-     * that field's box and has to scroll inside it rather than growing the
-     * drawer. `min-h` comes from the class the field passes in.
-     */
+    /* Standing in for a textarea: scroll inside its box, don't grow the drawer. */
     .lore-capture-body .ProseMirror {
         min-height: inherit;
     }
 
-    /* A block Lore carries but does not model: shown as its own Markdown. */
     .lore-editor .ProseMirror div[data-unknown-block]::before {
         content: attr(source);
         display: block;

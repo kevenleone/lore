@@ -1,29 +1,18 @@
-// Owns when a body is written to disk.
-//
-// The old textarea was click-to-edit and committed on blur, which made the save
-// policy invisible: there was exactly one moment a write could happen. A
-// block editor is always on, and clicking a menu blurs it, so blur is no longer
-// a safe trigger. Instead: debounce while typing, and flush on the events that
-// mean the user is done — the item changing, and unmount.
-
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 import { RawMarkdownEditor } from './RawMarkdownEditor';
 
-// ProseMirror and the Markdown stack are a third of the main bundle and only a
-// note body needs them. Raw mode, quick capture and the focus window must not
-// pay for the editor they never show.
+// A third of the main bundle, and only a rich-mode note body needs it.
 const BlockEditor = lazy(async () => ({
     default: (await import('./BlockEditor')).BlockEditor,
 }));
 
-/** How long typing pauses before the body is written. */
 const AUTOSAVE_MS = 600;
 
 interface BodyEditorProps {
-    /** Vault item id. Changing it flushes the previous body and reloads. */
+    /** Changing it flushes the previous body and reloads. */
     itemId: string;
     onCommit: (markdown: string) => void;
     placeholder?: string;
@@ -40,22 +29,17 @@ export function BodyEditor({
     const setEditorDirty = useStore((s) => s.setEditorDirty);
 
     const [raw, setRaw] = useState(rawDefault);
-    // The live body. `value` seeds it; after that this component is the truth
-    // until a commit lands, which is what the store's dirty guard protects.
     const [draft, setDraft] = useState(value);
 
-    // Bumped whenever the editor is re-seeded, so the block editor rebuilds
-    // from the new body instead of keeping the document it was born with.
+    // Bumped on re-seed so the block editor rebuilds from the new body.
     const [seed, setSeed] = useState(0);
-    // The body this editor was seeded from, and whether it still holds exactly
-    // that. Once the user has typed, their draft outranks any later arrival.
     const seededRef = useRef(value);
     const pristineRef = useRef(true);
 
     const draftRef = useRef(draft);
     const committedRef = useRef(value);
     const timerRef = useRef<null | ReturnType<typeof setTimeout>>(null);
-    // Read inside the unmount effect, which must not re-run when they change.
+    // Read from the unmount effect, which must not re-run when they change.
     const commitRef = useRef(onCommit);
     const dirtyRef = useRef(setEditorDirty);
     commitRef.current = onCommit;
@@ -87,7 +71,7 @@ export function BodyEditor({
         [flush, itemId, setEditorDirty],
     );
 
-    // A different item: write the old body before the new one replaces it.
+    // Write the old body before a different item replaces it.
     useEffect(() => {
         draftRef.current = value;
         committedRef.current = value;
@@ -99,10 +83,9 @@ export function BodyEditor({
         return flush;
     }, [itemId]);
 
-    // The body arriving late, or changing on disk before anything was typed.
-    // Only while pristine: after the first keystroke this would throw away what
-    // the user is writing, and after a save it would remount on our own echo
-    // and drop the caret mid-sentence.
+    // The body arriving after mount, since list rows carry none. Pristine only:
+    // later it would discard what is being typed, or remount on a save's own
+    // echo and drop the caret.
     useEffect(() => {
         if (!pristineRef.current || value === seededRef.current) return;
         draftRef.current = value;
@@ -123,8 +106,6 @@ export function BodyEditor({
             {raw ? (
                 <RawMarkdownEditor {...shared} />
             ) : (
-                // Remounting per item is deliberate: swapping a document under a
-                // live cursor loses the selection.
                 <Suspense fallback={<div className="mt-5 min-h-[240px]" />}>
                     <BlockEditor key={`${itemId}:${seed}`} {...shared} />
                 </Suspense>

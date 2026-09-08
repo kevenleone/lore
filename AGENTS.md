@@ -78,8 +78,10 @@ Other conventions:
 
 ### Comments
 
-Comment sparingly. A comment earns its place only when the code alone would let
-someone break something important — otherwise leave it out and let the code speak.
+**The default is no comment.** Most code needs none, and most comments that get
+written are restating what the code already says. A comment earns its place only
+when the code alone would let someone break something important — otherwise
+leave it out and let the code speak.
 
 Write one when, and only when:
 
@@ -97,9 +99,16 @@ Do **not** write one to:
 - Label a section, a constant, or an obviously-named function.
 - Explain where code was placed or which folder it belongs to.
 - Narrate a change, decision history, or what the code used to do.
+- Summarise a file at the top of it. A module's job should be evident from its
+  name and its exports.
+- Document a parameter, field or return whose name already says it.
+- Record why a bug happened. That belongs in the commit message; the fix belongs
+  in a test that fails without it.
 
-Prefer one tight line over three. If a comment needs a paragraph, the code
-probably needs a better name or a smaller function instead.
+**Prefer one tight line over three, and no comment over one tight line.** If a
+comment needs a paragraph, the code probably needs a better name or a smaller
+function instead. A file where comments outnumber a handful of lines is a file
+that has been narrated rather than written.
 
 ## Commit Rules
 

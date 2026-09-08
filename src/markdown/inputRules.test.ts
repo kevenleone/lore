@@ -1,11 +1,5 @@
 // @vitest-environment jsdom
 
-// With the slash menu gone, Markdown input rules are the whole authoring story:
-// typing `# ` must become a heading in place. These come from the extensions in
-// schema.ts rather than from anything Lore wrote, which is exactly why they
-// need a test — a StarterKit option changing under us would silently remove the
-// only way to make a heading.
-
 import { Editor } from '@tiptap/core';
 import { describe, expect, it } from 'vitest';
 

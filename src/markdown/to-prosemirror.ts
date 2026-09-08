@@ -1,22 +1,9 @@
-// mdast → ProseMirror document.
-//
-// Every top-level block carries the source it came from, so the serializer can
-// hand back the original bytes for anything the user did not touch. Inline
-// content is converted structurally; block-level source is what matters for
-// diff stability.
-
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import type { PhrasingContent, RootContent } from 'mdast';
 
 import type { Block, ParsedBody } from './types';
 
 import { schema } from './schema';
-
-/** Where a block's original source is parked while it is being edited. */
-export interface BlockSource {
-    source: string;
-    type: string;
-}
 
 const MARK_BY_TYPE: Readonly<Record<string, string>> = {
     delete: 'strike',
@@ -27,7 +14,6 @@ const MARK_BY_TYPE: Readonly<Record<string, string>> = {
 
 export function toDocument(parsed: ParsedBody): ProseMirrorNode {
     const content = parsed.blocks.map(toNode).filter((node): node is ProseMirrorNode => !!node);
-    // An empty body still needs one editable paragraph to put a cursor in.
     return schema.node('doc', null, content.length ? content : [schema.node('paragraph')]);
 }
 
@@ -60,7 +46,6 @@ function childBlocks(children: readonly RootContent[]): ProseMirrorNode[] {
         const node = blockNode(child);
         if (node) out.push(node);
     }
-    // A list item must contain at least one block for the schema to accept it.
     return out.length ? out : [schema.node('paragraph')];
 }
 
@@ -95,8 +80,6 @@ function collectInline(
             collectInline(child.children, [...marks, markName], out);
             continue;
         }
-        // Anything else (images, footnote references, raw inline HTML) has no
-        // inline representation here; keep its literal text rather than drop it.
         if ('value' in child && typeof child.value === 'string') {
             out.push(schema.text(child.value, resolveMarks(marks)));
         }
@@ -110,15 +93,9 @@ function inline(children: readonly PhrasingContent[]): ProseMirrorNode[] {
 }
 
 function listNode(node: Extract<RootContent, { type: 'list' }>): ProseMirrorNode {
-    // GFM checkboxes are a task list, which is a different node than a bullet
-    // list even though Markdown spells them with the same marker — and a blank
-    // line between them does not start a new list, so `- a` followed by
-    // `- [ ] b` arrives here as one list with mixed items.
-    //
-    // Every item must be a checkbox for this to be a task list. Treating a
-    // mixed list as one would give the plain items a checkbox they never had;
-    // as a bullet list it loses the boxes instead, and the fragility gate
-    // catches that and carries the whole list as source rather than either.
+    // A blank line does not start a new list, so `- a` followed by `- [ ] b`
+    // arrives as one list with mixed items. Every item must be a checkbox, or
+    // the plain ones gain a box they never had.
     const isTask =
         node.children.length > 0 &&
         node.children.every((item) => typeof item.checked === 'boolean');

@@ -1,8 +1,3 @@
-// Read-only Markdown, for places an editor would be overkill.
-//
-// Imports the parser only — never the schema or ProseMirror — so a comment
-// thread does not pull the editor bundle in behind it.
-
 import type { PhrasingContent, RootContent } from 'mdast';
 
 import { useMemo } from 'react';
@@ -44,8 +39,7 @@ function Block({ node }: { node: RootContent }): null | React.JSX.Element {
                 </pre>
             );
         case 'heading': {
-            // A comment is not a document; its headings are emphasis, not
-            // outline levels, so they all render at one weight.
+            // A comment is not a document: `##` is emphasis, not structure.
             return <p className="font-semibold text-text">{inline(node.children)}</p>;
         }
         case 'list':
@@ -59,7 +53,6 @@ function Block({ node }: { node: RootContent }): null | React.JSX.Element {
         case 'thematicBreak':
             return <hr className="border-t border-none border-border" />;
         default:
-            // Anything unmodelled shows as its own source rather than vanishing.
             return 'value' in node && typeof node.value === 'string' ? (
                 <p className="font-mono text-body-sm text-text3">{node.value}</p>
             ) : null;

@@ -31,8 +31,6 @@ export function deriveSnippet(
         // A task's body may open with its checklist. Previewing that verbatim put
         // raw `- [ ]` markers in the list, so the prose wins and the checklist
         // falls back to a count.
-        // Markdown is stripped so a row reads as prose: `## Notes` and
-        // `**important**` were previously shown with their syntax intact.
         const prose = stripSubtasks(body);
         if (prose) {
             const line = firstPlainLine(prose);
