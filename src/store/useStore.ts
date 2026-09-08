@@ -111,6 +111,16 @@ interface StoreState {
     detail: Item | null;
     dismissMigrationNotice: () => void;
     /**
+     * The item whose body is being edited and not yet saved, if any.
+     *
+     * A vault change — including the one our own save causes — re-lists and
+     * re-reads `detail`. With a click-to-edit textarea that was invisible: the
+     * draft lived in component state. An always-on editor reads from `detail`,
+     * so without this an external write, or simply typing fast enough to
+     * overlap a save, would replace the text under the cursor.
+     */
+    editorDirtyId: null | string;
+    /**
      * Promotes the open drawer to a full page for this item only. It writes the
      * override rather than the preference, so the next item still opens the way
      * the user chose.
@@ -148,9 +158,9 @@ interface StoreState {
     loadItemMeta: (id: string) => Promise<void>;
     /** Which surface the window's main area shows: the library or the calendar. */
     mainView: MainView;
-
     /** Set once by a migration so the UI can say what happened. */
     migrationNotice: null | string;
+
     onboarded: boolean;
     onboardingStep: OnboardingStep;
     /**
@@ -174,16 +184,16 @@ interface StoreState {
     refresh: () => Promise<void>;
     removeComment: (id: string, commentId: string) => Promise<void>;
     removeTag: (id: string, tag: string) => Promise<void>;
-
     renameItemFile: (id: string, stem: string) => Promise<void>;
+
     /** Puts the current interval back to its full length, still paused. */
     resetFocusInterval: () => void;
     /** Item id → ISO time it sits at on the calendar. */
     schedule: Record<string, string>;
     /** Places an item on the calendar, or clears it when `at` is null. */
     scheduleItem: (id: string, at: Date | null) => void;
-
     search: string;
+
     searching: boolean;
     /**
      * Ids the index matched, or null when the query is too short to run one and
@@ -196,9 +206,11 @@ interface StoreState {
     selectView: (kind: View['kind'], val?: null | string) => void;
     sendChat: (question: string) => Promise<void>;
     setAccent: (accent: Accent) => void;
-
     setAiAssist: (on: boolean) => void;
+
     setAppearance: (appearance: Appearance) => void;
+    /** Marks the open body as having unsaved changes. See `editorDirtyId`. */
+    setEditorDirty: (id: null | string) => void;
     setFilters: (patch: Partial<Filters>) => void;
 
     setFocusTask: (id: null | string) => void;
@@ -642,9 +654,11 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     detail: null,
+
     dismissMigrationNotice() {
         set({ migrationNotice: null });
     },
+    editorDirtyId: null,
     expandOpenItem() {
         set({ openAs: 'page' });
     },
@@ -723,7 +737,16 @@ export const useStore = create<StoreState>((set, get) => ({
     async loadDetail(id) {
         const item = await getRepository().getItem(id);
         // Ignore a response that lost the race to a newer selection.
-        if (get().selectedId === id) set({ detail: item });
+        if (get().selectedId !== id) {
+            void get().loadItemMeta(id);
+            return;
+        }
+
+        const state = get();
+        // Everything else on the item still refreshes — a tag added in another
+        // window should appear — but the body the user is typing into wins.
+        const keepBody = state.editorDirtyId === id && state.detail?.id === id;
+        set({ detail: item && keepBody ? { ...item, body: state.detail?.body } : item });
         void get().loadItemMeta(id);
     },
 
@@ -737,12 +760,13 @@ export const useStore = create<StoreState>((set, get) => ({
         const meta = repo.itemMeta ? await repo.itemMeta(id).catch(() => null) : null;
         if (get().selectedId === id) set({ itemMeta: meta });
     },
+
     mainView: 'library',
     migrationNotice: null,
-
     onboarded: persisted.onboarded,
 
     onboardingStep: 'pick',
+
     openAs: null,
     openCapture() {
         set({ captureOpen: true, focusPopoverOpen: false });
@@ -756,7 +780,6 @@ export const useStore = create<StoreState>((set, get) => ({
         if (path) await get().switchWorkspace(path);
     },
     prefs: persisted.prefs,
-
     recentWorkspaces: persisted.recentWorkspaces,
 
     async refresh() {
@@ -814,6 +837,7 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     search: '',
+
     searching: false,
     searchResults: null,
     selectedId: 'i1',
@@ -858,12 +882,11 @@ export const useStore = create<StoreState>((set, get) => ({
         };
         set((s) => ({ chat: [...s.chat, aiMsg] }));
     },
-
-    /* ---------------- onboarding ---------------- */
-
     setAccent(accent) {
         get().setPref('accent', accent);
     },
+
+    /* ---------------- onboarding ---------------- */
 
     setAiAssist(on) {
         set({ aiAssist: on });
@@ -871,6 +894,10 @@ export const useStore = create<StoreState>((set, get) => ({
 
     setAppearance(appearance) {
         get().setPref('appearance', appearance);
+    },
+
+    setEditorDirty(id) {
+        set({ editorDirtyId: id });
     },
 
     /* ---------------- settings ---------------- */

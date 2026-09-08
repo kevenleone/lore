@@ -16,8 +16,19 @@ import { joinBody, parseSubtasks, stripSubtasks, toggleSubtask } from '../../lib
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
 import { collectionFor, detailFlags, relatedItems, viewTitle } from '../../store/views';
-import { Back, Check, Close, Expand, External, Globe, StarOutline, Trash } from '../common/glyphs';
+import {
+    Back,
+    Check,
+    Close,
+    Expand,
+    External,
+    Globe,
+    PanelRight,
+    StarOutline,
+    Trash,
+} from '../common/glyphs';
 import { Icon } from '../common/Icon';
+import { BodyEditor } from '../editor/BodyEditor';
 import { AiSummaryCard } from './AiSummaryCard';
 import { RelatedCards } from './RelatedCards';
 
@@ -44,7 +55,10 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const renameItemFile = useStore((s) => s.renameItemFile);
     // The AI sections need both the pane toggle and the Capture & AI setting.
     const aiAssist = useStore((s) => s.aiAssist && s.prefs.switches.autoSum);
+    const blockEditorEnabled = useStore((s) => s.prefs.switches.blockEditor);
     const toggleStar = useStore((s) => s.toggleStar);
+    const propertiesOpen = useStore((s) => s.prefs.propertiesOpen);
+    const toggleProperties = useStore((s) => s.toggleProperties);
     const deleteItem = useStore((s) => s.deleteItem);
     const updateItem = useStore((s) => s.updateItem);
     const addTag = useStore((s) => s.addTag);
@@ -131,6 +145,28 @@ export function DetailPane({ chrome }: DetailPaneProps) {
         const next = titleDraft.trim();
         setEditingTitle(false);
         if (next && next !== sel.title) void updateItem(sel.id, { title: next });
+    };
+
+    // Prose bodies only. Code is not prose, and a link's editable text is a
+    // frontmatter scalar, where a multi-line editor would mean YAML quoting
+    // churn on every save.
+    // `listItems()` omits bodies, so until `detail` arrives for this item `sel`
+    // is the list row and `sel.body` is undefined. The editor seeds itself from
+    // the body it is given, so opening it against that empty stand-in would
+    // show an empty note — and the next keystroke would save it over the real
+    // one. It waits for the body instead.
+    const bodyLoaded = detail?.id === sel.id;
+    const useBlockEditor =
+        blockEditorEnabled && bodyLoaded && (sel.type === 'note' || sel.type === 'task');
+
+    /**
+     * A task's body is prose plus the checklist the Subtasks panel owns, so the
+     * editor's Markdown is only the prose half and `joinBody` puts the two back
+     * together — the same contract the textarea had.
+     */
+    const commitBodyMarkdown = (markdown: string) => {
+        const body = isTask ? joinBody(markdown, subtasks) : markdown;
+        void updateItem(sel.id, { body: body || undefined });
     };
 
     const startBody = () => {
@@ -229,6 +265,24 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                                 Open
                             </span>
                         )}
+                        {/*
+                         * Properties describes this item, so it sits with the
+                         * item's own actions rather than in the window chrome.
+                         * The panel itself is docked outside the drawer and page
+                         * branches in App.tsx, so it opens the same way here.
+                         */}
+                        <button
+                            aria-pressed={propertiesOpen}
+                            className={cn(
+                                'inline-flex cursor-pointer border-none bg-none p-1',
+                                propertiesOpen ? 'text-accent' : 'text-[#c4c4cc]',
+                            )}
+                            onClick={toggleProperties}
+                            title="Properties (⌘⌥I)"
+                            type="button"
+                        >
+                            <PanelRight />
+                        </button>
                         <button
                             className={cn(
                                 'inline-flex cursor-pointer border-none bg-none p-1',
@@ -358,7 +412,14 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                 )}
 
                 {/* body: code / note-task content / link description — editable */}
-                {bodyField && editingBody ? (
+                {useBlockEditor ? (
+                    <BodyEditor
+                        itemId={sel.id}
+                        onCommit={commitBodyMarkdown}
+                        placeholder="Add content…"
+                        value={bodyValue ?? ''}
+                    />
+                ) : bodyField && editingBody ? (
                     <textarea
                         autoFocus
                         className={bodyTextareaClass(flags.detIsCode)}
