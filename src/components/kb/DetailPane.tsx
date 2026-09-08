@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Subtask } from '../../lib/subtasks';
 import type { OpenMode } from '../../store/types';
 
+import { openExternal } from '../../lib/appInfo';
 import { useAssetSrc } from '../../lib/assetSrc';
 import { cn } from '../../lib/cn';
 import { formatSavedDate } from '../../lib/format';
@@ -538,13 +539,4 @@ export function DetailPane({ chrome }: DetailPaneProps) {
             </div>
         </div>
     );
-}
-
-async function openExternal(url: string) {
-    try {
-        const { openUrl } = await import('@tauri-apps/plugin-opener');
-        await openUrl(url);
-    } catch {
-        window.open(url, '_blank');
-    }
 }
