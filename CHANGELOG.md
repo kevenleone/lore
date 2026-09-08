@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/kevenleone/lore/compare/v1.2.0...v1.2.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **settings:** show real information in the About pane ([0c6c2cb](https://github.com/kevenleone/lore/commit/0c6c2cba7e2404f4f7a9ed2eb3f0ac84f656a9d8))
+
 ## [1.2.0](https://github.com/kevenleone/lore/compare/v1.1.1...v1.2.0) (2026-09-06)
 
 
