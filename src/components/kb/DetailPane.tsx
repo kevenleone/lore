@@ -53,7 +53,6 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const expandOpenItem = useStore((s) => s.expandOpenItem);
     const selectedId = useStore((s) => s.selectedId);
     const detail = useStore((s) => s.detail);
-    const renameItemFile = useStore((s) => s.renameItemFile);
     // The AI sections need both the pane toggle and the Capture & AI setting.
     const aiAssist = useStore((s) => s.aiAssist && s.prefs.switches.autoSum);
     const blockEditorEnabled = useStore((s) => s.prefs.switches.blockEditor);
@@ -72,8 +71,6 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const sel = detail && detail.id === listItem?.id ? detail : listItem;
 
     const [editingTitle, setEditingTitle] = useState(false);
-    const [editingFilename, setEditingFilename] = useState(false);
-    const [filenameDraft, setFilenameDraft] = useState('');
     const [titleDraft, setTitleDraft] = useState('');
     const [editingBody, setEditingBody] = useState(false);
     const [bodyDraft, setBodyDraft] = useState('');
@@ -110,7 +107,6 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const coll = collectionFor(sel, collections);
     const related = relatedItems(sel, items);
     const flags = detailFlags(sel, aiAssist, related.length);
-    const fileStem = (sel.path ?? '').split('/').pop()?.replace(/\.md$/, '') ?? '';
     const linkUrl =
         sel.type === 'link' ? sel.url || (sel.domain ? `https://${sel.domain}` : '') : '';
 
@@ -176,14 +172,6 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                 body: (isTask ? joinBody(bodyDraft, subtasks) : bodyDraft) || undefined,
             });
         else if (bodyField === 'description') void updateItem(sel.id, { description: bodyDraft });
-    };
-
-    const commitFilename = () => {
-        const next = filenameDraft.trim();
-        setEditingFilename(false);
-        // Unlike a retitle, this moves the file and rewrites every inbound link,
-        // so it only runs when the name actually changed.
-        if (next && next !== fileStem) void renameItemFile(sel.id, next);
     };
 
     const commitTag = () => {
@@ -373,35 +361,6 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     {coll?.name ?? 'Unfiled'}
                     <span className="opacity-50">·</span>
                     Saved {formatSavedDate(sel.createdAt)}
-                    {sel.path && (
-                        <>
-                            <span className="opacity-50">·</span>
-                            {editingFilename ? (
-                                <input
-                                    autoFocus
-                                    className="min-w-[120px] border-b-[1.5px] border-none border-b-accent bg-transparent font-mono text-body-sm text-text outline-none"
-                                    onBlur={commitFilename}
-                                    onChange={(e) => setFilenameDraft(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') commitFilename();
-                                        if (e.key === 'Escape') setEditingFilename(false);
-                                    }}
-                                    value={filenameDraft}
-                                />
-                            ) : (
-                                <span
-                                    className="cursor-text font-mono text-body-sm"
-                                    onClick={() => {
-                                        setFilenameDraft(fileStem);
-                                        setEditingFilename(true);
-                                    }}
-                                    title="Click to rename the file. Renaming rewrites links that point here."
-                                >
-                                    {fileStem}.md
-                                </span>
-                            )}
-                        </>
-                    )}
                 </div>
 
                 {/* image preview — only when there is an image */}
