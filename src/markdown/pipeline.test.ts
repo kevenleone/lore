@@ -1,9 +1,3 @@
-// The end-to-end guarantee, stated as a test.
-//
-// Read a body, build the editor document, change exactly one block, write it
-// back: every other byte of the file must be identical. This is what keeps
-// `git status` quiet on a vault Lore has merely been used in.
-
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';

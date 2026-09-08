@@ -1,6 +1,3 @@
-// Phase 2's correctness claim, tested where it lives: a document that came from
-// a body, written back over that body.
-
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -25,9 +22,7 @@ function open(body: string) {
 }
 
 describe('applyDocument', () => {
-    // The regression that matters: comparing generated Markdown against the
-    // original source marked every normalising block dirty on open, so merely
-    // viewing a note rewrote it. Dirtiness comes from the document, not a diff.
+    // Dirtiness comes from the document, not from diffing generated Markdown.
     it.each(fixtures)('%s: an untouched document writes back unchanged', (_name, text) => {
         const { doc, parsed } = open(text);
         expect(applyDocument(parsed, doc, NOTHING_DIRTY)).toBe(text);

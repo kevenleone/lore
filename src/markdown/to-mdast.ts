@@ -1,16 +1,9 @@
-// ProseMirror document → mdast → Markdown.
-//
-// This is the path a *changed* block takes. Untouched blocks never come through
-// here — they are written from their original source — so normalization by the
-// generator only ever affects text the user actually edited.
-
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import type { BlockContent, ListItem, PhrasingContent, RootContent } from 'mdast';
 
 import { gfmToMarkdown } from 'mdast-util-gfm';
 import { toMarkdown } from 'mdast-util-to-markdown';
 
-/** Markdown for one top-level block, matching what `parse` would read back. */
 export function generateBlock(node: ProseMirrorNode): string {
     if (node.type.name === 'unknownBlock') return String(node.attrs.source ?? '');
 
@@ -87,7 +80,6 @@ function toBlockContent(node: ProseMirrorNode): BlockContent | null {
 
 const MARK_ORDER = ['link', 'bold', 'italic', 'strike', 'code'] as const;
 
-/** Every top-level block of a document, as Markdown. */
 export function generateBlocks(doc: ProseMirrorNode): string[] {
     const out: string[] = [];
     doc.forEach((child) => out.push(generateBlock(child)));
@@ -108,7 +100,7 @@ function inline(node: ProseMirrorNode): PhrasingContent[] {
         if (!child.isText) return;
 
         let built: PhrasingContent = { type: 'text', value: child.text ?? '' };
-        // Innermost first, so the outermost mark ends up wrapping everything.
+        // Innermost first, so the outermost mark wraps everything.
         for (const name of [...MARK_ORDER].reverse()) {
             const mark = child.marks.find((m) => m.type.name === name);
             if (!mark) continue;

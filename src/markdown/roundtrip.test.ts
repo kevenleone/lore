@@ -1,9 +1,3 @@
-// The gate for the whole editor project.
-//
-// If `serialize(parse(x))` is not `x` byte for byte, an editor built on this
-// reformats files it merely opened, and a Git-tracked vault fills with diffs
-// nobody asked for. Every fixture here is a shape a real vault contains.
-
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -27,7 +21,6 @@ describe('round trip', () => {
 });
 
 describe('targeted edits', () => {
-    // The git-churn guarantee: editing one block must not move any other byte.
     it.each(fixtures)('%s: rewriting one block leaves the rest alone', (_name, text) => {
         const parsed = parse(text);
         if (parsed.blocks.length < 2) return;

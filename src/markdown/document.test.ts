@@ -1,6 +1,3 @@
-// Phase 1: the mdast ↔ document mapping, and the fragility gate that decides
-// which blocks are safe to model at all. All DOM-free.
-
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';

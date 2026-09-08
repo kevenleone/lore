@@ -111,13 +111,9 @@ interface StoreState {
     detail: Item | null;
     dismissMigrationNotice: () => void;
     /**
-     * The item whose body is being edited and not yet saved, if any.
-     *
-     * A vault change — including the one our own save causes — re-lists and
-     * re-reads `detail`. With a click-to-edit textarea that was invisible: the
-     * draft lived in component state. An always-on editor reads from `detail`,
-     * so without this an external write, or simply typing fast enough to
-     * overlap a save, would replace the text under the cursor.
+     * The item whose body has unsaved edits. Any vault change re-reads
+     * `detail`, including the one our own save causes, which would otherwise
+     * replace the text under the cursor.
      */
     editorDirtyId: null | string;
     /**
@@ -209,7 +205,6 @@ interface StoreState {
     setAiAssist: (on: boolean) => void;
 
     setAppearance: (appearance: Appearance) => void;
-    /** Marks the open body as having unsaved changes. See `editorDirtyId`. */
     setEditorDirty: (id: null | string) => void;
     setFilters: (patch: Partial<Filters>) => void;
 
@@ -743,8 +738,7 @@ export const useStore = create<StoreState>((set, get) => ({
         }
 
         const state = get();
-        // Everything else on the item still refreshes — a tag added in another
-        // window should appear — but the body the user is typing into wins.
+        // Everything else still refreshes; only the body being typed into wins.
         const keepBody = state.editorDirtyId === id && state.detail?.id === id;
         set({ detail: item && keepBody ? { ...item, body: state.detail?.body } : item });
         void get().loadItemMeta(id);

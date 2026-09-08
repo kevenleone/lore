@@ -1,10 +1,3 @@
-// The editor's document schema, defined once and shared by the converters.
-//
-// `getSchema` runs without a DOM, so everything below — and every test that
-// builds a document from it — works under plain Node. That is deliberate: the
-// mdast ↔ document mapping is where corruption bugs live, and it must be
-// testable without a browser.
-
 import type { Extensions } from '@tiptap/core';
 
 import { getSchema, Node } from '@tiptap/core';
@@ -12,12 +5,7 @@ import { TaskItem, TaskList } from '@tiptap/extension-list';
 import { type Schema } from '@tiptap/pm/model';
 import StarterKit from '@tiptap/starter-kit';
 
-/**
- * A block the editor deliberately does not model: raw HTML, a footnote
- * definition, a `$$` math fence, a `:::` directive. It holds its source and is
- * written back untouched, so opening a note can never cost the user content
- * Lore happens not to understand.
- */
+/** Holds the source of a block the editor does not model, and writes it back. */
 export const UnknownBlock = Node.create({
     // Not `code`: nothing here is edited, it is only carried.
     addAttributes() {
@@ -35,16 +23,9 @@ export const UnknownBlock = Node.create({
     selectable: true,
 });
 
-/*
- * Appearance lives here, as Tailwind classes on each node, rather than in a
- * stylesheet. Preflight strips heading sizes, list markers and block margins,
- * so without this the editor renders structurally correct HTML that all looks
- * like body text.
- *
- * Body prose matches the detail pane it replaces: `text-title-lg` at 1.65.
- * Heading sizes are arbitrary px because the shared scale tops out at 15px —
- * see the note on px units at the top of theme/tailwind.css.
- */
+/* Preflight strips heading sizes, list markers and block margins, so without
+ * these every block would render as body text. Heading sizes are in
+ * theme/tailwind.css, where they can vary by level. */
 const BLOCK_SPACING = 'mt-[14px] first:mt-0';
 
 const NODE_CLASSES = {

@@ -1,9 +1,5 @@
 // @vitest-environment jsdom
 
-// Quick capture must keep working with the flag off, and must not become slow
-// with it on — the editor is lazy, so the textarea has to be a real fallback
-// rather than a blank box.
-
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 

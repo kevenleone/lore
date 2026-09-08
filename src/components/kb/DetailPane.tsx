@@ -147,23 +147,14 @@ export function DetailPane({ chrome }: DetailPaneProps) {
         if (next && next !== sel.title) void updateItem(sel.id, { title: next });
     };
 
-    // Prose bodies only. Code is not prose, and a link's editable text is a
-    // frontmatter scalar, where a multi-line editor would mean YAML quoting
-    // churn on every save.
-    // `listItems()` omits bodies, so until `detail` arrives for this item `sel`
-    // is the list row and `sel.body` is undefined. The editor seeds itself from
-    // the body it is given, so opening it against that empty stand-in would
-    // show an empty note — and the next keystroke would save it over the real
-    // one. It waits for the body instead.
+    // Code is not prose, and a link's text is a frontmatter scalar.
+    // List rows carry no body, so opening the editor against that stand-in
+    // would show an empty note and save it over the real one.
     const bodyLoaded = detail?.id === sel.id;
     const useBlockEditor =
         blockEditorEnabled && bodyLoaded && (sel.type === 'note' || sel.type === 'task');
 
-    /**
-     * A task's body is prose plus the checklist the Subtasks panel owns, so the
-     * editor's Markdown is only the prose half and `joinBody` puts the two back
-     * together — the same contract the textarea had.
-     */
+    /** A task's editor holds only the prose; the Subtasks panel owns the rest. */
     const commitBodyMarkdown = (markdown: string) => {
         const body = isTask ? joinBody(markdown, subtasks) : markdown;
         void updateItem(sel.id, { body: body || undefined });
@@ -265,12 +256,6 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                                 Open
                             </span>
                         )}
-                        {/*
-                         * Properties describes this item, so it sits with the
-                         * item's own actions rather than in the window chrome.
-                         * The panel itself is docked outside the drawer and page
-                         * branches in App.tsx, so it opens the same way here.
-                         */}
                         <button
                             aria-pressed={propertiesOpen}
                             className={cn(

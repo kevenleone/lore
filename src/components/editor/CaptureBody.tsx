@@ -1,10 +1,3 @@
-// The capture drawer's body field: the block editor when it is switched on, the
-// plain textarea otherwise.
-//
-// Quick capture is the one flow that has to feel instant, so the editor is
-// loaded lazily and the textarea stands in until it arrives. The window opens
-// at the same speed either way; the field simply upgrades itself.
-
 import { lazy, Suspense } from 'react';
 
 import { useStore } from '../../store/useStore';
