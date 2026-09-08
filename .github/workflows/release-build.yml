@@ -33,11 +33,6 @@ jobs:
     macos:
         name: macOS (${{ matrix.arch }})
         runs-on: macos-latest
-        # Deliberately not named APPLE_CERTIFICATE: the bundler signs whenever
-        # that variable is *present*, so an unconfigured secret would expand to
-        # "" and fail `security import` on an empty .p12.
-        env:
-            SIGNING_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
         strategy:
             fail-fast: false
             matrix:
@@ -79,31 +74,37 @@ jobs:
             - name: Build sidecar for ${{ matrix.target }}
               run: cd sidecar && bun scripts/build.ts ${{ matrix.target }}
 
-            # Without these the bundle is ad-hoc signed and Gatekeeper shows
-            # the unidentified-developer prompt; adding the six repository
-            # secrets is the only step needed to sign and notarize instead.
-            - name: Enable Apple code signing and notarization
-              if: env.SIGNING_CERTIFICATE != ''
+            # The bundler signs whenever APPLE_CERTIFICATE is *present*, so
+            # the variable cannot be set at all on the unsigned path: an unset
+            # secret expands to "" and fails `security import` on an empty .p12.
+            # Hence two build steps rather than one with a conditional env.
+            - name: Check for Apple signing secrets
+              id: signing
               env:
                   CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-                  CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-                  ID: ${{ secrets.APPLE_ID }}
-                  PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-                  SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-                  TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
               run: |
-                  {
-                    # A base64 export may carry line breaks, so the certificate
-                    # needs the multi-line form.
-                    printf 'APPLE_CERTIFICATE<<__LORE_EOF__\n%s\n__LORE_EOF__\n' "$CERTIFICATE"
-                    printf 'APPLE_CERTIFICATE_PASSWORD=%s\n' "$CERTIFICATE_PASSWORD"
-                    printf 'APPLE_ID=%s\n' "$ID"
-                    printf 'APPLE_PASSWORD=%s\n' "$PASSWORD"
-                    printf 'APPLE_SIGNING_IDENTITY=%s\n' "$SIGNING_IDENTITY"
-                    printf 'APPLE_TEAM_ID=%s\n' "$TEAM_ID"
-                  } >> "$GITHUB_ENV"
+                  if [ -n "$CERTIFICATE" ]; then
+                    echo 'enabled=true' >> "$GITHUB_OUTPUT"
+                  else
+                    echo 'enabled=false' >> "$GITHUB_OUTPUT"
+                  fi
 
-            - name: Build Tauri bundles
+            - name: Build Tauri bundles (signed and notarized)
+              if: steps.signing.outputs.enabled == 'true'
+              env:
+                  APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+                  APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+                  APPLE_ID: ${{ secrets.APPLE_ID }}
+                  APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+                  APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+                  APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+              run: pnpm tauri build --target ${{ matrix.target }} --bundles app,dmg --config src-tauri/tauri.ci.conf.json
+
+            # Ad-hoc signed, so Gatekeeper shows the unidentified-developer
+            # prompt; adding the six repository secrets is the only step needed
+            # to take the signed path instead.
+            - name: Build Tauri bundles (unsigned)
+              if: steps.signing.outputs.enabled == 'false'
               run: pnpm tauri build --target ${{ matrix.target }} --bundles app,dmg --config src-tauri/tauri.ci.conf.json
 
             - name: Upload to release
