@@ -8,3 +8,8 @@ node_modules
 src-tauri/binaries
 src-tauri/gen
 src-tauri/target
+
+# The round-trip corpus. These files are deliberately malformed, unusually
+# indented and CRLF-terminated; formatting them would erase exactly what they
+# test. See src/markdown/roundtrip.test.ts.
+src/markdown/fixtures
