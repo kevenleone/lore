@@ -300,3 +300,94 @@
         background: transparent;
     }
 }
+
+/*
+ * ProseMirror's structural rules. Everything a block *looks* like is a Tailwind
+ * class on its node view; what is left here is the handful of things a utility
+ * cannot express — how the editable region handles whitespace and where the
+ * caret goes — plus the placeholder, which needs a pseudo-element.
+ *
+ * Colours are tokens, so both themes are already correct and there is no
+ * `dark:` variant, per the rules at the top of this file.
+ */
+@layer components {
+    .lore-editor .ProseMirror {
+        outline: none;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    /* The gap cursor, for placing a caret beside an atom such as unknownBlock. */
+    .lore-editor .ProseMirror-gapcursor:after {
+        border-top: 1px solid var(--text);
+    }
+
+    .lore-editor .ProseMirror p.is-editor-empty:first-child::before {
+        color: var(--faint);
+        content: attr(data-placeholder);
+        float: left;
+        height: 0;
+        pointer-events: none;
+    }
+
+    /*
+     * Heading sizes and the checkbox row are the two things a single utility
+     * class cannot carry: one varies per level, the other styles a structure
+     * Tiptap renders inside the node. Everything else about the editor's
+     * appearance is a Tailwind class in markdown/schema.ts.
+     */
+    .lore-editor .ProseMirror :is(h1, h2, h3, h4) {
+        color: var(--text);
+        font-weight: 600;
+        line-height: 1.3;
+        margin-top: 22px;
+    }
+    .lore-editor .ProseMirror :is(h1, h2, h3, h4):first-child {
+        margin-top: 0;
+    }
+    .lore-editor .ProseMirror h1 {
+        font-size: 23px;
+        letter-spacing: -0.01em;
+    }
+    .lore-editor .ProseMirror h2 {
+        font-size: 19px;
+    }
+    .lore-editor .ProseMirror h3 {
+        font-size: 16.5px;
+    }
+    .lore-editor .ProseMirror h4 {
+        font-size: 15px;
+    }
+
+    /* Tiptap renders a task item as `<li><label><input></label><div>`. */
+    .lore-editor .ProseMirror li[data-checked] > label {
+        flex: none;
+        margin-top: 3px;
+        user-select: none;
+    }
+    .lore-editor .ProseMirror li[data-checked] > div {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .lore-editor .ProseMirror li[data-checked='true'] > div {
+        color: var(--text3);
+        text-decoration: line-through;
+    }
+
+    /*
+     * In the capture drawer the editor stands in for a textarea, so it inherits
+     * that field's box and has to scroll inside it rather than growing the
+     * drawer. `min-h` comes from the class the field passes in.
+     */
+    .lore-capture-body .ProseMirror {
+        min-height: inherit;
+    }
+
+    /* A block Lore carries but does not model: shown as its own Markdown. */
+    .lore-editor .ProseMirror div[data-unknown-block]::before {
+        content: attr(source);
+        display: block;
+        font-family: var(--font-mono, ui-monospace, monospace);
+        white-space: pre-wrap;
+    }
+}

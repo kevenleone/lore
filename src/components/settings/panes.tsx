@@ -257,6 +257,8 @@ export function LookPane() {
     const openMode = useStore((s) => s.prefs.openMode);
     const setOpenMode = useStore((s) => s.setOpenMode);
     const counts = useSwitch('counts');
+    const blockEditor = useSwitch('blockEditor');
+    const rawMarkdownDefault = useSwitch('rawMarkdownDefault');
     const motion = useSwitch('motion');
 
     return (
@@ -370,8 +372,31 @@ export function LookPane() {
                     onChange={counts.onChange}
                 />
             </Row>
-            <Row desc="The capture balloon appears without the spring." last title="Reduce motion">
+            <Row desc="The capture balloon appears without the spring." title="Reduce motion">
                 <Toggle label="Reduce motion" on={motion.on} onChange={motion.onChange} />
+            </Row>
+
+            <SectionLabel>Editing</SectionLabel>
+            <Row
+                desc="Notes open in a formatted editor. Type / for headings, lists, quotes and more."
+                title="Block editor for notes"
+            >
+                <Toggle
+                    label="Block editor for notes"
+                    on={blockEditor.on}
+                    onChange={blockEditor.onChange}
+                />
+            </Row>
+            <Row
+                desc="Start in the raw text instead of the formatted view."
+                last
+                title="Open notes in Markdown"
+            >
+                <Toggle
+                    label="Open notes in Markdown"
+                    on={rawMarkdownDefault.on}
+                    onChange={rawMarkdownDefault.onChange}
+                />
             </Row>
         </>
     );

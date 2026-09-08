@@ -230,6 +230,8 @@ export interface Switches {
     // Capture & AI
     autoSum: boolean;
     autoTag: boolean;
+    /** Edit note bodies in the block editor rather than a plain textarea. */
+    blockEditor: boolean;
     calPersonal: boolean;
     calShared: boolean;
     calWork: boolean;
@@ -252,6 +254,8 @@ export interface Switches {
     motion: boolean;
     preview: boolean;
     quiet: boolean;
+    /** Open the block editor in raw Markdown mode. */
+    rawMarkdownDefault: boolean;
     showFocus: boolean;
     // Calendar
     showTasks: boolean;
@@ -280,6 +284,7 @@ export const DEFAULT_SWITCHES: Switches = {
     autoBreak: true,
     autoSum: true,
     autoTag: true,
+    blockEditor: false,
     calPersonal: true,
     calShared: false,
     calWork: true,
@@ -298,6 +303,7 @@ export const DEFAULT_SWITCHES: Switches = {
     motion: false,
     preview: true,
     quiet: true,
+    rawMarkdownDefault: false,
     showFocus: true,
     showTasks: true,
     sounds: false,
