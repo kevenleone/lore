@@ -110,7 +110,7 @@ export default function App() {
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
         mq.addEventListener('change', paint);
         return () => mq.removeEventListener('change', paint);
-    }, [appearance]);
+    }, [accent, appearance]);
 
     // Refresh when the Quick Capture window saves a new item, and take over
     // ⌥Space while this window is in front — Rust routes the shortcut here
