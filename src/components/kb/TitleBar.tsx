@@ -7,7 +7,7 @@ import { useEffect, useRef } from 'react';
 
 import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
-import { PanelRight, Plus, Search, SidebarToggle, Sort, Sparkle, ViewList } from '../common/glyphs';
+import { Plus, Search, SidebarToggle, Sort, Sparkle, ViewList } from '../common/glyphs';
 import { Tooltip } from '../common/Tooltip';
 import { FocusChip } from '../focus/FocusChip';
 
@@ -18,9 +18,7 @@ const CHROME_BUTTON =
 export function TitleBar({ onCapture }: { onCapture: () => void }) {
     const toggleSidebar = useStore((s) => s.toggleSidebar);
     const toggleChat = useStore((s) => s.toggleChat);
-    const toggleProperties = useStore((s) => s.toggleProperties);
     const chatOpen = useStore((s) => s.chatOpen);
-    const propertiesOpen = useStore((s) => s.prefs.propertiesOpen);
     const search = useStore((s) => s.search);
     const setSearch = useStore((s) => s.setSearch);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -97,20 +95,6 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                         onClick={toggleChat}
                     >
                         <Sparkle />
-                    </span>
-                </Tooltip>
-                <Tooltip keys="⌘⌥I" label="Properties">
-                    <span
-                        aria-label="Properties"
-                        aria-pressed={propertiesOpen}
-                        className={cn(
-                            CHROME_BUTTON,
-                            propertiesOpen ? 'bg-accent-tint text-accent' : 'text-text2',
-                        )}
-                        onClick={toggleProperties}
-                        role="button"
-                    >
-                        <PanelRight />
                     </span>
                 </Tooltip>
                 <Tooltip label="View options">

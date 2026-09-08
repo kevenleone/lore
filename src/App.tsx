@@ -143,6 +143,26 @@ export default function App() {
         : drawer.open
           ? 'animate-drawer-in'
           : 'animate-drawer-out';
+    /*
+     * Properties describe the open item, so the panel belongs on screen only
+     * while that item is — otherwise closing a drawer left a panel behind
+     * describing something no longer visible. The preference is untouched, so
+     * reopening an item brings the panel back the way the user left it.
+     */
+    const detailVisible = !chatOpen && (listMode || asPage || drawer.mounted);
+    const showProperties = propertiesOpen && detailVisible;
+    /*
+     * Whether the panel floats over the content or takes a column beside it.
+     *
+     * This follows the view mode, never the drawer's mounted state. Keying it
+     * to the drawer meant that on close the flag flipped the moment the drawer
+     * unmounted, while the panel still had its full width and 220ms of collapse
+     * left — so it briefly became a flex column, squeezed the table, and let it
+     * snap back. List and page put the panel in flow because their content
+     * genuinely should make room for it; Cards and Table never do.
+     */
+    const overlayProperties = !listMode && !asPage;
+
     const scrimClass = reduceMotion
         ? undefined
         : drawer.open
@@ -221,9 +241,17 @@ export default function App() {
                                     />
                                     <div
                                         className={cn(
-                                            'absolute top-0 right-0 bottom-0 z-30 flex min-h-0 w-[496px] flex-col border-l border-border bg-surface shadow-float',
+                                            'absolute top-0 bottom-0 z-30 flex min-h-0 w-[496px] flex-col border-l border-border bg-surface shadow-float',
+                                            !reduceMotion &&
+                                                'transition-[right] duration-220 ease-[cubic-bezier(.4,0,.2,1)]',
                                             drawerClass,
                                         )}
+                                        // The drawer is absolute and the panel is in
+                                        // flow, so without this they occupy the same
+                                        // edge and the panel paints over the drawer.
+                                        // Inset by the panel's width instead, and
+                                        // travel with it as it opens and closes.
+                                        style={{ right: showProperties ? PROPERTIES_WIDTH : 0 }}
                                     >
                                         <DetailPane chrome="drawer" />
                                     </div>
@@ -236,18 +264,30 @@ export default function App() {
                              * its contents never reflow mid-transition.
                              */}
                             <div
-                                aria-hidden={!propertiesOpen}
+                                aria-hidden={!showProperties}
                                 className={cn(
-                                    'z-31 flex-none overflow-hidden',
-                                    propertiesOpen
+                                    'z-31 overflow-hidden',
+                                    /*
+                                     * A drawer lays over the list, so the list must
+                                     * not reflow when the panel opens beside it —
+                                     * taking width out of the flex row reran the
+                                     * table's column layout behind the scrim. Over a
+                                     * drawer the panel overlays too; everywhere else
+                                     * it is a column and shrinking the content is
+                                     * exactly what should happen.
+                                     */
+                                    overlayProperties
+                                        ? 'absolute top-0 right-0 bottom-0'
+                                        : 'flex-none',
+                                    showProperties
                                         ? 'border-l border-border'
                                         : 'border-l-0 border-none',
                                     !reduceMotion &&
                                         'transition-[width] duration-220 ease-[cubic-bezier(.4,0,.2,1)]',
                                 )}
-                                inert={!propertiesOpen}
+                                inert={!showProperties}
                                 // The collapse animates between two shared constants.
-                                style={{ width: propertiesOpen ? PROPERTIES_WIDTH : 0 }}
+                                style={{ width: showProperties ? PROPERTIES_WIDTH : 0 }}
                             >
                                 <PropertiesPanel />
                             </div>
