@@ -91,7 +91,7 @@ describe('collectionCount', () => {
 describe('viewTitle', () => {
     it('maps each view kind to a label', () => {
         expect(viewTitle({ kind: 'all', val: null }, COLLECTIONS)).toBe('All Items');
-        expect(viewTitle({ kind: 'starred', val: null }, COLLECTIONS)).toBe('Flagged');
+        expect(viewTitle({ kind: 'starred', val: null }, COLLECTIONS)).toBe('Starred');
         expect(viewTitle({ kind: 'collection', val: 'work' }, COLLECTIONS)).toBe('Work');
         expect(viewTitle({ kind: 'tag', val: 'design' }, COLLECTIONS)).toBe('#design');
     });
