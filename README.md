@@ -186,6 +186,36 @@ related:
 The Markdown body — the note's content, or your own notes on a link.
 ```
 
+### Documents that live somewhere else
+
+Paste a GitHub repo and Lore reads its README; paste a `blob/…/*.md` URL and it
+reads that file. Either way you get a real document to read, not a bookmark.
+
+```markdown
+---
+title: emitsignal/emitsignal
+type: link
+url: https://github.com/emitsignal/emitsignal
+source:
+    kind: github
+    raw: https://raw.githubusercontent.com/emitsignal/emitsignal/HEAD/README.md
+    ref: HEAD
+    fetched: 2026-09-09T10:12:04.000Z
+---
+```
+
+The body is the Markdown itself, cached in the file — so it reads offline, is
+found by search, and diffs in git. Relative images and links are rewritten to
+absolute URLs once, when it is fetched, which is what makes the copy correct in
+Obsidian and on GitHub too. `ref: HEAD` follows the repository's default branch
+rather than pinning a name, and needs no API call and no token.
+
+`source` is what makes the body read-only. Opening the item checks the origin —
+at most once every few hours, and only rewriting the file when the Markdown
+actually changed, so an unchanged upstream never churns your history. **Save &
+edit** drops `source`, keeps the text and the `url`, and hands you an ordinary
+note.
+
 **A plain folder of Markdown just works.** A folder with no `collections.json`
 entry is still a collection, coloured from a hash of its name. A file with no
 frontmatter is a valid note; its title falls back to the first heading, then the
