@@ -269,7 +269,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                                 propertiesOpen ? 'text-accent' : 'text-[#c4c4cc]',
                             )}
                             onClick={toggleProperties}
-                            title="Properties (⌘⌥I)"
+                            title="Properties (⌘L)"
                             type="button"
                         >
                             <PanelRight />
@@ -280,7 +280,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                                 sel.flags.starred ? 'text-accent' : 'text-[#c4c4cc]',
                             )}
                             onClick={() => void toggleStar(sel.id)}
-                            title={sel.flags.starred ? 'Remove flag' : 'Flag'}
+                            title={sel.flags.starred ? 'Unstar' : 'Star'}
                             type="button"
                         >
                             <StarOutline

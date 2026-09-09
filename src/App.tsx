@@ -8,6 +8,8 @@
 
 import { useEffect } from 'react';
 
+import type { View } from './store/types';
+
 import { CalendarView } from './components/calendar/CalendarView';
 import { CaptureDrawer } from './components/capture/CaptureDrawer';
 import { FocusMode } from './components/focus/FocusMode';
@@ -25,9 +27,18 @@ import { Onboarding } from './components/onboarding/Onboarding';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { cn } from './lib/cn';
 import { DRAWER_MS } from './lib/motion';
+import { isTypingTarget } from './lib/typingTarget';
 import { useMountTransition } from './lib/useMountTransition';
 import { useStore } from './store/useStore';
 import { effectiveTheme, paintTheme } from './theme/tokens';
+
+/** ⌘1–⌘4; the Calendar is not a Library view, so ⌘5 is handled beside them. */
+const LIBRARY_KEYS: Record<string, View['kind']> = {
+    Digit1: 'all',
+    Digit2: 'inbox',
+    Digit3: 'today',
+    Digit4: 'starred',
+};
 
 export default function App() {
     const hydrate = useStore((s) => s.hydrate);
@@ -53,12 +64,15 @@ export default function App() {
     // drawer's expand button sets.
     const openAs = useStore((s) => s.openAs ?? s.prefs.openMode);
     const openCapture = useStore((s) => s.openCapture);
+    const openSettings = useStore((s) => s.openSettings);
+    const selectView = useStore((s) => s.selectView);
     const setMainView = useStore((s) => s.setMainView);
     const settingsOpen = useStore((s) => s.settingsOpen);
     const statusBarVisible = useStore((s) => s.prefs.switches.statusBar);
     const toggleCapture = useStore((s) => s.toggleCapture);
     const toggleFocus = useStore((s) => s.toggleFocus);
     const toggleProperties = useStore((s) => s.toggleProperties);
+    const toggleSidebar = useStore((s) => s.toggleSidebar);
     const viewMode = useStore((s) => s.prefs.viewMode);
 
     useFocusTimer();
@@ -73,16 +87,30 @@ export default function App() {
     // something else, and Rust routes it here as `capture:toggle`.
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
+            const command = (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey;
+            // A bare ⌘ chord would otherwise fire mid-sentence in the editor,
+            // the search box or a title field.
+            const typing = isTypingTarget(e.target);
+            const libraryKind = command ? LIBRARY_KEYS[e.code] : undefined;
             if (e.altKey && e.shiftKey && e.code === 'KeyF') {
                 e.preventDefault();
                 toggleFocus();
-            } else if ((e.metaKey || e.ctrlKey) && !e.altKey && e.code === 'KeyN') {
+            } else if (command && e.code === 'KeyN') {
                 e.preventDefault();
                 toggleCapture();
-            } else if ((e.metaKey || e.ctrlKey) && e.altKey && e.code === 'KeyI') {
+            } else if (command && !typing && e.code === 'KeyB') {
+                e.preventDefault();
+                toggleSidebar();
+            } else if (command && !typing && e.code === 'KeyL') {
                 e.preventDefault();
                 toggleProperties();
-            } else if ((e.metaKey || e.ctrlKey) && e.key === '3') {
+            } else if (command && e.code === 'Comma') {
+                e.preventDefault();
+                openSettings();
+            } else if (command && !typing && libraryKind) {
+                e.preventDefault();
+                selectView(libraryKind, null);
+            } else if (command && !typing && e.code === 'Digit5') {
                 e.preventDefault();
                 setMainView('calendar');
             } else if (e.key === 'Escape') {
@@ -99,10 +127,13 @@ export default function App() {
         captureOpen,
         closeCapture,
         closeOpenItem,
+        openSettings,
+        selectView,
         setMainView,
         toggleCapture,
         toggleFocus,
         toggleProperties,
+        toggleSidebar,
     ]);
 
     // Paint the token set for the effective theme, and repaint when the OS

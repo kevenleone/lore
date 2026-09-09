@@ -54,7 +54,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
 
             <ModeBadge />
 
-            <Tooltip keys="⌘⌥S" label="Toggle sidebar">
+            <Tooltip keys="⌘B" label="Toggle sidebar">
                 <span
                     aria-label="Toggle sidebar"
                     className="ml-1 flex cursor-pointer text-faint"
