@@ -27,6 +27,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+#[cfg(target_os = "macos")]
+use objc2::rc::Retained;
 use tauri::image::Image;
 use tauri::menu::MenuItem;
 use tauri::{AppHandle, Emitter, LogicalPosition, Manager, Wry};
@@ -203,6 +205,50 @@ fn paint(app: &AppHandle, view: &TrayView) {
     if let Err(e) = tray.set_tooltip(Some(&view.tooltip)) {
         eprintln!("focus tray: set_tooltip failed: {e}");
     }
+}
+
+/// Draws the tray title in the system font's monospaced-digit variant.
+///
+/// The menu bar's default face gives digits proportional widths, so `18:50` and
+/// `18:49` are not the same width and the whole status item shifts a pixel or
+/// two every second. `tray-icon` sets a plain string title and exposes no font,
+/// so the button is reached through AppKit instead: down from the app's
+/// `NSStatusBarWindow`, whose content view holds the status button.
+///
+/// Must run on the main thread, and only once — the font outlives every later
+/// title. A failure here is cosmetic, so it is logged rather than returned.
+#[cfg(target_os = "macos")]
+pub fn use_monospaced_digits() {
+    use objc2::{MainThreadMarker, Message};
+    use objc2_app_kit::{NSApplication, NSButton, NSFont, NSFontWeightRegular, NSView};
+
+    /// Depth-first, because the button sits under the window's content view and
+    /// `tray-icon` puts a plain view of its own inside the button on top of that.
+    fn find_button(view: &NSView) -> Option<Retained<NSButton>> {
+        if let Ok(button) = view.retain().downcast::<NSButton>() {
+            return Some(button);
+        }
+        view.subviews().iter().find_map(|child| find_button(&child))
+    }
+
+    let Some(mtm) = MainThreadMarker::new() else {
+        eprintln!("focus tray: monospaced digits skipped, not on the main thread");
+        return;
+    };
+    let button = NSApplication::sharedApplication(mtm)
+        .windows()
+        .iter()
+        .filter(|window| window.class().name().to_bytes() == b"NSStatusBarWindow")
+        .find_map(|window| window.contentView().and_then(|view| find_button(&view)));
+    let Some(button) = button else {
+        eprintln!("focus tray: monospaced digits skipped, no status button found");
+        return;
+    };
+    // The menu bar is not drawn at the default system size, so the button's own
+    // size is carried over rather than asking for size 0.
+    let size = button.font().map_or(0.0, |font| font.pointSize());
+    let font = unsafe { NSFont::monospacedDigitSystemFontOfSize_weight(size, NSFontWeightRegular) };
+    button.setFont(Some(&font));
 }
 
 /// ---------------------------------------------------------------------------
