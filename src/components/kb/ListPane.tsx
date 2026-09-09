@@ -19,9 +19,11 @@ import {
     SORT_LABELS,
     viewTitle,
 } from '../../store/views';
+import { useContextMenu } from '../common/ContextMenu';
 import { Filter, Sort } from '../common/glyphs';
 import { CardGrid } from './CardGrid';
 import { FilterBar } from './FilterBar';
+import { ItemContextMenu } from './ItemContextMenu';
 import { matchesSearch } from './itemText';
 import { ListRows } from './ListRows';
 import { TableView } from './TableView';
@@ -46,6 +48,8 @@ export function ListPane() {
     const [sortOpen, setSortOpen] = useState(false);
     const [filtersOpen, setFiltersOpen] = useState(false);
     const sortRef = useRef<HTMLDivElement>(null);
+    const selectItem = useStore((s) => s.selectItem);
+    const contextMenu = useContextMenu();
 
     useEffect(() => {
         if (!sortOpen) return;
@@ -67,6 +71,14 @@ export function ListPane() {
     }
 
     const isList = viewMode === 'list';
+
+    const openMenu = (event: React.MouseEvent, id: string) => {
+        // Only in List: there, selecting merely moves the highlight, so the menu
+        // and the detail column agree. In Cards and Table selecting is what opens
+        // the item, and a right-click must not do that.
+        if (isList) selectItem(id);
+        contextMenu.openAt(event, id);
+    };
     const filterCount = activeFilterCount(filters);
     // A filter that is on must stay visible, or it silently shortens the list.
     const showFilters = filtersOpen || filterCount > 0;
@@ -157,10 +169,14 @@ export function ListPane() {
                                 : 'Nothing here yet.')}
                     </div>
                 )}
-                {viewMode === 'cards' && <CardGrid items={filtered} />}
-                {viewMode === 'table' && <TableView items={filtered} />}
-                {isList && <ListRows items={filtered} />}
+                {viewMode === 'cards' && <CardGrid items={filtered} onContextMenu={openMenu} />}
+                {viewMode === 'table' && <TableView items={filtered} onContextMenu={openMenu} />}
+                {isList && <ListRows items={filtered} onContextMenu={openMenu} />}
             </div>
+
+            {contextMenu.target && (
+                <ItemContextMenu onClose={contextMenu.close} target={contextMenu.target} />
+            )}
         </div>
     );
 }

@@ -2,7 +2,7 @@
 // the tag row under the subtitle. This is the layout the middle pane has always
 // had — Cards and Table are the alternatives.
 
-import type { Item } from '../../store/types';
+import type { SurfaceProps } from './surface';
 
 import { hasBanner } from '../../lib/banner';
 import { cn } from '../../lib/cn';
@@ -16,7 +16,7 @@ import { subtitle } from './itemText';
 /** Compact hides the tag row until its own row is hovered — hence `group`. */
 const TAG_ROW = 'mt-[6px] flex flex-wrap gap-[5px]';
 
-export function ListRows({ items }: { items: Item[] }) {
+export function ListRows({ items, onContextMenu }: SurfaceProps) {
     const selectedId = useStore((s) => s.selectedId);
     const selectItem = useStore((s) => s.selectItem);
     const density = useStore((s) => s.prefs.density);
@@ -43,6 +43,7 @@ export function ListRows({ items }: { items: Item[] }) {
                         )}
                         key={item.id}
                         onClick={() => selectItem(item.id)}
+                        onContextMenu={(e) => onContextMenu(e, item.id)}
                     >
                         {hasBanner(item) ? (
                             <span className="relative mt-px h-[38px] w-[56px] flex-none overflow-hidden rounded-7 bg-surface3">

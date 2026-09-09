@@ -2,7 +2,7 @@
 // its banner — the real image once it loads, the hashed placeholder before
 // that — and closes with the collection it lives in.
 
-import type { Item } from '../../store/types';
+import type { SurfaceProps } from './surface';
 
 import { hasBanner } from '../../lib/banner';
 import { cn } from '../../lib/cn';
@@ -14,7 +14,7 @@ import { Icon } from '../common/Icon';
 import { ItemBanner } from './ItemBanner';
 import { subtitle } from './itemText';
 
-export function CardGrid({ items }: { items: Item[] }) {
+export function CardGrid({ items, onContextMenu }: SurfaceProps) {
     const collections = useStore((s) => s.collections);
     const selectedId = useStore((s) => s.selectedId);
     const selectItem = useStore((s) => s.selectItem);
@@ -35,6 +35,7 @@ export function CardGrid({ items }: { items: Item[] }) {
                         )}
                         key={item.id}
                         onClick={() => selectItem(item.id)}
+                        onContextMenu={(e) => onContextMenu(e, item.id)}
                     >
                         <div className="relative h-[118px] flex-none overflow-hidden bg-surface3">
                             {hasBanner(item) ? (
