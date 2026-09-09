@@ -5,7 +5,7 @@
 // real <table>, which could not give the rows their own hover and selection
 // treatment as cheaply.
 
-import type { Item } from '../../store/types';
+import type { SurfaceProps } from './surface';
 
 import { hasBanner } from '../../lib/banner';
 import { cn } from '../../lib/cn';
@@ -21,7 +21,7 @@ const GRID_COLUMNS = 'minmax(240px, 1fr) 168px 176px 116px 92px';
 
 const COLUMNS = ['Item', 'Collection', 'Tags', 'Type', 'Added'];
 
-export function TableView({ items }: { items: Item[] }) {
+export function TableView({ items, onContextMenu }: SurfaceProps) {
     const collections = useStore((s) => s.collections);
     const selectedId = useStore((s) => s.selectedId);
     const selectItem = useStore((s) => s.selectItem);
@@ -55,6 +55,7 @@ export function TableView({ items }: { items: Item[] }) {
                         )}
                         key={item.id}
                         onClick={() => selectItem(item.id)}
+                        onContextMenu={(e) => onContextMenu(e, item.id)}
                         style={{ gridTemplateColumns: GRID_COLUMNS }}
                     >
                         <div className="flex min-w-0 items-center gap-[11px]">

@@ -66,6 +66,15 @@ export function Close({ className, size = 18, style, sw = 1.9 }: GlyphProps) {
 }
 
 /** Arrows to opposite corners — "give this the whole window". */
+export function Copy({ className, size = 14, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke className={className} size={size} style={style} sw={sw}>
+            <rect height="13" rx="2" ry="2" width="13" x="9" y="9" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </Stroke>
+    );
+}
+
 export function Expand({ className, size = 14, style, sw = 2 }: GlyphProps) {
     return (
         <Stroke className={className} size={size} style={style} sw={sw}>
