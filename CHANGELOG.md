@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.5.0](https://github.com/kevenleone/lore/compare/v1.4.0...v1.5.0) (2026-09-09)
+
+
+### Features
+
+* **kb:** confirm context-menu actions with a toast ([49c433e](https://github.com/kevenleone/lore/commit/49c433e0590310ded58c79bfdd2d70476caa8741))
+* **kb:** right-click an item for its common actions ([57ebf14](https://github.com/kevenleone/lore/commit/57ebf1470f915b9f274f387132e3197bce7d7541))
+* open the main window maximized ([a8235c5](https://github.com/kevenleone/lore/commit/a8235c529f1a491be8aceb53fae53e094e0e6bc3))
+* **shortcuts:** bind ⌘B, ⌘L, ⌘, and ⌘1–⌘5 ([b34013c](https://github.com/kevenleone/lore/commit/b34013cc41f6432ce48e242ab114c60d9a3dc9b7))
+
+
+### Bug Fixes
+
+* **tray:** keep the menu-bar countdown a fixed width ([8377ca0](https://github.com/kevenleone/lore/commit/8377ca08cdaba0059075d2fbd2dbf86317ec932a))
+* **tray:** restore the focus popover on left-click ([e4ea15d](https://github.com/kevenleone/lore/commit/e4ea15d31fac40df0a1220fdbc8ee70cd394b822))
+
+
+### Refactoring
+
+* call the starred view Starred rather than Flagged ([2410ff4](https://github.com/kevenleone/lore/commit/2410ff40d91d4f43d67227d35fa74299c1da33c2))
+
 ## [1.4.0](https://github.com/kevenleone/lore/compare/v1.3.0...v1.4.0) (2026-09-09)
 
 
