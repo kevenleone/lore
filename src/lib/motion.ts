@@ -5,3 +5,10 @@
  * timer that unmounts the element after it are two halves of the same number.
  */
 export const DRAWER_MS = 240;
+
+/**
+ * How long a toast stays up. Must stay equal to the `--animate-toast-life`
+ * duration in theme/tailwind.css: the animation fades the toast out as it ends,
+ * and this timer is what actually takes it off the screen.
+ */
+export const TOAST_MS = 2600;

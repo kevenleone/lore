@@ -43,6 +43,7 @@ import {
     type SettingsPane,
     type SortOrder,
     type Switches,
+    type Toast,
     type VaultSetup,
     type View,
     type ViewMode,
@@ -112,6 +113,7 @@ interface StoreState {
      */
     detail: Item | null;
     dismissMigrationNotice: () => void;
+    dismissToast: (id: string) => void;
     /**
      * The item whose body has unsaved edits. Any vault change re-reads
      * `detail`, including the one our own save causes, which would otherwise
@@ -153,13 +155,14 @@ interface StoreState {
     items: Item[];
 
     loadDetail: (id: string) => Promise<void>;
+
     loadItemMeta: (id: string) => Promise<void>;
     /** Which surface the window's main area shows: the library or the calendar. */
     mainView: MainView;
     /** Set once by a migration so the UI can say what happened. */
     migrationNotice: null | string;
-
     onboarded: boolean;
+
     onboardingStep: OnboardingStep;
     /**
      * Overrides `prefs.openMode` for the item currently open, or null to follow
@@ -177,6 +180,8 @@ interface StoreState {
     openWorkspacePicker: () => Promise<void>;
     // onboarding + preferences (persisted)
     prefs: Prefs;
+    /** Confirms an action whose effect the user cannot see happen. */
+    pushToast: (message: string) => void;
     recentWorkspaces: WorkspaceRef[];
     // data actions
     refresh: () => Promise<void>;
@@ -240,6 +245,8 @@ interface StoreState {
     tagOrder: string[];
     /** Recomputes the countdown from the clock, and rolls over at zero. */
     tickFocus: () => void;
+    /** Shows or hides the right-hand Properties panel. Persisted with the prefs. */
+    toasts: Toast[];
     toggleCapture: () => void;
     toggleChat: () => void;
     /** Adds or removes one value from a multi-select filter facet. */
@@ -248,7 +255,6 @@ interface StoreState {
     toggleFocus: () => void;
     toggleFocusMode: () => void;
     toggleFocusPopover: () => void;
-    /** Shows or hides the right-hand Properties panel. Persisted with the prefs. */
     toggleProperties: () => void;
     toggleSidebar: () => void;
     toggleStar: (id: string) => Promise<void>;
@@ -656,6 +662,9 @@ export const useStore = create<StoreState>((set, get) => ({
     dismissMigrationNotice() {
         set({ migrationNotice: null });
     },
+    dismissToast(id) {
+        set({ toasts: get().toasts.filter((toast) => toast.id !== id) });
+    },
     editorDirtyId: null,
     expandOpenItem() {
         set({ openAs: 'page' });
@@ -761,10 +770,10 @@ export const useStore = create<StoreState>((set, get) => ({
     mainView: 'library',
     migrationNotice: null,
     onboarded: persisted.onboarded,
-
     onboardingStep: 'pick',
 
     openAs: null,
+
     openCapture() {
         set({ captureOpen: true, focusPopoverOpen: false });
     },
@@ -777,6 +786,12 @@ export const useStore = create<StoreState>((set, get) => ({
         if (path) await get().switchWorkspace(path);
     },
     prefs: persisted.prefs,
+    pushToast(message) {
+        const toast = { id: crypto.randomUUID(), message };
+        // A burst of actions should not stack into a column that covers the
+        // list it is reporting on.
+        set({ toasts: [...get().toasts, toast].slice(-3) });
+    },
     recentWorkspaces: persisted.recentWorkspaces,
 
     async refresh() {
@@ -1035,6 +1050,8 @@ export const useStore = create<StoreState>((set, get) => ({
         finishInterval(get, set, 'elapsed');
     },
 
+    toasts: [],
+
     toggleCapture() {
         set((s) => ({ captureOpen: !s.captureOpen, focusPopoverOpen: false }));
     },
@@ -1092,7 +1109,6 @@ export const useStore = create<StoreState>((set, get) => ({
     toggleFocusPopover() {
         set((s) => ({ focusPopoverOpen: !s.focusPopoverOpen }));
     },
-
     toggleProperties() {
         const open = !get().prefs.propertiesOpen;
         get().setPref('propertiesOpen', open);

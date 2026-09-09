@@ -12,6 +12,7 @@ import type { View } from './store/types';
 
 import { CalendarView } from './components/calendar/CalendarView';
 import { CaptureDrawer } from './components/capture/CaptureDrawer';
+import { Toasts } from './components/common/Toasts';
 import { FocusMode } from './components/focus/FocusMode';
 import { FocusPopover } from './components/focus/FocusPopover';
 import { useFocusTimer } from './components/focus/useFocusTimer';
@@ -204,7 +205,9 @@ export default function App() {
             className="relative h-full overflow-hidden bg-surface text-text"
         >
             <div
-                className="flex h-full flex-col"
+                // `relative` anchors the toast stack, which belongs inside the
+                // zoom so it follows the Text size preference.
+                className="relative flex h-full flex-col"
                 // "Text size" scales the whole tree; every size in the UI is in px
                 // (see theme/tailwind.css), so the zoom is applied here rather than
                 // through rem units.
@@ -323,6 +326,7 @@ export default function App() {
                     <CaptureDrawer />
                 </div>
                 {statusBarVisible && <StatusBar />}
+                <Toasts />
             </div>
 
             {/*
