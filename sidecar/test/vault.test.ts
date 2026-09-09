@@ -815,23 +815,4 @@ describe('virtual documents', () => {
 
         expect((await s.refreshItem(created.id, true))?.body).toBe('mine');
     });
-
-    it('detaching drops the source and keeps the body and the url', async () => {
-        const s = await open();
-        const created = await s.createItem(
-            baseItem({
-                body: '# doc',
-                source,
-                title: 'Readme',
-                type: 'link',
-                url: 'https://g/e/e',
-            }),
-        );
-
-        const detached = await s.detachSource(created.id);
-        expect(detached?.source).toBeUndefined();
-        expect(detached?.body).toBe('# doc');
-        expect(detached?.url).toBe('https://g/e/e');
-        expect(await readFile(join(root, `${detached!.path}`), 'utf8')).not.toContain('source:');
-    });
 });
