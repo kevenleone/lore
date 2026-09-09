@@ -266,17 +266,18 @@ zero network or keys. A real provider belongs in the data engine, so the API key
 never reaches the renderer — not yet built.
 
 **Settings is a modal sheet** (`components/settings/`) with the design's ten
-panes. Accent, appearance, list density, text size, AI location and the full
-switch set write through the store and persist; panes that need a backend
+panes. Colour mode, theme style, accent, list density, text size, AI location
+and the full switch set write through the store and persist; panes that need a backend
 (devices, billing, calendar accounts) render the design's copy against
 placeholder figures.
 
 **Styling is Tailwind CSS v4**, with `src/theme/tailwind.css` as the single
 stylesheet. Two deliberate departures from stock Tailwind: every length is px
 rather than rem (`App.tsx` scales the tree with `zoom` for the Text size
-preference), and there is no `dark:` variant — the colour tokens in
-`theme/tokens.ts` flip wholesale between light and dark, so `bg-surface` is
-already correct in both. See [AGENTS.md](AGENTS.md) for the full conventions.
+preference), and there is no `dark:` variant — the colour tokens are swapped
+wholesale from the theme registry in `theme/themes.ts`, so `bg-surface` is
+already correct in every theme. See [AGENTS.md](AGENTS.md) for the full
+conventions.
 
 ## Layout
 

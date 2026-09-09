@@ -27,11 +27,13 @@ a stock Tailwind setup, both deliberately:
   Chromium, `rem` and `px` do scale identically under `zoom`; the px choice
   means the answer never has to be re-derived for another engine.) The type and
   radius scales are px for the same reason.
-- **There is no `dark:` variant, and there must not be one.** The colour tokens
-  in `src/theme/tokens.ts` flip wholesale between `LIGHT_TOKENS` and
-  `DARK_TOKENS`, so `bg-surface` is already correct in both themes. If you need
-  a colour that differs by theme, add the key to **both** token maps and bridge
-  it in the `@theme inline` block — do not reach for `dark:`.
+- **There is no `dark:` variant, and there must not be one.** A theme is a whole
+  token map, served by the registry in `src/theme/themes.ts`, and `paintTheme`
+  swaps the map wholesale — so `bg-surface` is already correct in every theme. If
+  you need a colour that differs by theme, add the key to **every** map — the two
+  literal ones (`LIGHT_TOKENS`, `DARK_TOKENS`) and `buildTokens()` in
+  `src/theme/palette.ts` — and bridge it in the `@theme inline` block. Do not
+  reach for `dark:`. `src/theme/palette.test.ts` fails if a map falls behind.
 
 Other conventions:
 
