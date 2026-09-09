@@ -1,10 +1,11 @@
 // Commands and helpers for the Quick Capture window. The window is declared
-// (hidden) in tauri.conf.json; here we toggle/hide it. ⌥Space (registered in
-// lib.rs) and the tray's Quick Capture item both route through toggle.
+// (hidden) in tauri.conf.json; here we toggle/hide it. The capture shortcut
+// (registered in lib.rs, and per build mode — see `mode.rs`) and the tray's
+// Quick Capture item both route through toggle.
 
 use tauri::{AppHandle, Emitter, Manager};
 
-/// ⌥Space, from wherever the user pressed it.
+/// The capture shortcut, from wherever the user pressed it.
 ///
 /// With Lore in front, capture belongs inside the window it is already showing,
 /// so the main window is asked to toggle its capture drawer. The floating panel
@@ -106,12 +107,19 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
 
     use crate::focus_tray::{self, FocusTray, TRAY_ID};
 
-    let capture = MenuItem::with_id(app, "capture", "Quick Capture", true, Some("Alt+Space"))?;
+    let capture = MenuItem::with_id(
+        app,
+        "capture",
+        "Quick Capture",
+        true,
+        Some(crate::mode::CAPTURE_SHORTCUT),
+    )?;
     let focus = MenuItem::with_id(app, "focus", "Start Focus", true, Some("Alt+Shift+F"))?;
     let stop = MenuItem::with_id(app, "stopfocus", "Stop Focus", false, None::<&str>)?;
     let focus_mode = MenuItem::with_id(app, "focusmode", "Open Focus mode", true, None::<&str>)?;
-    let open = MenuItem::with_id(app, "open", "Open Lore", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Quit Lore", true, Some("Cmd+Q"))?;
+    let name = crate::mode::PRODUCT_NAME;
+    let open = MenuItem::with_id(app, "open", format!("Open {name}"), true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", format!("Quit {name}"), true, Some("Cmd+Q"))?;
     let menu = MenuBuilder::new(app)
         .item(&capture)
         .separator()
@@ -130,8 +138,8 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     // Left-click opens the menu (macOS-standard); the user picks an action.
     let tray = TrayIconBuilder::with_id(TRAY_ID)
         // The retina master; macOS scales it down for the 1x menu bar.
-        .icon(tauri::include_image!("icons/tray@2x.png"))
-        .tooltip("Lore")
+        .icon(crate::focus_tray::idle_icon())
+        .tooltip(name)
         .menu(&menu)
         // The menu is the right-click gesture; a left click is the popover.
         .show_menu_on_left_click(false)
@@ -174,9 +182,11 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .build(app)?;
 
     // The mark ships as a monochrome template so the menu bar inverts it for
-    // light and dark appearances, per the identity's menu-bar spec.
+    // light and dark appearances, per the identity's menu-bar spec. A labelled
+    // build opts out: template mode forces monochrome, which would throw away
+    // the tint that tells dev and agent apart.
     #[cfg(target_os = "macos")]
-    tray.set_icon_as_template(true)?;
+    tray.set_icon_as_template(crate::mode::is_prod())?;
     #[cfg(not(target_os = "macos"))]
     let _ = &tray;
 

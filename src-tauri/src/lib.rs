@@ -1,7 +1,8 @@
 // Lore — Tauri entry point.
 // Plugins back the one-shot import of the legacy store (sql), opening external
-// links (opener), the ⌥Space quick-capture global shortcut (global-shortcut,
-// desktop only), and spawning the Bun data engine (shell).
+// links (opener), the quick-capture global shortcut (global-shortcut, desktop
+// only — the combination is per build mode, see `mode.rs`), and spawning the
+// Bun data engine (shell).
 //
 // `sql` is only still here for the legacy import; nothing else in the app
 // touches a database. Link metadata moved into the engine, so `http` and its
@@ -16,6 +17,7 @@
 
 mod commands;
 mod focus_tray;
+mod mode;
 mod sidecar;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -66,14 +68,27 @@ pub fn run() {
                 eprintln!("lore: data engine unavailable: {e}");
             }
 
+            // A labelled build says so in the window list too — the windows are
+            // `decorations: false`, so this is what Mission Control and the
+            // Window menu show.
+            for label in ["main", "focus", "capture"] {
+                if let Some(window) = app.get_webview_window(label) {
+                    let title = window.title().unwrap_or_default();
+                    let _ = window.set_title(&mode::window_title(&title));
+                }
+            }
+
             #[cfg(desktop)]
             {
+                use std::str::FromStr;
+
                 use tauri_plugin_global_shortcut::{
-                    Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState,
+                    GlobalShortcutExt, Shortcut, ShortcutState,
                 };
 
-                let alt_space = Shortcut::new(Some(Modifiers::ALT), Code::Space);
-                let trigger = alt_space.clone();
+                let capture = Shortcut::from_str(mode::CAPTURE_SHORTCUT)
+                    .expect("the mode's capture shortcut is not a shortcut");
+                let trigger = capture;
 
                 app.handle().plugin(
                     tauri_plugin_global_shortcut::Builder::new()
@@ -85,7 +100,16 @@ pub fn run() {
                         .build(),
                 )?;
 
-                app.global_shortcut().register(alt_space)?;
+                // Losing the shortcut must not stop the app booting. Each mode
+                // has its own combination, but another Lore in the same mode —
+                // or any other app — can already hold it, and an instance with
+                // no global shortcut is still a working instance.
+                if let Err(e) = app.global_shortcut().register(capture) {
+                    eprintln!(
+                        "lore: {} is taken; quick capture is tray-only: {e}",
+                        mode::CAPTURE_SHORTCUT
+                    );
+                }
 
                 commands::build_tray(app.handle())?;
                 // The tray has to exist before anything tries to paint it.

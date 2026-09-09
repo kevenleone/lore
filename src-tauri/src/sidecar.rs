@@ -12,8 +12,9 @@ use tauri_plugin_shell::process::{CommandEvent, CommandChild};
 use tauri_plugin_shell::ShellExt;
 
 /// Fixed endpoint used by `pnpm dev:all`, which runs the sidecar under
-/// `bun --watch` so it stays out of the Rust rebuild loop.
-const DEV_PORT: u16 = 51789;
+/// `bun --watch` so it stays out of the Rust rebuild loop. The port is per
+/// mode, so a dev Lore and an agent's Lore never reach each other's engine.
+const DEV_PORT: &str = crate::mode::SIDECAR_DEV_PORT;
 const DEV_TOKEN: &str = "lore-dev-token";
 
 const HANDSHAKE: &str = "LORE_SIDECAR";
