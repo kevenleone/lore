@@ -7,6 +7,7 @@
 import type { Appearance } from '../../theme/tokens';
 
 import { APP_LINKS, APP_VERSION, openExternal } from '../../lib/appInfo';
+import { APP_MODE, captureShortcutKeys } from '../../lib/appMode';
 import { cn } from '../../lib/cn';
 import {
     type Accent,
@@ -62,7 +63,7 @@ export function GeneralPane() {
                 title="Launch at login"
             />
             <SwitchRow
-                desc="Hiding it leaves ⌥Space as the only way in."
+                desc={`Hiding it leaves ${captureShortcutKeys().join('')} as the only way in.`}
                 name="menubar"
                 title="Show icon in the menu bar"
             />
@@ -410,7 +411,7 @@ const SHORTCUT_GROUPS = [
     {
         name: 'Global',
         rows: [
-            { keys: ['⌥', 'Space'], label: 'Quick capture (from any app)' },
+            { keys: captureShortcutKeys(), label: 'Quick capture (from any app)' },
             { keys: ['⌥', '⇧', 'C'], label: 'Capture the current browser tab' },
             { keys: ['⌥', '⇧', 'S'], label: 'Capture selected text' },
             { keys: ['⌥', '⇧', 'F'], label: 'Start or pause a focus session' },
@@ -779,6 +780,9 @@ export function AboutPane() {
     const workspacePath = useStore((s) => s.workspacePath);
 
     const meta = [
+        // Which Lore this is, and the vault it opened — the pair that settles
+        // "am I looking at the instance I think I am".
+        { k: 'Build', v: `${APP_MODE.productName} · ${APP_MODE.mode}` },
         { k: 'Vault', v: `${workspacePath ?? 'The default vault'} · ${items.length} items` },
         { k: 'Format', v: 'Markdown files with YAML frontmatter' },
         { k: 'Account', v: 'None — Lore never asks for one' },
@@ -790,9 +794,9 @@ export function AboutPane() {
         <>
             <div className="pt-2 pb-[22px] text-center">
                 <span className="inline-flex text-text">
-                    <LoreMark size={58} />
+                    <LoreMark color={APP_MODE.accent ?? undefined} size={58} />
                 </span>
-                <div className="mt-3 text-[17px] font-[660]">Lore</div>
+                <div className="mt-3 text-[17px] font-[660]">{APP_MODE.productName}</div>
                 <div className="mt-[3px] text-body text-text3">Version {APP_VERSION}</div>
                 <p className="mx-auto mt-4 mb-0 max-w-[420px] text-body leading-[1.6] text-text2">
                     Lore is a solo project, built in the open. It keeps your library on your own

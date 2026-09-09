@@ -14,6 +14,7 @@ import type { FocusSnapshot } from './focusSnapshot';
 
 import { loadPersisted } from '../../store/persisted';
 import { effectiveTheme, paintTheme } from '../../theme/tokens';
+import { ModeAccentBar } from '../common/ModeBadge';
 import { FocusPanelBody } from './FocusPanelBody';
 import { PANEL_MARGIN } from './layout';
 import { TICK_MS } from './useFocusTimer';
@@ -167,6 +168,7 @@ export function FocusPanel() {
                 className="relative animate-pop-in-fast overflow-hidden rounded-[15px] border border-border bg-surface font-sans text-text shadow-[0_8px_24px_-6px_rgba(20,20,40,.38),0_2px_6px_rgba(0,0,0,.10)] select-none"
                 ref={cardRef}
             >
+                <ModeAccentBar />
                 <FocusPanelBody
                     actions={{
                         onNextTask: () => send('focus:next-task'),

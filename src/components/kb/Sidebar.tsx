@@ -4,6 +4,7 @@
 
 import type { IconName, View } from '../../store/types';
 
+import { captureShortcut } from '../../lib/appMode';
 import { cn } from '../../lib/cn';
 import { SEED_TAG_ORDER } from '../../store/seed';
 import { useStore } from '../../store/useStore';
@@ -79,7 +80,9 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
             >
                 <Sparkle size={15} />
                 Quick Capture
-                <span className="ml-auto font-mono text-caption opacity-75">⌥Space</span>
+                <span className="ml-auto font-mono text-caption opacity-75">
+                    {captureShortcut()}
+                </span>
             </div>
 
             {/* Library */}

@@ -8,6 +8,7 @@ import { useEffect, useRef } from 'react';
 import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 import { Plus, Search, SidebarToggle, Sort, Sparkle, ViewList } from '../common/glyphs';
+import { ModeAccentBar, ModeBadge } from '../common/ModeBadge';
 import { Tooltip } from '../common/Tooltip';
 import { FocusChip } from '../focus/FocusChip';
 
@@ -43,11 +44,15 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
             className="relative z-35 flex h-[46px] flex-none items-center gap-[14px] border-b border-border bg-titlebar px-[14px] backdrop-blur-[20px]"
             data-tauri-drag-region
         >
+            <ModeAccentBar />
+
             <div className="flex items-center gap-2">
                 <TrafficLight action="close" color="#ff5f57" />
                 <TrafficLight action="minimize" color="#febc2e" />
                 <TrafficLight action="toggleMaximize" color="#28c840" />
             </div>
+
+            <ModeBadge />
 
             <Tooltip keys="⌘⌥S" label="Toggle sidebar">
                 <span

@@ -14,6 +14,7 @@ import type { Collection, ItemType, Priority } from '../../store/types';
 
 import { getRepository } from '../../data';
 import { deriveTitle } from '../../data/plainText';
+import { captureShortcut } from '../../lib/appMode';
 import { addDays } from '../../lib/calendar';
 import {
     hideCapture,
@@ -792,7 +793,7 @@ export function Composer({
                     {error ??
                         (inDrawer
                             ? 'esc to close · drag files to attach'
-                            : '⌥Space to toggle · drag files to attach')}
+                            : `${captureShortcut()} to toggle · drag files to attach`)}
                 </span>
                 <span className="flex items-center gap-2">
                     <span
