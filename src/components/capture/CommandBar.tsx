@@ -10,6 +10,7 @@ import type { ItemType } from '../../store/types';
 import { deriveTitle } from '../../data/plainText';
 import { captureAi, hideCapture, hostOf, saveCapture } from '../../lib/captureActions';
 import { cn } from '../../lib/cn';
+import { documentTitle, type GithubDocument, resolveGithubDocument } from '../../lib/github';
 import { fetchLinkMetadata, type LinkMetadata } from '../../lib/linkMetadata';
 import { typeMeta } from '../../store/typeMeta';
 import { Globe, Sparkle } from '../common/glyphs';
@@ -27,6 +28,7 @@ export function CommandBar() {
     const [type, setType] = useState<ItemType>('note');
     const [tags, setTags] = useState<string[]>([]);
     const [meta, setMeta] = useState<LinkMetadata | null>(null);
+    const [sourceDocument, setSourceDocument] = useState<GithubDocument | null>(null);
     const [fetching, setFetching] = useState(false);
     const [error, setError] = useState<null | string>(null);
 
@@ -37,6 +39,7 @@ export function CommandBar() {
             setType('note');
             setTags([]);
             setMeta(null);
+            setSourceDocument(null);
             return;
         }
         let cancelled = false;
@@ -59,15 +62,27 @@ export function CommandBar() {
             if (detected === 'link') {
                 setFetching(true);
                 try {
-                    const m = await fetchLinkMetadata(value);
-                    if (!cancelled) setMeta(m);
+                    // The thumbnail and the document are independent: a repo whose
+                    // README will not resolve still gets its preview.
+                    const [metadata, resolved] = await Promise.all([
+                        fetchLinkMetadata(value),
+                        resolveGithubDocument(value),
+                    ]);
+                    if (!cancelled) {
+                        setMeta(metadata);
+                        setSourceDocument(resolved);
+                    }
                 } catch {
-                    if (!cancelled) setMeta(null);
+                    if (!cancelled) {
+                        setMeta(null);
+                        setSourceDocument(null);
+                    }
                 } finally {
                     if (!cancelled) setFetching(false);
                 }
             } else {
                 setMeta(null);
+                setSourceDocument(null);
             }
         }, 350);
         return () => {
@@ -86,7 +101,7 @@ export function CommandBar() {
         if (!text.trim()) return;
         try {
             setError(null);
-            await saveCapture(buildItem(text, type, tags, meta));
+            await saveCapture(buildItem(text, type, tags, meta, sourceDocument));
         } catch (e) {
             setError(e instanceof Error ? e.message : String(e));
         }
@@ -147,9 +162,17 @@ export function CommandBar() {
                         </div>
                         <div className="min-w-0 flex-1">
                             <div className="truncate text-[14.5px] font-[620] text-text">
-                                {fetching && !meta ? 'Fetching…' : meta?.title || hostOf(text)}
+                                {fetching && !meta
+                                    ? 'Fetching…'
+                                    : sourceDocument
+                                      ? documentTitle(sourceDocument, meta)
+                                      : meta?.title || hostOf(text)}
                             </div>
-                            <div className="mt-[2px] text-body text-text3">{hostOf(text)}</div>
+                            <div className="mt-[2px] text-body text-text3">
+                                {sourceDocument
+                                    ? `${hostOf(text)} · ${sourceDocument.path}`
+                                    : hostOf(text)}
+                            </div>
                             {meta?.description && (
                                 <div className="mt-[9px] line-clamp-2 text-body-lg leading-[1.5] text-text2">
                                     {meta.description}
@@ -215,6 +238,7 @@ function buildItem(
     type: ItemType,
     tags: string[],
     meta: LinkMetadata | null,
+    sourceDocument: GithubDocument | null,
 ): NewItem {
     const trimmed = text.trim();
     const base: NewItem = {
@@ -227,13 +251,25 @@ function buildItem(
     };
     if (type === 'link') {
         const host = hostOf(trimmed);
-        return {
+        const link: NewItem = {
             ...base,
             description: meta?.description,
             domain: host || undefined,
             image: meta?.image,
             title: meta?.title || host || trimmed,
             url: trimmed,
+        };
+        if (!sourceDocument) return link;
+        return {
+            ...link,
+            body: sourceDocument.markdown,
+            source: {
+                fetched: new Date().toISOString(),
+                kind: 'github',
+                raw: sourceDocument.raw,
+                ref: sourceDocument.ref,
+            },
+            title: documentTitle(sourceDocument, meta),
         };
     }
     if (type === 'code' || type === 'note' || type === 'task') {
