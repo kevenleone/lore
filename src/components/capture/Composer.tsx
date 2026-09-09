@@ -24,6 +24,7 @@ import {
     saveCapture,
 } from '../../lib/captureActions';
 import { cn } from '../../lib/cn';
+import { documentTitle, type GithubDocument, resolveGithubDocument } from '../../lib/github';
 import { fetchLinkMetadata, type LinkMetadata } from '../../lib/linkMetadata';
 import { joinBody } from '../../lib/subtasks';
 import { PRIORITIES } from '../../store/types';
@@ -114,6 +115,7 @@ export function Composer({
     const [error, setError] = useState<null | string>(null);
     const [saving, setSaving] = useState(false);
     const [meta, setMeta] = useState<LinkMetadata | null>(null);
+    const [sourceDocument, setSourceDocument] = useState<GithubDocument | null>(null);
     const [fetching, setFetching] = useState(false);
 
     // Task-only fields.
@@ -133,20 +135,32 @@ export function Composer({
     const [dragging, setDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Fetch link metadata as the URL settles (link tab only).
+    // Fetch link metadata, and any Markdown behind the URL, as it settles
+    // (link tab only). The two are independent: a repo whose README will not
+    // resolve still gets its preview.
     useEffect(() => {
         if (tab !== 'link' || !value.trim()) {
             setMeta(null);
+            setSourceDocument(null);
             return;
         }
         let cancelled = false;
         const id = setTimeout(async () => {
             setFetching(true);
             try {
-                const m = await fetchLinkMetadata(value);
-                if (!cancelled) setMeta(m);
+                const [metadata, resolved] = await Promise.all([
+                    fetchLinkMetadata(value),
+                    resolveGithubDocument(value),
+                ]);
+                if (!cancelled) {
+                    setMeta(metadata);
+                    setSourceDocument(resolved);
+                }
             } catch {
-                if (!cancelled) setMeta(null);
+                if (!cancelled) {
+                    setMeta(null);
+                    setSourceDocument(null);
+                }
             } finally {
                 if (!cancelled) setFetching(false);
             }
@@ -276,6 +290,19 @@ export function Composer({
                 title: meta?.title || host || text,
                 url: text,
             };
+            if (sourceDocument) {
+                item = {
+                    ...item,
+                    body: sourceDocument.markdown,
+                    source: {
+                        fetched: new Date().toISOString(),
+                        kind: 'github',
+                        raw: sourceDocument.raw,
+                        ref: sourceDocument.ref,
+                    },
+                    title: documentTitle(sourceDocument, meta),
+                };
+            }
         } else if (tab === 'task') {
             const body = joinBody(description, subtasks);
             item = {
@@ -379,11 +406,15 @@ export function Composer({
                                 )}
                                 <div className="px-[14px] py-3">
                                     <div className="text-[14.5px] font-[620]">
-                                        {meta.title || hostOf(value)}
+                                        {sourceDocument
+                                            ? documentTitle(sourceDocument, meta)
+                                            : meta.title || hostOf(value)}
                                     </div>
                                     <div className="mt-[3px] flex items-center gap-[5px] text-body text-text3">
                                         <Globe size={12} />
-                                        {hostOf(value)}
+                                        {sourceDocument
+                                            ? `${hostOf(value)} · ${sourceDocument.path}`
+                                            : hostOf(value)}
                                     </div>
                                     {meta.description && (
                                         <div className="mt-[10px] line-clamp-3 text-body-lg leading-[1.55] text-text2">
