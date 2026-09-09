@@ -21,7 +21,7 @@ const TYPES = Object.keys(TYPE_META) as ItemType[];
 const FLAGS: { key: keyof ItemFlags; label: string }[] = [
     { key: 'inbox', label: 'Inbox' },
     { key: 'today', label: 'Today' },
-    { key: 'starred', label: 'Flagged' },
+    { key: 'starred', label: 'Starred' },
     { key: 'done', label: 'Done' },
 ];
 

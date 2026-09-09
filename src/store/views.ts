@@ -204,7 +204,7 @@ export function viewTitle(view: View, collections: Collection[]): string {
         case 'inbox':
             return 'Inbox';
         case 'starred':
-            return 'Flagged';
+            return 'Starred';
         case 'tag':
             return `#${view.val}`;
         case 'today':
