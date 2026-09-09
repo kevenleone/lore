@@ -10,6 +10,7 @@
                 "decorations": false,
                 "height": 960,
                 "label": "main",
+                "maximized": true,
                 "minHeight": 640,
                 "minWidth": 960,
                 "title": "Lore",
