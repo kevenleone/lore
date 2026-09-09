@@ -106,8 +106,6 @@ interface StoreState {
     cycleFocusTask: () => void;
     deleteCollection: (id: string) => Promise<void>;
     deleteItem: (id: string) => Promise<void>;
-    /** Drops a virtual document's `source`, handing the user the cached text. */
-    detachSource: (id: string) => Promise<void>;
     /**
      * The selected item, with its `body` — `listItems()` omits bodies, so the
      * detail pane reads through here and falls back to the list row until it
@@ -662,15 +660,6 @@ export const useStore = create<StoreState>((set, get) => ({
             set({ detail: null, selectedId: next });
             if (next) void get().loadDetail(next);
         }
-    },
-
-    async detachSource(id) {
-        const repo = getRepository();
-        if (!repo.detachSource) return;
-        await repo.detachSource(id);
-        await get().refresh();
-        await get().loadDetail(id);
-        get().pushToast('Saved to your vault — the document is yours to edit.');
     },
 
     detail: null,

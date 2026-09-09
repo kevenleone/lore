@@ -509,15 +509,6 @@ describe('virtual document routes', () => {
         expect(res.body.body).toBe('# new');
     });
 
-    it('detaches the source and keeps the body', async () => {
-        await openVault();
-        const created = await call('POST', '/items', newItem({ body: '# doc', source }));
-
-        const res = await call('POST', `/items/${created.body.id}/detach`);
-        expect(res.body.source).toBeUndefined();
-        expect(res.body.body).toBe('# doc');
-    });
-
     it('404s refreshing an unknown item', async () => {
         await openVault();
         expect((await call('POST', '/items/nope/refresh')).status).toBe(404);

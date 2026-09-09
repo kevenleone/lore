@@ -128,27 +128,6 @@ export class VaultStore {
         return true;
     }
 
-    /**
-     * Drops an item's `source`, turning the cached copy into text the user owns.
-     * Its own route rather than a PATCH because `undefined` does not survive
-     * JSON, so "remove this key" cannot be expressed as a patch at all.
-     */
-    async detachSource(id: string): Promise<Item | null> {
-        const row = this.db.query<FileRow, [string]>('SELECT * FROM files WHERE id = ?').get(id);
-        if (!row) return null;
-        const item = rowToItem(row, true);
-        if (!item.source) return item;
-        delete item.source;
-        this.checked.delete(id);
-        await this.writeItem(
-            row.path,
-            { ...item, updatedAt: new Date().toISOString() },
-            JSON.parse(row.unresolved) as string[],
-            JSON.parse(row.extra) as Record<string, unknown>,
-        );
-        return this.getItem(id);
-    }
-
     getItem(id: string): Item | null {
         const row = this.db.query<FileRow, [string]>('SELECT * FROM files WHERE id = ?').get(id);
         return row ? rowToItem(row, true) : null;

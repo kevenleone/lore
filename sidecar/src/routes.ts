@@ -214,20 +214,6 @@ export function routes(workspace: Workspace) {
                 return item;
             })
 
-            /**
-             * Drops the item's `source`, handing the user the text. Not a PATCH:
-             * JSON has no way to say "remove this key".
-             */
-            .post('/items/:id/detach', async ({ params, set }) => {
-                const item = await workspace.current.detachSource(params.id);
-                if (!item) {
-                    set.status = 404;
-                    return { error: 'not_found' };
-                }
-                workspace.notify();
-                return item;
-            })
-
             /* ---------------- attachments ---------------- */
 
             /**

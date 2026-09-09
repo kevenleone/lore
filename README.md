@@ -210,11 +210,11 @@ absolute URLs once, when it is fetched, which is what makes the copy correct in
 Obsidian and on GitHub too. `ref: HEAD` follows the repository's default branch
 rather than pinning a name, and needs no API call and no token.
 
-`source` is what makes the body read-only. Opening the item checks the origin —
-at most once every few hours, and only rewriting the file when the Markdown
-actually changed, so an unchanged upstream never churns your history. **Save &
-edit** drops `source`, keeps the text and the `url`, and hands you an ordinary
-note.
+`source` is what makes the body read-only, and it stays that way: a virtual
+document is a live document, not a copy you take over. Opening the item checks
+the origin — at most once every few hours, and only rewriting the file when the
+Markdown actually changed, so an unchanged upstream never churns your history.
+Delete the `source` block by hand and the file is an ordinary note again.
 
 **A plain folder of Markdown just works.** A folder with no `collections.json`
 entry is still a collection, coloured from a hash of its name. A file with no

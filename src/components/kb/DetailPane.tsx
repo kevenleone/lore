@@ -68,7 +68,6 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const toggleProperties = useStore((s) => s.toggleProperties);
     const rawDefault = useStore((s) => s.prefs.switches.rawMarkdownDefault);
     const deleteItem = useStore((s) => s.deleteItem);
-    const detachSource = useStore((s) => s.detachSource);
     const refreshSource = useStore((s) => s.refreshSource);
     const updateItem = useStore((s) => s.updateItem);
     const addTag = useStore((s) => s.addTag);
@@ -82,7 +81,6 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const [editingTitle, setEditingTitle] = useState(false);
     const [titleDraft, setTitleDraft] = useState('');
     const [editingBody, setEditingBody] = useState(false);
-    const [editingDocument, setEditingDocument] = useState(false);
     const [bodyDraft, setBodyDraft] = useState('');
     const [addingTag, setAddingTag] = useState(false);
     const [tagDraft, setTagDraft] = useState('');
@@ -96,7 +94,6 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     useEffect(() => {
         setEditingTitle(false);
         setEditingBody(false);
-        setEditingDocument(false);
         setAddingTag(false);
         setTagDraft('');
         setSubtaskDraft('');
@@ -137,14 +134,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     // show an empty note and save it over the real one.
     const bodyLoaded = detail?.id === sel.id;
 
-    const bodyField = detailBodyField(sel, bodyLoaded);
-    const linkIsDocument = sel.type === 'link' && bodyField === 'body';
-
-    // A document reads until the user asks to edit it. The editor models only
-    // the blocks it can write back, so handing it a README would drop the
-    // images and turn the tables and the HTML into raw source — saving a
-    // document must not change what it looks like.
-    const readsAsDocument = virtual || (linkIsDocument && !editingDocument);
+    const bodyField = detailBodyField(sel);
 
     // A task's body is prose *plus* a `- [ ]` checklist. The two get separate
     // editors — free text here, checkboxes below — so the prose textarea never
@@ -181,8 +171,8 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const useBlockEditor =
         blockEditorEnabled &&
         bodyLoaded &&
-        !readsAsDocument &&
-        (sel.type === 'note' || sel.type === 'task' || linkIsDocument);
+        !virtual &&
+        (sel.type === 'note' || sel.type === 'task');
 
     /** A task's editor holds only the prose; the Subtasks panel owns the rest. */
     const commitBodyMarkdown = (markdown: string) => {
@@ -406,37 +396,11 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                         </span>
                         <span className="opacity-50">·</span>
                         <span>Fetched {formatRelative(sel.source.fetched)}</span>
-                        <span className="ml-auto flex items-center gap-2">
-                            <span
-                                className="cursor-pointer rounded-7 px-[9px] py-[4px] text-body-lg text-text2 hover:bg-hover"
-                                onClick={() => void refreshSource(sel.id)}
-                            >
-                                Refresh
-                            </span>
-                            <span
-                                className="cursor-pointer rounded-7 bg-accent px-[11px] py-[4px] text-body-lg font-semibold text-white"
-                                onClick={() => {
-                                    // The button promises an editor, so open one.
-                                    void detachSource(sel.id).then(() => setEditingDocument(true));
-                                }}
-                                title="Keep this copy and make it editable"
-                            >
-                                Save &amp; edit
-                            </span>
-                        </span>
-                    </div>
-                )}
-
-                {/* a document the user owns: reading is the default, editing a mode */}
-                {!virtual && linkIsDocument && (
-                    <div className="mt-5 flex flex-wrap items-center gap-x-[10px] gap-y-2 rounded-11 border border-border bg-surface2 px-[14px] py-[10px] text-body text-text3">
-                        <Source size={13} />
-                        <span>Yours · edited {formatRelative(sel.updatedAt)}</span>
                         <span
                             className="ml-auto cursor-pointer rounded-7 px-[9px] py-[4px] text-body-lg text-text2 hover:bg-hover"
-                            onClick={() => setEditingDocument(!editingDocument)}
+                            onClick={() => void refreshSource(sel.id)}
                         >
-                            {editingDocument ? 'Done' : 'Edit'}
+                            Refresh
                         </span>
                     </div>
                 )}
@@ -451,8 +415,8 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     />
                 )}
 
-                {/* body: a document reads, everything else edits */}
-                {readsAsDocument ? (
+                {/* body: a virtual document reads, everything else edits */}
+                {virtual ? (
                     <DocumentView className="mt-5" markdown={sel.body ?? ''} />
                 ) : useBlockEditor ? (
                     <BodyEditor

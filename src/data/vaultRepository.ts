@@ -58,12 +58,6 @@ export class VaultRepository implements KnowledgeRepository {
 
     /* ---------------- items ---------------- */
 
-    async detachSource(id: string): Promise<Item> {
-        return this.call(() =>
-            request<Item>(`/items/${encodeURIComponent(id)}/detach`, { method: 'POST' }),
-        );
-    }
-
     dispose(): void {
         this.events?.close();
         this.events = null;
