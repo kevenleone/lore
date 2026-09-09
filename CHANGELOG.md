@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.6.0](https://github.com/kevenleone/lore/compare/v1.5.0...v1.6.0) (2026-09-09)
+
+
+### Features
+
+* **capture:** save a GitHub repo as the document it points at ([4f88722](https://github.com/kevenleone/lore/commit/4f88722ff09a665889b46ae3d2e3abc0a3e680a4))
+* **data:** reach refresh and detach from the renderer ([6566b96](https://github.com/kevenleone/lore/commit/6566b96e44e3985dbd2b385f296b5d97fba2b170))
+* **kb:** keep a virtual document live rather than offering to own it ([6525774](https://github.com/kevenleone/lore/commit/65257748933b5c2c9f6f40ac3336a0067201741d))
+* **kb:** read a virtual document instead of editing it ([fe332b4](https://github.com/kevenleone/lore/commit/fe332b4c10fc56f2c2902c51de8868308a8dc9af))
+* **kb:** render GitHub alerts in a fetched document ([e857d62](https://github.com/kevenleone/lore/commit/e857d622ce4fb2a8678fc20945b1e8310a251851))
+* **kb:** say that a virtual document is read-only ([6a82741](https://github.com/kevenleone/lore/commit/6a82741859aa5a0197cda48adf76b5fda63b3ec3))
+* **sidecar:** carry a virtual document's source through the vault ([6100cec](https://github.com/kevenleone/lore/commit/6100ceca0c5c801decfa15f96b7036bd8dc74652))
+* **sidecar:** resolve GitHub URLs to the Markdown behind them ([b36d0fb](https://github.com/kevenleone/lore/commit/b36d0fb6816b3fffb93f6674893d8c1bc21a3afa))
+
+
+### Bug Fixes
+
+* **kb:** edit the Markdown of a link that carries some ([228d902](https://github.com/kevenleone/lore/commit/228d9029d9dba621b40914cb2388eca9dd0c1c38))
+* **kb:** keep reading a document after it is saved ([a2bcb32](https://github.com/kevenleone/lore/commit/a2bcb328a6f9d6cb4ade465c8e9cc79405251e31))
+* **kb:** show the whole preview image, not a crop of it ([76c0895](https://github.com/kevenleone/lore/commit/76c0895d8c25f54e071ab3b87461b220d9f37cf3))
+
+
+### Documentation
+
+* describe virtual documents and the source key ([a427d22](https://github.com/kevenleone/lore/commit/a427d227a6e331cca1df3c87a73ba50436d60706))
+
 ## [1.5.0](https://github.com/kevenleone/lore/compare/v1.4.0...v1.5.0) (2026-09-09)
 
 
