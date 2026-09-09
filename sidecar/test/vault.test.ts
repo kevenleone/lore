@@ -710,3 +710,128 @@ describe('rename', () => {
         expect(await Bun.file(join(root, 'same.md')).exists()).toBe(true);
     });
 });
+
+describe('virtual documents', () => {
+    const source = {
+        fetched: '2026-01-01T00:00:00.000Z',
+        kind: 'github' as const,
+        raw: 'https://raw.githubusercontent.com/e/e/HEAD/README.md',
+        ref: 'HEAD',
+    };
+
+    const realFetch = globalThis.fetch;
+    afterEach(() => {
+        globalThis.fetch = realFetch;
+    });
+
+    const serve = (markdown: string) => {
+        globalThis.fetch = (async () =>
+            new Response(markdown, {
+                headers: { 'content-type': 'text/plain' },
+            })) as unknown as typeof fetch;
+    };
+
+    it('round-trips source through serialize and parse', () => {
+        const item = {
+            ...baseItem({ source, type: 'link', url: 'https://github.com/e/e' }),
+            createdAt: '2026-01-01T00:00:00.000Z',
+            id: 'V1',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+        } as Item;
+
+        const text = serializeFile(item, []);
+        expect(text).toContain('kind: github');
+
+        const back = toItem(parseFile(text), { id: 'V1', mtime: '', relatedIds: [], stem: 'v' });
+        expect(back.source).toEqual(source);
+    });
+
+    it('writes no source key for an ordinary item', () => {
+        const item = {
+            ...baseItem(),
+            createdAt: '2026-01-01T00:00:00.000Z',
+            id: 'N1',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+        } as Item;
+        expect(serializeFile(item, [])).not.toContain('source:');
+    });
+
+    it('ignores a source that names no origin', () => {
+        const text = '---\nid: X\ntitle: T\ntype: note\nsource:\n  kind: github\n---\n\nBody\n';
+        const back = toItem(parseFile(text), { id: 'X', mtime: '', relatedIds: [], stem: 'x' });
+        expect(back.source).toBeUndefined();
+    });
+
+    it('replaces the cached body when the origin changed', async () => {
+        const s = await open();
+        const created = await s.createItem(baseItem({ body: 'old', source, title: 'Readme' }));
+        serve('# new');
+
+        const refreshed = await s.refreshItem(created.id, true);
+        expect(refreshed?.body).toBe('# new');
+        expect(refreshed?.source?.fetched).not.toBe(source.fetched);
+    });
+
+    it('does not restamp updated when the origin is unchanged', async () => {
+        const s = await open();
+        const created = await s.createItem(baseItem({ body: '# same', source, title: 'Readme' }));
+        serve('# same');
+
+        const refreshed = await s.refreshItem(created.id, true);
+        expect(refreshed?.updatedAt).toBe(created.updatedAt);
+        expect(refreshed?.source?.fetched).toBe(source.fetched);
+    });
+
+    it('keeps the cached copy when the origin cannot be read', async () => {
+        const s = await open();
+        const created = await s.createItem(baseItem({ body: 'cached', source, title: 'Readme' }));
+        globalThis.fetch = (async () => {
+            throw new Error('offline');
+        }) as unknown as typeof fetch;
+
+        expect((await s.refreshItem(created.id, true))?.body).toBe('cached');
+    });
+
+    it('checks the origin at most once per interval', async () => {
+        const s = await open();
+        const created = await s.createItem(baseItem({ body: 'old', source, title: 'Readme' }));
+        let calls = 0;
+        globalThis.fetch = (async () => {
+            calls += 1;
+            return new Response('# new');
+        }) as unknown as typeof fetch;
+
+        await s.refreshItem(created.id);
+        await s.refreshItem(created.id);
+        expect(calls).toBe(1);
+    });
+
+    it('leaves an item with no source alone', async () => {
+        const s = await open();
+        const created = await s.createItem(baseItem({ body: 'mine' }));
+        globalThis.fetch = (async () => {
+            throw new Error('should not be called');
+        }) as unknown as typeof fetch;
+
+        expect((await s.refreshItem(created.id, true))?.body).toBe('mine');
+    });
+
+    it('detaching drops the source and keeps the body and the url', async () => {
+        const s = await open();
+        const created = await s.createItem(
+            baseItem({
+                body: '# doc',
+                source,
+                title: 'Readme',
+                type: 'link',
+                url: 'https://g/e/e',
+            }),
+        );
+
+        const detached = await s.detachSource(created.id);
+        expect(detached?.source).toBeUndefined();
+        expect(detached?.body).toBe('# doc');
+        expect(detached?.url).toBe('https://g/e/e');
+        expect(await readFile(join(root, `${detached!.path}`), 'utf8')).not.toContain('source:');
+    });
+});

@@ -4,7 +4,7 @@
 // round-trip control — what gets written back must stay diff-friendly, and
 // unknown keys a user or another tool added must survive being edited in Lore.
 
-import type { Item, ItemComment, ItemFlags, ItemType, Priority } from '@lore/types';
+import type { Item, ItemComment, ItemFlags, ItemSource, ItemType, Priority } from '@lore/types';
 
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
@@ -27,6 +27,7 @@ const KNOWN_KEYS = new Set([
     'points',
     'priority',
     'related',
+    'source',
     'starred',
     'summary',
     'tags',
@@ -144,6 +145,24 @@ const commentArray = (v: unknown, fallback: string): ItemComment[] => {
     return out;
 };
 
+/**
+ * A virtual document's origin. Hand-written or half-written `source` degrades to
+ * "not virtual" rather than making the file unreadable, like every other field
+ * here — an item that loses its source is merely an ordinary note.
+ */
+const source = (v: unknown): ItemSource | undefined => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+    const raw = v as Record<string, unknown>;
+    const url = str(raw.raw);
+    if (str(raw.kind) !== 'github' || !url) return undefined;
+    return {
+        fetched: iso(raw.fetched, new Date(0).toISOString()),
+        kind: 'github',
+        raw: url,
+        ref: str(raw.ref) ?? 'HEAD',
+    };
+};
+
 export interface ToItemContext {
     /** Vault-relative directory; "" at the root means uncollected. */
     collectionId?: string;
@@ -188,6 +207,7 @@ export function serializeFile(
     if (item.priority && item.priority !== 'normal') fm.priority = item.priority;
     if (item.image) fm.image = item.image;
     if (item.description) fm.description = item.description;
+    if (item.source) fm.source = item.source;
     if (item.summary) fm.summary = item.summary;
     if (item.points?.length) fm.points = item.points;
     if (relatedLinks.length) fm.related = relatedLinks;
@@ -232,6 +252,7 @@ export function toItem(parsed: ParsedFile, ctx: ToItemContext): Item {
         points: strArray(data.points).length ? strArray(data.points) : undefined,
         priority: priority(data.priority),
         related: ctx.relatedIds,
+        source: source(data.source),
         summary: str(data.summary),
         tags: strArray(data.tags).map((t) => t.replace(/^#/, '')),
         // A file written by hand has no `title`; its first heading, then its

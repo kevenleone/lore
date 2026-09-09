@@ -7,11 +7,15 @@ import type { Database } from 'bun:sqlite';
 import { deriveDomain, deriveSnippet } from '@lore/derive';
 import { mkdir, rm, rmdir, stat } from 'node:fs/promises';
 
+import { parseGithubTarget, resolveDocument } from '../github';
 import { type Resolver, resolveRelated, rewriteRelated, serializeRelated } from '../links';
 import { parseFile, serializeFile, toItem } from '../markdown';
 import { newId, uniqueStem } from '../slug';
 import { collectionOf, INDEX_FILE, joinPath, stemOf, TRASH_DIR, Vault } from '../vault';
 import { type FileRow, hashContent, IndexVersionMismatch, openIndex } from './db';
+
+/** How long a virtual document is trusted before it is checked again. */
+const REFRESH_TTL_MS = 6 * 60 * 60 * 1000;
 
 export class VaultStore {
     /**
@@ -19,6 +23,14 @@ export class VaultStore {
      * event its own write is about to produce. Set by the Workspace that owns it.
      */
     onWrite: ((relPath: string, text: null | string) => void) | null = null;
+
+    /**
+     * When each virtual document was last checked against its origin. Kept in
+     * memory rather than in the file: recording a check that found no change
+     * would rewrite the vault on every open, and `source.fetched` is meant to
+     * say when this copy was taken, not when it was last looked at.
+     */
+    private readonly checked = new Map<string, number>();
 
     private db: Database;
 
@@ -116,6 +128,27 @@ export class VaultStore {
         return true;
     }
 
+    /**
+     * Drops an item's `source`, turning the cached copy into text the user owns.
+     * Its own route rather than a PATCH because `undefined` does not survive
+     * JSON, so "remove this key" cannot be expressed as a patch at all.
+     */
+    async detachSource(id: string): Promise<Item | null> {
+        const row = this.db.query<FileRow, [string]>('SELECT * FROM files WHERE id = ?').get(id);
+        if (!row) return null;
+        const item = rowToItem(row, true);
+        if (!item.source) return item;
+        delete item.source;
+        this.checked.delete(id);
+        await this.writeItem(
+            row.path,
+            { ...item, updatedAt: new Date().toISOString() },
+            JSON.parse(row.unresolved) as string[],
+            JSON.parse(row.extra) as Record<string, unknown>,
+        );
+        return this.getItem(id);
+    }
+
     getItem(id: string): Item | null {
         const row = this.db.query<FileRow, [string]>('SELECT * FROM files WHERE id = ?').get(id);
         return row ? rowToItem(row, true) : null;
@@ -158,6 +191,8 @@ export class VaultStore {
             .map(([name, count]) => ({ count, name }))
             .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
     }
+
+    /* ---------------- reads ---------------- */
 
     /**
      * Brings the index in line with the files.
@@ -209,7 +244,38 @@ export class VaultStore {
         return { indexed, removed };
     }
 
-    /* ---------------- reads ---------------- */
+    /**
+     * Re-reads a virtual document from its origin. The file is only rewritten
+     * when the Markdown actually differs — an unchanged upstream must not restamp
+     * `updated` and churn the vault's git history every time the item is opened.
+     *
+     * Every failure answers with the item unchanged: a cached copy the user can
+     * still read beats an error about a network they may not have.
+     */
+    async refreshItem(id: string, force = false): Promise<Item | null> {
+        const current = this.getItem(id);
+        if (!current?.source) return current;
+
+        const last = this.checked.get(id) ?? 0;
+        if (!force && Date.now() - last < REFRESH_TTL_MS) return current;
+        this.checked.set(id, Date.now());
+
+        const target = parseGithubTarget(current.source.raw);
+        if (!target) return current;
+        const document = await resolveDocument(target);
+        if (!document) return current;
+        if (document.markdown.trim() === (current.body ?? '').trim()) return current;
+
+        return this.updateItem(id, {
+            body: document.markdown,
+            source: {
+                ...current.source,
+                fetched: new Date().toISOString(),
+                raw: document.raw,
+                ref: document.ref,
+            },
+        });
+    }
 
     /**
      * Renames a file, rewriting every wikilink that pointed at it.
