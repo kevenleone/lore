@@ -82,6 +82,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const [editingTitle, setEditingTitle] = useState(false);
     const [titleDraft, setTitleDraft] = useState('');
     const [editingBody, setEditingBody] = useState(false);
+    const [editingDocument, setEditingDocument] = useState(false);
     const [bodyDraft, setBodyDraft] = useState('');
     const [addingTag, setAddingTag] = useState(false);
     const [tagDraft, setTagDraft] = useState('');
@@ -95,6 +96,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     useEffect(() => {
         setEditingTitle(false);
         setEditingBody(false);
+        setEditingDocument(false);
         setAddingTag(false);
         setTagDraft('');
         setSubtaskDraft('');
@@ -138,6 +140,12 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const bodyField = detailBodyField(sel, bodyLoaded);
     const linkIsDocument = sel.type === 'link' && bodyField === 'body';
 
+    // A document reads until the user asks to edit it. The editor models only
+    // the blocks it can write back, so handing it a README would drop the
+    // images and turn the tables and the HTML into raw source — saving a
+    // document must not change what it looks like.
+    const readsAsDocument = virtual || (linkIsDocument && !editingDocument);
+
     // A task's body is prose *plus* a `- [ ]` checklist. The two get separate
     // editors — free text here, checkboxes below — so the prose textarea never
     // shows raw Markdown the checklist UI is already responsible for.
@@ -173,7 +181,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const useBlockEditor =
         blockEditorEnabled &&
         bodyLoaded &&
-        !virtual &&
+        !readsAsDocument &&
         (sel.type === 'note' || sel.type === 'task' || linkIsDocument);
 
     /** A task's editor holds only the prose; the Subtasks panel owns the rest. */
@@ -407,11 +415,28 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                             </span>
                             <span
                                 className="cursor-pointer rounded-7 bg-accent px-[11px] py-[4px] text-body-lg font-semibold text-white"
-                                onClick={() => void detachSource(sel.id)}
+                                onClick={() => {
+                                    // The button promises an editor, so open one.
+                                    void detachSource(sel.id).then(() => setEditingDocument(true));
+                                }}
                                 title="Keep this copy and make it editable"
                             >
                                 Save &amp; edit
                             </span>
+                        </span>
+                    </div>
+                )}
+
+                {/* a document the user owns: reading is the default, editing a mode */}
+                {!virtual && linkIsDocument && (
+                    <div className="mt-5 flex flex-wrap items-center gap-x-[10px] gap-y-2 rounded-11 border border-border bg-surface2 px-[14px] py-[10px] text-body text-text3">
+                        <Source size={13} />
+                        <span>Yours · edited {formatRelative(sel.updatedAt)}</span>
+                        <span
+                            className="ml-auto cursor-pointer rounded-7 px-[9px] py-[4px] text-body-lg text-text2 hover:bg-hover"
+                            onClick={() => setEditingDocument(!editingDocument)}
+                        >
+                            {editingDocument ? 'Done' : 'Edit'}
                         </span>
                     </div>
                 )}
@@ -426,8 +451,8 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     />
                 )}
 
-                {/* body: a virtual document reads, everything else edits */}
-                {virtual ? (
+                {/* body: a document reads, everything else edits */}
+                {readsAsDocument ? (
                     <DocumentView className="mt-5" markdown={sel.body ?? ''} />
                 ) : useBlockEditor ? (
                     <BodyEditor
