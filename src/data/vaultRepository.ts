@@ -58,6 +58,12 @@ export class VaultRepository implements KnowledgeRepository {
 
     /* ---------------- items ---------------- */
 
+    async detachSource(id: string): Promise<Item> {
+        return this.call(() =>
+            request<Item>(`/items/${encodeURIComponent(id)}/detach`, { method: 'POST' }),
+        );
+    }
+
     dispose(): void {
         this.events?.close();
         this.events = null;
@@ -110,6 +116,12 @@ export class VaultRepository implements KnowledgeRepository {
 
     async listTags(): Promise<TagCount[]> {
         return this.call(() => request<TagCount[]>('/tags'));
+    }
+
+    async refreshItem(id: string): Promise<Item> {
+        return this.call(() =>
+            request<Item>(`/items/${encodeURIComponent(id)}/refresh`, { method: 'POST' }),
+        );
     }
 
     async renameItem(id: string, stem: string): Promise<Item> {
