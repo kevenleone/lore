@@ -355,27 +355,33 @@
         pointer-events: none;
     }
 
-    .lore-editor .ProseMirror :is(h1, h2, h3, h4) {
+    /* Shared with `.lore-document`, the read-only reader, so a document looks the
+     * same whether or not it is editable. h5/h6 only ever reach the reader —
+     * the editor's schema stops at h4. */
+    :is(.lore-editor .ProseMirror, .lore-document) :is(h1, h2, h3, h4, h5, h6) {
         color: var(--text);
         font-weight: 600;
         line-height: 1.3;
         margin-top: 22px;
     }
-    .lore-editor .ProseMirror :is(h1, h2, h3, h4):first-child {
+    :is(.lore-editor .ProseMirror, .lore-document) :is(h1, h2, h3, h4, h5, h6):first-child {
         margin-top: 0;
     }
-    .lore-editor .ProseMirror h1 {
+    :is(.lore-editor .ProseMirror, .lore-document) h1 {
         font-size: 23px;
         letter-spacing: -0.01em;
     }
-    .lore-editor .ProseMirror h2 {
+    :is(.lore-editor .ProseMirror, .lore-document) h2 {
         font-size: 19px;
     }
-    .lore-editor .ProseMirror h3 {
+    :is(.lore-editor .ProseMirror, .lore-document) h3 {
         font-size: 16.5px;
     }
-    .lore-editor .ProseMirror h4 {
+    :is(.lore-editor .ProseMirror, .lore-document) h4 {
         font-size: 15px;
+    }
+    .lore-document :is(h5, h6) {
+        font-size: 14px;
     }
 
     /* Tiptap renders a task item as `<li><label><input></label><div>`. */
