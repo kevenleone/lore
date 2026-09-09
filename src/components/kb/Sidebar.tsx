@@ -36,16 +36,19 @@ function rowClass(active: boolean): string {
     );
 }
 
+const KEY_CAP = 'font-mono text-caption opacity-50';
+
 const LIB_VIEWS: {
     countKey: keyof ReturnType<typeof viewCounts>;
     icon: IconName;
+    keys: string;
     kind: View['kind'];
     label: string;
 }[] = [
-    { countKey: 'all', icon: 'layers', kind: 'all', label: 'All Items' },
-    { countKey: 'inbox', icon: 'inbox', kind: 'inbox', label: 'Inbox' },
-    { countKey: 'today', icon: 'calendar', kind: 'today', label: 'Today' },
-    { countKey: 'starred', icon: 'star', kind: 'starred', label: 'Flagged' },
+    { countKey: 'all', icon: 'layers', keys: '⌘1', kind: 'all', label: 'All Items' },
+    { countKey: 'inbox', icon: 'inbox', keys: '⌘2', kind: 'inbox', label: 'Inbox' },
+    { countKey: 'today', icon: 'calendar', keys: '⌘3', kind: 'today', label: 'Today' },
+    { countKey: 'starred', icon: 'star', keys: '⌘4', kind: 'starred', label: 'Starred' },
 ];
 
 export function Sidebar({ onCapture }: { onCapture: () => void }) {
@@ -100,6 +103,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                         </span>
                         <span className="flex-1">{v.label}</span>
                         {showCounts && <span className={COUNT}>{counts[v.countKey]}</span>}
+                        <span className={KEY_CAP}>{v.keys}</span>
                     </div>
                 );
             })}
@@ -113,7 +117,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                     <Icon name="calendar" />
                 </span>
                 <span className="flex-1">Calendar</span>
-                <span className="font-mono text-caption opacity-50">⌘3</span>
+                <span className={KEY_CAP}>⌘5</span>
             </div>
 
             {/* Collections (add / edit / remove) */}
