@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.4.0](https://github.com/kevenleone/lore/compare/v1.3.0...v1.4.0) (2026-09-09)
+
+
+### Features
+
+* **settings:** rename Look & Feel to Appearance and add a theme gallery ([d8b2d63](https://github.com/kevenleone/lore/commit/d8b2d63c5b4a5acaaa53fd5661bac72063f7ad94))
+* **theme:** serve the token map from a theme registry ([dd05891](https://github.com/kevenleone/lore/commit/dd05891a9de314ce18a1349f51bc47805d12a3d8))
+
+
+### Bug Fixes
+
+* **sidecar:** re-sign the compiled binary so macOS will run it ([8561ca4](https://github.com/kevenleone/lore/commit/8561ca44b8be3ea09e9d0a46a5c961f1e657008a))
+
+
+### Documentation
+
+* describe the theme registry rather than a light/dark pair ([0110177](https://github.com/kevenleone/lore/commit/01101776c04a8e9062e036862e482ef3404fcacd))
+
 ## [1.3.0](https://github.com/kevenleone/lore/compare/v1.2.1...v1.3.0) (2026-09-09)
 
 
