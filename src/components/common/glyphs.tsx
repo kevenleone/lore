@@ -103,6 +103,18 @@ export function Filter({ className, size = 14, style, sw = 1.9 }: GlyphProps) {
     );
 }
 
+export function GitBranch({ className, size = 13, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke className={className} size={size} style={style} sw={sw}>
+            <line x1="6" x2="6" y1="4" y2="20" />
+            <circle cx="6" cy="19" r="2" />
+            <circle cx="6" cy="5" r="2" />
+            <circle cx="18" cy="8" r="2" />
+            <path d="M18 10v1.5a4 4 0 0 1-4 4H8" />
+        </Stroke>
+    );
+}
+
 export function Globe({ className, size = 13, style, sw = 1.8 }: GlyphProps) {
     return (
         <Stroke className={className} size={size} style={style} sw={sw}>
@@ -146,6 +158,14 @@ export function Message({ className, size = 16, style, sw = 1.8 }: GlyphProps) {
     return (
         <Stroke className={className} size={size} style={style} sw={sw}>
             <path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z" />
+        </Stroke>
+    );
+}
+
+export function Moon({ className, size = 13, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke className={className} size={size} style={style} sw={sw}>
+            <path d="M20.5 14.3A8.6 8.6 0 0 1 9.7 3.5a8.6 8.6 0 1 0 10.8 10.8z" />
         </Stroke>
     );
 }
@@ -338,6 +358,15 @@ export function Stop({ className, size = 13, style }: GlyphProps) {
 }
 
 /** The clock face used by the focus chip in the title bar. */
+export function Sun({ className, size = 13, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke className={className} size={size} style={style} sw={sw}>
+            <circle cx="12" cy="12" r="4.2" />
+            <path d="M12 2.6v2.2M12 19.2v2.2M4.3 4.3l1.6 1.6M18.1 18.1l1.6 1.6M2.6 12h2.2M19.2 12h2.2M4.3 19.7l1.6-1.6M18.1 5.9l1.6-1.6" />
+        </Stroke>
+    );
+}
+
 export function Timer({ className, size = 13, style, sw = 2 }: GlyphProps) {
     return (
         <Stroke className={className} size={size} style={style} sw={sw}>
