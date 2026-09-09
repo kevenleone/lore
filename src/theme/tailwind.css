@@ -148,6 +148,7 @@
     --animate-scrim-in: fade-in 240ms ease;
     --animate-scrim-out: fade-out 240ms ease forwards;
     --animate-tooltip-in: tooltip-in 100ms ease-out;
+    --animate-tooltip-in-up: tooltip-in-up 100ms ease-out;
 
     /* Ported from SettingsModal.css.ts. */
     --animate-scrim-fade-in: fade-in 140ms ease;
@@ -227,6 +228,17 @@
         from {
             opacity: 0;
             transform: translate(-50%, -3px);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+    }
+
+    @keyframes tooltip-in-up {
+        from {
+            opacity: 0;
+            transform: translate(-50%, 3px);
         }
         to {
             opacity: 1;
