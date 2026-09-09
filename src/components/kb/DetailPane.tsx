@@ -407,12 +407,19 @@ export function DetailPane({ chrome }: DetailPaneProps) {
 
                 {/* image preview — only when there is an image */}
                 {flags.showPreview && previewSrc && (
-                    <img
-                        alt={sel.title}
-                        className="mt-5 mb-1 block h-[204px] w-full rounded-[13px] border border-border object-cover"
-                        draggable={false}
-                        src={previewSrc}
-                    />
+                    /* The whole image, never a crop of it. A link preview is
+                     * usually a composed 1200×630 card whose text runs to its
+                     * edges, and a fixed height cut more of it the wider the pane
+                     * got. No width is forced either, so a small preview stays its
+                     * own size rather than being blown up to fill the pane. */
+                    <div className="mt-5 mb-1 flex justify-center overflow-hidden rounded-[13px] border border-border bg-surface3">
+                        <img
+                            alt={sel.title}
+                            className="block max-h-[420px] max-w-full"
+                            draggable={false}
+                            src={previewSrc}
+                        />
+                    </div>
                 )}
 
                 {/* body: a virtual document reads, everything else edits */}
