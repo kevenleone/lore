@@ -69,6 +69,12 @@ for (const t of wanted) {
     // --bytecode trims startup time and size; both matter because this binary is
     // the single biggest thing the sidecar adds to the app bundle.
     await $`bun build --compile --minify --bytecode --target=${t.bun} ${import.meta.dir}/../src/index.ts --outfile ${out}`;
+    // `bun build --compile` appends the bundle after the ad-hoc signature it
+    // links in, so the shipped binary fails validation and macOS SIGKILLs it on
+    // exec — silently, before any handshake. Re-signing seals the whole file.
+    if (t.triple.endsWith('-apple-darwin') && process.platform === 'darwin') {
+        await $`codesign --force --sign - ${out}`;
+    }
     const size = (await Bun.file(out).stat()).size;
     console.log(`  ${(size / 1024 / 1024).toFixed(1)} MB  ${out}`);
 }
