@@ -86,6 +86,15 @@ export function buildTokens(seed: ThemeSeed): Record<string, string> {
         ...NEUTRALS[seed.mode],
         '--ac-border': alpha(seed.text2, 0.42),
         '--ac-tint': alpha(seed.text2, 0.2),
+        // A GitHub alert is a severity, and the seed has no hue of its own for
+        // one — so each reuses the closest hue the theme already declares. The
+        // names are the alert's, not the borrowed feature's, so giving them
+        // their own seed hues later touches nothing outside this file.
+        '--alert-caution-fg': seed.types.image,
+        '--alert-important-fg': seed.lanes.starter,
+        '--alert-note-fg': seed.lanes.empty,
+        '--alert-tip-fg': seed.lanes.open,
+        '--alert-warning-fg': seed.types.note,
         '--border': seed.border,
         '--border-soft': mix(seed.border, seed.surface, 0.5),
         '--canvas': seed.canvas,

@@ -63,3 +63,48 @@ describe('DocumentView', () => {
         expect(mount('').textContent).toBe('');
     });
 });
+
+describe('GitHub alerts', () => {
+    it('titles an alert and drops the marker from the prose', () => {
+        const container = mount('> [!IMPORTANT]\n> Dusklight does not provide assets.');
+        expect(container.textContent).toContain('Important');
+        expect(container.textContent).toContain('Dusklight does not provide assets.');
+        expect(container.textContent).not.toContain('[!IMPORTANT]');
+    });
+
+    it('reads the marker on its own line too', () => {
+        const container = mount('> [!WARNING]\n>\n> One.\n>\n> Two.');
+        expect(container.textContent).toContain('Warning');
+        expect(container.textContent).not.toContain('[!WARNING]');
+        expect(container.querySelectorAll('p')).toHaveLength(3);
+    });
+
+    it.each([
+        ['note', 'Note'],
+        ['tip', 'Tip'],
+        ['important', 'Important'],
+        ['warning', 'Warning'],
+        ['caution', 'Caution'],
+    ])('renders a %s alert', (marker, label) => {
+        expect(mount(`> [!${marker.toUpperCase()}]\n> Body.`).textContent).toContain(label);
+    });
+
+    it('is case-insensitive, as GitHub is', () => {
+        expect(mount('> [!note]\n> Body.').textContent).toContain('Note');
+    });
+
+    it('keeps inline content beside the marker', () => {
+        const link = mount('> [!NOTE]\n> Based on the [decomp](https://x.com).').querySelector('a');
+        expect(link?.getAttribute('href')).toBe('https://x.com');
+    });
+
+    it('leaves an ordinary blockquote alone', () => {
+        const container = mount('> Just a quote.');
+        expect(container.querySelector('blockquote')?.textContent).toBe('Just a quote.');
+    });
+
+    it('does not treat an unknown marker as an alert', () => {
+        const container = mount('> [!SOMETHING]\n> Body.');
+        expect(container.querySelector('blockquote')?.textContent).toContain('[!SOMETHING]');
+    });
+});

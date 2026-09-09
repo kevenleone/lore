@@ -1,10 +1,11 @@
-import type { PhrasingContent, RootContent, TableCell, TableRow } from 'mdast';
+import type { Blockquote, PhrasingContent, RootContent, TableCell, TableRow } from 'mdast';
 
 import { useMemo } from 'react';
 
 import { openExternal } from '../../lib/appInfo';
 import { cn } from '../../lib/cn';
 import { toAst } from '../../markdown/parse';
+import { Caution, Info, Lightbulb, Message, Warning } from '../common/glyphs';
 
 /**
  * The read-only reading surface for a document Lore did not author.
@@ -22,6 +23,52 @@ interface DocumentViewProps {
 
 const SPACING = 'mt-[14px] first:mt-0';
 
+/**
+ * GitHub's alerts — `> [!NOTE]` and friends. Not GFM, so remark leaves the
+ * marker as literal text at the head of the blockquote; without this the reader
+ * shows "[!IMPORTANT]" as prose, which is how the source repo's warnings arrive
+ * looking like a typo.
+ *
+ * Both class names are written out in full: Tailwind only generates a utility it
+ * can see as a literal string, so deriving one from the other would emit no CSS.
+ */
+const ALERTS = {
+    caution: {
+        border: 'border-alert-caution-fg',
+        Icon: Caution,
+        label: 'Caution',
+        text: 'text-alert-caution-fg',
+    },
+    important: {
+        border: 'border-alert-important-fg',
+        Icon: Message,
+        label: 'Important',
+        text: 'text-alert-important-fg',
+    },
+    note: {
+        border: 'border-alert-note-fg',
+        Icon: Info,
+        label: 'Note',
+        text: 'text-alert-note-fg',
+    },
+    tip: {
+        border: 'border-alert-tip-fg',
+        Icon: Lightbulb,
+        label: 'Tip',
+        text: 'text-alert-tip-fg',
+    },
+    warning: {
+        border: 'border-alert-warning-fg',
+        Icon: Warning,
+        label: 'Warning',
+        text: 'text-alert-warning-fg',
+    },
+} as const;
+
+type AlertKind = keyof typeof ALERTS;
+
+const MARKER = /^\[!(caution|important|note|tip|warning)\][ \t]*(\r?\n|$)/i;
+
 export function DocumentView({ className, markdown }: DocumentViewProps): React.JSX.Element {
     const children = useMemo(() => toAst(markdown).children, [markdown]);
 
@@ -34,9 +81,59 @@ export function DocumentView({ className, markdown }: DocumentViewProps): React.
     );
 }
 
+function Alert({
+    children,
+    kind,
+}: {
+    children: readonly RootContent[];
+    kind: AlertKind;
+}): React.JSX.Element {
+    const { border, Icon, label, text } = ALERTS[kind];
+    return (
+        <div className={cn(SPACING, 'border-l-[3px] pl-[14px]', border)}>
+            <p className={cn('flex items-center gap-[7px] font-[620]', text)}>
+                <Icon size={14} />
+                {label}
+            </p>
+            {children.map((child, index) => (
+                <Block key={index} node={child} />
+            ))}
+        </div>
+    );
+}
+
+/** The alert a blockquote opens with, and what is left once the marker is cut. */
+function alertOf(node: Blockquote): { children: RootContent[]; kind: AlertKind } | null {
+    const [first, ...rest] = node.children;
+    if (first?.type !== 'paragraph') return null;
+    const [lead, ...siblings] = first.children;
+    if (lead?.type !== 'text') return null;
+
+    const match = MARKER.exec(lead.value);
+    if (!match) return null;
+    const kind = match[1].toLowerCase() as AlertKind;
+
+    // `> [!NOTE]` alone on its line makes the marker its own paragraph; on the
+    // same line as the text it only prefixes the first text node.
+    const remainder = lead.value.slice(match[0].length);
+    if (!remainder && !siblings.length) return { children: rest, kind };
+    return {
+        children: [
+            {
+                ...first,
+                children: remainder ? [{ ...lead, value: remainder }, ...siblings] : siblings,
+            },
+            ...rest,
+        ],
+        kind,
+    };
+}
+
 function Block({ node }: { node: RootContent }): null | React.JSX.Element {
     switch (node.type) {
-        case 'blockquote':
+        case 'blockquote': {
+            const alert = alertOf(node);
+            if (alert) return <Alert kind={alert.kind}>{alert.children}</Alert>;
             return (
                 <blockquote
                     className={cn(SPACING, 'border-l-2 border-border pl-[14px] text-text3')}
@@ -46,6 +143,7 @@ function Block({ node }: { node: RootContent }): null | React.JSX.Element {
                     ))}
                 </blockquote>
             );
+        }
         case 'code':
             return (
                 <pre

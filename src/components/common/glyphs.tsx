@@ -32,6 +32,15 @@ export function Calendar({ className, size = 13, style, sw = 1.8 }: GlyphProps) 
     );
 }
 
+export function Caution({ className, size = 13, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke className={className} size={size} style={style} sw={sw}>
+            <circle cx="12" cy="12" r="9" />
+            <line x1="8" x2="16" y1="12" y2="12" />
+        </Stroke>
+    );
+}
+
 export function Check({ className, size = 12, style, sw = 2.4 }: GlyphProps) {
     return (
         <Stroke className={className} size={size} style={style} sw={sw}>
@@ -150,6 +159,15 @@ export function Info({ className, size = 13, style, sw = 1.8 }: GlyphProps) {
             <circle cx="12" cy="12" r="9" />
             <line x1="12" x2="12" y1="11" y2="16.5" />
             <line x1="12" x2="12" y1="7.6" y2="8.2" />
+        </Stroke>
+    );
+}
+
+export function Lightbulb({ className, size = 13, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke className={className} size={size} style={style} sw={sw}>
+            <path d="M9.2 16.5a6 6 0 1 1 5.6 0v2.2H9.2Z" />
+            <line x1="10" x2="14" y1="21" y2="21" />
         </Stroke>
     );
 }
@@ -446,6 +464,16 @@ export function ViewTable({ className, size = 15, style, sw = 1.8 }: GlyphProps)
             <rect height="14" rx="2" width="18" x="3" y="5" />
             <line x1="3" x2="21" y1="10" y2="10" />
             <line x1="10" x2="10" y1="10" y2="19" />
+        </Stroke>
+    );
+}
+
+export function Warning({ className, size = 13, style, sw = 1.8 }: GlyphProps) {
+    return (
+        <Stroke className={className} size={size} style={style} sw={sw}>
+            <path d="M12 3.8 21 19.5H3Z" />
+            <line x1="12" x2="12" y1="9.6" y2="14.4" />
+            <line x1="12" x2="12" y1="16.6" y2="17.2" />
         </Stroke>
     );
 }
