@@ -410,3 +410,9 @@ export interface FocusState {
 
 /** Which surface the window's main area is showing. */
 export type MainView = 'calendar' | 'library';
+
+/** A transient confirmation, shown for `TOAST_MS` and then dropped. */
+export interface Toast {
+    id: string;
+    message: string;
+}

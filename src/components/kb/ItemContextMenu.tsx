@@ -23,6 +23,7 @@ export function ItemContextMenu({
     const expandOpenItem = useStore((s) => s.expandOpenItem);
     const selectItem = useStore((s) => s.selectItem);
     const toggleStar = useStore((s) => s.toggleStar);
+    const pushToast = useStore((s) => s.pushToast);
     const updateItem = useStore((s) => s.updateItem);
     const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -33,8 +34,15 @@ export function ItemContextMenu({
         onClose();
     };
 
-    const toggleFlag = (key: 'done' | 'inbox' | 'today') => {
+    const toggleFlag = (key: 'done' | 'inbox' | 'today', on: string, off: string) => {
         void updateItem(item.id, { flags: { ...item.flags, [key]: !item.flags[key] } });
+        pushToast(item.flags[key] ? off : on);
+    };
+
+    const copy = (text: string, what: string) => {
+        void copyText(text).then((ok) =>
+            pushToast(ok ? `${what} copied` : `Couldn't copy the ${what.toLowerCase()}`),
+        );
     };
 
     return (
@@ -45,7 +53,15 @@ export function ItemContextMenu({
                     <ContextMenuItem onClick={() => setConfirmingDelete(false)}>
                         Cancel
                     </ContextMenuItem>
-                    <ContextMenuItem danger onClick={() => run(() => void deleteItem(item.id))}>
+                    <ContextMenuItem
+                        danger
+                        onClick={() =>
+                            run(() => {
+                                void deleteItem(item.id);
+                                pushToast('Deleted');
+                            })
+                        }
+                    >
                         <Trash size={14} />
                         Delete
                     </ContextMenuItem>
@@ -67,29 +83,48 @@ export function ItemContextMenu({
                         Open in a page
                     </ContextMenuItem>
                     <ContextMenuSeparator />
-                    <ContextMenuItem onClick={() => run(() => void toggleStar(item.id))}>
+                    <ContextMenuItem
+                        onClick={() =>
+                            run(() => {
+                                void toggleStar(item.id);
+                                pushToast(item.flags.starred ? 'Unstarred' : 'Starred');
+                            })
+                        }
+                    >
                         <StarOutline size={14} />
                         {item.flags.starred ? 'Unstar' : 'Star'}
                     </ContextMenuItem>
-                    <ContextMenuItem onClick={() => run(() => toggleFlag('done'))}>
+                    <ContextMenuItem
+                        onClick={() =>
+                            run(() => toggleFlag('done', 'Marked done', 'Marked not done'))
+                        }
+                    >
                         <Check size={13} />
                         {item.flags.done ? 'Mark not done' : 'Mark done'}
                     </ContextMenuItem>
-                    <ContextMenuItem onClick={() => run(() => toggleFlag('today'))}>
+                    <ContextMenuItem
+                        onClick={() =>
+                            run(() => toggleFlag('today', 'Added to Today', 'Removed from Today'))
+                        }
+                    >
                         <Timer size={14} />
                         {item.flags.today ? 'Remove from Today' : 'Add to Today'}
                     </ContextMenuItem>
-                    <ContextMenuItem onClick={() => run(() => toggleFlag('inbox'))}>
+                    <ContextMenuItem
+                        onClick={() =>
+                            run(() => toggleFlag('inbox', 'Moved to Inbox', 'Removed from Inbox'))
+                        }
+                    >
                         <Icon name="inbox" size={14} />
                         {item.flags.inbox ? 'Remove from Inbox' : 'Move to Inbox'}
                     </ContextMenuItem>
                     <ContextMenuSeparator />
-                    <ContextMenuItem onClick={() => run(() => void copyText(item.title))}>
+                    <ContextMenuItem onClick={() => run(() => copy(item.title, 'Title'))}>
                         <Copy size={14} />
                         Copy title
                     </ContextMenuItem>
                     {item.url && (
-                        <ContextMenuItem onClick={() => run(() => void copyText(item.url ?? ''))}>
+                        <ContextMenuItem onClick={() => run(() => copy(item.url ?? '', 'Link'))}>
                             <Link size={14} />
                             Copy link
                         </ContextMenuItem>
