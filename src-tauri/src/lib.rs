@@ -52,9 +52,7 @@ pub fn run() {
                     commands::hide_main(window.app_handle());
                 }
                 // A menu-bar popover goes away as soon as you look elsewhere.
-                tauri::WindowEvent::Focused(false)
-                    if window.label() == focus_tray::PANEL_LABEL =>
-                {
+                tauri::WindowEvent::Focused(false) if window.label() == focus_tray::PANEL_LABEL => {
                     let _ = window.hide();
                 }
                 _ => {}
@@ -82,9 +80,7 @@ pub fn run() {
             {
                 use std::str::FromStr;
 
-                use tauri_plugin_global_shortcut::{
-                    GlobalShortcutExt, Shortcut, ShortcutState,
-                };
+                use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
                 let capture = Shortcut::from_str(mode::CAPTURE_SHORTCUT)
                     .expect("the mode's capture shortcut is not a shortcut");
