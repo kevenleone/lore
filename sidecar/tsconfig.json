@@ -17,6 +17,7 @@
             "@lore/derive": ["../src/data/derive.ts"],
             "@lore/types": ["../src/store/types.ts"]
         },
+        "resolveJsonModule": true,
         "skipLibCheck": true,
 
         "strict": true,

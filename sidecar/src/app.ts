@@ -8,18 +8,25 @@ import { Elysia } from 'elysia';
 
 import type { Config } from './config';
 
+import modes from '../../lore.modes.json';
 import { routes } from './routes';
 import { Workspace } from './workspace';
 
 /**
  * Origins allowed to call the sidecar. The webview runs on `tauri://localhost`;
- * the Vite dev server on 1420. Anything else — notably a page in the user's
- * normal browser — is refused, so a visited website cannot reach the vault even
- * if it somehow guessed the port.
+ * the Vite dev server on the port its build mode owns. Anything else — notably
+ * a page in the user's normal browser — is refused, so a visited website cannot
+ * reach the vault even if it somehow guessed the port.
+ *
+ * Every mode's dev port is listed rather than only the running one: the set is
+ * three localhost ports either way, and a mode whose webview is refused by its
+ * own engine fails in a way that reads as the engine being down.
  */
 const ALLOWED_ORIGINS = new Set([
-    'http://127.0.0.1:1420',
-    'http://localhost:1420',
+    ...Object.values(modes).flatMap(({ vitePort }) => [
+        `http://127.0.0.1:${vitePort}`,
+        `http://localhost:${vitePort}`,
+    ]),
     'http://tauri.localhost',
     'https://tauri.localhost',
     'tauri://localhost',

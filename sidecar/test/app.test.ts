@@ -77,9 +77,13 @@ describe('origin policy', () => {
         expect(res.headers.get('access-control-allow-origin')).toBe(WEBVIEW);
     });
 
-    it('allows the vite dev origin', async () => {
-        const res = await req('/health', { origin: 'http://localhost:1420' });
-        expect(res.status).toBe(200);
+    it('allows every build mode its own vite dev origin', async () => {
+        // A mode refused by its own engine looks exactly like the engine being
+        // down, which is how the dev and agent ports were caught.
+        for (const port of [1420, 1430, 1440]) {
+            const res = await req('/health', { origin: `http://localhost:${port}` });
+            expect(res.status).toBe(200);
+        }
     });
 
     it('answers preflight before the auth guard', async () => {
@@ -103,7 +107,14 @@ describe('config', () => {
     it('falls back to the fixed dev token and port when none is supplied', () => {
         const c = loadConfig({});
         expect(c.dev).toBe(true);
-        expect(c.port).toBe(51789);
+        expect(c.port).toBe(51799);
+    });
+
+    it('gives each build mode its own dev port', () => {
+        expect(loadConfig({ LORE_MODE: 'agent' }).port).toBe(51809);
+        expect(loadConfig({ LORE_MODE: 'prod' }).port).toBe(51789);
+        // An unknown mode is the dev one, matching `vite.config.ts`.
+        expect(loadConfig({ LORE_MODE: 'nonsense' }).port).toBe(51799);
     });
 
     it('reads the vault and parent pid', () => {
