@@ -42,12 +42,22 @@ const PANEL_GAP: f64 = 6.0;
 /// draws on; `TICK_MS` in `useFocusTimer.ts` is the same number.
 const TICK: Duration = Duration::from_millis(250);
 
-fn idle_icon() -> Image<'static> {
-    tauri::include_image!("icons/tray@2x.png")
+/// `include_image!` takes a literal, so every mode's mark is compiled in and
+/// the live one is picked here rather than at the call sites.
+pub fn idle_icon() -> Image<'static> {
+    match crate::mode::MODE {
+        "dev" => tauri::include_image!("icons/dev/tray@2x.png"),
+        "agent" => tauri::include_image!("icons/agent/tray@2x.png"),
+        _ => tauri::include_image!("icons/tray@2x.png"),
+    }
 }
 
 fn running_icon() -> Image<'static> {
-    tauri::include_image!("icons/tray-focus@2x.png")
+    match crate::mode::MODE {
+        "dev" => tauri::include_image!("icons/dev/tray-focus@2x.png"),
+        "agent" => tauri::include_image!("icons/agent/tray-focus@2x.png"),
+        _ => tauri::include_image!("icons/tray-focus@2x.png"),
+    }
 }
 
 /// What the renderer says should be on the tray. `None` means nothing at all.
@@ -124,11 +134,16 @@ fn remaining_at(ends_at_ms: i64, now_ms: i64) -> i64 {
 }
 
 fn view_for(session: Option<&Session>) -> TrayView {
+    let name = crate::mode::PRODUCT_NAME;
+
     let Some(session) = session else {
         return TrayView {
             running: false,
-            title: None,
-            tooltip: "Lore".into(),
+            // A labelled build keeps its label in the menu bar even at rest.
+            // The tinted mark carries it too, but the word is the part that
+            // survives a glance at a crowded menu bar.
+            title: crate::mode::label().map(str::to_string),
+            tooltip: name.into(),
         };
     };
 
@@ -139,13 +154,18 @@ fn view_for(session: Option<&Session>) -> TrayView {
     let text = clock(remaining);
     let label = &session.label;
 
+    let title = match crate::mode::label() {
+        Some(mode) => format!("{mode} {text}"),
+        None => text.clone(),
+    };
+
     TrayView {
         running: session.running,
-        title: Some(text.clone()),
+        title: Some(title),
         tooltip: if session.running {
-            format!("{label} · {text} left")
+            format!("{name} · {label} · {text} left")
         } else {
-            format!("{label} · {text} · paused")
+            format!("{name} · {label} · {text} · paused")
         },
     }
 }
@@ -167,9 +187,10 @@ fn paint(app: &AppHandle, view: &TrayView) {
         eprintln!("focus tray: set_icon failed: {e}");
     }
     // Setting an icon clears the template flag, so the menu bar would stop
-    // inverting the mark for a light appearance without this.
+    // inverting the mark for a light appearance without this. A labelled build
+    // stays off template so its tint survives — see `build_tray`.
     #[cfg(target_os = "macos")]
-    if let Err(e) = tray.set_icon_as_template(true) {
+    if let Err(e) = tray.set_icon_as_template(crate::mode::is_prod()) {
         eprintln!("focus tray: set_icon_as_template failed: {e}");
     }
 
