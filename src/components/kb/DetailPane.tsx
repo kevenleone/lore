@@ -383,10 +383,16 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     Saved {formatSavedDate(sel.createdAt)}
                 </div>
 
-                {/* the origin of a virtual document, and the two ways out of it */}
+                {/* where a virtual document comes from, and why it does not edit */}
                 {virtual && sel.source && (
                     <div className="mt-5 flex flex-wrap items-center gap-x-[10px] gap-y-2 rounded-11 border border-border bg-surface2 px-[14px] py-[10px] text-body text-text3">
                         <Source size={13} />
+                        <span
+                            className="rounded-md bg-surface3 px-[7px] py-[2px] text-caption font-semibold tracking-[.03em] text-text3 uppercase"
+                            title="Lore keeps this document in step with its origin instead of editing it. Delete the source block from the file to make it your own."
+                        >
+                            Read-only
+                        </span>
                         <span
                             className="cursor-pointer truncate text-text2 underline decoration-border underline-offset-2"
                             onClick={() => void openExternal(sel.source!.raw)}
