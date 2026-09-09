@@ -112,6 +112,8 @@ pub fn run() {
                 }
 
                 commands::build_tray(app.handle())?;
+                #[cfg(target_os = "macos")]
+                focus_tray::use_monospaced_digits();
                 // The tray has to exist before anything tries to paint it.
                 focus_tray::start_painter(app.handle());
             }
