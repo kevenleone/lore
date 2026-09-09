@@ -56,6 +56,7 @@
         "build": "tsc && vite build",
         "build:sidecar": "pnpm --filter @lore/sidecar build",
         "dev": "vite",
+        "dev:agent": "LORE_MODE=agent pnpm tauri dev",
         "dev:all": "concurrently -n vite,sidecar -c cyan,magenta \"pnpm dev\" \"pnpm dev:sidecar\"",
         "dev:sidecar": "pnpm --filter @lore/sidecar dev",
         "format": "prettier --write .",
