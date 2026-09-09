@@ -6,6 +6,7 @@ import { create } from 'zustand';
 
 import type { AiProvider } from '../ai/aiProvider';
 import type { CollectionPatch, ItemPatch, NewCollection, NewItem } from '../data/repository';
+import type { ThemeId } from '../theme/themes';
 import type { Appearance } from '../theme/tokens';
 import type { WorkspaceRef } from './persisted';
 
@@ -19,6 +20,7 @@ import { ensureNotificationPermission, notifyIntervalEnd } from '../lib/focusNot
 import { nextPhase, phaseSeconds, remainingSeconds } from '../lib/focusTimer';
 import { initVaultGit } from '../lib/vaultGit';
 import { broadcastWorkspaceChange, pickWorkspaceFolder, rememberWorkspace } from '../lib/workspace';
+import { effectiveTheme } from '../theme/tokens';
 import { loadPersisted, savePersisted } from './persisted';
 import { SEED_CHAT, SEED_COLLECTIONS, SEED_ITEMS } from './seed';
 import {
@@ -217,6 +219,7 @@ interface StoreState {
     setSearch: (q: string) => void;
     setSettingsPane: (pane: SettingsPane) => void;
     setSort: (sort: SortOrder) => void;
+    setTheme: (id: ThemeId) => void;
     // settings sheet
     settingsOpen: boolean;
     settingsPane: SettingsPane;
@@ -931,6 +934,11 @@ export const useStore = create<StoreState>((set, get) => ({
     },
     setSort(sort) {
         set({ sort });
+    },
+
+    setTheme(id) {
+        const mode = effectiveTheme(get().prefs.appearance);
+        get().setPref(mode === 'dark' ? 'darkTheme' : 'lightTheme', id);
     },
 
     settingsOpen: false,

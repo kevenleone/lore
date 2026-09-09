@@ -76,8 +76,12 @@ export function CaptureApp() {
 
     const theme = effectiveTheme(prefs.appearance);
     useEffect(() => {
-        paintTheme(theme, prefs.accent);
-    }, [prefs.accent, theme]);
+        paintTheme({
+            accent: prefs.accent,
+            mode: theme,
+            themeId: theme === 'dark' ? prefs.darkTheme : prefs.lightTheme,
+        });
+    }, [prefs.accent, prefs.darkTheme, prefs.lightTheme, theme]);
 
     return (
         <div

@@ -34,6 +34,8 @@ export default function App() {
     const refresh = useStore((s) => s.refresh);
     const appearance = useStore((s) => s.prefs.appearance);
     const accent = useStore((s) => s.prefs.accent);
+    const darkTheme = useStore((s) => s.prefs.darkTheme);
+    const lightTheme = useStore((s) => s.prefs.lightTheme);
     const textSize = useStore((s) => s.prefs.textSize);
     const sidebarVisible = useStore((s) => s.sidebarVisible);
     const reduceMotion = useStore((s) => s.prefs.switches.motion);
@@ -104,15 +106,18 @@ export default function App() {
     ]);
 
     // Paint the token set for the effective theme, and repaint when the OS
-    // switches while Appearance is on Auto.
+    // switches while Color mode is on Auto.
     useEffect(() => {
-        const paint = () => paintTheme(effectiveTheme(appearance), accent);
+        const paint = () => {
+            const mode = effectiveTheme(appearance);
+            paintTheme({ accent, mode, themeId: mode === 'dark' ? darkTheme : lightTheme });
+        };
         paint();
         if (appearance !== 'auto' || !window.matchMedia) return;
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
         mq.addEventListener('change', paint);
         return () => mq.removeEventListener('change', paint);
-    }, [accent, appearance]);
+    }, [accent, appearance, darkTheme, lightTheme]);
 
     // Refresh when the Quick Capture window saves a new item, and take over
     // ⌥Space while this window is in front — Rust routes the shortcut here

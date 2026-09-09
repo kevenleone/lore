@@ -11,10 +11,10 @@
  *    computed in px so the zoom arithmetic is predictable.
  *
  * 2. There is no `dark:` variant, and there must not be one. The colour tokens
- *    in src/theme/tokens.ts flip wholesale between LIGHT_TOKENS and DARK_TOKENS,
- *    so `bg-surface` is already correct in both themes. If you need a colour
- *    that differs by theme, add a key to BOTH token maps and bridge it below —
- *    do not reach for `dark:`.
+ *    are swapped wholesale from the theme registry in src/theme/themes.ts, so
+ *    `bg-surface` is already correct in every theme. If you need a colour that
+ *    differs by theme, add a key to EVERY theme's map — the two literal ones and
+ *    buildTokens() — and bridge it below; do not reach for `dark:`.
  */
 
 @layer theme, base, components, utilities;

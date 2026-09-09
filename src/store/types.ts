@@ -2,6 +2,10 @@
 // Shapes mirror the Claude Design prototype's seed data, with ISO timestamps
 // added so the real app can derive relative `time` / human `date` at render.
 
+import type { ThemeId } from '../theme/themes';
+
+import { DEFAULT_DARK_THEME, DEFAULT_LIGHT_THEME } from '../theme/themes';
+
 export interface ChatMessage {
     id: string;
     role: 'ai' | 'user';
@@ -327,8 +331,12 @@ export interface Prefs {
     accent: Accent;
     aiMode: AiMode;
     appearance: Appearance;
+    /** The theme style used whenever the effective mode is dark. */
+    darkTheme: ThemeId;
     density: Density;
     durations: Durations;
+    /** The theme style used whenever the effective mode is light. */
+    lightTheme: ThemeId;
     longBreakAfter: number;
     notifStyle: NotificationStyle;
     openMode: OpenMode;
@@ -344,8 +352,10 @@ export const DEFAULT_PREFS: Prefs = {
     accent: DEFAULT_ACCENT,
     aiMode: 'cloud',
     appearance: 'light',
+    darkTheme: DEFAULT_DARK_THEME,
     density: 'Cozy',
     durations: { focus: 25, long: 15, short: 5 },
+    lightTheme: DEFAULT_LIGHT_THEME,
     longBreakAfter: 4,
     notifStyle: 'Banner',
     openMode: 'drawer',
