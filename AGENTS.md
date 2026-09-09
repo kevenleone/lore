@@ -114,7 +114,7 @@ that has been narrated rather than written.
 
 Use [Conventional Commits](https://www.conventionalcommits.org/): `<prefix>: <description>`.
 
-- Run `bun format` before committing; if Prettier modifies files, stage them and add a final `chore: Source Format` commit as the last commit in the sequence.
+- Run `pnpm format` before committing; if Prettier modifies files, stage them and add a final `chore: Source Format` commit as the last commit in the sequence.
 - Do **not** add `Co-authored-by:` trailers.
 - Do **not** add AI attribution footers anywhere — no "🤖 Generated with Claude Code" (or similar) in commit messages, PR descriptions, or issue comments.
 - Avoid commit bodies/footers unless the change has a breaking or high-impact side effect.
@@ -145,7 +145,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/): `<prefix>: <de
 
 ### Formatting Workflow
 
-1. Before committing, run `bun format` at the project root
+1. Before committing, run `pnpm format` at the project root
 2. If `prettier` modified any files, stage those changes and add a final commit:
     ```
     chore: Source Format
