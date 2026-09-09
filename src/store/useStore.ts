@@ -106,6 +106,8 @@ interface StoreState {
     cycleFocusTask: () => void;
     deleteCollection: (id: string) => Promise<void>;
     deleteItem: (id: string) => Promise<void>;
+    /** Drops a virtual document's `source`, handing the user the cached text. */
+    detachSource: (id: string) => Promise<void>;
     /**
      * The selected item, with its `body` — `listItems()` omits bodies, so the
      * detail pane reads through here and falls back to the list row until it
@@ -185,6 +187,11 @@ interface StoreState {
     recentWorkspaces: WorkspaceRef[];
     // data actions
     refresh: () => Promise<void>;
+    /**
+     * Re-reads a virtual document from its origin. Safe to call on every open —
+     * the data engine holds the interval, so this carries no policy.
+     */
+    refreshSource: (id: string) => Promise<void>;
     removeComment: (id: string, commentId: string) => Promise<void>;
     removeTag: (id: string, tag: string) => Promise<void>;
     renameItemFile: (id: string, stem: string) => Promise<void>;
@@ -657,6 +664,15 @@ export const useStore = create<StoreState>((set, get) => ({
         }
     },
 
+    async detachSource(id) {
+        const repo = getRepository();
+        if (!repo.detachSource) return;
+        await repo.detachSource(id);
+        await get().refresh();
+        await get().loadDetail(id);
+        get().pushToast('Saved to your vault — the document is yours to edit.');
+    },
+
     detail: null,
 
     dismissMigrationNotice() {
@@ -801,6 +817,18 @@ export const useStore = create<StoreState>((set, get) => ({
         // Re-read the body: a mutation may have changed it.
         const id = get().selectedId;
         if (id) void get().loadDetail(id);
+    },
+
+    async refreshSource(id) {
+        const repo = getRepository();
+        if (!repo.refreshItem) return;
+        // Offline is the common case here, not an error: the cached copy is
+        // already on screen and stays there.
+        const item = await repo.refreshItem(id).catch(() => null);
+        if (!item || get().selectedId !== id) return;
+        if (item.updatedAt === get().detail?.updatedAt) return;
+        await get().refresh();
+        await get().loadDetail(id);
     },
 
     async removeComment(id, commentId) {

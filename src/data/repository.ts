@@ -20,9 +20,15 @@ export interface KnowledgeRepository {
     /** Removes the collection and unfiles any items that referenced it. */
     deleteCollection(id: string): Promise<void>;
     deleteItem(id: string): Promise<void>;
+    /**
+     * Drops a virtual document's `source`, handing the user the cached text.
+     * Not a patch: JSON cannot carry "remove this key". Optional, like the rest
+     * of what only the vault can do.
+     */
+    detachSource?(id: string): Promise<Item>;
+
     /** Releases connections/streams so a workspace switch can rebuild cleanly. */
     dispose?(): Promise<void> | void;
-
     getItem(id: string): Promise<Item | null>;
     /**
      * Per-file facts for the Properties panel. Optional: only the vault knows a
@@ -31,7 +37,14 @@ export interface KnowledgeRepository {
     itemMeta?(id: string): Promise<ItemMeta | null>;
     listCollections(): Promise<Collection[]>;
     listItems(view?: View): Promise<Item[]>;
+
     listTags(): Promise<TagCount[]>;
+
+    /**
+     * Re-reads a virtual document from its origin. Safe to call on every open —
+     * the engine holds the interval and answers with the item either way.
+     */
+    refreshItem?(id: string): Promise<Item>;
 
     /**
      * Renames the file behind an item. Separate from `updateItem` because a
