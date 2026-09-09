@@ -257,6 +257,7 @@ export function LookPane() {
     const openMode = useStore((s) => s.prefs.openMode);
     const setOpenMode = useStore((s) => s.setOpenMode);
     const counts = useSwitch('counts');
+    const statusBar = useSwitch('statusBar');
     const blockEditor = useSwitch('blockEditor');
     const rawMarkdownDefault = useSwitch('rawMarkdownDefault');
     const motion = useSwitch('motion');
@@ -370,6 +371,16 @@ export function LookPane() {
                     label="Show counts in the sidebar"
                     on={counts.on}
                     onChange={counts.onChange}
+                />
+            </Row>
+            <Row
+                desc="Vault, version and Git along the bottom of the window."
+                title="Show the status bar"
+            >
+                <Toggle
+                    label="Show the status bar"
+                    on={statusBar.on}
+                    onChange={statusBar.onChange}
                 />
             </Row>
             <Row desc="The capture balloon appears without the spring." title="Reduce motion">

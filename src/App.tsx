@@ -19,6 +19,7 @@ import { ListPane } from './components/kb/ListPane';
 import { Notice } from './components/kb/Notice';
 import { PROPERTIES_WIDTH, PropertiesPanel } from './components/kb/PropertiesPanel';
 import { Sidebar, SIDEBAR_WIDTH } from './components/kb/Sidebar';
+import { StatusBar } from './components/kb/StatusBar';
 import { TitleBar } from './components/kb/TitleBar';
 import { Onboarding } from './components/onboarding/Onboarding';
 import { SettingsModal } from './components/settings/SettingsModal';
@@ -52,6 +53,7 @@ export default function App() {
     const openCapture = useStore((s) => s.openCapture);
     const setMainView = useStore((s) => s.setMainView);
     const settingsOpen = useStore((s) => s.settingsOpen);
+    const statusBarVisible = useStore((s) => s.prefs.switches.statusBar);
     const toggleCapture = useStore((s) => s.toggleCapture);
     const toggleFocus = useStore((s) => s.toggleFocus);
     const toggleProperties = useStore((s) => s.toggleProperties);
@@ -284,6 +286,7 @@ export default function App() {
                      */}
                     <CaptureDrawer />
                 </div>
+                {statusBarVisible && <StatusBar />}
             </div>
 
             {/*

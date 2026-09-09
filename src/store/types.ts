@@ -260,6 +260,7 @@ export interface Switches {
     // Calendar
     showTasks: boolean;
     sounds: boolean;
+    statusBar: boolean;
     // Vault
     touchid: boolean;
 }
@@ -307,6 +308,7 @@ export const DEFAULT_SWITCHES: Switches = {
     showFocus: true,
     showTasks: true,
     sounds: false,
+    statusBar: true,
     touchid: true,
 };
 
