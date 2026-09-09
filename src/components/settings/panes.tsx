@@ -22,6 +22,8 @@ import {
     type WeekStart,
 } from '../../store/types';
 import { useStore } from '../../store/useStore';
+import { themesFor } from '../../theme/themes';
+import { effectiveTheme } from '../../theme/tokens';
 import { LoreMark } from '../common/LoreMark';
 import { SettingsIcon } from '../common/settingsGlyphs';
 import { CALENDAR_ACCOUNTS } from './calendarAccounts';
@@ -35,6 +37,7 @@ import {
     Segmented,
     Toggle,
 } from './controls';
+import { ThemePreview } from './ThemePreview';
 
 /** Card-shaped radio (appearance swatches, AI location). */
 const CHOICE_CARD =
@@ -231,7 +234,7 @@ function StorageMeter() {
 }
 
 /* ------------------------------------------------------------------ *
- * Look & Feel
+ * Appearance
  * ------------------------------------------------------------------ */
 
 const APPEARANCES: { id: Appearance; label: string; swatch: string }[] = [
@@ -249,6 +252,8 @@ export function LookPane() {
     const appearance = useStore((s) => s.prefs.appearance);
     const setAppearance = useStore((s) => s.setAppearance);
     const accent = useStore((s) => s.prefs.accent);
+    const darkTheme = useStore((s) => s.prefs.darkTheme);
+    const lightTheme = useStore((s) => s.prefs.lightTheme);
     const setAccent = useStore((s) => s.setAccent);
     const density = useStore((s) => s.prefs.density);
     const textSize = useStore((s) => s.prefs.textSize);
@@ -262,10 +267,13 @@ export function LookPane() {
     const blockEditor = useSwitch('blockEditor');
     const rawMarkdownDefault = useSwitch('rawMarkdownDefault');
     const motion = useSwitch('motion');
+    const mode = effectiveTheme(appearance);
+    const setTheme = useStore((s) => s.setTheme);
+    const themeId = mode === 'dark' ? darkTheme : lightTheme;
 
     return (
         <>
-            <SectionLabel first>Appearance</SectionLabel>
+            <SectionLabel first>Color mode</SectionLabel>
             <div className="mb-1 flex gap-[10px]">
                 {APPEARANCES.map((a) => {
                     const active = appearance === a.id;
@@ -299,6 +307,42 @@ export function LookPane() {
                         </button>
                     );
                 })}
+            </div>
+
+            <SectionLabel>Theme style</SectionLabel>
+            <div className="mb-1 text-body leading-[1.5] text-text3">
+                The colours used throughout Lore. Light and dark keep separate picks.
+            </div>
+            <div className="mt-[10px] max-h-[300px] overflow-y-auto pr-1">
+                <div className="grid grid-cols-4 gap-[10px]">
+                    {themesFor(mode).map((t) => {
+                        const active = themeId === t.id;
+                        return (
+                            <button
+                                aria-pressed={active}
+                                className={cn(
+                                    'flex cursor-pointer flex-col gap-[7px] rounded-xl border-[1.5px] p-[7px] font-[inherit] text-[inherit]',
+                                    active
+                                        ? 'border-accent bg-accent-tint'
+                                        : 'border-border bg-transparent',
+                                )}
+                                key={t.id}
+                                onClick={() => setTheme(t.id)}
+                                type="button"
+                            >
+                                <ThemePreview theme={t} />
+                                <span
+                                    className={cn(
+                                        'truncate text-caption',
+                                        active ? 'font-semibold' : 'font-medium text-text2',
+                                    )}
+                                >
+                                    {t.name}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             <SectionLabel>Accent</SectionLabel>
