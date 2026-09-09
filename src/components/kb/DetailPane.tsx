@@ -11,7 +11,7 @@ import type { OpenMode } from '../../store/types';
 import { openExternal } from '../../lib/appInfo';
 import { useAssetSrc } from '../../lib/assetSrc';
 import { cn } from '../../lib/cn';
-import { formatSavedDate } from '../../lib/format';
+import { formatRelative, formatSavedDate } from '../../lib/format';
 import { joinBody, parseSubtasks, stripSubtasks, toggleSubtask } from '../../lib/subtasks';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
@@ -30,6 +30,7 @@ import {
 } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 import { BodyEditor } from '../editor/BodyEditor';
+import { DocumentView } from '../editor/DocumentView';
 import { AiSummaryCard } from './AiSummaryCard';
 import { RelatedCards } from './RelatedCards';
 
@@ -61,6 +62,8 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const toggleProperties = useStore((s) => s.toggleProperties);
     const rawDefault = useStore((s) => s.prefs.switches.rawMarkdownDefault);
     const deleteItem = useStore((s) => s.deleteItem);
+    const detachSource = useStore((s) => s.detachSource);
+    const refreshSource = useStore((s) => s.refreshSource);
     const updateItem = useStore((s) => s.updateItem);
     const addTag = useStore((s) => s.addTag);
     const removeTag = useStore((s) => s.removeTag);
@@ -97,6 +100,14 @@ export function DetailPane({ chrome }: DetailPaneProps) {
         if (addingTag) tagInputRef.current?.focus();
     }, [addingTag]);
 
+    // A virtual document checks its origin when it is opened. The engine holds
+    // the interval, so this asks every time and is usually answered from the
+    // copy already on disk.
+    const sourceRaw = sel?.source?.raw;
+    useEffect(() => {
+        if (sel?.id && sourceRaw) void refreshSource(sel.id);
+    }, [sel?.id, sourceRaw, refreshSource]);
+
     if (!sel) {
         return <div className="flex-1 bg-surface" />;
     }
@@ -109,6 +120,10 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const flags = detailFlags(sel, aiAssist, related.length);
     const linkUrl =
         sel.type === 'link' ? sel.url || (sel.domain ? `https://${sel.domain}` : '') : '';
+
+    // The body is a cached copy of someone else's document until the user takes
+    // it over, so nothing here writes to it.
+    const virtual = !!sel.source;
 
     // note/task/code edit the item's own content; a link's editable text stays its
     // `description`. Links do get a real `body` in the vault, but exposing an
@@ -152,7 +167,10 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     // would show an empty note and save it over the real one.
     const bodyLoaded = detail?.id === sel.id;
     const useBlockEditor =
-        blockEditorEnabled && bodyLoaded && (sel.type === 'note' || sel.type === 'task');
+        blockEditorEnabled &&
+        bodyLoaded &&
+        !virtual &&
+        (sel.type === 'note' || sel.type === 'task');
 
     /** A task's editor holds only the prose; the Subtasks panel owns the rest. */
     const commitBodyMarkdown = (markdown: string) => {
@@ -363,6 +381,37 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     Saved {formatSavedDate(sel.createdAt)}
                 </div>
 
+                {/* the origin of a virtual document, and the two ways out of it */}
+                {virtual && sel.source && (
+                    <div className="mt-5 flex flex-wrap items-center gap-x-[10px] gap-y-2 rounded-11 border border-border bg-surface2 px-[14px] py-[10px] text-body text-text3">
+                        <Source size={13} />
+                        <span
+                            className="cursor-pointer truncate text-text2 underline decoration-border underline-offset-2"
+                            onClick={() => void openExternal(sel.source!.raw)}
+                            title={sel.source.raw}
+                        >
+                            {sourceLabel(sel.source.raw)}
+                        </span>
+                        <span className="opacity-50">·</span>
+                        <span>Fetched {formatRelative(sel.source.fetched)}</span>
+                        <span className="ml-auto flex items-center gap-2">
+                            <span
+                                className="cursor-pointer rounded-7 px-[9px] py-[4px] text-body-lg text-text2 hover:bg-hover"
+                                onClick={() => void refreshSource(sel.id)}
+                            >
+                                Refresh
+                            </span>
+                            <span
+                                className="cursor-pointer rounded-7 bg-accent px-[11px] py-[4px] text-body-lg font-semibold text-white"
+                                onClick={() => void detachSource(sel.id)}
+                                title="Keep this copy and make it editable"
+                            >
+                                Save &amp; edit
+                            </span>
+                        </span>
+                    </div>
+                )}
+
                 {/* image preview — only when there is an image */}
                 {flags.showPreview && previewSrc && (
                     <img
@@ -373,8 +422,10 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     />
                 )}
 
-                {/* body: code / note-task content / link description — editable */}
-                {useBlockEditor ? (
+                {/* body: a virtual document reads, everything else edits */}
+                {virtual ? (
+                    <DocumentView className="mt-5" markdown={sel.body ?? ''} />
+                ) : useBlockEditor ? (
                     <BodyEditor
                         itemId={sel.id}
                         onCommit={commitBodyMarkdown}
@@ -563,4 +614,13 @@ export function DetailPane({ chrome }: DetailPaneProps) {
             </div>
         </div>
     );
+}
+
+/** `owner/repo · path` — the raw URL itself is noise in a header strip. */
+function sourceLabel(raw: string): string {
+    const match = /^https?:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/[^/]+\/(.+)$/.exec(
+        raw,
+    );
+    if (!match) return raw;
+    return `${match[1]}/${match[2]} · ${decodeURIComponent(match[3])}`;
 }
