@@ -7,17 +7,23 @@
 
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
+import { cn } from '../../lib/cn';
+
 export interface TooltipProps {
+    /** Centred on the trigger by default; 'end' keeps a bubble at the window edge on screen. */
+    align?: 'center' | 'end';
     children: ReactNode;
     /** Shortcut for the action, drawn as a key cap after the label. */
     keys?: string;
     label: string;
+    /** The bubble hangs below by default; chrome on the bottom edge needs 'above'. */
+    side?: 'above' | 'below';
 }
 
 /** Long enough that crossing the toolbar does not trail labels behind it. */
 const DELAY_MS = 320;
 
-export function Tooltip({ children, keys, label }: TooltipProps) {
+export function Tooltip({ align = 'center', children, keys, label, side = 'below' }: TooltipProps) {
     const [shown, setShown] = useState(false);
     const timer = useRef<null | ReturnType<typeof setTimeout>>(null);
 
@@ -56,7 +62,17 @@ export function Tooltip({ children, keys, label }: TooltipProps) {
                     // `-translate-x-1/2`, which compiles to the `translate` property and
                     // would compose with the keyframe's own transform instead of
                     // replacing it.
-                    className="pointer-events-none absolute top-[calc(100%+7px)] left-1/2 z-[60] [transform:translateX(-50%)] animate-tooltip-in rounded-lg border border-border bg-surface px-[9px] py-[5px] text-body-sm font-medium whitespace-nowrap text-text shadow-float"
+                    className={cn(
+                        'pointer-events-none absolute z-[60] rounded-lg border border-border bg-surface px-[9px] py-[5px] text-body-sm font-medium whitespace-nowrap text-text shadow-float',
+                        side === 'above' ? 'bottom-[calc(100%+7px)]' : 'top-[calc(100%+7px)]',
+                        // The centred keyframes carry the -50% themselves, so an
+                        // end-aligned bubble needs an animation that leaves x alone.
+                        align === 'end'
+                            ? 'right-0 animate-surface-in'
+                            : side === 'above'
+                              ? 'left-1/2 [transform:translateX(-50%)] animate-tooltip-in-up'
+                              : 'left-1/2 [transform:translateX(-50%)] animate-tooltip-in',
+                    )}
                     role="tooltip"
                 >
                     {label}
