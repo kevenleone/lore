@@ -131,26 +131,26 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .item(&quit)
         .build()?;
 
-    // Held so the countdown can rename Start/Pause and enable Stop.
+    // Held so the countdown can rename Start/Pause and enable Stop, and so the
+    // right-click can put the menu on the status item for as long as it is open.
     app.state::<FocusTray>()
         .set_menu_items(focus.clone(), stop.clone());
+    app.state::<FocusTray>().set_menu(menu);
 
-    // Left-click opens the menu (macOS-standard); the user picks an action.
     let tray = TrayIconBuilder::with_id(TRAY_ID)
         // The retina master; macOS scales it down for the 1x menu bar.
         .icon(crate::focus_tray::idle_icon())
         .tooltip(name)
-        .menu(&menu)
-        // The menu is the right-click gesture; a left click is the popover.
-        .show_menu_on_left_click(false)
-        .on_tray_icon_event(|tray, event| {
-            if let TrayIconEvent::Click {
+        // No menu here on purpose: a menu attached to the status item makes
+        // AppKit report every click on it as a right-click, so the left click
+        // never arrives. `focus_tray::popup_menu` lends it out per right-click.
+        .on_tray_icon_event(|tray, event| match event {
+            TrayIconEvent::Click {
                 button: MouseButton::Left,
                 button_state: MouseButtonState::Up,
                 rect,
                 ..
-            } = event
-            {
+            } => {
                 let position = rect.position.to_physical::<f64>(1.0);
                 let size = rect.size.to_physical::<f64>(1.0);
                 focus_tray::toggle_panel(
@@ -159,6 +159,12 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
                     position.y + size.height,
                 );
             }
+            TrayIconEvent::Click {
+                button: MouseButton::Right,
+                button_state: MouseButtonState::Down,
+                ..
+            } => focus_tray::popup_menu(tray),
+            _ => {}
         })
         .on_menu_event(|app, event| match event.id.as_ref() {
             "capture" => toggle_capture_window(app),

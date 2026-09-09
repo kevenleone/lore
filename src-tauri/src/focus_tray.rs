@@ -29,8 +29,11 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[cfg(target_os = "macos")]
 use objc2::rc::Retained;
+#[cfg(target_os = "macos")]
+use objc2_app_kit::NSButton;
 use tauri::image::Image;
-use tauri::menu::MenuItem;
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::TrayIcon;
 use tauri::{AppHandle, Emitter, LogicalPosition, Manager, Wry};
 
 pub const TRAY_ID: &str = "lore-tray";
@@ -95,6 +98,9 @@ pub struct FocusTray {
     session: Mutex<Option<Session>>,
     /// Last state the main window pushed, replayed to the panel when it opens.
     snapshot: Mutex<Option<serde_json::Value>>,
+    /// The tray menu, held off the status item until a right-click asks for it.
+    /// See `popup_menu`.
+    menu: Mutex<Option<Menu<Wry>>>,
     /// The tray menu's stop line, disabled until there is a session to end.
     stop_item: Mutex<Option<MenuItem<Wry>>>,
     /// The tray menu's start/pause line, kept so its label can follow the timer.
@@ -102,6 +108,12 @@ pub struct FocusTray {
 }
 
 impl FocusTray {
+    pub fn set_menu(&self, menu: Menu<Wry>) {
+        if let Ok(mut slot) = self.menu.lock() {
+            *slot = Some(menu);
+        }
+    }
+
     pub fn set_menu_items(&self, toggle: MenuItem<Wry>, stop: MenuItem<Wry>) {
         if let Ok(mut slot) = self.toggle_item.lock() {
             *slot = Some(toggle);
@@ -207,23 +219,17 @@ fn paint(app: &AppHandle, view: &TrayView) {
     }
 }
 
-/// Draws the tray title in the system font's monospaced-digit variant.
+/// The menu bar button this app's status item draws into.
 ///
-/// The menu bar's default face gives digits proportional widths, so `18:50` and
-/// `18:49` are not the same width and the whole status item shifts a pixel or
-/// two every second. `tray-icon` sets a plain string title and exposes no font,
-/// so the button is reached through AppKit instead: down from the app's
-/// `NSStatusBarWindow`, whose content view holds the status button.
-///
-/// Must run on the main thread, and only once — the font outlives every later
-/// title. A failure here is cosmetic, so it is logged rather than returned.
+/// `tray-icon` keeps no handle to it, so it is found through AppKit: the app's
+/// one `NSStatusBarWindow`, then down its view tree — the button sits under the
+/// window's content view, and `tray-icon` nests a plain view of its own inside
+/// the button on top of that, so the search takes the first button it meets.
 #[cfg(target_os = "macos")]
-pub fn use_monospaced_digits() {
+fn status_button() -> Option<Retained<NSButton>> {
     use objc2::{MainThreadMarker, Message};
-    use objc2_app_kit::{NSApplication, NSButton, NSFont, NSFontWeightRegular, NSView};
+    use objc2_app_kit::{NSApplication, NSView};
 
-    /// Depth-first, because the button sits under the window's content view and
-    /// `tray-icon` puts a plain view of its own inside the button on top of that.
     fn find_button(view: &NSView) -> Option<Retained<NSButton>> {
         if let Ok(button) = view.retain().downcast::<NSButton>() {
             return Some(button);
@@ -231,16 +237,27 @@ pub fn use_monospaced_digits() {
         view.subviews().iter().find_map(|child| find_button(&child))
     }
 
-    let Some(mtm) = MainThreadMarker::new() else {
-        eprintln!("focus tray: monospaced digits skipped, not on the main thread");
-        return;
-    };
-    let button = NSApplication::sharedApplication(mtm)
+    let mtm = MainThreadMarker::new()?;
+    NSApplication::sharedApplication(mtm)
         .windows()
         .iter()
         .filter(|window| window.class().name().to_bytes() == b"NSStatusBarWindow")
-        .find_map(|window| window.contentView().and_then(|view| find_button(&view)));
-    let Some(button) = button else {
+        .find_map(|window| window.contentView().and_then(|view| find_button(&view)))
+}
+
+/// Draws the tray title in the system font's monospaced-digit variant.
+///
+/// The menu bar's default face gives digits proportional widths, so `18:50` and
+/// `18:49` are not the same width and the whole status item shifts a pixel or
+/// two every second. `tray-icon` sets a plain string title and exposes no font.
+///
+/// Must run on the main thread, and only once — the font outlives every later
+/// title. A failure here is cosmetic, so it is logged rather than returned.
+#[cfg(target_os = "macos")]
+pub fn use_monospaced_digits() {
+    use objc2_app_kit::{NSFont, NSFontWeightRegular};
+
+    let Some(button) = status_button() else {
         eprintln!("focus tray: monospaced digits skipped, no status button found");
         return;
     };
@@ -249,6 +266,39 @@ pub fn use_monospaced_digits() {
     let size = button.font().map_or(0.0, |font| font.pointSize());
     let font = unsafe { NSFont::monospacedDigitSystemFontOfSize_weight(size, NSFontWeightRegular) };
     button.setFont(Some(&font));
+}
+
+/// Opens the tray menu, for the right-click that asked for it.
+///
+/// The menu is attached to the status item only for as long as it is open. Left
+/// attached, it makes AppKit deliver *every* click on the item as a right-click
+/// — which is what silently took the popover away from the left button, since
+/// the left-click event never arrived at all. `performClick` runs the menu in a
+/// nested run loop, so by the time it returns the menu has closed and can come
+/// straight back off.
+pub fn popup_menu(tray: &TrayIcon<Wry>) {
+    let menu = tray
+        .app_handle()
+        .state::<FocusTray>()
+        .menu
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .clone();
+    let Some(menu) = menu else {
+        return;
+    };
+    if let Err(e) = tray.set_menu(Some(menu)) {
+        eprintln!("focus tray: attaching the menu failed: {e}");
+        return;
+    }
+    #[cfg(target_os = "macos")]
+    match status_button() {
+        Some(button) => unsafe { button.performClick(None) },
+        None => eprintln!("focus tray: no status button to open the menu on"),
+    }
+    if let Err(e) = tray.set_menu(None::<Menu<Wry>>) {
+        eprintln!("focus tray: detaching the menu failed: {e}");
+    }
 }
 
 /// ---------------------------------------------------------------------------
