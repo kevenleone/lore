@@ -1,0 +1,29 @@
+{
+    "agent": {
+        "accent": "#7c5cd6",
+        "captureShortcut": "Alt+Control+Space",
+        "identifier": "com.lore.app.agent",
+        "label": "AGENT",
+        "productName": "Lore Agent",
+        "sidecarDevPort": 51809,
+        "vitePort": 1440
+    },
+    "dev": {
+        "accent": "#d98324",
+        "captureShortcut": "Alt+Shift+Space",
+        "identifier": "com.lore.app.dev",
+        "label": "DEV",
+        "productName": "Lore Dev",
+        "sidecarDevPort": 51799,
+        "vitePort": 1430
+    },
+    "prod": {
+        "accent": null,
+        "captureShortcut": "Alt+Space",
+        "identifier": "com.lore.app",
+        "label": null,
+        "productName": "Lore",
+        "sidecarDevPort": 51789,
+        "vitePort": 1420
+    }
+}
