@@ -8,6 +8,7 @@ import {
     activeFilterCount,
     applyFilters,
     collectionCount,
+    detailBodyField,
     detailFlags,
     filterByView,
     localDateKey,
@@ -226,5 +227,52 @@ describe('activeFilterCount', () => {
                 to: '2026-02-01',
             }),
         ).toBe(5);
+    });
+});
+
+describe('detailBodyField', () => {
+    const item = (over: Partial<Item>): Item => ({
+        createdAt: '',
+        flags: {},
+        id: 'i1',
+        related: [],
+        tags: [],
+        title: 'T',
+        type: 'link',
+        updatedAt: '',
+        ...over,
+    });
+
+    const source = {
+        fetched: '',
+        kind: 'github' as const,
+        raw: 'https://raw.githubusercontent.com/e/e/HEAD/README.md',
+        ref: 'HEAD',
+    };
+
+    it.each(['code', 'note', 'task'] as const)('edits the body of a %s', (type) => {
+        expect(detailBodyField(item({ type }), true)).toBe('body');
+    });
+
+    it('edits a bookmark description, which is all it has', () => {
+        expect(detailBodyField(item({ description: 'D' }), true)).toBe('description');
+    });
+
+    it('edits the body of a link that carries Markdown', () => {
+        expect(detailBodyField(item({ body: '# doc' }), true)).toBe('body');
+    });
+
+    it('edits the body of a virtual document even before it is loaded', () => {
+        expect(detailBodyField(item({ source }), false)).toBe('body');
+    });
+
+    it('waits for the body before switching a link away from its description', () => {
+        // A list row carries no body; reading "no body" off one would open an
+        // editor over the real one.
+        expect(detailBodyField(item({ description: 'D' }), false)).toBe('description');
+    });
+
+    it('has nothing to edit on an image', () => {
+        expect(detailBodyField(item({ type: 'image' }), true)).toBeNull();
     });
 });

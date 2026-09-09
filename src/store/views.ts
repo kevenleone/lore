@@ -165,6 +165,21 @@ export function collectionFor(item: Item, collections: Collection[]): Collection
     return item.collectionId ? (collections.find((c) => c.id === item.collectionId) ?? null) : null;
 }
 
+/**
+ * Which field the detail pane edits.
+ *
+ * A link that carries Markdown — a document fetched from its origin, or one the
+ * user has taken over with Save & edit — edits that Markdown. A bookmark has
+ * only its `description`, so that stays its editable text. `bodyLoaded` says
+ * whether the item came from `getItem`: a list row carries no body, and reading
+ * "no body" off one would open an editor over the real one.
+ */
+export function detailBodyField(item: Item, bodyLoaded: boolean): 'body' | 'description' | null {
+    if (item.type === 'code' || item.type === 'note' || item.type === 'task') return 'body';
+    if (item.type !== 'link') return null;
+    return item.source || (bodyLoaded && item.body) ? 'body' : 'description';
+}
+
 /** Detail-pane section visibility — mirrors the prototype's `sc-if` gates. */
 export function detailFlags(item: Item, showAI: boolean, relatedCount: number): DetailFlags {
     return {

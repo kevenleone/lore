@@ -15,7 +15,13 @@ import { formatRelative, formatSavedDate } from '../../lib/format';
 import { joinBody, parseSubtasks, stripSubtasks, toggleSubtask } from '../../lib/subtasks';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
-import { collectionFor, detailFlags, relatedItems, viewTitle } from '../../store/views';
+import {
+    collectionFor,
+    detailBodyField,
+    detailFlags,
+    relatedItems,
+    viewTitle,
+} from '../../store/views';
 import {
     Back,
     Check,
@@ -125,11 +131,12 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     // it over, so nothing here writes to it.
     const virtual = !!sel.source;
 
-    // note/task/code edit the item's own content; a link's editable text stays its
-    // `description`. Links do get a real `body` in the vault, but exposing an
-    // editor for it is a separate change — this keeps today's behaviour exactly.
-    const bodyField: 'body' | 'description' | null =
-        flags.detIsCode || flags.detIsText ? 'body' : sel.type === 'link' ? 'description' : null;
+    // List rows carry no body, so opening an editor against that stand-in would
+    // show an empty note and save it over the real one.
+    const bodyLoaded = detail?.id === sel.id;
+
+    const bodyField = detailBodyField(sel, bodyLoaded);
+    const linkIsDocument = sel.type === 'link' && bodyField === 'body';
 
     // A task's body is prose *plus* a `- [ ]` checklist. The two get separate
     // editors — free text here, checkboxes below — so the prose textarea never
@@ -162,15 +169,12 @@ export function DetailPane({ chrome }: DetailPaneProps) {
         if (next && next !== sel.title) void updateItem(sel.id, { title: next });
     };
 
-    // Code is not prose, and a link's text is a frontmatter scalar.
-    // List rows carry no body, so opening the editor against that stand-in
-    // would show an empty note and save it over the real one.
-    const bodyLoaded = detail?.id === sel.id;
+    // Code is not prose, and a bookmark's text is a frontmatter scalar.
     const useBlockEditor =
         blockEditorEnabled &&
         bodyLoaded &&
         !virtual &&
-        (sel.type === 'note' || sel.type === 'task');
+        (sel.type === 'note' || sel.type === 'task' || linkIsDocument);
 
     /** A task's editor holds only the prose; the Subtasks panel owns the rest. */
     const commitBodyMarkdown = (markdown: string) => {
@@ -456,7 +460,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     >
                         {sel.body}
                     </pre>
-                ) : flags.detIsText ? (
+                ) : bodyField === 'body' ? (
                     <p
                         className={cn(
                             'mt-[18px] mb-1 cursor-text text-title-lg leading-[1.65]',
