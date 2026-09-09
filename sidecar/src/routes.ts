@@ -6,6 +6,7 @@ import type { Item } from '@lore/types';
 import { Elysia } from 'elysia';
 
 import { gitStatus, initGit } from './git';
+import { parseGithubTarget, resolveDocument } from './github';
 import { fetchLinkMetadata } from './linkMetadata';
 import { ATTACHMENTS_DIR, hashColor } from './vault';
 import { Workspace, WorkspaceNotOpen } from './workspace';
@@ -198,6 +199,35 @@ export function routes(workspace: Workspace) {
                 return item;
             })
 
+            /**
+             * Re-reads a virtual document from its origin. Safe to call on every
+             * open: the store holds the interval, so the renderer carries no
+             * policy and a hot item is not refetched.
+             */
+            .post('/items/:id/refresh', async ({ params, query, set }) => {
+                const item = await workspace.current.refreshItem(params.id, query.force === '1');
+                if (!item) {
+                    set.status = 404;
+                    return { error: 'not_found' };
+                }
+                workspace.notify();
+                return item;
+            })
+
+            /**
+             * Drops the item's `source`, handing the user the text. Not a PATCH:
+             * JSON has no way to say "remove this key".
+             */
+            .post('/items/:id/detach', async ({ params, set }) => {
+                const item = await workspace.current.detachSource(params.id);
+                if (!item) {
+                    set.status = 404;
+                    return { error: 'not_found' };
+                }
+                workspace.notify();
+                return item;
+            })
+
             /* ---------------- attachments ---------------- */
 
             /**
@@ -289,6 +319,28 @@ export function routes(workspace: Workspace) {
                     return { error: 'url_required' };
                 }
                 return fetchLinkMetadata(url);
+            })
+
+            /**
+             * Resolves a GitHub URL to the Markdown behind it — a repo's README or
+             * a `.md` file named outright. Outside the workspace guard for the same
+             * reason `/link-metadata` is: capture runs before a vault is open.
+             *
+             * A URL that names no document answers `{}`, and the capture saves an
+             * ordinary link.
+             */
+            .post('/github/resolve', async ({ body, set }) => {
+                const { url } = body as { url?: string };
+                if (!url) {
+                    set.status = 400;
+                    return { error: 'url_required' };
+                }
+                const target = parseGithubTarget(url);
+                if (!target) return {};
+                return ((await resolveDocument(target)) ?? {}) as unknown as Record<
+                    string,
+                    unknown
+                >;
             })
 
             /* ---------------- derived reads ---------------- */

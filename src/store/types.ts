@@ -86,6 +86,12 @@ export interface Item {
      * persisted; see `deriveSnippet`.
      */
     snippet?: string;
+    /**
+     * Set when the body is a cached copy of a document that lives somewhere else.
+     * Its presence is what makes an item read-only; dropping it is how the user
+     * takes ownership of the text.
+     */
+    source?: ItemSource;
     /** AI-generated summary (distinct from a link's own description). */
     summary?: string;
     tags: string[];
@@ -136,6 +142,19 @@ export interface ItemMeta {
     /** Bytes on disk, frontmatter included. */
     size: number;
     words: number;
+}
+
+/**
+ * Where a virtual document's body came from. `ref` is usually `HEAD`, which
+ * tracks the repository's default branch rather than pinning a branch name.
+ */
+export interface ItemSource {
+    /** ISO 8601 timestamp of the last successful fetch. */
+    fetched: string;
+    kind: 'github';
+    /** The URL the Markdown is read from. */
+    raw: string;
+    ref: string;
 }
 
 export type ItemType = 'code' | 'image' | 'link' | 'note' | 'task';

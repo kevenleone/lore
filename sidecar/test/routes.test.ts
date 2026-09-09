@@ -460,3 +460,66 @@ describe('attachment routes', () => {
         expect(res.status).toBe(400);
     });
 });
+
+describe('virtual document routes', () => {
+    const realFetch = globalThis.fetch;
+    afterEach(() => {
+        globalThis.fetch = realFetch;
+    });
+
+    const serve = (markdown: string) => {
+        globalThis.fetch = (async () => new Response(markdown)) as unknown as typeof fetch;
+    };
+
+    const source = {
+        fetched: '2026-01-01T00:00:00.000Z',
+        kind: 'github',
+        raw: 'https://raw.githubusercontent.com/e/e/HEAD/README.md',
+        ref: 'HEAD',
+    };
+
+    it('resolves a repo URL to its README before a workspace is open', async () => {
+        serve('# emitsignal');
+        const res = await call('POST', '/github/resolve', {
+            url: 'https://github.com/emitsignal/emitsignal',
+        });
+        expect(res.status).toBe(200);
+        expect(res.body.markdown).toBe('# emitsignal');
+        expect(res.body.title).toBe('emitsignal/emitsignal');
+    });
+
+    it('answers empty for a URL that names no document', async () => {
+        expect(
+            (await call('POST', '/github/resolve', { url: 'https://github.com/o/r/issues/1' }))
+                .body,
+        ).toEqual({});
+    });
+
+    it('requires a url', async () => {
+        expect((await call('POST', '/github/resolve', {})).status).toBe(400);
+    });
+
+    it('refreshes a virtual document from its origin', async () => {
+        await openVault();
+        const created = await call('POST', '/items', newItem({ body: 'old', source }));
+        serve('# new');
+
+        const res = await call('POST', `/items/${created.body.id}/refresh?force=1`);
+        expect(res.status).toBe(200);
+        expect(res.body.body).toBe('# new');
+    });
+
+    it('detaches the source and keeps the body', async () => {
+        await openVault();
+        const created = await call('POST', '/items', newItem({ body: '# doc', source }));
+
+        const res = await call('POST', `/items/${created.body.id}/detach`);
+        expect(res.body.source).toBeUndefined();
+        expect(res.body.body).toBe('# doc');
+    });
+
+    it('404s refreshing an unknown item', async () => {
+        await openVault();
+        expect((await call('POST', '/items/nope/refresh')).status).toBe(404);
+    });
+});
