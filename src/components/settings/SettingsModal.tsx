@@ -39,7 +39,7 @@ interface PaneDef {
 const PANES: PaneDef[] = [
     { Body: GeneralPane, icon: 'gear', id: 'general', label: 'General' },
     { Body: VaultPane, icon: 'folder', id: 'vault', label: 'Vault' },
-    { Body: LookPane, icon: 'palette', id: 'look', label: 'Look & Feel' },
+    { Body: LookPane, icon: 'palette', id: 'look', label: 'Appearance' },
     { Body: KeysPane, icon: 'keyboard', id: 'keys', label: 'Keyboard Shortcuts' },
     { Body: NotifPane, icon: 'bell', id: 'notif', label: 'Notifications' },
     { Body: CapturePane, icon: 'sparkle', id: 'capture', label: 'Capture & AI' },
