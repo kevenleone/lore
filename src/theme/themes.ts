@@ -32,6 +32,11 @@ export type ThemeId =
 export const LIGHT_TOKENS: Record<string, string> = {
     '--ac-border': '#dedee5',
     '--ac-tint': '#eeeef2',
+    '--alert-caution-fg': '#b0555f',
+    '--alert-important-fg': '#6b4fa8',
+    '--alert-note-fg': '#3b5bbf',
+    '--alert-tip-fg': '#3f8f6a',
+    '--alert-warning-fg': '#9e7b46',
     '--border': '#ececef',
     '--border-soft': '#f0f0f2',
     '--canvas': '#e7e5df',
@@ -79,6 +84,11 @@ export const LIGHT_TOKENS: Record<string, string> = {
 export const DARK_TOKENS: Record<string, string> = {
     '--ac-border': 'rgba(184,186,201,.42)',
     '--ac-tint': 'rgba(184,186,201,.20)',
+    '--alert-caution-fg': '#e2949e',
+    '--alert-important-fg': '#b9a3e0',
+    '--alert-note-fg': '#93aae8',
+    '--alert-tip-fg': '#7fc39a',
+    '--alert-warning-fg': '#d3ac72',
     '--border': '#34343d',
     '--border-soft': '#2c2c34',
     '--canvas': '#15151a',

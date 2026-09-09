@@ -82,6 +82,13 @@
     --color-lane-open-bg: var(--lane-open-bg);
     --color-lane-open-fg: var(--lane-open-fg);
 
+    /* GitHub alerts in a fetched document (> [!NOTE] and friends). */
+    --color-alert-note-fg: var(--alert-note-fg);
+    --color-alert-tip-fg: var(--alert-tip-fg);
+    --color-alert-important-fg: var(--alert-important-fg);
+    --color-alert-warning-fg: var(--alert-warning-fg);
+    --color-alert-caution-fg: var(--alert-caution-fg);
+
     /* Per-type chips (link / note / task / code / image). */
     --color-type-link-bg: var(--type-link-bg);
     --color-type-link-fg: var(--type-link-fg);
