@@ -96,6 +96,41 @@ pnpm build:sidecar    # compile the engine binary Tauri bundles
 pnpm tauri build      # produce a distributable .app/.dmg
 ```
 
+### Build modes
+
+Three Lores can run at once — the one you installed, the one you are working on,
+and one an agent is changing under you — so each is a separate app that says
+which it is. `LORE_MODE` picks one; `lore.modes.json` is the table they all read.
+
+```bash
+pnpm tauri dev                     # Lore Dev, amber
+LORE_MODE=agent pnpm tauri dev     # Lore Agent, violet
+pnpm tauri build                   # Lore, the shipping identity
+```
+
+| Mode    | App          | Vault                        | Vite | Engine | Quick capture |
+| ------- | ------------ | ---------------------------- | ---- | ------ | ------------- |
+| `prod`  | `Lore`       | `…/com.lore.app/Vault`       | 1420 | random | ⌥Space        |
+| `dev`   | `Lore Dev`   | `…/com.lore.app.dev/Vault`   | 1430 | 51799  | ⌥⇧Space       |
+| `agent` | `Lore Agent` | `…/com.lore.app.agent/Vault` | 1440 | 51809  | ⌥⌃Space       |
+
+A labelled build tints its Dock and menu-bar icons, shows its label beside the
+traffic lights and in the menu bar, and draws a hairline of its colour along the
+top of every window. Its identifier is its own, so it opens its own vault and
+keeps its own preferences — `pnpm tauri dev` will not touch the library the
+installed app is using. Settings → About names the build and the vault it opened.
+
+Two modes out of one checkout share a Cargo target directory, so switching
+between them rebuilds the Rust side and running both at once blocks on the build
+lock. Give each its own worktree — or set `CARGO_TARGET_DIR` — when you want two
+running side by side.
+
+Regenerate the tinted icon sets after changing a master or an accent:
+
+```bash
+node scripts/mode-icons.mjs
+```
+
 ## Getting started
 
 First launch shows onboarding: sign in with Apple / Google / an email link, or
@@ -274,13 +309,18 @@ sidecar/                     the data engine (Bun + Elysia)
   src/routes.ts              the HTTP surface
   scripts/build.ts           compiles the per-platform binaries
 src-tauri/
-  src/{lib.rs, commands.rs}  plugins, ⌥Space shortcut, capture window control
+  src/{lib.rs, commands.rs}  plugins, capture shortcut, capture window control
+  src/mode.rs                which Lore this binary is (see "Build modes")
   src/sidecar.rs             spawn, handshake, supervise and kill the engine
   tauri.conf.json            windows, externalBin, bundle config
+  tauri.{dev,agent}.conf.json  name, identifier and icons for a labelled build
   capabilities/default.json  permission grants
   icons/app-icon.svg         Dock icon master — regenerate the rasters with
                              `pnpm tauri icon src-tauri/icons/app-icon.svg -o src-tauri/icons`
   icons/tray-icon.svg        menu-bar master (monochrome template, auto-inverts)
+  icons/{dev,agent}/         tinted sets, written by `scripts/mode-icons.mjs`
+lore.modes.json              the build-mode table every side reads
+scripts/tauri.mjs            `pnpm tauri` with the mode's config applied
 docs/images/                 README screenshots, rendered from the design sources
 ```
 
