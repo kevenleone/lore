@@ -3,9 +3,9 @@
 // losing focus dismisses it. Hosts both capture directions (A command bar,
 // B composer) behind a small toggle.
 //
-// This window is the out-of-app path: ⌥Space reaches it only when Lore is not
-// the frontmost window. With Lore in front, the shortcut opens `CaptureDrawer`
-// in the main window instead.
+// This window is the out-of-app path: the capture shortcut reaches it only when
+// Lore is not the frontmost window. With Lore in front, the shortcut opens
+// `CaptureDrawer` in the main window instead.
 
 import { useEffect, useState } from 'react';
 
@@ -15,6 +15,7 @@ import { cn } from '../../lib/cn';
 import { onWorkspaceChanged } from '../../lib/workspace';
 import { loadPersisted } from '../../store/persisted';
 import { effectiveTheme, paintTheme } from '../../theme/tokens';
+import { ModeBadge } from '../common/ModeBadge';
 import { CommandBar } from './CommandBar';
 import { Composer } from './Composer';
 type Mode = 'A' | 'B';
@@ -86,7 +87,8 @@ export function CaptureApp() {
             }}
         >
             {/* direction toggle — a floating segmented control */}
-            <div className="flex gap-[3px] rounded-9 border border-border bg-surface-glass p-[3px] shadow-[0_6px_18px_-6px_rgba(24,24,48,.35)] backdrop-blur-[20px]">
+            <div className="flex items-center gap-[3px] rounded-9 border border-border bg-surface-glass p-[3px] shadow-[0_6px_18px_-6px_rgba(24,24,48,.35)] backdrop-blur-[20px]">
+                <ModeBadge className="ml-[3px]" />
                 <Toggle active={mode === 'A'} onClick={() => setMode('A')}>
                     Command bar
                 </Toggle>

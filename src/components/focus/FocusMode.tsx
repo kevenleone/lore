@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
+import { captureShortcut } from '../../lib/appMode';
 import { cn } from '../../lib/cn';
 import {
     elapsedFraction,
@@ -185,7 +186,8 @@ export function FocusMode() {
                             ))}
                             {captured.length === 0 && (
                                 <div className="text-body-sm text-text3">
-                                    Nothing yet — ⌥Space captures without leaving the session.
+                                    Nothing yet — {captureShortcut()} captures without leaving the
+                                    session.
                                 </div>
                             )}
                         </div>
