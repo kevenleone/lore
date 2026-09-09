@@ -10,4 +10,10 @@ import { effectiveTheme, paintTheme } from './tokens';
 
 const { prefs } = loadPersisted();
 
-paintTheme(effectiveTheme(prefs.appearance), prefs.accent);
+const mode = effectiveTheme(prefs.appearance);
+
+paintTheme({
+    accent: prefs.accent,
+    mode,
+    themeId: mode === 'dark' ? prefs.darkTheme : prefs.lightTheme,
+});

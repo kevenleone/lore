@@ -46,8 +46,12 @@ export function FocusPanel() {
     const theme = effectiveTheme(prefs.appearance);
 
     useEffect(() => {
-        paintTheme(theme, prefs.accent);
-    }, [prefs.accent, theme]);
+        paintTheme({
+            accent: prefs.accent,
+            mode: theme,
+            themeId: theme === 'dark' ? prefs.darkTheme : prefs.lightTheme,
+        });
+    }, [prefs.accent, prefs.darkTheme, prefs.lightTheme, theme]);
 
     // Fit the window to the card instead of guessing a height in the config: the
     // card grows and shrinks with the task title's wrapping and the empty state,
