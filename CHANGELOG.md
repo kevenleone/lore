@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.3.0](https://github.com/kevenleone/lore/compare/v1.2.1...v1.3.0) (2026-09-09)
+
+
+### Features
+
+* **capture:** write note and task bodies in the block editor ([a389308](https://github.com/kevenleone/lore/commit/a3893084dd364b3fb5af857cb889b6763c5c2dde))
+* **kb:** add a status bar along the bottom of the window ([47e4a93](https://github.com/kevenleone/lore/commit/47e4a93f0cc66ea7c0699069cec70483b4395077))
+* **kb:** edit note and task bodies in a block editor ([bec1845](https://github.com/kevenleone/lore/commit/bec1845fb2de15cfbe9298fc8983ed5c3e87aa5c))
+* **kb:** move the filename from the header into Properties ([3445be3](https://github.com/kevenleone/lore/commit/3445be34255339d8b6f6d085f36ad2d3c45cbf84))
+* **kb:** move the raw Markdown toggle into the item toolbar ([0e363f9](https://github.com/kevenleone/lore/commit/0e363f931d3794a0da53fbc8e025626f44a5bfc6))
+* **kb:** render Markdown in comments, snippets and titles ([83f5a2b](https://github.com/kevenleone/lore/commit/83f5a2b09fd79b034a291aab29808c43bc1a40c4))
+* **markdown:** add a source-preserving Markdown core ([4637a2e](https://github.com/kevenleone/lore/commit/4637a2e9152b57e973810f26990644cf4eea15bc))
+* **modes:** add the build-mode table and a tauri wrapper that applies it ([d136092](https://github.com/kevenleone/lore/commit/d136092a567fe0a7e73a20c80639b47206263d55))
+* **modes:** give each build mode its own identity, shortcut and tray ([c0d638b](https://github.com/kevenleone/lore/commit/c0d638b079e418d0093d970450bce72925c464a5))
+* **modes:** mark the running mode in the UI ([12f1197](https://github.com/kevenleone/lore/commit/12f119791ed41ac1d287b036974df8ff3653f857))
+* **modes:** tint the dock and menu-bar icons per mode ([1459056](https://github.com/kevenleone/lore/commit/145905605088b28b7ee6c377b3afdc8d513c8875))
+* **sidecar:** follow the build mode's dev port and allow its origin ([3359e1c](https://github.com/kevenleone/lore/commit/3359e1caa282c3adaebfc0e0ff52dc4d95af611b))
+* **theme:** add Teal and Ochre accents ([22d6348](https://github.com/kevenleone/lore/commit/22d6348ff2e3aff533529dcd6a38b6478cad1449))
+* **ui:** let a tooltip hang above its trigger ([41ef905](https://github.com/kevenleone/lore/commit/41ef9051e6213476407ee3cfe1d6dd5dffef4f99))
+
+
+### Bug Fixes
+
+* **kb:** move the properties toggle to the item toolbar ([041efe4](https://github.com/kevenleone/lore/commit/041efe40c30656a106df3780638b055666a2ad39))
+* **theme:** repaint the token set when the accent changes ([fd56a41](https://github.com/kevenleone/lore/commit/fd56a41553b8212146e9320cb2cb9b51fea4b56b))
+
+
+### Documentation
+
+* document the build modes, and correct the formatter to pnpm ([610f9be](https://github.com/kevenleone/lore/commit/610f9beb538c81eef3d206fedb76a008adef45b7))
+* sharpen the comment rule and strip narration from the editor ([33ef92e](https://github.com/kevenleone/lore/commit/33ef92ed3aae31913c73f7078266ed3259aecd23))
+
 ## [1.2.1](https://github.com/kevenleone/lore/compare/v1.2.0...v1.2.1) (2026-09-08)
 
 
