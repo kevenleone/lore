@@ -19,6 +19,8 @@ mod commands;
 mod focus_tray;
 mod mode;
 mod sidecar;
+#[cfg(target_os = "macos")]
+mod window_frame;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -74,6 +76,11 @@ pub fn run() {
                     let title = window.title().unwrap_or_default();
                     let _ = window.set_title(&mode::window_title(&title));
                 }
+            }
+
+            #[cfg(target_os = "macos")]
+            if let Some(window) = app.get_webview_window("main") {
+                window_frame::adopt_system_frame(&window);
             }
 
             #[cfg(desktop)]
