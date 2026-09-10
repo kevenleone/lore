@@ -14,7 +14,7 @@ import { FocusChip } from '../focus/FocusChip';
 
 /** The three round chrome buttons either side of the Capture button. */
 const CHROME_BUTTON =
-    'flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-lg';
+    'flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-lg border-none bg-transparent';
 
 export function TitleBar({ onCapture }: { onCapture: () => void }) {
     const toggleSidebar = useStore((s) => s.toggleSidebar);
@@ -41,27 +41,30 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
         <div
             // z-35 keeps it above every pane below, so a tooltip hanging off the
             // bar is drawn over the list header rather than behind it.
-            className="relative z-35 flex h-[46px] flex-none items-center gap-[14px] border-b border-border bg-titlebar px-[14px] backdrop-blur-[20px]"
-            data-tauri-drag-region
+            className="relative z-35 flex h-[46px] flex-none items-center gap-[14px] border-b border-border bg-titlebar px-[14px] backdrop-blur-[20px] select-none"
+            // "deep" drags from anywhere in the bar, not only its bare gaps; Tauri
+            // exempts the real controls, which is why they are all buttons.
+            data-tauri-drag-region="deep"
         >
             <ModeAccentBar />
 
             <div className="flex items-center gap-2">
-                <TrafficLight action="close" color="#ff5f57" />
-                <TrafficLight action="minimize" color="#febc2e" />
-                <TrafficLight action="toggleMaximize" color="#28c840" />
+                <TrafficLight action="close" color="#ff5f57" label="Close" />
+                <TrafficLight action="minimize" color="#febc2e" label="Minimize" />
+                <TrafficLight action="toggleMaximize" color="#28c840" label="Zoom" />
             </div>
 
             <ModeBadge />
 
             <Tooltip keys="⌘B" label="Toggle sidebar">
-                <span
+                <button
                     aria-label="Toggle sidebar"
-                    className="ml-1 flex cursor-pointer text-faint"
+                    className="ml-1 flex cursor-pointer border-none bg-transparent p-0 text-faint"
                     onClick={toggleSidebar}
+                    type="button"
                 >
                     <SidebarToggle />
-                </span>
+                </button>
             </Tooltip>
 
             <div className="flex-1" />
@@ -91,16 +94,17 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                     <FocusChip />
                 </Tooltip>
                 <Tooltip keys="⌘J" label="Ask Lore">
-                    <span
+                    <button
                         aria-label="Ask Lore"
                         className={cn(
                             CHROME_BUTTON,
                             chatOpen ? 'bg-accent-tint text-accent' : 'text-text2',
                         )}
                         onClick={toggleChat}
+                        type="button"
                     >
                         <Sparkle />
-                    </span>
+                    </button>
                 </Tooltip>
                 <Tooltip label="View options">
                     <ChromeButton label="View options">
@@ -112,16 +116,17 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                         <Sort />
                     </ChromeButton>
                 </Tooltip>
-                <span
-                    className="ml-1 inline-flex cursor-pointer items-center gap-[7px] rounded-lg bg-accent px-[11px] py-[6px] text-body font-semibold text-white"
+                <button
+                    className="ml-1 inline-flex cursor-pointer items-center gap-[7px] rounded-lg border-none bg-accent px-[11px] py-[6px] font-[inherit] text-body font-semibold text-white"
                     onClick={onCapture}
+                    type="button"
                 >
                     <Plus />
                     Capture
                     <span className="rounded-5 bg-white/22 px-[6px] py-px font-mono text-micro">
                         ⌘N
                     </span>
-                </span>
+                </button>
             </div>
         </div>
     );
@@ -129,25 +134,29 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
 
 function ChromeButton({ children, label }: { children: React.ReactNode; label: string }) {
     return (
-        <span aria-label={label} className={cn(CHROME_BUTTON, 'text-text2')}>
+        <button aria-label={label} className={cn(CHROME_BUTTON, 'text-text2')} type="button">
             {children}
-        </span>
+        </button>
     );
 }
 
 function TrafficLight({
     action,
     color,
+    label,
 }: {
     action: 'close' | 'minimize' | 'toggleMaximize';
     color: string;
+    label: string;
 }) {
     return (
-        <span
-            className="h-3 w-3 cursor-pointer rounded-full"
+        <button
+            aria-label={label}
+            className="h-3 w-3 cursor-pointer rounded-full border-none p-0"
             onClick={() => windowControl(action)}
             // The macOS traffic-light colours are fixed, not themed.
             style={{ background: color }}
+            type="button"
         />
     );
 }
