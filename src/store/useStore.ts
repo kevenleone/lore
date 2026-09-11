@@ -1186,18 +1186,6 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     toggleSwitch(key) {
-        const switches = get().prefs.switches;
-        // The Dock tile and the menu-bar icon are the two ways back to a hidden
-        // Lore. Turning off the second one would leave the capture shortcut as
-        // the only route in, and no way at all to reach this setting again.
-        const lastWayIn =
-            (key === 'dockIcon' && switches.dockIcon && !switches.menuBarIcon) ||
-            (key === 'menuBarIcon' && switches.menuBarIcon && !switches.dockIcon);
-        if (lastWayIn) {
-            get().pushToast('Keep Lore in the Dock or the menu bar — one of the two.');
-            return;
-        }
-
         set((s) => ({
             prefs: { ...s.prefs, switches: { ...s.prefs.switches, [key]: !s.prefs.switches[key] } },
         }));

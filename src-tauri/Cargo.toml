@@ -35,10 +35,9 @@ tokio = { version = "1", features = ["time"] }
 tauri-plugin-autostart = "2.5.1"
 tauri-plugin-global-shortcut = "2"
 
-# Reached for three things: the menu bar's monospaced-digit font, which
-# `tray-icon` gives no way to set (`focus_tray::use_monospaced_digits`),
-# bringing Lore forward with no Dock tile to click (`commands::activate_app`),
-# and putting a deleted vault in the Trash rather than shredding it
+# Reached for two things: the menu bar's monospaced-digit font, which
+# `tray-icon` gives no way to set (`focus_tray::use_monospaced_digits`), and
+# putting a deleted vault in the Trash rather than shredding it
 # (`commands::trash_path`).
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"

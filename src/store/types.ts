@@ -258,19 +258,14 @@ export interface Switches {
     blockEditor: boolean;
     // Look & Feel
     counts: boolean;
-    /**
-     * Lore has a Dock tile and a Cmd-Tab entry.
-     *
-     * Named apart from the `dock` the design shipped, which no code read: that
-     * key defaulted to false, so honouring a stored copy of it would take the
-     * Dock icon away from everyone who upgrades. Same for `launch` and
-     * `menubar` below — an unknown key falls back to the default here.
-     */
-    dockIcon: boolean;
     focusEnd: boolean;
     /**
      * Registered as a login item. The login item itself is the truth; this is
      * reconciled against it on boot, see `useStartupPrefs`.
+     *
+     * Named apart from the `launch` the design shipped, which no code read:
+     * that key defaulted to true, so honouring a stored copy of it would
+     * register a login item for everyone who upgrades. Same for `menuBarIcon`.
      */
     // General
     launchAtLogin: boolean;
@@ -310,7 +305,6 @@ export const DEFAULT_SWITCHES: Switches = {
     autoSum: true,
     blockEditor: false,
     counts: true,
-    dockIcon: true,
     focusEnd: true,
     launchAtLogin: false,
     logFocus: false,

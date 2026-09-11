@@ -49,11 +49,10 @@ pub fn run() {
                 window_frame::TitleBarHeight::default()
             }
         })
-        .manage(commands::DockPreference::default())
+        .manage(commands::TrayVisible::default())
         .invoke_handler(tauri::generate_handler![
             commands::hide_capture,
             commands::open_focus_mode,
-            commands::set_dock_visible,
             commands::set_tray_visible,
             commands::trash_path,
             focus_tray::focus_snapshot,

@@ -1,6 +1,6 @@
-// Where Lore appears when the machine starts and while it runs: the login
-// item, the Dock tile and the menu-bar icon. Each call is a no-op outside
-// Tauri, so the browser dev server behaves as it always has.
+// Where Lore appears when the machine starts and while it runs: the login item
+// and the menu-bar icon. Each call is a no-op outside Tauri, so the browser dev
+// server behaves as it always has.
 
 /**
  * Whether Lore is registered to start at login, according to the login item
@@ -14,10 +14,6 @@ export async function launchAtLoginEnabled(): Promise<boolean | null> {
     } catch {
         return null;
     }
-}
-
-export async function setDockVisible(visible: boolean): Promise<void> {
-    await invoke('set_dock_visible', { visible });
 }
 
 /** Returns false when the login item could not be written. */
