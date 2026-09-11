@@ -18,6 +18,13 @@ const COLLECTIONS = [
 ];
 
 describe('GeneralPane', () => {
+    it('offers the menu-bar icon but not the Dock one, which is always there', () => {
+        render(<GeneralPane />);
+
+        expect(screen.getByRole('switch', { name: 'Show icon in the menu bar' })).toBeTruthy();
+        expect(screen.queryByRole('switch', { name: 'Show icon in the Dock' })).toBeNull();
+    });
+
     it('offers the Inbox and every collection, and files the choice', () => {
         useStore.setState({ collections: COLLECTIONS });
         render(<GeneralPane />);

@@ -88,15 +88,10 @@ export function GeneralPane() {
                 title="Launch at login"
             />
             <SwitchRow
-                desc={`Hiding it leaves ${captureShortcutKeys().join('')} as the way in.`}
+                desc={`Lore stays in the Dock either way; hiding this leaves ${captureShortcutKeys().join('')} and the Dock.`}
+                last
                 name="menuBarIcon"
                 title="Show icon in the menu bar"
-            />
-            <SwitchRow
-                desc="Also decides whether Lore appears in the app switcher."
-                last
-                name="dockIcon"
-                title="Show icon in the Dock"
             />
 
             <SectionLabel>Captures</SectionLabel>

@@ -7,26 +7,21 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use tauri::{AppHandle, Emitter, Manager};
 
-/// Whether the user wants Lore in the Dock, so that showing the main window
-/// does not quietly undo the preference.
+/// Whether the menu-bar icon is showing.
 ///
-/// `show_main` has to decide the activation policy every time it raises the
-/// window, and the renderer — which owns preferences — may not be running yet
-/// when the tray raises it. Hence a copy on the Rust side, written by
-/// `set_dock_visible` and read wherever the policy is set.
-pub struct DockPreference(AtomicBool);
+/// Hiding the main window normally drops the Dock entry too, which is right
+/// while the tray icon is there to bring it back. With the tray hidden it would
+/// leave no way into Lore at all, so the Dock entry stays instead.
+pub struct TrayVisible(AtomicBool);
 
-impl Default for DockPreference {
-    /// On until the renderer says otherwise: the tray can raise the window
-    /// before the preference has been read, and a Lore that boots into the Dock
-    /// is what every version so far has done.
+impl Default for TrayVisible {
     fn default() -> Self {
         Self(AtomicBool::new(true))
     }
 }
 
-impl DockPreference {
-    pub fn get(&self) -> bool {
+impl TrayVisible {
+    fn get(&self) -> bool {
         self.0.load(Ordering::Relaxed)
     }
 
@@ -107,31 +102,21 @@ pub fn trash_path(path: String) -> Result<(), String> {
     }
 }
 
-/// Settings → General → "Show icon in the Dock".
-#[tauri::command]
-pub fn set_dock_visible(app: AppHandle, visible: bool) {
-    app.state::<DockPreference>().set(visible);
-
-    // Dropping the Dock entry while the window is hidden would be the same as
-    // hiding it twice; raising it back is the job of `show_main`.
-    let showing = app
-        .get_webview_window("main")
-        .and_then(|win| win.is_visible().ok())
-        .unwrap_or(false);
-    if showing {
-        set_app_visible_in_switcher(&app, visible);
-    }
-}
-
 /// Settings → General → "Show icon in the menu bar".
 #[tauri::command]
 pub fn set_tray_visible(app: AppHandle, visible: bool) {
+    app.state::<TrayVisible>().set(visible);
+
+    // A Lore with no menu-bar icon has to stay in the Dock, even if the window
+    // was hidden before the icon went away.
+    if !visible {
+        set_app_visible_in_switcher(&app, true);
+    }
+
     #[cfg(desktop)]
     if let Some(tray) = app.tray_by_id(crate::focus_tray::TRAY_ID) {
         let _ = tray.set_visible(visible);
     }
-    #[cfg(not(desktop))]
-    let _ = (app, visible);
 }
 
 /// macOS only: `Accessory` keeps Lore in the menu bar but out of the Dock and
@@ -155,46 +140,25 @@ fn set_app_visible_in_switcher(app: &AppHandle, visible: bool) {
 /// Bring the main window back, restoring the Dock/Cmd-Tab entry first so the
 /// window can actually come to the front instead of opening behind other apps.
 pub fn show_main(app: &AppHandle) {
-    let dock = app.state::<DockPreference>().get();
-    set_app_visible_in_switcher(app, dock);
+    set_app_visible_in_switcher(app, true);
 
     if let Some(win) = app.get_webview_window("main") {
         let _ = win.show();
         let _ = win.unminimize();
         let _ = win.set_focus();
     }
-
-    // An Accessory app is not in the activation order, so `set_focus` alone
-    // leaves the window behind whatever the user was looking at. With the Dock
-    // icon on, the policy change above has already brought Lore forward.
-    #[cfg(target_os = "macos")]
-    if !dock {
-        activate_app();
-    }
-}
-
-/// Brings Lore forward without a Dock tile to click.
-#[cfg(target_os = "macos")]
-fn activate_app() {
-    use objc2::MainThreadMarker;
-    use objc2_app_kit::NSApplication;
-
-    let Some(marker) = MainThreadMarker::new() else {
-        return;
-    };
-    #[allow(deprecated)]
-    NSApplication::sharedApplication(marker).activateIgnoringOtherApps(true);
 }
 
 /// Hide the main window and drop out of the Dock and Cmd-Tab; the tray icon
-/// stays, and is the way back in. With the tray icon hidden too, the capture
-/// shortcut is — which is why Settings refuses to turn off the last of them.
+/// stays, and is the way back in. Without a tray icon the Dock entry is the
+/// only way back, so it stays instead.
 pub fn hide_main(app: &AppHandle) {
     if let Some(win) = app.get_webview_window("main") {
         let _ = win.hide();
     }
 
-    set_app_visible_in_switcher(app, false);
+    let tray = app.state::<TrayVisible>().get();
+    set_app_visible_in_switcher(app, !tray);
 }
 
 /// System-tray icon. Left-clicking it opens the focus popover under the icon —
