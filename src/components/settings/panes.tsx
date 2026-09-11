@@ -597,17 +597,17 @@ export function CapturePane() {
     return (
         <>
             <p className="mt-0 mb-4 text-body leading-[1.5] text-text3">
-                Lore&rsquo;s AI runs on this Mac, against a placeholder model — no key, no account,
-                nothing sent anywhere. Tag suggestions and duplicate detection land when it is
-                replaced with the real one.
+                Lore does not summarize or tag anything for you yet. Quick capture guesses a type
+                from what you typed, and that guess is made on this Mac by a placeholder — no key,
+                no account, nothing sent anywhere.
             </p>
 
-            <SectionLabel first>Automatic work</SectionLabel>
+            <SectionLabel first>In the detail pane</SectionLabel>
             <SwitchRow
-                desc="A short abstract plus key points, shown on the item after it lands."
+                desc="A note can carry a summary, key points and links in its own frontmatter. This is whether they are shown."
                 last
-                name="autoSum"
-                title="Summarize what I save"
+                name="detailSections"
+                title="Show a note’s summary and links"
             />
         </>
     );

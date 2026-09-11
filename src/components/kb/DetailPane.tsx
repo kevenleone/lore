@@ -61,7 +61,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const selectedId = useStore((s) => s.selectedId);
     const detail = useStore((s) => s.detail);
     // The AI sections need both the pane toggle and the Capture & AI setting.
-    const aiAssist = useStore((s) => s.aiAssist && s.prefs.switches.autoSum);
+    const showSections = useStore((s) => s.prefs.switches.detailSections);
     const blockEditorEnabled = useStore((s) => s.prefs.switches.blockEditor);
     const toggleStar = useStore((s) => s.toggleStar);
     const propertiesOpen = useStore((s) => s.prefs.propertiesOpen);
@@ -122,7 +122,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
     const meta = typeMeta(sel.type);
     const coll = collectionFor(sel, collections);
     const related = relatedItems(sel, items);
-    const flags = detailFlags(sel, aiAssist, related.length);
+    const flags = detailFlags(sel, showSections, related.length);
     const linkUrl =
         sel.type === 'link' ? sel.url || (sel.domain ? `https://${sel.domain}` : '') : '';
 
