@@ -354,17 +354,19 @@ export function Composer({
                 {TABS.map((t) => {
                     const active = tab === t.type;
                     return (
-                        <div
+                        <button
+                            aria-pressed={active}
                             className={cn(
-                                'flex items-center gap-[6px] rounded-lg px-[11px] py-[7px] text-body-lg whitespace-nowrap',
+                                'flex items-center gap-[6px] rounded-lg border-none bg-transparent px-[11px] py-[7px] font-[inherit] text-body-lg whitespace-nowrap',
                                 active ? 'bg-accent-tint font-[590] text-accent' : 'text-text2',
                             )}
                             key={t.type}
                             onClick={() => setTab(t.type)}
+                            type="button"
                         >
                             <Icon name={t.type} size={15} />
                             <span>{t.label}</span>
-                        </div>
+                        </button>
                     );
                 })}
             </div>
@@ -472,13 +474,15 @@ export function Composer({
                             {DEADLINES.map((choice) => {
                                 const day = dayFromNow(choice.days);
                                 return (
-                                    <span
+                                    <button
+                                        aria-pressed={dueAt === day}
                                         className={cn(CHIP, dueAt === day ? CHIP_ON : CHIP_OFF)}
                                         key={choice.label}
                                         onClick={() => setDueAt(dueAt === day ? '' : day)}
+                                        type="button"
                                     >
                                         {choice.label}
-                                    </span>
+                                    </button>
                                 );
                             })}
                             <span className="inline-flex items-center gap-[5px] rounded-md bg-surface3 px-[9px] py-[3px] text-caption text-text2">
@@ -491,37 +495,43 @@ export function Composer({
                                 />
                             </span>
                             {dueAt && (
-                                <span
-                                    className="inline-flex items-center text-faint"
+                                <button
+                                    aria-label="Clear the deadline"
+                                    className="inline-flex items-center border-none bg-transparent p-0 text-faint"
                                     onClick={() => setDueAt('')}
-                                    title="Clear the deadline"
+                                    type="button"
                                 >
                                     <Close size={13} sw={2} />
-                                </span>
+                                </button>
                             )}
                         </div>
 
                         <div className="mt-[11px] flex flex-wrap items-center gap-[7px]">
                             <span className={SECTION_LABEL}>Priority</span>
                             {PRIORITIES.map((p) => (
-                                <span
+                                <button
+                                    aria-pressed={priority === p}
                                     className={cn(CHIP, priority === p ? CHIP_ON : CHIP_OFF)}
                                     key={p}
                                     onClick={() => setPriority(p)}
+                                    type="button"
                                 >
                                     {PRIORITY_LABELS[p]}
-                                </span>
+                                </button>
                             ))}
                         </div>
 
                         <div className="mt-[11px] flex items-center gap-2">
                             <span className={SECTION_LABEL}>Focus</span>
-                            <span
+                            <button
+                                aria-checked={today}
                                 className={cn(
-                                    'inline-flex items-center gap-[6px] rounded-md px-[9px] py-[3px] text-caption',
+                                    'inline-flex items-center gap-[6px] rounded-md border-none px-[9px] py-[3px] font-[inherit] text-caption',
                                     today ? CHIP_ON : CHIP_OFF,
                                 )}
                                 onClick={() => setToday((t) => !t)}
+                                role="checkbox"
+                                type="button"
                             >
                                 <span
                                     className={cn(
@@ -534,7 +544,7 @@ export function Composer({
                                     <Check size={9} sw={3} />
                                 </span>
                                 Add to Today
-                            </span>
+                            </button>
                         </div>
 
                         <div className="mt-[11px] flex flex-wrap items-start gap-2">
@@ -545,9 +555,11 @@ export function Composer({
                                         className="inline-flex items-center gap-[7px] text-body-lg text-text2"
                                         key={`${index}-${subtask.text}`}
                                     >
-                                        <span
+                                        <button
+                                            aria-checked={!!subtask.done}
+                                            aria-label={subtask.text}
                                             className={cn(
-                                                'flex h-[15px] w-[15px] flex-none items-center justify-center rounded-[4px] border',
+                                                'flex h-[15px] w-[15px] flex-none items-center justify-center rounded-[4px] border p-0',
                                                 subtask.done
                                                     ? 'border-accent bg-accent text-white'
                                                     : 'border-border text-transparent',
@@ -559,9 +571,11 @@ export function Composer({
                                                     ),
                                                 )
                                             }
+                                            role="checkbox"
+                                            type="button"
                                         >
                                             <Check size={10} sw={3} />
-                                        </span>
+                                        </button>
                                         <span
                                             className={cn(
                                                 subtask.done && 'line-through opacity-60',
@@ -569,14 +583,16 @@ export function Composer({
                                         >
                                             {subtask.text}
                                         </span>
-                                        <span
-                                            className="text-faint"
+                                        <button
+                                            aria-label={`Remove ${subtask.text}`}
+                                            className="border-none bg-transparent p-0 text-faint"
                                             onClick={() =>
                                                 setSubtasks((a) => a.filter((_, j) => j !== index))
                                             }
+                                            type="button"
                                         >
                                             <Close size={12} sw={2} />
-                                        </span>
+                                        </button>
                                     </span>
                                 ))}
                                 <input
@@ -610,16 +626,18 @@ export function Composer({
                     <>
                         <div className="mb-3 flex items-center gap-[7px]">
                             {IMAGE_SOURCES.map((source) => (
-                                <span
+                                <button
+                                    aria-pressed={imageSource === source.value}
                                     className={cn(
                                         CHIP,
                                         imageSource === source.value ? CHIP_ON : CHIP_OFF,
                                     )}
                                     key={source.value}
                                     onClick={() => setImageSource(source.value)}
+                                    type="button"
                                 >
                                     {source.label}
-                                </span>
+                                </button>
                             ))}
                         </div>
                         {imageSource === 'url' ? (
@@ -665,9 +683,9 @@ export function Composer({
                             </>
                         ) : (
                             <>
-                                <div
+                                <button
                                     className={cn(
-                                        'flex flex-col items-center gap-[9px] rounded-xl border-[1.5px] border-dashed p-[34px] text-center',
+                                        'flex w-full flex-col items-center gap-[9px] rounded-xl border-[1.5px] border-dashed bg-transparent p-[34px] text-center font-[inherit]',
                                         dragging ? 'border-accent bg-accent-tint' : 'border-dash',
                                     )}
                                     onClick={() => fileInputRef.current?.click()}
@@ -683,6 +701,7 @@ export function Composer({
                                         setDragging(false);
                                         pickFile(e.dataTransfer.files[0]);
                                     }}
+                                    type="button"
                                 >
                                     {preview && file?.type.startsWith('image/') ? (
                                         <img
@@ -704,7 +723,7 @@ export function Composer({
                                             ? 'Click to choose a different file'
                                             : 'or click to browse — PNG, PDF, screenshots'}
                                     </div>
-                                </div>
+                                </button>
                                 <input
                                     accept="image/*,.pdf"
                                     className="hidden"
@@ -728,14 +747,16 @@ export function Composer({
                 <div className="mt-[14px] flex flex-wrap items-center gap-[7px]">
                     <span className={SECTION_LABEL}>Tags</span>
                     {tags.map((t) => (
-                        <span
-                            className="inline-flex items-center gap-[5px] rounded-md bg-accent-tint px-2 py-[3px] font-mono text-caption text-accent"
+                        <button
+                            aria-label={`Remove tag ${t}`}
+                            className="inline-flex items-center gap-[5px] rounded-md border-none bg-accent-tint px-2 py-[3px] font-mono text-caption text-accent"
                             key={t}
                             onClick={() => removeTag(t)}
+                            type="button"
                         >
                             #{t}
                             <span className="opacity-55">×</span>
-                        </span>
+                        </button>
                     ))}
                     {addingTag ? (
                         <input
@@ -761,13 +782,14 @@ export function Composer({
                             value={tagDraft}
                         />
                     ) : (
-                        <span
+                        <button
                             className="inline-flex items-center gap-1 rounded-md border border-dashed border-dash bg-transparent px-[7px] py-[2px] font-mono text-caption text-text3"
                             onClick={() => setAddingTag(true)}
+                            type="button"
                         >
                             <Plus size={9} sw={2.4} />
                             tag
-                        </span>
+                        </button>
                     )}
                 </div>
 
@@ -776,9 +798,12 @@ export function Composer({
                 <div className="mt-[11px] flex items-center gap-2">
                     <span className={SECTION_LABEL}>Collection</span>
                     <div className="relative" ref={collRef}>
-                        <span
-                            className="inline-flex items-center gap-[7px] rounded-lg bg-sel px-[10px] py-[5px] text-body-lg text-text2"
+                        <button
+                            aria-expanded={collOpen}
+                            aria-haspopup="listbox"
+                            className="inline-flex items-center gap-[7px] rounded-lg border-none bg-sel px-[10px] py-[5px] font-[inherit] text-body-lg text-text2"
                             onClick={() => setCollOpen((o) => !o)}
+                            type="button"
                         >
                             <span
                                 className="h-[9px] w-[9px] rounded-full"
@@ -789,7 +814,7 @@ export function Composer({
                             <span className="flex text-faint">
                                 <ChevronDown />
                             </span>
-                        </span>
+                        </button>
                         {collOpen && (
                             <div className="absolute top-8 left-0 z-30 max-h-[220px] min-w-[180px] overflow-auto rounded-10 border border-border bg-surface p-[5px] shadow-[0_14px_34px_-10px_rgba(24,24,48,.32)]">
                                 {collections.length === 0 && (
@@ -798,9 +823,10 @@ export function Composer({
                                     </div>
                                 )}
                                 {collections.map((c) => (
-                                    <div
+                                    <button
+                                        aria-selected={c.id === collectionId}
                                         className={cn(
-                                            'flex items-center gap-2 rounded-7 px-[10px] py-[7px] text-body-lg',
+                                            'flex w-full items-center gap-2 rounded-7 border-none px-[10px] py-[7px] text-left font-[inherit] text-body-lg',
                                             c.id === collectionId
                                                 ? 'bg-accent-tint font-semibold text-accent'
                                                 : 'bg-transparent font-normal text-text2',
@@ -810,13 +836,15 @@ export function Composer({
                                             setCollectionId(c.id);
                                             setCollOpen(false);
                                         }}
+                                        role="option"
+                                        type="button"
                                     >
                                         <span
                                             className="h-[9px] w-[9px] flex-none rounded-full"
                                             style={{ background: c.color }}
                                         />
                                         {c.name}
-                                    </div>
+                                    </button>
                                 ))}
                             </div>
                         )}
@@ -833,24 +861,27 @@ export function Composer({
                             : `${captureShortcut()} to toggle · drag files to attach`)}
                 </span>
                 <span className="flex items-center gap-2">
-                    <span
-                        className="rounded-lg px-3 py-[6px] text-body-lg text-text2"
+                    <button
+                        className="rounded-lg border-none bg-transparent px-3 py-[6px] font-[inherit] text-body-lg text-text2"
                         onClick={onCancel}
+                        type="button"
                     >
                         Cancel
-                    </span>
-                    <span
+                    </button>
+                    <button
                         className={cn(
-                            'inline-flex items-center gap-[7px] rounded-lg bg-accent px-[14px] py-[7px] text-body-lg font-semibold text-white',
-                            canSave && !saving ? 'opacity-100' : 'cursor-default opacity-55',
+                            'inline-flex items-center gap-[7px] rounded-lg border-none bg-accent px-[14px] py-[7px] font-[inherit] text-body-lg font-semibold text-white',
+                            canSave && !saving ? 'opacity-100' : 'opacity-55',
                         )}
+                        disabled={!canSave || saving}
                         onClick={() => void save()}
+                        type="button"
                     >
                         {saving ? 'Saving…' : 'Save'}
                         <span className="rounded-5 bg-white/22 px-[6px] py-0 font-mono text-caption">
                             ⏎
                         </span>
-                    </span>
+                    </button>
                 </span>
             </div>
         </div>
