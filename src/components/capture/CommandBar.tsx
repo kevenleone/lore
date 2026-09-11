@@ -1,12 +1,13 @@
-// Direction A — Command bar. Type anything; the AI detects what it is, fetches
-// link metadata (title/description/image), suggests tags, and files it.
-// Enter saves, Esc closes.
+// Direction A — Command bar. Type anything; the AI detects what it is (unless
+// Settings pins a capture type), fetches link metadata (title/description/image),
+// suggests tags, and files it. Enter saves, Esc closes.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { NewItem } from '../../data/repository';
 import type { ItemType } from '../../store/types';
 
+import { getRepository } from '../../data';
 import { deriveTitle } from '../../data/plainText';
 import { captureAi, hideCapture, hostOf, saveCapture } from '../../lib/captureActions';
 import { cn } from '../../lib/cn';
@@ -16,27 +17,48 @@ import { typeMeta } from '../../store/typeMeta';
 import { Globe, Sparkle } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 
-const COLLECTION_FOR: Partial<Record<ItemType, string>> = {
-    code: 'design',
-    link: 'reading',
-    note: 'work',
-    task: 'work',
-};
+interface CommandBarProps {
+    /** Collection new captures are filed into; null means the Inbox. */
+    collectionId: null | string;
+    /** Settings' default capture type. `'auto'` leaves detection in charge. */
+    defaultType: 'auto' | ItemType;
+}
 
-export function CommandBar() {
+export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
+    const pinned = defaultType === 'auto' ? null : defaultType;
+    const [collectionName, setCollectionName] = useState<null | string>(null);
     const [text, setText] = useState('');
-    const [type, setType] = useState<ItemType>('note');
+    const [type, setType] = useState<ItemType>(pinned ?? 'note');
     const [tags, setTags] = useState<string[]>([]);
     const [meta, setMeta] = useState<LinkMetadata | null>(null);
     const [sourceDocument, setSourceDocument] = useState<GithubDocument | null>(null);
     const [fetching, setFetching] = useState(false);
     const [error, setError] = useState<null | string>(null);
 
+    // The "Filed to" line names the collection rather than its id, and a
+    // collection deleted since the preference was set reads as the Inbox.
+    useEffect(() => {
+        if (!collectionId) {
+            setCollectionName(null);
+            return;
+        }
+        let cancelled = false;
+        void getRepository()
+            .listCollections()
+            .then((collections) => {
+                if (cancelled) return;
+                setCollectionName(collections.find((c) => c.id === collectionId)?.name ?? null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [collectionId]);
+
     // Detect type, suggest tags, and (for links) fetch metadata as input settles.
     useEffect(() => {
         const value = text.trim();
         if (!value) {
-            setType('note');
+            setType(pinned ?? 'note');
             setTags([]);
             setMeta(null);
             setSourceDocument(null);
@@ -44,7 +66,7 @@ export function CommandBar() {
         }
         let cancelled = false;
         const id = setTimeout(async () => {
-            const detected = await captureAi.detectType(value);
+            const detected = pinned ?? (await captureAi.detectType(value));
             if (cancelled) return;
             setType(detected);
             const suggested = await captureAi.suggestTags({
@@ -89,19 +111,25 @@ export function CommandBar() {
             cancelled = true;
             clearTimeout(id);
         };
-    }, [text]);
+    }, [pinned, text]);
 
     const meta_ = typeMeta(type);
-    const filedTo = useMemo(() => {
-        const id = COLLECTION_FOR[type];
-        return id ? id[0].toUpperCase() + id.slice(1) : 'Inbox';
-    }, [type]);
+    const filedTo = collectionName ?? 'Inbox';
 
     const save = async () => {
         if (!text.trim()) return;
         try {
             setError(null);
-            await saveCapture(buildItem(text, type, tags, meta, sourceDocument));
+            await saveCapture(
+                buildItem(
+                    text,
+                    type,
+                    tags,
+                    meta,
+                    sourceDocument,
+                    collectionName ? collectionId : null,
+                ),
+            );
         } catch (e) {
             setError(e instanceof Error ? e.message : String(e));
         }
@@ -239,10 +267,11 @@ function buildItem(
     tags: string[],
     meta: LinkMetadata | null,
     sourceDocument: GithubDocument | null,
+    collectionId: null | string,
 ): NewItem {
     const trimmed = text.trim();
     const base: NewItem = {
-        collectionId: COLLECTION_FOR[type],
+        collectionId: collectionId ?? undefined,
         flags: { inbox: true },
         related: [],
         tags,
