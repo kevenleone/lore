@@ -29,7 +29,7 @@ import {
 } from '../lib/workspace';
 import { effectiveTheme } from '../theme/tokens';
 import { loadPersisted, savePersisted } from './persisted';
-import { SEED_CHAT, SEED_COLLECTIONS, SEED_ITEMS } from './seed';
+import { SEED_COLLECTIONS, SEED_ITEMS } from './seed';
 import {
     type Accent,
     type ChatMessage,
@@ -89,7 +89,6 @@ interface StoreState {
     /** Appends a comment to the item's frontmatter. */
     addComment: (id: string, body: string) => Promise<void>;
     addTag: (id: string, tag: string) => Promise<void>;
-    aiAssist: boolean;
     bumpDuration: (key: keyof Durations, delta: number) => void;
     /**
      * True while the in-window capture drawer is open. The floating capture
@@ -230,7 +229,6 @@ interface StoreState {
     selectView: (kind: View['kind'], val?: null | string) => void;
     sendChat: (question: string) => Promise<void>;
     setAccent: (accent: Accent) => void;
-    setAiAssist: (on: boolean) => void;
     setAppearance: (appearance: Appearance) => void;
 
     setEditorDirty: (id: null | string) => void;
@@ -609,7 +607,6 @@ export const useStore = create<StoreState>((set, get) => ({
         if (!clean || !item || item.tags.includes(clean)) return;
         await get().updateItem(id, { tags: [...item.tags, clean] });
     },
-    aiAssist: true,
     bumpDuration(key, delta) {
         set((s) => ({
             prefs: {
@@ -623,7 +620,7 @@ export const useStore = create<StoreState>((set, get) => ({
         persist(get());
     },
     captureOpen: false,
-    chat: SEED_CHAT,
+    chat: [],
 
     chatOpen: false,
     clearFilters() {
@@ -955,9 +952,6 @@ export const useStore = create<StoreState>((set, get) => ({
     },
     setAccent(accent) {
         get().setPref('accent', accent);
-    },
-    setAiAssist(on) {
-        set({ aiAssist: on });
     },
 
     /* ---------------- onboarding ---------------- */

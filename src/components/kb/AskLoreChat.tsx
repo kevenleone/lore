@@ -1,5 +1,9 @@
-// Detail-pane chat: "Ask Lore" — answers grounded in the knowledge base,
-// citing Sources chips that jump to the referenced item.
+// Detail-pane chat: "Ask Lore" — names the saved items most relevant to a
+// question, citing Sources chips that jump to the referenced item.
+//
+// It opens empty. It used to open on a seeded exchange, which read as a
+// conversation the user had already had, in a vault where its cited items did
+// not exist.
 
 import { useState } from 'react';
 
@@ -37,13 +41,24 @@ export function AskLoreChat() {
                         Answers grounded in your knowledge base
                     </div>
                 </div>
-                <span className="flex text-faint" onClick={toggleChat}>
+                <button
+                    aria-label="Close Ask Lore"
+                    className="flex border-none bg-transparent p-0 text-faint hover:text-text2"
+                    onClick={toggleChat}
+                    type="button"
+                >
                     <Close />
-                </span>
+                </button>
             </div>
 
             {/* messages */}
             <div className="flex flex-1 flex-col gap-4 overflow-auto px-6 py-[22px]">
+                {messages.length === 0 && (
+                    <p className="m-auto max-w-[280px] text-center text-body leading-[1.6] text-text3">
+                        Ask a question and Lore points at the notes you have already saved that bear
+                        on it.
+                    </p>
+                )}
                 {messages.map((m) =>
                     m.role === 'user' ? (
                         <div
@@ -67,10 +82,11 @@ export function AskLoreChat() {
                                         if (!item) return null;
                                         const meta = typeMeta(item.type);
                                         return (
-                                            <span
-                                                className="inline-flex items-center gap-[6px] rounded-lg border border-border bg-surface px-[9px] py-1 text-body-sm text-text2 hover:border-border hover:bg-surface2"
+                                            <button
+                                                className="inline-flex items-center gap-[6px] rounded-lg border border-border bg-surface px-[9px] py-1 font-[inherit] text-body-sm text-text2 hover:bg-surface2"
                                                 key={src.itemId}
                                                 onClick={() => selectItem(src.itemId)}
+                                                type="button"
                                             >
                                                 <span
                                                     className={cn(
@@ -81,7 +97,7 @@ export function AskLoreChat() {
                                                     <Icon name={item.type} size={13} />
                                                 </span>
                                                 {item.title}
-                                            </span>
+                                            </button>
                                         );
                                     })}
                                 </div>
@@ -102,12 +118,14 @@ export function AskLoreChat() {
                     placeholder="Ask about anything you've saved…"
                     value={draft}
                 />
-                <span
-                    className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-11 bg-accent text-white"
+                <button
+                    aria-label="Send"
+                    className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-11 border-none bg-accent text-white"
                     onClick={submit}
+                    type="button"
                 >
                     <Send />
-                </span>
+                </button>
             </div>
         </div>
     );
