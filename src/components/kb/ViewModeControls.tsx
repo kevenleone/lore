@@ -76,7 +76,7 @@ export function ViewModePicker() {
 
 function segmentClass(active: boolean): string {
     return cn(
-        'flex cursor-pointer items-center justify-center rounded-md border-none font-[inherit]',
+        'flex items-center justify-center rounded-md border-none font-[inherit]',
         active
             ? 'bg-surface font-[590] text-accent shadow-seg'
             : 'bg-transparent font-medium text-text3',

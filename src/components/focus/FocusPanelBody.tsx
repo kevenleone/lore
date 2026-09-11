@@ -8,7 +8,6 @@
 
 import type { FocusSnapshot } from './focusSnapshot';
 
-import { cn } from '../../lib/cn';
 import { elapsedFraction, formatClock } from '../../lib/focusTimer';
 import { ChevronDown, Expand } from '../common/glyphs';
 import { Icon } from '../common/Icon';
@@ -46,7 +45,7 @@ export function FocusPanelBody({
         <>
             <button
                 aria-label="Open Focus mode"
-                className="absolute top-2 right-2 z-1 flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-7 border-none bg-transparent p-0 text-faint hover:bg-hover"
+                className="absolute top-2 right-2 z-1 flex h-[26px] w-[26px] items-center justify-center rounded-7 border-none bg-transparent p-0 text-faint hover:bg-hover"
                 onClick={actions.onOpenFocusMode}
                 title="Open Focus mode"
                 type="button"
@@ -119,10 +118,7 @@ export function FocusPanelBody({
                     <button
                         // The design's chevron opens a picker; until there is one
                         // this steps through the queue.
-                        className={cn(
-                            'mt-[9px] flex w-full items-center gap-[10px] border-none bg-transparent p-0 text-left font-[inherit] text-[inherit]',
-                            canCycle ? 'cursor-pointer' : 'cursor-default',
-                        )}
+                        className="mt-[9px] flex w-full items-center gap-[10px] border-none bg-transparent p-0 text-left font-[inherit] text-[inherit]"
                         onClick={actions.onNextTask}
                         type="button"
                     >

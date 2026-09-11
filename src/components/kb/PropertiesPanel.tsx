@@ -39,7 +39,7 @@ export function PropertiesPanel() {
                 <span className="flex-1 text-body-lg font-[620] text-text">Properties</span>
                 <button
                     aria-label="Close properties"
-                    className="flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-7 border-none bg-transparent p-0 text-text3"
+                    className="flex h-[26px] w-[26px] items-center justify-center rounded-7 border-none bg-transparent p-0 text-text3"
                     onClick={toggleProperties}
                     type="button"
                 >

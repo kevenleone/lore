@@ -66,7 +66,7 @@ export function CaptureDrawer() {
         <div className="pointer-events-none absolute inset-0 z-40 overflow-hidden">
             <div
                 className={cn(
-                    'pointer-events-auto absolute inset-0 cursor-pointer bg-scrim',
+                    'pointer-events-auto absolute inset-0 bg-scrim',
                     !reduceMotion && (open ? 'animate-scrim-in' : 'animate-scrim-out'),
                 )}
                 onClick={closeCapture}
@@ -81,7 +81,7 @@ export function CaptureDrawer() {
                     <span className="text-body-lg font-semibold">Capture</span>
                     <button
                         aria-label="Close capture"
-                        className="ml-auto inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-7 border-none bg-transparent p-0 text-text3"
+                        className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-7 border-none bg-transparent p-0 text-text3"
                         onClick={closeCapture}
                         type="button"
                     >

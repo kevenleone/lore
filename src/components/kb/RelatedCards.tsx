@@ -27,7 +27,7 @@ export function RelatedCards({ related }: { related: Item[] }) {
                     const meta = typeMeta(r.type);
                     return (
                         <div
-                            className="flex cursor-pointer items-center gap-[11px] rounded-11 border border-border px-[13px] py-[11px] hover:border-border hover:bg-surface2"
+                            className="flex items-center gap-[11px] rounded-11 border border-border px-[13px] py-[11px] hover:border-border hover:bg-surface2"
                             key={r.id}
                             onClick={() => selectItem(r.id)}
                         >

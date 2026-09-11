@@ -27,7 +27,7 @@ export function MenuItem({
     return (
         <div
             className={cn(
-                'flex cursor-pointer items-center gap-[7px] rounded-7 px-2 py-[6px] text-body hover:bg-hover',
+                'flex items-center gap-[7px] rounded-7 px-2 py-[6px] text-body hover:bg-hover',
                 selected ? 'font-[590] text-accent' : 'font-normal text-text2',
             )}
             onClick={onClick}
@@ -66,7 +66,7 @@ export function Picker({
         <div className="relative" ref={ref}>
             <button
                 aria-expanded={open}
-                className="flex max-w-full cursor-pointer items-center gap-[5px] rounded-7 border-none bg-transparent px-[6px] py-[3px] text-left font-[inherit] text-body text-text hover:bg-hover"
+                className="flex max-w-full items-center gap-[5px] rounded-7 border-none bg-transparent px-[6px] py-[3px] text-left font-[inherit] text-body text-text hover:bg-hover"
                 onClick={() => setOpen((o) => !o)}
                 type="button"
             >

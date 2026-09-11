@@ -86,7 +86,7 @@ export function RelationshipsSection({ item }: { item: Item }) {
                             ) : (
                                 suggestions.map((s) => (
                                     <div
-                                        className="flex cursor-pointer items-center gap-[7px] rounded-7 border border-transparent px-[7px] py-[5px] text-body text-text2 hover:border-border hover:bg-surface2"
+                                        className="flex items-center gap-[7px] rounded-7 border border-transparent px-[7px] py-[5px] text-body text-text2 hover:border-border hover:bg-surface2"
                                         key={s.id}
                                         onClick={() => add(s.id)}
                                     >
@@ -99,7 +99,7 @@ export function RelationshipsSection({ item }: { item: Item }) {
                     </div>
                 ) : (
                     <button
-                        className="flex cursor-pointer items-center justify-center gap-[6px] rounded-9 border border-dashed border-dash bg-transparent px-[9px] py-[7px] font-[inherit] text-body text-faint"
+                        className="flex items-center justify-center gap-[6px] rounded-9 border border-dashed border-dash bg-transparent px-[9px] py-[7px] font-[inherit] text-body text-faint"
                         onClick={() => setAdding(true)}
                         type="button"
                     >
@@ -129,7 +129,7 @@ function RelationCard({ item, onRemove }: { item: Item; onRemove?: () => void })
 
     return (
         <div
-            className="flex cursor-pointer items-center gap-2 rounded-9 border border-border px-[9px] py-[7px] hover:border-border hover:bg-surface2"
+            className="flex items-center gap-2 rounded-9 border border-border px-[9px] py-[7px] hover:border-border hover:bg-surface2"
             onClick={() => selectItem(item.id)}
         >
             <span
@@ -145,7 +145,7 @@ function RelationCard({ item, onRemove }: { item: Item; onRemove?: () => void })
             </span>
             {onRemove && (
                 <span
-                    className="flex-none cursor-pointer text-title leading-none text-faint"
+                    className="flex-none text-title leading-none text-faint"
                     onClick={(e) => {
                         e.stopPropagation();
                         onRemove();

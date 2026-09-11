@@ -27,7 +27,7 @@ import {
 
 /** A pane entry in the left rail. */
 const NAV_ITEM =
-    'text-body-lg flex w-full cursor-pointer items-center gap-[10px] rounded-lg border-none bg-transparent px-2 py-[6px] text-left font-[inherit] hover:bg-hover';
+    'text-body-lg flex w-full items-center gap-[10px] rounded-lg border-none bg-transparent px-2 py-[6px] text-left font-[inherit] hover:bg-hover';
 
 interface PaneDef {
     Body: () => React.JSX.Element;

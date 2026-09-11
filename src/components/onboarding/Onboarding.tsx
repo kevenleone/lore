@@ -24,7 +24,7 @@ import { LoreMark, WORDMARK_FONT } from '../common/LoreMark';
 import { SettingsIcon } from '../common/settingsGlyphs';
 
 const BUTTON_BASE =
-    'text-title flex h-[42px] w-full cursor-pointer items-center justify-center gap-2 rounded-10 font-[inherit]';
+    'text-title flex h-[42px] w-full items-center justify-center gap-2 rounded-10 font-[inherit]';
 
 /** Accent-filled call to action. */
 const PRIMARY_BUTTON = cn(
@@ -40,7 +40,7 @@ const GHOST_BUTTON = cn(
 
 /** Text-only "back" affordance under the primary action. */
 const QUIET_BUTTON =
-    'text-subhead mt-[6px] flex h-[38px] w-full cursor-pointer items-center justify-center rounded-10 border-none bg-transparent font-[inherit] text-text2 hover:bg-sel hover:text-text';
+    'text-subhead mt-[6px] flex h-[38px] w-full items-center justify-center rounded-10 border-none bg-transparent font-[inherit] text-text2 hover:bg-sel hover:text-text';
 
 const COPY = {
     create: {
@@ -249,7 +249,7 @@ function CreateCard({
                         : tildePath(path, home)}
                 </span>
                 <button
-                    className="inline-flex h-[30px] cursor-pointer items-center rounded-lg border border-border bg-sel px-3 font-[inherit] text-body font-[560] text-text hover:bg-hover"
+                    className="inline-flex h-[30px] items-center rounded-lg border border-border bg-sel px-3 font-[inherit] text-body font-[560] text-text hover:bg-hover"
                     onClick={onChoose}
                     type="button"
                 >
@@ -260,7 +260,7 @@ function CreateCard({
             <button
                 aria-pressed={git}
                 className={cn(
-                    'mt-[14px] flex w-full cursor-pointer items-start gap-3 rounded-xl border px-[14px] py-[13px] text-left font-[inherit]',
+                    'mt-[14px] flex w-full items-start gap-3 rounded-xl border px-[14px] py-[13px] text-left font-[inherit]',
                     git ? 'border-accent bg-surface2' : 'border-border bg-surface',
                 )}
                 onClick={onToggleGit}
@@ -328,7 +328,7 @@ function OpenCard({
                 <div className="mt-[22px] flex flex-col gap-px overflow-hidden rounded-xl border border-border">
                     {recents.map((recent) => (
                         <button
-                            className="flex cursor-pointer items-start gap-[11px] border-b border-border-soft bg-surface2 px-[15px] py-[13px] text-left font-[inherit] hover:bg-hover"
+                            className="flex items-start gap-[11px] border-b border-border-soft bg-surface2 px-[15px] py-[13px] text-left font-[inherit] hover:bg-hover"
                             disabled={busy}
                             key={recent.path}
                             onClick={() => onOpen(recent.path)}
@@ -387,7 +387,7 @@ function PickCard({ onEnter }: { onEnter: (lane: Lane) => void }) {
                 {LANES.map((lane, index) => (
                     <button
                         className={cn(
-                            'flex w-full cursor-pointer items-start gap-[13px] rounded-xl border px-[14px] py-[13px] text-left font-[inherit] hover:border-accent-border hover:bg-surface2',
+                            'flex w-full items-start gap-[13px] rounded-xl border px-[14px] py-[13px] text-left font-[inherit] hover:border-accent-border hover:bg-surface2',
                             // The design rests on the first lane, which is the one
                             // most people want.
                             index === 0 ? 'border-border bg-surface2' : 'border-border bg-surface',

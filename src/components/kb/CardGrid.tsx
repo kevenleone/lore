@@ -28,7 +28,7 @@ export function CardGrid({ items, onContextMenu }: SurfaceProps) {
                 return (
                     <div
                         className={cn(
-                            'flex cursor-pointer flex-col overflow-hidden rounded-xl border bg-surface',
+                            'flex flex-col overflow-hidden rounded-xl border bg-surface',
                             selected
                                 ? 'border-accent shadow-[0_0_0_2px_var(--ac-tint)]'
                                 : 'border-border',

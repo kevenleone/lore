@@ -46,7 +46,7 @@ export function WorkspaceSwitcher() {
         <div className="relative px-[2px] pb-2" ref={ref}>
             <button
                 className={cn(
-                    'flex w-full cursor-pointer items-center gap-2 rounded-lg border-none px-[9px] py-[7px] text-left font-[inherit] text-text',
+                    'flex w-full items-center gap-2 rounded-lg border-none px-[9px] py-[7px] text-left font-[inherit] text-text',
                     open ? 'bg-hover' : 'bg-transparent hover:bg-hover',
                 )}
                 onClick={() => setOpen((v) => !v)}
@@ -124,7 +124,7 @@ function Row({
 }) {
     return (
         <button
-            className="flex w-full cursor-pointer items-center gap-2 rounded-7 border-none bg-transparent px-[9px] py-[7px] text-left font-[inherit] text-body-lg text-text hover:bg-hover"
+            className="flex w-full items-center gap-2 rounded-7 border-none bg-transparent px-[9px] py-[7px] text-left font-[inherit] text-body-lg text-text hover:bg-hover"
             onClick={onClick}
             title={hint}
             type="button"

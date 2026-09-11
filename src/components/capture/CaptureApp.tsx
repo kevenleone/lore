@@ -120,7 +120,7 @@ function Toggle({
     return (
         <span
             className={cn(
-                'cursor-pointer rounded-7 px-3 py-[5px] text-body-sm',
+                'rounded-7 px-3 py-[5px] text-body-sm',
                 active ? 'bg-accent font-semibold text-white' : 'font-medium text-text2',
             )}
             onClick={onClick}
