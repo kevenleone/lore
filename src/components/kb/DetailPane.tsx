@@ -260,13 +260,14 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     )}
                     <span className="ml-auto flex items-center gap-2">
                         {linkUrl && (
-                            <span
-                                className="inline-flex items-center gap-[6px] rounded-lg border border-border px-[11px] py-[5px] text-body text-text2"
+                            <button
+                                className="inline-flex items-center gap-[6px] rounded-lg border border-border bg-transparent px-[11px] py-[5px] font-[inherit] text-body text-text2 hover:bg-hover"
                                 onClick={() => void openExternal(linkUrl)}
+                                type="button"
                             >
                                 <External />
                                 Open
-                            </span>
+                            </button>
                         )}
                         {useBlockEditor && (
                             <button
@@ -326,21 +327,23 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                                 This removes “{sel.title}” from your knowledge base.
                             </div>
                             <div className="mt-[14px] flex justify-end gap-2">
-                                <span
-                                    className="rounded-lg px-3 py-[6px] text-body-lg text-text2"
+                                <button
+                                    className="rounded-lg border-none bg-transparent px-3 py-[6px] font-[inherit] text-body-lg text-text2"
                                     onClick={() => setConfirmDelete(false)}
+                                    type="button"
                                 >
                                     Cancel
-                                </span>
-                                <span
-                                    className="rounded-lg bg-[#c0392b] px-[14px] py-[6px] text-body-lg font-semibold text-white"
+                                </button>
+                                <button
+                                    className="rounded-lg border-none bg-danger px-[14px] py-[6px] font-[inherit] text-body-lg font-semibold text-white"
                                     onClick={() => {
                                         setConfirmDelete(false);
                                         void deleteItem(sel.id);
                                     }}
+                                    type="button"
                                 >
                                     Delete
-                                </span>
+                                </button>
                             </div>
                         </div>
                     )}
@@ -393,21 +396,23 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                         >
                             Read-only
                         </span>
-                        <span
-                            className="truncate text-text2 underline decoration-border underline-offset-2"
+                        <button
+                            className="truncate border-none bg-transparent p-0 font-[inherit] text-text2 underline decoration-border underline-offset-2"
                             onClick={() => void openExternal(sel.source!.raw)}
                             title={sel.source.raw}
+                            type="button"
                         >
                             {sourceLabel(sel.source.raw)}
-                        </span>
+                        </button>
                         <span className="opacity-50">·</span>
                         <span>Fetched {formatRelative(sel.source.fetched)}</span>
-                        <span
-                            className="ml-auto rounded-7 px-[9px] py-[4px] text-body-lg text-text2 hover:bg-hover"
+                        <button
+                            className="ml-auto rounded-7 border-none bg-transparent px-[9px] py-[4px] font-[inherit] text-body-lg text-text2 hover:bg-hover"
                             onClick={() => void refreshSource(sel.id)}
+                            type="button"
                         >
                             Refresh
-                        </span>
+                        </button>
                     </div>
                 )}
 
@@ -503,39 +508,49 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                                     className="group flex items-start gap-[10px] rounded-7 px-2 py-[5px] hover:bg-hover"
                                     key={`${index}-${subtask.text}`}
                                 >
-                                    <span
-                                        className={cn(
-                                            'mt-[3px] flex h-[16px] w-[16px] flex-none items-center justify-center rounded-[5px] border',
-                                            subtask.done
-                                                ? 'border-accent bg-accent text-white'
-                                                : 'border-border text-transparent',
-                                        )}
+                                    {/* Box and label are one control: two hit
+                                        areas for the same tick, so one button
+                                        rather than two tab stops. */}
+                                    <button
+                                        aria-checked={!!subtask.done}
+                                        className="flex min-w-0 flex-1 items-start gap-[10px] border-none bg-transparent p-0 text-left font-[inherit]"
                                         onClick={() =>
                                             writeSubtasks(toggleSubtask(subtasks, index))
                                         }
+                                        role="checkbox"
+                                        type="button"
                                     >
-                                        <Check size={11} sw={3} />
-                                    </span>
-                                    <span
-                                        className={cn(
-                                            'flex-1 text-title leading-[1.5]',
-                                            subtask.done ? 'text-text3 line-through' : 'text-text2',
-                                        )}
-                                        onClick={() =>
-                                            writeSubtasks(toggleSubtask(subtasks, index))
-                                        }
-                                    >
-                                        {subtask.text}
-                                    </span>
-                                    <span
-                                        aria-label="Remove subtask"
-                                        className="mt-[3px] flex-none text-faint opacity-0 group-hover:opacity-100"
+                                        <span
+                                            className={cn(
+                                                'mt-[3px] flex h-[16px] w-[16px] flex-none items-center justify-center rounded-[5px] border',
+                                                subtask.done
+                                                    ? 'border-accent bg-accent text-white'
+                                                    : 'border-border text-transparent',
+                                            )}
+                                        >
+                                            <Check size={11} sw={3} />
+                                        </span>
+                                        <span
+                                            className={cn(
+                                                'flex-1 text-title leading-[1.5]',
+                                                subtask.done
+                                                    ? 'text-text3 line-through'
+                                                    : 'text-text2',
+                                            )}
+                                        >
+                                            {subtask.text}
+                                        </span>
+                                    </button>
+                                    <button
+                                        aria-label={`Remove ${subtask.text}`}
+                                        className="mt-[3px] flex-none border-none bg-transparent p-0 text-faint opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
                                         onClick={() =>
                                             writeSubtasks(subtasks.filter((_, j) => j !== index))
                                         }
+                                        type="button"
                                     >
                                         <Close size={13} sw={2} />
-                                    </span>
+                                    </button>
                                 </div>
                             ))}
                             <div className="flex items-center gap-[10px] px-2 py-[5px]">
@@ -580,13 +595,14 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                                 key={tag}
                             >
                                 #{tag}
-                                <span
-                                    className="text-body-lg leading-none opacity-55"
+                                <button
+                                    aria-label={`Remove tag ${tag}`}
+                                    className="border-none bg-transparent p-0 font-[inherit] text-body-lg leading-none opacity-55"
                                     onClick={() => void removeTag(sel.id, tag)}
-                                    title="Remove tag"
+                                    type="button"
                                 >
                                     ×
-                                </span>
+                                </button>
                             </span>
                         ))}
                         {addingTag ? (
@@ -606,12 +622,13 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                                 value={tagDraft}
                             />
                         ) : (
-                            <span
-                                className="rounded-7 border border-dashed border-dash px-[9px] py-[3px] font-mono text-body-sm text-faint"
+                            <button
+                                className="rounded-7 border border-dashed border-dash bg-transparent px-[9px] py-[3px] font-mono text-body-sm text-faint"
                                 onClick={() => setAddingTag(true)}
+                                type="button"
                             >
                                 + add
-                            </span>
+                            </button>
                         )}
                     </div>
                 </div>
