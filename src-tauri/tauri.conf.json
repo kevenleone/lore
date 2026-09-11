@@ -44,6 +44,18 @@
                 "url": "capture.html",
                 "visible": false,
                 "width": 640
+            },
+            {
+                "decorations": false,
+                "focus": false,
+                "height": 1056,
+                "label": "print",
+                "resizable": false,
+                "skipTaskbar": true,
+                "title": "Print",
+                "url": "print.html",
+                "visible": false,
+                "width": 816
             }
         ]
     },

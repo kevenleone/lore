@@ -26,11 +26,16 @@ struct Command {
     label: &'static str,
 }
 
-const FILE_COMMANDS: [Command; 2] = [
+const FILE_COMMANDS: [Command; 3] = [
     Command {
         accelerator: "CmdOrCtrl+N",
         id: "capture",
         label: "Quick Capture",
+    },
+    Command {
+        accelerator: "CmdOrCtrl+Shift+E",
+        id: "export-pdf",
+        label: "Export as PDF…",
     },
     Command {
         accelerator: "",
@@ -122,6 +127,8 @@ pub fn install<R: Runtime>(app: &App<R>) -> tauri::Result<()> {
         .item(&command_item(app, &FILE_COMMANDS[0])?)
         .separator()
         .item(&command_item(app, &FILE_COMMANDS[1])?)
+        .separator()
+        .item(&command_item(app, &FILE_COMMANDS[2])?)
         .separator()
         .close_window()
         .build()?;
