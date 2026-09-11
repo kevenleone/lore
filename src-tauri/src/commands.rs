@@ -84,6 +84,29 @@ pub fn hide_capture(app: AppHandle) {
     }
 }
 
+/// Moves a folder to the Trash, and reports what went wrong if it cannot.
+///
+/// The Trash rather than a delete: "Delete local vault" is the most destructive
+/// thing in Settings, and the difference between a mistake and a catastrophe is
+/// whether the files can be dragged back out.
+#[tauri::command]
+pub fn trash_path(path: String) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        use objc2_foundation::{NSFileManager, NSString, NSURL};
+
+        let url = NSURL::fileURLWithPath(&NSString::from_str(&path));
+        NSFileManager::defaultManager()
+            .trashItemAtURL_resultingItemURL_error(&url, None)
+            .map_err(|e| e.localizedDescription().to_string())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = path;
+        Err("Lore can only move a vault to the Trash on macOS.".into())
+    }
+}
+
 /// Settings → General → "Show icon in the Dock".
 #[tauri::command]
 pub fn set_dock_visible(app: AppHandle, visible: bool) {
