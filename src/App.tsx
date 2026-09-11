@@ -133,18 +133,32 @@ export default function App() {
     // ⌥Space while this window is in front — Rust routes the shortcut here
     // rather than to the floating panel whenever the main window has focus.
     useEffect(() => {
-        const unlisteners: (() => void)[] = [];
+        // `listen` resolves a tick after the effect returns, so a cleanup that
+        // has already run has nothing to remove — and the listener outlives the
+        // mount that made it. Under StrictMode that is two of everything, which
+        // a toggle answers by toggling straight back.
+        let live = true;
+        let unlisteners: (() => void)[] = [];
+
         (async () => {
             try {
                 const { listen } = await import('@tauri-apps/api/event');
-                unlisteners.push(await listen('item:created', () => void refresh()));
-                unlisteners.push(await listen('capture:toggle', () => toggleCapture()));
-                unlisteners.push(await listen<string>('menu', (e) => menuCommands[e.payload]?.()));
+                const registered = await Promise.all([
+                    listen('item:created', () => void refresh()),
+                    listen('capture:toggle', () => toggleCapture()),
+                    listen<string>('menu', (e) => menuCommands[e.payload]?.()),
+                ]);
+                if (live) unlisteners = registered;
+                else registered.forEach((off) => off());
             } catch {
                 // Outside Tauri — no event bus.
             }
         })();
-        return () => unlisteners.forEach((off) => off());
+
+        return () => {
+            live = false;
+            unlisteners.forEach((off) => off());
+        };
     }, [menuCommands, refresh, toggleCapture]);
 
     // List keeps a permanent detail column; Cards and Table open an item over or
