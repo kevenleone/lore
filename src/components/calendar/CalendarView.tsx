@@ -2,9 +2,8 @@
 // window: a toolbar, a rail of unscheduled tasks, and a day/week/month grid
 // carrying scheduled tasks and finished focus sessions.
 //
-// Connected calendar accounts have no backend behind them yet, so the legend
-// names them and says so rather than drawing invented meetings. Everything the
-// grid does draw is real: tasks the user placed, and sessions the timer ran.
+// Everything the grid draws is real: tasks the user placed, and sessions the
+// timer ran. There is no calendar sync, so the legend names only those two.
 
 import { useState } from 'react';
 
@@ -29,7 +28,6 @@ import { cn } from '../../lib/cn';
 import { startOfDay } from '../../lib/focusTimer';
 import { useStore } from '../../store/useStore';
 import { ChevronRight, Plus } from '../common/glyphs';
-import { CALENDAR_ACCOUNTS } from '../settings/calendarAccounts';
 import { Segmented } from '../settings/controls';
 /** Square icon button in the toolbar. */
 const TOOLBAR_BUTTON =
@@ -113,7 +111,6 @@ function CalendarRail() {
     const schedule = useStore((s) => s.schedule);
     const switches = useStore((s) => s.prefs.switches);
 
-    const connected = CALENDAR_ACCOUNTS.filter((a) => switches[a.key]);
     const unscheduled = items.filter((i) => i.type === 'task' && !schedule[i.id]);
 
     return (
@@ -125,15 +122,7 @@ function CalendarRail() {
                         <LegendRow color="var(--type-task-fg, #4d855f)" name="Captured tasks" />
                     )}
                     {switches.showFocus && <LegendRow color="var(--ac)" name="Focus sessions" />}
-                    {connected.map((a) => (
-                        <LegendRow color={a.color} key={a.key} muted name={a.name} />
-                    ))}
                 </div>
-                {connected.length > 0 && (
-                    <div className="mt-[10px] text-label leading-[1.5] text-text3">
-                        Connected accounts aren’t syncing yet — nothing from them is drawn.
-                    </div>
-                )}
             </div>
 
             <div>
@@ -216,17 +205,12 @@ function EventBlock({
     );
 }
 
-function LegendRow({ color, muted, name }: { color: string; muted?: boolean; name: string }) {
+function LegendRow({ color, name }: { color: string; name: string }) {
     return (
-        <div
-            className={cn(
-                'flex items-center gap-[9px] text-body text-text2',
-                muted ? 'opacity-55' : 'opacity-100',
-            )}
-        >
+        <div className="flex items-center gap-[9px] text-body text-text2">
             <span
                 className="h-[11px] w-[11px] flex-none rounded-[3px]"
-                // The calendar's own colour, as the provider reports it.
+                // The band's own colour, shared with the chips in the grid.
                 style={{ background: color }}
             />
             <span className="min-w-0 flex-1">{name}</span>

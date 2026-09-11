@@ -149,7 +149,7 @@ export function FocusPanelBody({
             <div className="flex items-center justify-between border-t border-border-soft bg-surface2 px-4 py-[10px]">
                 <span className="inline-flex items-center gap-[7px] text-label text-text3">
                     <SettingsIcon name="info" size={13} sw={1.8} />
-                    Do Not Disturb is {snapshot.dnd ? 'on' : 'off'}
+                    Start or pause from anywhere in Lore
                 </span>
                 <span className="rounded-5 border border-b-2 border-kbd-border bg-kbd-bg px-[6px] py-px font-mono text-micro text-text2">
                     ⌥⇧F
