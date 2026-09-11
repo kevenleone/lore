@@ -216,13 +216,13 @@ export function CommandBar() {
                 )}
                 <span className="flex items-center gap-[7px]">
                     <span
-                        className="cursor-pointer rounded-md border border-b-2 border-kbd-border bg-surface px-[7px] py-[2px] font-mono text-caption text-text2"
+                        className="rounded-md border border-b-2 border-kbd-border bg-surface px-[7px] py-[2px] font-mono text-caption text-text2"
                         onClick={() => void hideCapture()}
                     >
                         esc
                     </span>
                     <span
-                        className="cursor-pointer rounded-md border border-b-2 border-black/12 bg-accent px-2 py-[2px] font-mono text-caption text-white"
+                        className="rounded-md border border-b-2 border-black/12 bg-accent px-2 py-[2px] font-mono text-caption text-white"
                         onClick={() => void save()}
                     >
                         ⏎ Save

@@ -50,7 +50,7 @@ export function TableView({ items, onContextMenu }: SurfaceProps) {
                         className={cn(
                             // Table rows have no thumbnail column to anchor them, so
                             // they take a hover of their own.
-                            'grid cursor-pointer items-center gap-4 border-b border-border-soft px-[18px] py-[9px] hover:bg-hover',
+                            'grid items-center gap-4 border-b border-border-soft px-[18px] py-[9px] hover:bg-hover',
                             selected && 'bg-sel shadow-[inset_2px_0_0_var(--ac)]',
                         )}
                         key={item.id}

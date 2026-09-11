@@ -14,7 +14,7 @@ import { Check, Pause, Play, Plus, Restart, SkipForward, Stop } from '../common/
 
 /** Transport and queue-add buttons share this shell. */
 const TRANSPORT_BUTTON =
-    'inline-flex cursor-pointer items-center justify-center rounded-11 border-none bg-surface3 p-0 font-[inherit] text-text2 hover:brightness-[.96]';
+    'inline-flex items-center justify-center rounded-11 border-none bg-surface3 p-0 font-[inherit] text-text2 hover:brightness-[.96]';
 
 /** The small round "+" that puts a captured item into the queue. */
 export function AddToQueueButton({ label, onClick }: { label: string; onClick: () => void }) {
@@ -67,7 +67,6 @@ export function QueueRow({ item }: { item: Item }) {
                 active
                     ? 'border-accent-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,.05)]'
                     : 'border-transparent bg-transparent',
-                done ? 'cursor-default' : 'cursor-pointer',
             )}
             onClick={() => !done && setFocusTask(item.id)}
         >
@@ -75,7 +74,7 @@ export function QueueRow({ item }: { item: Item }) {
                 aria-checked={done}
                 aria-label={item.title}
                 className={cn(
-                    'mt-px flex h-[17px] w-[17px] flex-none cursor-pointer items-center justify-center rounded-5 border-[1.5px] p-0',
+                    'mt-px flex h-[17px] w-[17px] flex-none items-center justify-center rounded-5 border-[1.5px] p-0',
                     done
                         ? 'border-accent bg-accent text-white'
                         : 'border-dash bg-transparent text-transparent',

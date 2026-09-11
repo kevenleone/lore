@@ -33,7 +33,7 @@ import { CALENDAR_ACCOUNTS } from '../settings/calendarAccounts';
 import { Segmented } from '../settings/controls';
 /** Square icon button in the toolbar. */
 const TOOLBAR_BUTTON =
-    'inline-flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-7 border-none bg-surface3 p-0 font-[inherit] text-text2 hover:brightness-[.96]';
+    'inline-flex h-[26px] w-[26px] items-center justify-center rounded-7 border-none bg-surface3 p-0 font-[inherit] text-text2 hover:brightness-[.96]';
 
 const MONTH_CELL =
     'flex min-h-0 min-w-0 flex-col gap-[3px] overflow-hidden border-t border-l border-border px-[7px] py-[6px]';
@@ -80,7 +80,7 @@ export function CalendarView({ onCapture }: { onCapture: () => void }) {
                     </button>
                 </span>
                 <button
-                    className="cursor-pointer rounded-lg border border-border bg-transparent px-[11px] py-[5px] font-[inherit] text-body text-text2"
+                    className="rounded-lg border border-border bg-transparent px-[11px] py-[5px] font-[inherit] text-body text-text2"
                     onClick={() => setAnchor(startOfDay(new Date()))}
                     type="button"
                 >
@@ -89,7 +89,7 @@ export function CalendarView({ onCapture }: { onCapture: () => void }) {
                 <div className="ml-auto flex items-center gap-[10px]">
                     <Segmented onChange={setScale} options={SCALES} value={scale} />
                     <button
-                        className="inline-flex cursor-pointer items-center gap-[7px] rounded-lg border-none bg-accent px-[11px] py-[6px] font-[inherit] text-body font-semibold text-white"
+                        className="inline-flex items-center gap-[7px] rounded-lg border-none bg-accent px-[11px] py-[6px] font-[inherit] text-body font-semibold text-white"
                         onClick={onCapture}
                         type="button"
                     >
@@ -182,7 +182,7 @@ function EventBlock({
     return (
         <div
             className={cn(
-                'absolute right-1 left-1 z-4 flex cursor-pointer overflow-hidden rounded-lg border-l-[2.5px] hover:brightness-[.97]',
+                'absolute right-1 left-1 z-4 flex overflow-hidden rounded-lg border-l-[2.5px] hover:brightness-[.97]',
                 focus
                     ? 'border-l-accent bg-[repeating-linear-gradient(45deg,var(--ac-tint),var(--ac-tint)_6px,transparent_6px,transparent_12px)]'
                     : 'border-l-type-task-fg bg-type-task-bg',
@@ -300,7 +300,7 @@ function MonthGrid({ anchor }: { anchor: Date }) {
                             {events.slice(0, 3).map((event) => (
                                 <span
                                     className={cn(
-                                        'cursor-pointer truncate rounded-5 px-[6px] py-[3px] text-micro leading-[1.3] font-semibold',
+                                        'truncate rounded-5 px-[6px] py-[3px] text-micro leading-[1.3] font-semibold',
                                         event.kind === 'focus'
                                             ? 'bg-accent-tint text-accent'
                                             : 'bg-type-task-bg text-type-task-fg',

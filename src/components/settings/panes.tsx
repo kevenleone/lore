@@ -41,11 +41,11 @@ import { ThemePreview } from './ThemePreview';
 
 /** Card-shaped radio (appearance swatches, AI location). */
 const CHOICE_CARD =
-    'flex cursor-pointer gap-3 rounded-xl bg-transparent px-[14px] py-[13px] text-left font-[inherit] hover:bg-hover';
+    'flex gap-3 rounded-xl bg-transparent px-[14px] py-[13px] text-left font-[inherit] hover:bg-hover';
 
 /** The About pane's link list. */
 const ABOUT_LINK =
-    'text-body cursor-pointer rounded-lg border border-border bg-surface px-[10px] py-[6px] font-[inherit] text-text2 hover:bg-hover hover:text-text';
+    'text-body rounded-lg border border-border bg-surface px-[10px] py-[6px] font-[inherit] text-text2 hover:bg-hover hover:text-text';
 
 /** The bordered cards the Storage meter and About rows are built from. */
 const CARD = 'rounded-xl border border-border px-4 py-[14px]';
@@ -281,7 +281,7 @@ export function LookPane() {
                         <button
                             aria-pressed={active}
                             className={cn(
-                                'flex flex-1 cursor-pointer flex-col gap-[9px] rounded-xl border-[1.5px] p-[11px] font-[inherit] text-[inherit]',
+                                'flex flex-1 flex-col gap-[9px] rounded-xl border-[1.5px] p-[11px] font-[inherit] text-[inherit]',
                                 active
                                     ? 'border-accent bg-accent-tint'
                                     : 'border-border bg-transparent',
@@ -321,7 +321,7 @@ export function LookPane() {
                             <button
                                 aria-pressed={active}
                                 className={cn(
-                                    'flex cursor-pointer flex-col gap-[7px] rounded-xl border-[1.5px] p-[7px] font-[inherit] text-[inherit]',
+                                    'flex flex-col gap-[7px] rounded-xl border-[1.5px] p-[7px] font-[inherit] text-[inherit]',
                                     active
                                         ? 'border-accent bg-accent-tint'
                                         : 'border-border bg-transparent',
@@ -353,7 +353,7 @@ export function LookPane() {
                         <button
                             aria-label={ACCENT_NAMES[hex]}
                             aria-pressed={active}
-                            className="flex h-7 w-7 flex-none cursor-pointer items-center justify-center rounded-full border-[1.5px] bg-transparent p-0 shadow-[inset_0_0_0_2px_var(--surface)]"
+                            className="flex h-7 w-7 flex-none items-center justify-center rounded-full border-[1.5px] bg-transparent p-0 shadow-[inset_0_0_0_2px_var(--surface)]"
                             key={hex}
                             onClick={() => setAccent(hex as Accent)}
                             // The ring and the dot are the accent being offered,

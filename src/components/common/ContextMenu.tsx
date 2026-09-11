@@ -87,7 +87,7 @@ export function ContextMenuItem({
     return (
         <div
             className={cn(
-                'flex cursor-pointer items-center gap-[8px] rounded-7 px-2 py-[6px] text-body hover:bg-hover',
+                'flex items-center gap-[8px] rounded-7 px-2 py-[6px] text-body hover:bg-hover',
                 danger ? 'text-danger' : 'text-text2',
             )}
             onClick={onClick}

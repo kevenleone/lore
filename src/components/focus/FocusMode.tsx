@@ -90,7 +90,7 @@ export function FocusMode() {
                 </span>
                 <button
                     aria-label="Leave focus mode"
-                    className="flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-7 border-none bg-transparent p-0 text-text2"
+                    className="flex h-[26px] w-[26px] items-center justify-center rounded-7 border-none bg-transparent p-0 text-text2"
                     onClick={close}
                     type="button"
                 >
@@ -229,7 +229,7 @@ function QueuePicker({ onPick }: { onPick: (id: string) => void }) {
             <div className="mt-1 flex flex-col">
                 {matches.map((item) => (
                     <button
-                        className="flex w-full cursor-pointer items-center gap-[10px] rounded-10 border-none bg-transparent px-[11px] py-[10px] text-left font-[inherit] hover:bg-hover"
+                        className="flex w-full items-center gap-[10px] rounded-10 border-none bg-transparent px-[11px] py-[10px] text-left font-[inherit] hover:bg-hover"
                         key={item.id}
                         onClick={() => onPick(item.id)}
                         type="button"

@@ -13,15 +13,14 @@ import { SettingsIcon } from '../common/settingsGlyphs';
  * panes build a few one-off buttons that have to match these exactly.
  */
 export const PILL_BUTTON =
-    'text-body inline-flex flex-none cursor-pointer items-center gap-[7px] rounded-lg border border-border bg-surface px-[10px] py-[6px] font-[inherit] text-text2 disabled:cursor-default not-disabled:hover:bg-hover';
+    'text-body inline-flex flex-none items-center gap-[7px] rounded-lg border border-border bg-surface px-[10px] py-[6px] font-[inherit] text-text2 disabled:cursor-default not-disabled:hover:bg-hover';
 
 /** Square icon-only button: pane headers, the notice's dismiss. */
 export const ICON_BUTTON =
-    'flex cursor-pointer items-center justify-center rounded-lg border-none bg-transparent text-text2 hover:bg-hover';
+    'flex items-center justify-center rounded-lg border-none bg-transparent text-text2 hover:bg-hover';
 
 /** One option inside a segmented control. */
-const SEG_ITEM =
-    'text-body cursor-pointer rounded-7 border-none bg-transparent px-[11px] py-[5px] font-[inherit]';
+const SEG_ITEM = 'text-body rounded-7 border-none bg-transparent px-[11px] py-[5px] font-[inherit]';
 
 /** Slide durations for the toggle; `ease` rather than a Tailwind easing token. */
 const SWITCH_TRANSITION = 'duration-[160ms] ease-[ease]';
@@ -179,7 +178,7 @@ export function Toggle({
             aria-checked={on}
             aria-label={label}
             className={cn(
-                'relative h-[22px] w-[38px] flex-none cursor-pointer rounded-xl border-none p-0 transition-[background]',
+                'relative h-[22px] w-[38px] flex-none rounded-xl border-none p-0 transition-[background]',
                 SWITCH_TRANSITION,
                 on ? 'bg-accent' : 'bg-track-off',
             )}

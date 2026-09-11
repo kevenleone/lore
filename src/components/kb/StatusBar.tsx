@@ -18,7 +18,7 @@ import { Tooltip } from '../common/Tooltip';
 const DEFAULT_LABEL = 'Local vault';
 
 const SEGMENT =
-    'flex cursor-pointer items-center gap-[5px] rounded-md border-none bg-transparent px-[6px] py-[3px] font-[inherit] text-caption text-text2 hover:bg-hover';
+    'flex items-center gap-[5px] rounded-md border-none bg-transparent px-[6px] py-[3px] font-[inherit] text-caption text-text2 hover:bg-hover';
 
 const ICON_SEGMENT = cn(SEGMENT, 'h-[22px] w-[22px] justify-center px-0');
 

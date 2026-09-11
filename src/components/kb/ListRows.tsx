@@ -37,7 +37,7 @@ export function ListRows({ items, onContextMenu }: SurfaceProps) {
                 return (
                     <div
                         className={cn(
-                            'group flex cursor-pointer items-start gap-3 border-b border-border',
+                            'group flex items-start gap-3 border-b border-border',
                             rowPadding,
                             selected && 'bg-accent-tint shadow-[inset_2px_0_0_var(--ac)]',
                         )}
