@@ -14,6 +14,11 @@ use tauri::{
 
 use crate::mode;
 
+/// Namespaces this menu's ids. A menu event reaches every handler in the app,
+/// and the tray has a `capture` of its own: without the prefix, one ⌘N opened
+/// the drawer here and the floating panel there, which closed the drawer again.
+const MENU_PREFIX: &str = "menu:";
+
 /// A command the menu sends to the window, by id.
 struct Command {
     accelerator: &'static str,
@@ -161,7 +166,11 @@ pub fn install<R: Runtime>(app: &App<R>) -> tauri::Result<()> {
 
     app.set_menu(menu)?;
     app.on_menu_event(|app, event| {
-        let _ = app.emit_to("main", "menu", event.id().0.as_str());
+        // The tray's items arrive here too; they are `commands.rs`'s to answer.
+        let Some(command) = event.id().0.strip_prefix(MENU_PREFIX) else {
+            return;
+        };
+        let _ = app.emit_to("main", "menu", command);
     });
 
     Ok(())
@@ -171,7 +180,7 @@ fn command_item<R: Runtime>(
     app: &App<R>,
     command: &Command,
 ) -> tauri::Result<tauri::menu::MenuItem<R>> {
-    let item = MenuItemBuilder::with_id(command.id, command.label);
+    let item = MenuItemBuilder::with_id(format!("{MENU_PREFIX}{}", command.id), command.label);
     match command.accelerator.is_empty() {
         true => item.build(app),
         false => item.accelerator(command.accelerator).build(app),
