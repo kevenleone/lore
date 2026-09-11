@@ -20,6 +20,7 @@ mod app_menu;
 mod commands;
 mod focus_tray;
 mod mode;
+mod print_pdf;
 mod sidecar;
 #[cfg(target_os = "macos")]
 mod window_frame;
@@ -35,10 +36,11 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         // The panels are placed by the app — the capture window centres itself
-        // on every open — so only the main window's geometry is the user's.
+        // on every open, and the print window is parked offscreen — so only the
+        // main window's geometry is the user's.
         .plugin(
             tauri_plugin_window_state::Builder::default()
-                .with_denylist(&["capture", "focus"])
+                .with_denylist(&["capture", "focus", "print"])
                 .build(),
         )
         .manage(sidecar::SidecarState::default())
@@ -55,6 +57,7 @@ pub fn run() {
             commands::open_focus_mode,
             commands::set_tray_visible,
             commands::trash_path,
+            print_pdf::export_webview_pdf,
             focus_tray::focus_snapshot,
             focus_tray::sync_focus,
             sidecar::sidecar_endpoint,
@@ -97,7 +100,7 @@ pub fn run() {
             // A labelled build says so in the window list too — the windows are
             // `decorations: false`, so this is what Mission Control and the
             // Window menu show.
-            for label in ["main", "focus", "capture"] {
+            for label in ["main", "focus", "capture", "print"] {
                 if let Some(window) = app.get_webview_window(label) {
                     let title = window.title().unwrap_or_default();
                     let _ = window.set_title(&mode::window_title(&title));

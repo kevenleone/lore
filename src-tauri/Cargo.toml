@@ -35,10 +35,12 @@ tokio = { version = "1", features = ["time"] }
 tauri-plugin-autostart = "2.5.1"
 tauri-plugin-global-shortcut = "2"
 
-# Reached for two things: the menu bar's monospaced-digit font, which
-# `tray-icon` gives no way to set (`focus_tray::use_monospaced_digits`), and
-# putting a deleted vault in the Trash rather than shredding it
-# (`commands::trash_path`).
+# Reached for three things: the menu bar's monospaced-digit font, which
+# `tray-icon` gives no way to set (`focus_tray::use_monospaced_digits`), putting
+# a deleted vault in the Trash rather than shredding it
+# (`commands::trash_path`), and printing a webview to a PDF file
+# (`print_pdf::export_pdf`). Every version here is the one wry already resolves,
+# so the webview handed over by `with_webview` is the same `WKWebView` type.
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"
 objc2-app-kit = { version = "0.3", features = [
@@ -46,12 +48,18 @@ objc2-app-kit = { version = "0.3", features = [
     "NSButton",
     "NSControl",
     "NSFont",
+    "NSGraphics",
+    "NSPrintInfo",
+    "NSPrintOperation",
     "NSResponder",
     "NSView",
     "NSWindow",
 ] }
+objc2-web-kit = { version = "0.3", features = ["WKWebView"] }
 objc2-foundation = { version = "0.3", features = [
+    "NSDictionary",
     "NSError",
+    "NSGeometry",
     "NSFileManager",
     "NSString",
     "NSURL",

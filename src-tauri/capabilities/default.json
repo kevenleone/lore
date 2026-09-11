@@ -23,7 +23,8 @@
         "autostart:allow-enable",
         "autostart:allow-disable",
         "autostart:allow-is-enabled",
-        "core:window:allow-request-user-attention"
+        "core:window:allow-request-user-attention",
+        "dialog:allow-save"
     ],
-    "windows": ["main", "capture", "focus"]
+    "windows": ["main", "capture", "focus", "print"]
 }
