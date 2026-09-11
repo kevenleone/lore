@@ -24,6 +24,16 @@ const COLLECTION_COLORS = [
 
 const ROW_BASE = 'text-subhead flex items-center gap-[9px] rounded-7 px-[9px] py-[6px]';
 
+/** Strips the chrome a `<button>` brings, so it sits in a row like the text did. */
+const BARE_BUTTON = 'border-none bg-transparent p-0 font-[inherit] text-[inherit]';
+
+/**
+ * Row actions are revealed by hover *and* by focus: on hover alone a keyboard
+ * user can tab to a button that is never drawn, or never reach it at all.
+ */
+const ROW_ACTIONS =
+    'flex items-center gap-2 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100';
+
 export function CollectionsSection() {
     const items = useStore((s) => s.items);
     const collections = useStore((s) => s.collections);
@@ -35,7 +45,6 @@ export function CollectionsSection() {
 
     const [editingId, setEditingId] = useState<null | string>(null);
     const [confirmId, setConfirmId] = useState<null | string>(null);
-    const [hoveredId, setHoveredId] = useState<null | string>(null);
     const [draftName, setDraftName] = useState('');
     const [draftColor, setDraftColor] = useState(COLLECTION_COLORS[0]);
     const nameRef = useRef<HTMLInputElement>(null);
@@ -89,8 +98,10 @@ export function CollectionsSection() {
             />
             <div className="flex flex-wrap items-center gap-[6px]">
                 {COLLECTION_COLORS.map((c) => (
-                    <span
-                        className="h-[18px] w-[18px] rounded-full"
+                    <button
+                        aria-label={`Colour ${c}`}
+                        aria-pressed={draftColor === c}
+                        className="h-[18px] w-[18px] rounded-full border-none p-0"
                         key={c}
                         onClick={() => setDraftColor(c)}
                         // Both the swatch and its selected ring are the swatch's
@@ -99,19 +110,25 @@ export function CollectionsSection() {
                             background: c,
                             boxShadow: draftColor === c ? `0 0 0 2px #fff, 0 0 0 4px ${c}` : 'none',
                         }}
+                        type="button"
                     />
                 ))}
             </div>
             <div className="flex justify-end gap-[6px]">
-                <span className="rounded-7 px-[10px] py-1 text-body text-text2" onClick={cancel}>
+                <button
+                    className={cn(BARE_BUTTON, 'rounded-7 px-[10px] py-1 text-body text-text2')}
+                    onClick={cancel}
+                    type="button"
+                >
                     Cancel
-                </span>
-                <span
-                    className="rounded-7 bg-accent px-3 py-1 text-body font-semibold text-white"
+                </button>
+                <button
+                    className="rounded-7 border-none bg-accent px-3 py-1 font-[inherit] text-body font-semibold text-white"
                     onClick={() => void save()}
+                    type="button"
                 >
                     Save
-                </span>
+                </button>
             </div>
         </div>
     );
@@ -122,9 +139,14 @@ export function CollectionsSection() {
                 <span className="text-caption font-[680] tracking-[.06em] text-faint uppercase">
                     Collections
                 </span>
-                <span className="ml-auto flex text-faint" onClick={startAdd} title="New collection">
+                <button
+                    aria-label="New collection"
+                    className={cn(BARE_BUTTON, 'ml-auto flex text-faint hover:text-text2')}
+                    onClick={startAdd}
+                    type="button"
+                >
                     <Plus size={13} sw={2} />
-                </span>
+                </button>
             </div>
 
             {collections.map((c) => {
@@ -136,76 +158,78 @@ export function CollectionsSection() {
                             <span className="flex-1 text-body text-[#a23b30]">
                                 Delete “{c.name}”?
                             </span>
-                            <span
-                                className="flex text-text3"
+                            <button
+                                aria-label={`Keep ${c.name}`}
+                                className={cn(BARE_BUTTON, 'flex text-text3')}
                                 onClick={() => setConfirmId(null)}
-                                title="Cancel"
+                                type="button"
                             >
                                 <Close size={14} />
-                            </span>
-                            <span
-                                className="flex text-[#c0392b]"
+                            </button>
+                            <button
+                                aria-label={`Delete ${c.name}`}
+                                className={cn(BARE_BUTTON, 'flex text-danger')}
                                 onClick={() => {
                                     setConfirmId(null);
                                     void deleteCollection(c.id);
                                 }}
-                                title="Delete"
+                                type="button"
                             >
                                 <Check size={14} sw={2.4} />
-                            </span>
+                            </button>
                         </div>
                     );
                 }
 
                 const active = isViewActive(view, 'collection', c.id);
-                const hovered = hoveredId === c.id;
                 return (
+                    // The row is a group rather than a button: it holds the
+                    // collection's own button plus two more, and a button
+                    // cannot contain buttons.
                     <div
                         className={cn(
                             ROW_BASE,
+                            'group',
                             active
                                 ? 'bg-accent-tint font-[590] text-accent'
                                 : 'text-text2 hover:bg-hover',
                         )}
                         key={c.id}
-                        onClick={() => selectView('collection', c.id)}
-                        onMouseEnter={() => setHoveredId(c.id)}
-                        onMouseLeave={() => setHoveredId((h) => (h === c.id ? null : h))}
                     >
                         <span
                             className="h-[10px] w-[10px] flex-none rounded-[3px]"
                             // The collection's own colour, which the user picks.
                             style={{ background: c.color }}
                         />
-                        <span className="flex-1 truncate">{c.name}</span>
-                        {hovered ? (
-                            <span className="flex items-center gap-2">
-                                <span
-                                    className="flex text-text3"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        startEdit(c.id, c.name, c.color);
-                                    }}
-                                    title="Edit"
-                                >
-                                    <Pencil size={13} />
-                                </span>
-                                <span
-                                    className="flex text-[#b0807c]"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setConfirmId(c.id);
-                                    }}
-                                    title="Delete"
-                                >
-                                    <Trash size={13} />
-                                </span>
-                            </span>
-                        ) : (
-                            <span className="text-body-sm tabular-nums opacity-50">
-                                {collectionCount(items, c.id)}
-                            </span>
-                        )}
+                        <button
+                            aria-current={active ? 'page' : undefined}
+                            className={cn(BARE_BUTTON, 'min-w-0 flex-1 truncate text-left')}
+                            onClick={() => selectView('collection', c.id)}
+                            type="button"
+                        >
+                            {c.name}
+                        </button>
+                        <span className="text-body-sm tabular-nums opacity-50 group-focus-within:hidden group-hover:hidden">
+                            {collectionCount(items, c.id)}
+                        </span>
+                        <span className={ROW_ACTIONS}>
+                            <button
+                                aria-label={`Rename ${c.name}`}
+                                className={cn(BARE_BUTTON, 'flex text-text3')}
+                                onClick={() => startEdit(c.id, c.name, c.color)}
+                                type="button"
+                            >
+                                <Pencil size={13} />
+                            </button>
+                            <button
+                                aria-label={`Delete ${c.name}`}
+                                className={cn(BARE_BUTTON, 'flex text-danger')}
+                                onClick={() => setConfirmId(c.id)}
+                                type="button"
+                            >
+                                <Trash size={13} />
+                            </button>
+                        </span>
                     </div>
                 );
             })}
