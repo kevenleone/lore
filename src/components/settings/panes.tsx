@@ -1,20 +1,23 @@
 // The settings panes from `Lore Settings.dc.html`, less the account and sync
-// ones — Lore is offline, so neither has anything to show. Controls backed by real
-// app state (accent, appearance, density, AI location, the switch set) write
-// through the store and persist; the rest render the design's copy against
-// placeholder figures until there is a backend to read them from.
+// ones — Lore is offline, so neither has anything to show. Every control here
+// writes app state that something outside this folder reads back: a row whose
+// feature does not exist yet is not shown at all, because a switch that quietly
+// does nothing is worse than a missing one.
+
+import { useMemo, useState } from 'react';
 
 import type { Appearance } from '../../theme/tokens';
 
 import { APP_LINKS, APP_VERSION, openExternal } from '../../lib/appInfo';
 import { APP_MODE, captureShortcutKeys } from '../../lib/appMode';
 import { cn } from '../../lib/cn';
+import { revealPath } from '../../lib/reveal';
 import {
     type Accent,
     ACCENT_NAMES,
     ACCENTS,
-    type AiMode,
     type Density,
+    type ItemType,
     type NotificationStyle,
     type OpenMode,
     type Switches,
@@ -26,8 +29,8 @@ import { themesFor } from '../../theme/themes';
 import { effectiveTheme } from '../../theme/tokens';
 import { LoreMark } from '../common/LoreMark';
 import { SettingsIcon } from '../common/settingsGlyphs';
-import { CALENDAR_ACCOUNTS } from './calendarAccounts';
 import {
+    type ChoiceOption,
     Chooser,
     KeyCap,
     PILL_BUTTON,
@@ -39,69 +42,121 @@ import {
 } from './controls';
 import { ThemePreview } from './ThemePreview';
 
-/** Card-shaped radio (appearance swatches, AI location). */
-const CHOICE_CARD =
-    'flex gap-3 rounded-xl bg-transparent px-[14px] py-[13px] text-left font-[inherit] hover:bg-hover';
-
 /** The About pane's link list. */
 const ABOUT_LINK =
     'text-body rounded-lg border border-border bg-surface px-[10px] py-[6px] font-[inherit] text-text2 hover:bg-hover hover:text-text';
 
-/** The bordered cards the Storage meter and About rows are built from. */
-const CARD = 'rounded-xl border border-border px-4 py-[14px]';
+/** Options for "Default capture type", ahead of the collections list. */
+const CAPTURE_TYPES: ChoiceOption<'auto' | ItemType>[] = [
+    { label: 'Detect automatically', value: 'auto' },
+    { label: 'Link', value: 'link' },
+    { label: 'Note', value: 'note' },
+    { label: 'Task', value: 'task' },
+    { label: 'Code', value: 'code' },
+    { label: 'Image', value: 'image' },
+];
 
 export function GeneralPane() {
     const collections = useStore((s) => s.collections);
-    const clip = useSwitch('clip');
+    const defaultCollection = useStore((s) => s.prefs.defaultCollection);
+    const defaultCaptureType = useStore((s) => s.prefs.defaultCaptureType);
+    const setPref = useStore((s) => s.setPref);
 
-    // "File new captures into" offers Inbox plus every real collection.
-    const targets = ['Inbox', ...collections.map((c) => c.name)];
+    // A collection deleted since the preference was set falls back to the
+    // Inbox rather than leaving the chooser showing an id that no longer reads.
+    const targets = useMemo<ChoiceOption<string>[]>(
+        () => [
+            { label: 'Inbox', value: INBOX_TARGET },
+            ...collections.map((c) => ({ label: c.name, value: c.id })),
+        ],
+        [collections],
+    );
+    const target = targets.some((t) => t.value === defaultCollection)
+        ? (defaultCollection ?? INBOX_TARGET)
+        : INBOX_TARGET;
 
     return (
         <>
-            <SectionLabel first>Startup</SectionLabel>
-            <SwitchRow
-                desc="Lore starts quietly in the menu bar when you sign in."
-                name="launch"
-                title="Launch at login"
-            />
-            <SwitchRow
-                desc={`Hiding it leaves ${captureShortcutKeys().join('')} as the only way in.`}
-                name="menubar"
-                title="Show icon in the menu bar"
-            />
-            <SwitchRow last name="dock" title="Show icon in the Dock" />
-
-            <SectionLabel>Defaults</SectionLabel>
+            <SectionLabel first>Captures</SectionLabel>
             <Row
-                desc="Used when the AI can't confidently pick a collection."
+                desc="Where quick capture files an item unless you pick somewhere else."
                 title="File new captures into"
             >
-                <Chooser options={targets} value={targets[0]} />
-            </Row>
-            <Row title="Default capture type">
-                <Chooser
-                    options={['Detect automatically', 'Link', 'Note', 'Task', 'Code']}
-                    value="Detect automatically"
+                <Chooser<string>
+                    label="File new captures into"
+                    onChange={(v) => setPref('defaultCollection', v === INBOX_TARGET ? null : v)}
+                    options={targets}
+                    value={target}
                 />
             </Row>
-            <Row
-                desc="Lore reads a copied link to prefill the field."
-                last
-                title="Keep the clipboard after capture"
-            >
-                <Toggle
-                    label="Keep the clipboard after capture"
-                    on={clip.on}
-                    onChange={clip.onChange}
+            <Row desc="Which tab the capture window opens on." last title="Default capture type">
+                <Chooser<'auto' | ItemType>
+                    label="Default capture type"
+                    onChange={(v) => setPref('defaultCaptureType', v)}
+                    options={CAPTURE_TYPES}
+                    value={defaultCaptureType}
                 />
             </Row>
+        </>
+    );
+}
 
-            <SectionLabel>Storage</SectionLabel>
-            <StorageMeter />
-            <div className="mt-[14px] flex gap-2">
-                <PillButton>Reveal library in Finder</PillButton>
-                <PillButton>Clear snapshot cache</PillButton>
+/**
+ * The chooser's stand-in for "no collection". `null` cannot be a menu value,
+ * and an id is never this string.
+ */
+const INBOX_TARGET = 'inbox';
+
+export function VaultPane() {
+    const workspacePath = useStore((s) => s.workspacePath);
+    const openWorkspacePicker = useStore((s) => s.openWorkspacePicker);
+    const setStep = useStore((s) => s.setOnboardingStep);
+    const items = useStore((s) => s.items);
+    const pushToast = useStore((s) => s.pushToast);
+
+    return (
+        <>
+            <div className="flex items-start gap-[13px] rounded-xl border border-dashed border-dash px-[18px] py-4">
+                <span className="mt-[2px] inline-flex text-text2">
+                    <SettingsIcon name="folder" size={18} />
+                </span>
+                <div className="min-w-0 flex-1">
+                    <div className="text-subhead font-semibold">Local vault — no account</div>
+                    <div className="mt-[3px] text-body leading-[1.5] text-text3">
+                        Lore runs entirely on this Mac. There is nothing to sign into: the vault is
+                        a folder of files you own, and nothing leaves the device.
+                    </div>
+                    <div className="mt-[10px] truncate font-mono text-body-sm text-text2">
+                        {workspacePath ?? 'The default vault, beside Lore’s own data'}
+                    </div>
+                    <div className="mt-[6px] text-body-sm text-text3">
+                        {items.length} {items.length === 1 ? 'item' : 'items'} · Markdown files with
+                        YAML frontmatter
+                    </div>
+                </div>
+            </div>
+            <div className="mt-[14px] flex flex-wrap gap-2">
+                <PillButton onClick={() => void openWorkspacePicker()}>
+                    Open another folder…
+                </PillButton>
+                <PillButton
+                    onClick={() => {
+                        // Back through the onboarding sheet, at its vault picker.
+                        setStep('pick');
+                        useStore.setState({ onboarded: false, settingsOpen: false });
+                    }}
+                >
+                    Set up a new vault
+                </PillButton>
+                <PillButton
+                    onClick={() => {
+                        void revealPath(workspacePath).then((ok) => {
+                            if (!ok) pushToast('Could not open the vault in Finder.');
+                        });
+                    }}
+                >
+                    Reveal in Finder
+                </PillButton>
             </div>
         </>
     );
@@ -126,116 +181,12 @@ function SwitchRow({
     );
 }
 
-/* ------------------------------------------------------------------ *
- * General
- * ------------------------------------------------------------------ */
-
 /** Binds a switch key to the store so panes stay declarative. */
 function useSwitch(key: keyof Switches) {
     const on = useStore((s) => s.prefs.switches[key]);
     const toggle = useStore((s) => s.toggleSwitch);
     return { on, onChange: () => toggle(key) };
 }
-
-const STORAGE_SEGMENTS = [
-    { color: 'var(--ac)', label: 'Files', share: 0.51, size: '940 MB' },
-    { color: '#8a92b8', label: 'Page snapshots', share: 0.3, size: '560 MB' },
-    { color: '#c9c9d2', label: 'Search index', share: 0.19, size: '340 MB' },
-];
-
-export function VaultPane() {
-    const workspacePath = useStore((s) => s.workspacePath);
-    const openWorkspacePicker = useStore((s) => s.openWorkspacePicker);
-    const setStep = useStore((s) => s.setOnboardingStep);
-    const touchid = useSwitch('touchid');
-
-    return (
-        <>
-            <div className="flex items-start gap-[13px] rounded-xl border border-dashed border-dash px-[18px] py-4">
-                <span className="mt-[2px] inline-flex text-text2">
-                    <SettingsIcon name="folder" size={18} />
-                </span>
-                <div className="min-w-0 flex-1">
-                    <div className="text-subhead font-semibold">Local vault — no account</div>
-                    <div className="mt-[3px] text-body leading-[1.5] text-text3">
-                        Lore runs entirely on this Mac. There is nothing to sign into: the vault is
-                        a folder of files you own, and nothing leaves the device.
-                    </div>
-                    <div className="mt-[10px] truncate font-mono text-body-sm text-text2">
-                        {workspacePath ?? 'The default vault, beside Lore’s own data'}
-                    </div>
-                </div>
-            </div>
-            <div className="mt-[14px] flex gap-2">
-                <PillButton onClick={() => void openWorkspacePicker()}>
-                    Open another folder…
-                </PillButton>
-                <PillButton
-                    onClick={() => {
-                        // Back through the onboarding sheet, at its vault picker.
-                        setStep('pick');
-                        useStore.setState({ onboarded: false, settingsOpen: false });
-                    }}
-                >
-                    Set up a new vault
-                </PillButton>
-            </div>
-
-            <SectionLabel>Security</SectionLabel>
-            <Row
-                desc="Applies after five minutes of inactivity."
-                title="Require Touch ID to open Lore"
-            >
-                <Toggle label="Require Touch ID" on={touchid.on} onChange={touchid.onChange} />
-            </Row>
-
-            <SectionLabel>Your data</SectionLabel>
-            <div className="mt-2 flex gap-2">
-                <PillButton>Export everything as Markdown</PillButton>
-                <PillButton tone="danger">Delete local vault</PillButton>
-            </div>
-        </>
-    );
-}
-
-/* ------------------------------------------------------------------ *
- * Vault
- * ------------------------------------------------------------------ */
-
-function StorageMeter() {
-    return (
-        <div className={cn(CARD, 'mt-2')}>
-            <div className="flex items-baseline justify-between">
-                <span className="text-subhead font-semibold">Local library</span>
-                <span className="text-body text-text3">1.84 GB of 5 GB</span>
-            </div>
-            <div className="my-[10px] flex h-2 gap-[2px] overflow-hidden rounded-5 bg-surface3">
-                {STORAGE_SEGMENTS.map((s) => (
-                    // Each segment's colour and share are data, not design.
-                    <span key={s.label} style={{ background: s.color, flex: s.share }} />
-                ))}
-            </div>
-            <div className="flex flex-wrap gap-4">
-                {STORAGE_SEGMENTS.map((s) => (
-                    <span
-                        className="inline-flex items-center gap-[6px] text-body-sm text-text3"
-                        key={s.label}
-                    >
-                        <span
-                            className="h-2 w-2 flex-none rounded-[3px]"
-                            style={{ background: s.color }}
-                        />
-                        {s.label} {s.size}
-                    </span>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-/* ------------------------------------------------------------------ *
- * Appearance
- * ------------------------------------------------------------------ */
 
 const APPEARANCES: { id: Appearance; label: string; swatch: string }[] = [
     { id: 'light', label: 'Light', swatch: '#f4f4f6' },
@@ -458,30 +409,27 @@ export function LookPane() {
     );
 }
 
-/* ------------------------------------------------------------------ *
- * Keyboard shortcuts
- * ------------------------------------------------------------------ */
-
+/**
+ * Only chords that actually fire. The main-window and view rows are the menu
+ * bar's accelerators in `app_menu.rs`; ⌥⇧F and Escape are `App.tsx`'s, and the
+ * global row is the one shortcut Rust registers. Shortcuts are not rebindable
+ * yet, so nothing here claims to be.
+ */
 const SHORTCUT_GROUPS = [
     {
         name: 'Global',
-        rows: [
-            { keys: captureShortcutKeys(), label: 'Quick capture (from any app)' },
-            { keys: ['⌥', '⇧', 'C'], label: 'Capture the current browser tab' },
-            { keys: ['⌥', '⇧', 'S'], label: 'Capture selected text' },
-            { keys: ['⌥', '⇧', 'F'], label: 'Start or pause a focus session' },
-            { keys: ['⌥', '⇧', 'L'], label: 'Open the knowledge base' },
-        ],
+        rows: [{ keys: captureShortcutKeys(), label: 'Quick capture, from any app' }],
     },
     {
-        name: 'Capture window',
+        name: 'Main window',
         rows: [
-            { keys: ['⏎'], label: 'Save' },
-            { keys: ['⌘', '⏎'], label: 'Save and keep going' },
-            { keys: ['⇥'], label: 'Cycle capture type' },
-            { keys: ['#'], label: 'Add a tag' },
-            { keys: ['⌘', 'L'], label: 'Pick a collection' },
-            { keys: ['esc'], label: 'Dismiss' },
+            { keys: ['⌘', 'K'], label: 'Search everything' },
+            { keys: ['⌘', 'N'], label: 'Capture drawer' },
+            { keys: ['⌥', '⇧', 'F'], label: 'Start or pause a focus session' },
+            { keys: ['⌘', 'B'], label: 'Toggle the sidebar' },
+            { keys: ['⌘', 'L'], label: 'Toggle the properties panel' },
+            { keys: ['⌘', ','], label: 'Open Settings' },
+            { keys: ['esc'], label: 'Close the capture drawer or the open item' },
         ],
     },
     {
@@ -495,32 +443,63 @@ const SHORTCUT_GROUPS = [
         ],
     },
     {
-        name: 'Knowledge base',
+        name: 'Capture window',
         rows: [
-            { keys: ['⌘', 'K'], label: 'Search everything' },
-            { keys: ['⌘', 'J'], label: 'Ask Lore' },
-            { keys: ['⌘', 'B'], label: 'Toggle the sidebar' },
-            { keys: ['⌘', 'L'], label: 'Toggle the properties panel' },
-            { keys: ['⌘', ','], label: 'Open Settings' },
-            { keys: ['⌘', '⇧', 'C'], label: 'Share' },
-            { keys: ['↑', '↓'], label: 'Next / previous item' },
-            { keys: ['⌘', 'N'], label: 'Capture drawer' },
+            { keys: ['⏎'], label: 'Save' },
+            { keys: ['esc'], label: 'Dismiss' },
         ],
     },
 ];
 
-export function KeysPane() {
+export function CapturePane() {
     return (
         <>
-            <div className="mb-5 flex items-center gap-[10px]">
-                <div className="flex flex-1 items-center gap-2 rounded-lg bg-surface3 px-[10px] py-[7px] text-body text-text3">
-                    <SettingsIcon name="search" size={14} sw={1.9} />
-                    <span>Filter shortcuts</span>
-                </div>
-                <PillButton>Restore defaults</PillButton>
-            </div>
+            <p className="mt-0 mb-4 text-body leading-[1.5] text-text3">
+                Lore&rsquo;s AI runs on this Mac, against a placeholder model — no key, no account,
+                nothing sent anywhere. Tag suggestions and duplicate detection land when it is
+                replaced with the real one.
+            </p>
 
-            {SHORTCUT_GROUPS.map((g) => (
+            <SectionLabel first>Automatic work</SectionLabel>
+            <SwitchRow
+                desc="A short abstract plus key points, shown on the item after it lands."
+                last
+                name="autoSum"
+                title="Summarize what I save"
+            />
+        </>
+    );
+}
+
+export function KeysPane() {
+    const [filter, setFilter] = useState('');
+
+    const groups = useMemo(() => {
+        const query = filter.trim().toLowerCase();
+        if (!query) return SHORTCUT_GROUPS;
+        return SHORTCUT_GROUPS.map((g) => ({
+            ...g,
+            rows: g.rows.filter(
+                (r) =>
+                    r.label.toLowerCase().includes(query) ||
+                    r.keys.join('').toLowerCase().includes(query),
+            ),
+        })).filter((g) => g.rows.length > 0);
+    }, [filter]);
+
+    return (
+        <>
+            <label className="mb-5 flex items-center gap-2 rounded-lg bg-surface3 px-[10px] py-[7px] text-body text-text3">
+                <SettingsIcon name="search" size={14} sw={1.9} />
+                <input
+                    className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-text outline-none"
+                    onChange={(e) => setFilter(e.target.value)}
+                    placeholder="Filter shortcuts"
+                    value={filter}
+                />
+            </label>
+
+            {groups.map((g) => (
                 <div className="mb-[22px]" key={g.name}>
                     <SectionLabel first>{g.name}</SectionLabel>
                     {g.rows.map((r, i) => (
@@ -529,7 +508,7 @@ export function KeysPane() {
                                 'flex items-center gap-4 border-b border-border-soft py-[9px]',
                                 i === g.rows.length - 1 && 'border-b-0',
                             )}
-                            key={r.label}
+                            key={`${g.name}:${r.label}`}
                         >
                             <span className="min-w-0 flex-1 text-body-lg">{r.label}</span>
                             <span className="flex flex-none gap-1">
@@ -541,36 +520,35 @@ export function KeysPane() {
                     ))}
                 </div>
             ))}
+            {groups.length === 0 && (
+                <div className="text-body text-text3">No shortcut matches “{filter}”.</div>
+            )}
         </>
     );
 }
 
-/* ------------------------------------------------------------------ *
- * Notifications
- * ------------------------------------------------------------------ */
-
 export function NotifPane() {
-    const digest = useSwitch('digest');
     const notifStyle = useStore((s) => s.prefs.notifStyle);
     const setPref = useStore((s) => s.setPref);
     const sounds = useSwitch('sounds');
 
     return (
         <>
+            <p className="mt-0 mb-4 text-body leading-[1.5] text-text3">
+                The focus timer is the only thing that notifies you today. Due-date reminders and
+                the weekly digest arrive with the features behind them.
+            </p>
+
             <SectionLabel first>Send me</SectionLabel>
-            <Row desc="Three things worth revisiting, chosen by the AI." title="Weekly digest">
-                <Chooser options={['Mondays, 08:00']} value="Mondays, 08:00" />
-                <Toggle label="Weekly digest" on={digest.on} onChange={digest.onChange} />
-            </Row>
             <SwitchRow
-                desc="Due-date alerts for captured tasks."
-                name="dueTasks"
-                title="Task reminders"
+                desc="When a focus interval or a break runs out."
+                last
+                name="focusEnd"
+                title="Focus session end"
             />
-            <SwitchRow last name="focusEnd" title="Focus session end" />
 
             <SectionLabel>Delivery</SectionLabel>
-            <Row title="Style">
+            <Row desc="An alert stays on screen until dismissed." title="Style">
                 <Segmented<NotificationStyle>
                     onChange={(v) => setPref('notifStyle', v)}
                     options={['Banner', 'Alert']}
@@ -581,7 +559,7 @@ export function NotifPane() {
                 <Toggle label="Play a sound" on={sounds.on} onChange={sounds.onChange} />
             </Row>
             <SwitchRow
-                desc="22:00 – 07:30 · nothing but task reminders gets through."
+                desc="22:00 – 07:30 · nothing gets through."
                 last
                 name="quiet"
                 title="Quiet hours"
@@ -590,97 +568,11 @@ export function NotifPane() {
     );
 }
 
-/* ------------------------------------------------------------------ *
- * Capture & AI
- * ------------------------------------------------------------------ */
-
-const AI_MODES: { desc: string; id: AiMode; label: string }[] = [
-    {
-        desc: 'Fastest and most accurate. Text is sent for processing and never retained.',
-        id: 'cloud',
-        label: 'Lore Cloud',
-    },
-    {
-        desc: 'Runs a small local model. Slower, works offline, nothing leaves the machine.',
-        id: 'local',
-        label: 'On this Mac',
-    },
-];
-
-export function CapturePane() {
-    const aiMode = useStore((s) => s.prefs.aiMode);
-    const setPref = useStore((s) => s.setPref);
-
-    return (
-        <>
-            <SectionLabel first>Automatic work</SectionLabel>
-            <SwitchRow
-                desc="A short abstract plus key points, written after the item lands."
-                name="autoSum"
-                title="Summarize what I save"
-            />
-            <SwitchRow
-                desc="Suggestions stay dashed until you accept them."
-                name="autoTag"
-                title="Suggest tags"
-            />
-            <SwitchRow name="preview" title="Fetch link previews and snapshots" />
-            <SwitchRow last name="dupe" title="Warn me about duplicates" />
-
-            <SectionLabel>Where the AI runs</SectionLabel>
-            <div className="mt-2 flex flex-col gap-2">
-                {AI_MODES.map((m) => {
-                    const active = aiMode === m.id;
-                    return (
-                        <button
-                            aria-pressed={active}
-                            className={cn(
-                                CHOICE_CARD,
-                                'items-start border-[1.5px] text-[inherit]',
-                                active
-                                    ? 'border-accent bg-accent-tint'
-                                    : 'border-border bg-transparent',
-                            )}
-                            key={m.id}
-                            onClick={() => setPref('aiMode', m.id)}
-                            type="button"
-                        >
-                            <span
-                                className={cn(
-                                    'mt-px flex h-[17px] w-[17px] flex-none items-center justify-center rounded-full border-[1.5px]',
-                                    active ? 'border-accent' : 'border-dash',
-                                )}
-                            >
-                                <span
-                                    className={cn(
-                                        'h-[9px] w-[9px] rounded-full',
-                                        active ? 'bg-accent' : 'bg-transparent',
-                                    )}
-                                />
-                            </span>
-                            <span className="min-w-0 flex-1">
-                                <span className="block text-subhead font-semibold">{m.label}</span>
-                                <span className="mt-[2px] block text-body leading-[1.5] text-text3">
-                                    {m.desc}
-                                </span>
-                            </span>
-                        </button>
-                    );
-                })}
-            </div>
-
-            <div className="mt-2">
-                <Row desc="Unlimited on Pro." last title="Summaries used this month">
-                    <span className="text-subhead font-[640] tabular-nums">412</span>
-                </Row>
-            </div>
-        </>
-    );
-}
-
-/* ------------------------------------------------------------------ *
- * Focus & Timer
- * ------------------------------------------------------------------ */
+/** How many focus intervals precede the long break. */
+const LONG_BREAK_OPTIONS: ChoiceOption<number>[] = [2, 3, 4, 5].map((n) => ({
+    label: `${n} sessions`,
+    value: n,
+}));
 
 const DURATION_LABELS = [
     { key: 'focus', label: 'Focus' },
@@ -689,58 +581,34 @@ const DURATION_LABELS = [
 ] as const;
 
 export function CalendarPane() {
-    const switches = useStore((s) => s.prefs.switches);
-    const toggle = useStore((s) => s.toggleSwitch);
     const weekStart = useStore((s) => s.prefs.weekStart);
     const setPref = useStore((s) => s.setPref);
 
     return (
         <>
-            <SectionLabel first>Connected calendars</SectionLabel>
-            {CALENDAR_ACCOUNTS.map((c) => (
-                <div
-                    className="flex items-center gap-3 border-b border-border-soft py-[11px]"
-                    key={c.key}
-                >
-                    <span
-                        className="h-[10px] w-[10px] flex-none rounded-[3px]"
-                        // The calendar's own colour, as the provider reports it.
-                        style={{ background: c.color }}
-                    />
-                    <div className="min-w-0 flex-1">
-                        <div className="text-body-lg font-semibold">{c.name}</div>
-                        <div className="mt-px text-body-sm text-text3">{c.meta}</div>
-                    </div>
-                    <Toggle label={c.name} on={switches[c.key]} onChange={() => toggle(c.key)} />
-                </div>
-            ))}
-            <div className="mt-3">
-                <PillButton>
-                    <SettingsIcon name="plus" size={13} sw={2.2} />
-                    Add a calendar account
-                </PillButton>
-            </div>
+            <p className="mt-0 mb-4 text-body leading-[1.5] text-text3">
+                The calendar draws what Lore already knows about: tasks you gave a due date, and
+                focus sessions you ran. Connecting an outside calendar is not built yet.
+            </p>
 
-            <SectionLabel>In the calendar view</SectionLabel>
+            <SectionLabel first>In the calendar view</SectionLabel>
             <SwitchRow
                 desc="Tasks with due dates appear as all-day chips."
                 name="showTasks"
-                title="Show captured tasks alongside events"
+                title="Show captured tasks"
             />
             <SwitchRow name="showFocus" title="Show focus sessions" />
-            <Row title="Week starts on">
+            <Row last title="Week starts on">
                 <Chooser<WeekStart>
+                    label="Week starts on"
                     onChange={(v) => setPref('weekStart', v)}
-                    options={['Monday', 'Sunday']}
+                    options={[
+                        { label: 'Monday', value: 'Monday' },
+                        { label: 'Sunday', value: 'Sunday' },
+                    ]}
                     value={weekStart}
                 />
             </Row>
-            <SwitchRow
-                desc="Notes captured during an event get filed to it."
-                last
-                name="attachNotes"
-                title="Attach meeting notes automatically"
-            />
         </>
     );
 }
@@ -789,17 +657,16 @@ export function FocusPane() {
 
             <SectionLabel>During a session</SectionLabel>
             <SwitchRow
-                desc="Quick capture still works — nothing interrupts you."
-                name="dnd"
-                title="Turn on Do Not Disturb"
+                desc="A break begins the moment a focus interval ends."
+                name="autoBreak"
+                title="Start breaks automatically"
             />
-            <SwitchRow name="autoBreak" title="Start breaks automatically" />
-            <SwitchRow name="chime" title="Chime at the end of each interval" />
-            <Row title="Long break after">
-                <Chooser
-                    onChange={(v) => setPref('longBreakAfter', parseInt(String(v), 10))}
-                    options={['2 sessions', '3 sessions', '4 sessions', '5 sessions']}
-                    value={`${longBreakAfter} sessions`}
+            <Row desc="Then the long one, instead of another short break." title="Long break after">
+                <Chooser<number>
+                    label="Long break after"
+                    onChange={(v) => setPref('longBreakAfter', v)}
+                    options={LONG_BREAK_OPTIONS}
+                    value={longBreakAfter}
                 />
             </Row>
             <SwitchRow
@@ -811,10 +678,6 @@ export function FocusPane() {
         </>
     );
 }
-
-/* ------------------------------------------------------------------ *
- * Calendar
- * ------------------------------------------------------------------ */
 
 function StepButton({ label, onClick, up }: { label: string; onClick: () => void; up?: boolean }) {
     return (
@@ -828,10 +691,6 @@ function StepButton({ label, onClick, up }: { label: string; onClick: () => void
         </button>
     );
 }
-
-/* ------------------------------------------------------------------ *
- * About
- * ------------------------------------------------------------------ */
 
 const ABOUT_LINKS: { href: string; label: string }[] = [
     { href: APP_LINKS.readme, label: 'Source on GitHub' },

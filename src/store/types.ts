@@ -212,8 +212,6 @@ export const ACCENT_NAMES: Record<Accent, string> = {
 };
 export const DEFAULT_ACCENT: Accent = '#393A4A';
 
-export type AiMode = 'cloud' | 'local';
-
 /* ------------------------------------------------------------------ *
  * Onboarding
  * ------------------------------------------------------------------ */
@@ -246,46 +244,33 @@ export type SettingsPane =
     'about' | 'cal' | 'capture' | 'focus' | 'general' | 'keys' | 'look' | 'notif' | 'vault';
 /** List sort order. */
 export type SortOrder = 'newest' | 'oldest' | 'title';
-/** Every boolean switch in the settings sheet, keyed as in the design. */
+/**
+ * Every boolean switch in the settings sheet. A key earns its place here only
+ * once something outside `components/settings/` reads it — `switches.test.ts`
+ * fails when one loses its last reader, so a toggle can never quietly become
+ * decoration again.
+ */
 export interface Switches {
-    attachNotes: boolean;
     autoBreak: boolean;
     // Capture & AI
     autoSum: boolean;
-    autoTag: boolean;
     /** Edit note bodies in the block editor rather than a plain textarea. */
     blockEditor: boolean;
-    calPersonal: boolean;
-    calShared: boolean;
-    calWork: boolean;
-    chime: boolean;
-    clip: boolean;
     // Look & Feel
     counts: boolean;
-    // Notifications
-    digest: boolean;
-    // Focus
-    dnd: boolean;
-    dock: boolean;
-    dueTasks: boolean;
-    dupe: boolean;
     focusEnd: boolean;
-    // General
-    launch: boolean;
+    // Focus
     logFocus: boolean;
-    menubar: boolean;
     motion: boolean;
-    preview: boolean;
     quiet: boolean;
     /** Open the block editor in raw Markdown mode. */
     rawMarkdownDefault: boolean;
     showFocus: boolean;
     // Calendar
     showTasks: boolean;
+    // Notifications
     sounds: boolean;
     statusBar: boolean;
-    // Vault
-    touchid: boolean;
 }
 
 /** What onboarding decided about the vault, handed to `finishOnboarding`. */
@@ -304,35 +289,19 @@ export type ViewMode = 'cards' | 'list' | 'table';
 export type WeekStart = 'Monday' | 'Sunday';
 
 export const DEFAULT_SWITCHES: Switches = {
-    attachNotes: true,
     autoBreak: true,
     autoSum: true,
-    autoTag: true,
     blockEditor: false,
-    calPersonal: true,
-    calShared: false,
-    calWork: true,
-    chime: true,
-    clip: true,
     counts: true,
-    digest: true,
-    dnd: true,
-    dock: false,
-    dueTasks: true,
-    dupe: true,
     focusEnd: true,
-    launch: true,
     logFocus: false,
-    menubar: true,
     motion: false,
-    preview: true,
     quiet: true,
     rawMarkdownDefault: false,
     showFocus: true,
     showTasks: true,
     sounds: false,
     statusBar: true,
-    touchid: true,
 };
 
 /** Focus-timer interval lengths, in minutes. */
@@ -348,10 +317,17 @@ export interface Durations {
  */
 export interface Prefs {
     accent: Accent;
-    aiMode: AiMode;
     appearance: Appearance;
     /** The theme style used whenever the effective mode is dark. */
     darkTheme: ThemeId;
+    /**
+     * The tab a capture opens on. `'auto'` leaves the surface to decide: the
+     * command bar infers the type from what was typed, the composer opens on
+     * Link.
+     */
+    defaultCaptureType: 'auto' | ItemType;
+    /** Collection new captures are filed into; null means the Inbox. */
+    defaultCollection: null | string;
     density: Density;
     durations: Durations;
     /** The theme style used whenever the effective mode is light. */
@@ -369,9 +345,10 @@ export interface Prefs {
 
 export const DEFAULT_PREFS: Prefs = {
     accent: DEFAULT_ACCENT,
-    aiMode: 'cloud',
     appearance: 'light',
     darkTheme: DEFAULT_DARK_THEME,
+    defaultCaptureType: 'auto',
+    defaultCollection: null,
     density: 'Cozy',
     durations: { focus: 25, long: 15, short: 5 },
     lightTheme: DEFAULT_LIGHT_THEME,

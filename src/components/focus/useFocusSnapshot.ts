@@ -10,7 +10,6 @@ import { queueItems } from '../../store/views';
 export function useFocusSnapshot(): FocusSnapshot {
     const collections = useStore((s) => s.collections);
     const durations = useStore((s) => s.prefs.durations);
-    const dnd = useStore((s) => s.prefs.switches.dnd);
     const focus = useStore((s) => s.focus);
     const items = useStore((s) => s.items);
     const totalSessions = useStore((s) => s.prefs.longBreakAfter);
@@ -22,7 +21,6 @@ export function useFocusSnapshot(): FocusSnapshot {
 
     return {
         canStop: !isTimerIdle(focus, durations),
-        dnd,
         endsAt: focus.endsAt,
         phase: focus.phase,
         queueCount: queue.length,

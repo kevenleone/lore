@@ -21,7 +21,6 @@ import { TICK_MS } from './useFocusTimer';
 
 const EMPTY: FocusSnapshot = {
     canStop: false,
-    dnd: true,
     endsAt: null,
     phase: 'focus',
     queueCount: 0,
