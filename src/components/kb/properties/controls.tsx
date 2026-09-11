@@ -25,15 +25,18 @@ export function MenuItem({
     selected: boolean;
 }) {
     return (
-        <div
+        <button
+            aria-selected={selected}
             className={cn(
-                'flex items-center gap-[7px] rounded-7 px-2 py-[6px] text-body hover:bg-hover',
+                'flex w-full items-center gap-[7px] rounded-7 border-none bg-transparent px-2 py-[6px] text-left font-[inherit] text-body hover:bg-hover',
                 selected ? 'font-[590] text-accent' : 'font-normal text-text2',
             )}
             onClick={onClick}
+            role="option"
+            type="button"
         >
             {children}
-        </div>
+        </button>
     );
 }
 

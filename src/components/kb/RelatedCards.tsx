@@ -26,10 +26,11 @@ export function RelatedCards({ related }: { related: Item[] }) {
                 {related.map((r) => {
                     const meta = typeMeta(r.type);
                     return (
-                        <div
-                            className="flex items-center gap-[11px] rounded-11 border border-border px-[13px] py-[11px] hover:border-border hover:bg-surface2"
+                        <button
+                            className="flex w-full items-center gap-[11px] rounded-11 border border-border bg-transparent px-[13px] py-[11px] text-left font-[inherit] hover:bg-surface2"
                             key={r.id}
                             onClick={() => selectItem(r.id)}
+                            type="button"
                         >
                             <span
                                 className={cn(
@@ -50,7 +51,7 @@ export function RelatedCards({ related }: { related: Item[] }) {
                             <span className="flex flex-none text-faint">
                                 <ChevronRight />
                             </span>
-                        </div>
+                        </button>
                     );
                 })}
             </div>
