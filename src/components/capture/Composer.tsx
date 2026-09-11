@@ -44,6 +44,11 @@ export interface ComposerProps {
      */
     defaultCollectionId?: null | string;
     /**
+     * Settings' default capture type. `'auto'` opens on Link, the tab that
+     * suits the commonest capture; a pinned type opens on its own tab.
+     */
+    defaultType?: 'auto' | ItemType;
+    /**
      * Whether the surface has stopped moving and may take focus.
      *
      * The drawer withholds it for the length of its slide. Focusing a field
@@ -97,12 +102,13 @@ const CHIP_OFF = 'bg-surface3 text-text2';
 export function Composer({
     chrome = 'panel',
     defaultCollectionId = null,
+    defaultType = 'auto',
     focusReady = true,
     onCancel = hideCapture,
     onSave,
 }: ComposerProps) {
     const inDrawer = chrome === 'drawer';
-    const [tab, setTab] = useState<ItemType>('link');
+    const [tab, setTab] = useState<ItemType>(defaultType === 'auto' ? 'link' : defaultType);
     const [value, setValue] = useState('');
     const [tags, setTags] = useState<string[]>([]);
     const [addingTag, setAddingTag] = useState(false);

@@ -102,7 +102,19 @@ export function CaptureApp() {
             </div>
 
             <div className="w-full max-w-[560px]">
-                {mode === 'A' ? <CommandBar key={sessionKey} /> : <Composer key={sessionKey} />}
+                {mode === 'A' ? (
+                    <CommandBar
+                        collectionId={prefs.defaultCollection}
+                        defaultType={prefs.defaultCaptureType}
+                        key={sessionKey}
+                    />
+                ) : (
+                    <Composer
+                        defaultCollectionId={prefs.defaultCollection}
+                        defaultType={prefs.defaultCaptureType}
+                        key={sessionKey}
+                    />
+                )}
             </div>
         </div>
     );

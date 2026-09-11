@@ -27,8 +27,10 @@ export function CaptureDrawer() {
     const createItem = useStore((s) => s.createItem);
     const reduceMotion = useStore((s) => s.prefs.switches.motion);
     // Capture from inside a collection files into it — the drawer is opened from
-    // the library the user is already looking at.
+    // the library the user is already looking at. Anywhere else, Settings decides.
     const view = useStore((s) => s.view);
+    const defaultCollection = useStore((s) => s.prefs.defaultCollection);
+    const defaultCaptureType = useStore((s) => s.prefs.defaultCaptureType);
     const { mounted, open } = useMountTransition(captureOpen, DRAWER_MS, reduceMotion);
     // False for the length of the slide, so the form does not focus a field that
     // is still off the right edge — see `Composer`'s `focusReady`. A timer rather
@@ -91,7 +93,10 @@ export function CaptureDrawer() {
                 <div className="flex min-h-0 flex-1 flex-col">
                     <Composer
                         chrome="drawer"
-                        defaultCollectionId={view.kind === 'collection' ? view.val : null}
+                        defaultCollectionId={
+                            view.kind === 'collection' ? view.val : defaultCollection
+                        }
+                        defaultType={defaultCaptureType}
                         focusReady={settled}
                         onCancel={closeCapture}
                         onSave={save}
