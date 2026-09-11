@@ -9,6 +9,7 @@ import { gitStatus, initGit } from './git';
 import { parseGithubTarget, resolveDocument } from './github';
 import { fetchLinkMetadata } from './linkMetadata';
 import { ATTACHMENTS_DIR, hashColor } from './vault';
+import { exportVault, measureVault } from './vaultSize';
 import { Workspace, WorkspaceNotOpen } from './workspace';
 
 type NewItemBody = Omit<Item, 'createdAt' | 'id' | 'updatedAt'>;
@@ -58,6 +59,22 @@ export function routes(workspace: Workspace) {
             })
 
             .post('/workspace/reindex', () => workspace.reconcile())
+
+            .get('/workspace/size', () => measureVault(workspace.current.vault.root))
+
+            /**
+             * Copy the vault's own files somewhere the user picked. The index is
+             * left behind: it is derived, and the point of the export is the
+             * Markdown, which is readable without Lore at all.
+             */
+            .post('/workspace/export', async ({ body, set }) => {
+                const { path } = body as { path?: string };
+                if (!path) {
+                    set.status = 400;
+                    return { error: 'path_required' };
+                }
+                return exportVault(workspace.current.vault.root, path);
+            })
 
             /* ---------------- git ---------------- */
 
