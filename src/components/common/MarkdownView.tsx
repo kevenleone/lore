@@ -14,7 +14,7 @@ export function MarkdownView({ className, markdown }: MarkdownViewProps): React.
     const children = useMemo(() => toAst(markdown).children, [markdown]);
 
     return (
-        <div className={cn('flex flex-col gap-2', className)}>
+        <div className={cn('flex flex-col gap-2 select-text', className)}>
             {children.map((node, index) => (
                 <Block key={index} node={node} />
             ))}

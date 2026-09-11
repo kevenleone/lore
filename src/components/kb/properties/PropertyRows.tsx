@@ -145,7 +145,7 @@ export function PropertyRows({ item }: { item: Item }) {
                     />
                 ) : (
                     <span
-                        className="min-w-0 cursor-text overflow-hidden"
+                        className="min-w-0 cursor-text overflow-hidden select-text"
                         onClick={() => {
                             setUrlDraft(item.url ?? '');
                             setEditingUrl(true);
@@ -165,7 +165,7 @@ function FlagChip({ label, on, onClick }: { label: string; on: boolean; onClick:
         <button
             aria-pressed={on}
             className={cn(
-                'cursor-pointer rounded-md border px-[7px] py-[2.5px] font-[inherit] text-label',
+                'rounded-md border px-[7px] py-[2.5px] font-[inherit] text-label',
                 on
                     ? 'border-solid border-transparent bg-accent-tint font-semibold text-accent'
                     : 'border-dashed border-dash bg-transparent font-medium text-faint',

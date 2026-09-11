@@ -37,7 +37,7 @@ export function AskLoreChat() {
                         Answers grounded in your knowledge base
                     </div>
                 </div>
-                <span className="flex cursor-pointer text-faint" onClick={toggleChat}>
+                <span className="flex text-faint" onClick={toggleChat}>
                     <Close />
                 </span>
             </div>
@@ -47,14 +47,14 @@ export function AskLoreChat() {
                 {messages.map((m) =>
                     m.role === 'user' ? (
                         <div
-                            className="max-w-[78%] self-end rounded-[15px_15px_4px_15px] bg-accent px-[15px] py-[10px] text-title leading-[1.5] text-white"
+                            className="max-w-[78%] self-end rounded-[15px_15px_4px_15px] bg-accent px-[15px] py-[10px] text-title leading-[1.5] text-white select-text"
                             key={m.id}
                         >
                             {m.text}
                         </div>
                     ) : (
                         <div className="max-w-[88%] self-start" key={m.id}>
-                            <div className="rounded-[15px_15px_15px_4px] bg-sel p-4 py-3 text-title leading-[1.55] text-text">
+                            <div className="rounded-[15px_15px_15px_4px] bg-sel p-4 py-3 text-title leading-[1.55] text-text select-text">
                                 {m.text}
                             </div>
                             {m.sources && m.sources.length > 0 && (
@@ -68,7 +68,7 @@ export function AskLoreChat() {
                                         const meta = typeMeta(item.type);
                                         return (
                                             <span
-                                                className="inline-flex cursor-pointer items-center gap-[6px] rounded-lg border border-border bg-surface px-[9px] py-1 text-body-sm text-text2 hover:border-border hover:bg-surface2"
+                                                className="inline-flex items-center gap-[6px] rounded-lg border border-border bg-surface px-[9px] py-1 text-body-sm text-text2 hover:border-border hover:bg-surface2"
                                                 key={src.itemId}
                                                 onClick={() => selectItem(src.itemId)}
                                             >
@@ -94,7 +94,7 @@ export function AskLoreChat() {
             {/* input */}
             <div className="flex flex-none items-center gap-[10px] border-t border-border px-5 py-[14px]">
                 <input
-                    className="flex-1 rounded-11 border-none bg-surface3 px-[14px] py-[11px] text-subhead text-text outline-none"
+                    className="flex-1 rounded-11 border-none bg-surface3 px-[14px] py-[11px] text-subhead text-text"
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') submit();
@@ -103,7 +103,7 @@ export function AskLoreChat() {
                     value={draft}
                 />
                 <span
-                    className="flex h-[38px] w-[38px] flex-none cursor-pointer items-center justify-center rounded-11 bg-accent text-white"
+                    className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-11 bg-accent text-white"
                     onClick={submit}
                 >
                     <Send />

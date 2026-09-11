@@ -22,8 +22,7 @@ const COLLECTION_COLORS = [
     '#9e7b46',
 ];
 
-const ROW_BASE =
-    'text-subhead flex cursor-pointer items-center gap-[9px] rounded-7 px-[9px] py-[6px]';
+const ROW_BASE = 'text-subhead flex items-center gap-[9px] rounded-7 px-[9px] py-[6px]';
 
 export function CollectionsSection() {
     const items = useStore((s) => s.items);
@@ -78,7 +77,7 @@ export function CollectionsSection() {
             key={key}
         >
             <input
-                className="rounded-7 border border-border bg-surface px-[9px] py-[6px] font-[inherit] text-subhead outline-none"
+                className="rounded-7 border border-border bg-surface px-[9px] py-[6px] font-[inherit] text-subhead"
                 onChange={(e) => setDraftName(e.target.value)}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter') void save();
@@ -91,7 +90,7 @@ export function CollectionsSection() {
             <div className="flex flex-wrap items-center gap-[6px]">
                 {COLLECTION_COLORS.map((c) => (
                     <span
-                        className="h-[18px] w-[18px] cursor-pointer rounded-full"
+                        className="h-[18px] w-[18px] rounded-full"
                         key={c}
                         onClick={() => setDraftColor(c)}
                         // Both the swatch and its selected ring are the swatch's
@@ -104,14 +103,11 @@ export function CollectionsSection() {
                 ))}
             </div>
             <div className="flex justify-end gap-[6px]">
-                <span
-                    className="cursor-pointer rounded-7 px-[10px] py-1 text-body text-text2"
-                    onClick={cancel}
-                >
+                <span className="rounded-7 px-[10px] py-1 text-body text-text2" onClick={cancel}>
                     Cancel
                 </span>
                 <span
-                    className="cursor-pointer rounded-7 bg-accent px-3 py-1 text-body font-semibold text-white"
+                    className="rounded-7 bg-accent px-3 py-1 text-body font-semibold text-white"
                     onClick={() => void save()}
                 >
                     Save
@@ -126,11 +122,7 @@ export function CollectionsSection() {
                 <span className="text-caption font-[680] tracking-[.06em] text-faint uppercase">
                     Collections
                 </span>
-                <span
-                    className="ml-auto flex cursor-pointer text-faint"
-                    onClick={startAdd}
-                    title="New collection"
-                >
+                <span className="ml-auto flex text-faint" onClick={startAdd} title="New collection">
                     <Plus size={13} sw={2} />
                 </span>
             </div>
@@ -145,14 +137,14 @@ export function CollectionsSection() {
                                 Delete “{c.name}”?
                             </span>
                             <span
-                                className="flex cursor-pointer text-text3"
+                                className="flex text-text3"
                                 onClick={() => setConfirmId(null)}
                                 title="Cancel"
                             >
                                 <Close size={14} />
                             </span>
                             <span
-                                className="flex cursor-pointer text-[#c0392b]"
+                                className="flex text-[#c0392b]"
                                 onClick={() => {
                                     setConfirmId(null);
                                     void deleteCollection(c.id);
@@ -189,7 +181,7 @@ export function CollectionsSection() {
                         {hovered ? (
                             <span className="flex items-center gap-2">
                                 <span
-                                    className="flex cursor-pointer text-text3"
+                                    className="flex text-text3"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         startEdit(c.id, c.name, c.color);
@@ -199,7 +191,7 @@ export function CollectionsSection() {
                                     <Pencil size={13} />
                                 </span>
                                 <span
-                                    className="flex cursor-pointer text-[#b0807c]"
+                                    className="flex text-[#b0807c]"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setConfirmId(c.id);

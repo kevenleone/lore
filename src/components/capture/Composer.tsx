@@ -90,7 +90,7 @@ const PRIORITY_LABELS: Record<Priority, string> = {
 };
 
 const SECTION_LABEL = 'text-micro font-semibold tracking-[.05em] text-faint uppercase';
-const CHIP = 'cursor-pointer rounded-md px-[9px] py-[3px] text-caption';
+const CHIP = 'rounded-md px-[9px] py-[3px] text-caption';
 const CHIP_ON = 'bg-accent-tint font-semibold text-accent';
 const CHIP_OFF = 'bg-surface3 text-text2';
 
@@ -350,7 +350,7 @@ export function Composer({
                     return (
                         <div
                             className={cn(
-                                'flex cursor-pointer items-center gap-[6px] rounded-lg px-[11px] py-[7px] text-body-lg whitespace-nowrap',
+                                'flex items-center gap-[6px] rounded-lg px-[11px] py-[7px] text-body-lg whitespace-nowrap',
                                 active ? 'bg-accent-tint font-[590] text-accent' : 'text-text2',
                             )}
                             key={t.type}
@@ -429,7 +429,7 @@ export function Composer({
                 {tab === 'note' && (
                     <CaptureBody
                         autoFocus
-                        className="min-h-[150px] w-full resize-y overflow-y-auto rounded-xl border border-border px-[14px] py-[13px] font-[inherit] text-[14.5px] leading-[1.6] text-text outline-none"
+                        className="min-h-[150px] w-full resize-y overflow-y-auto rounded-xl border border-border px-[14px] py-[13px] font-[inherit] text-[14.5px] leading-[1.6] text-text"
                         onChange={setValue}
                         placeholder="Write a note…"
                         textareaRef={setFieldRef}
@@ -486,7 +486,7 @@ export function Composer({
                             </span>
                             {dueAt && (
                                 <span
-                                    className="inline-flex cursor-pointer items-center text-faint"
+                                    className="inline-flex items-center text-faint"
                                     onClick={() => setDueAt('')}
                                     title="Clear the deadline"
                                 >
@@ -512,7 +512,7 @@ export function Composer({
                             <span className={SECTION_LABEL}>Focus</span>
                             <span
                                 className={cn(
-                                    'inline-flex cursor-pointer items-center gap-[6px] rounded-md px-[9px] py-[3px] text-caption',
+                                    'inline-flex items-center gap-[6px] rounded-md px-[9px] py-[3px] text-caption',
                                     today ? CHIP_ON : CHIP_OFF,
                                 )}
                                 onClick={() => setToday((t) => !t)}
@@ -541,7 +541,7 @@ export function Composer({
                                     >
                                         <span
                                             className={cn(
-                                                'flex h-[15px] w-[15px] flex-none cursor-pointer items-center justify-center rounded-[4px] border',
+                                                'flex h-[15px] w-[15px] flex-none items-center justify-center rounded-[4px] border',
                                                 subtask.done
                                                     ? 'border-accent bg-accent text-white'
                                                     : 'border-border text-transparent',
@@ -564,7 +564,7 @@ export function Composer({
                                             {subtask.text}
                                         </span>
                                         <span
-                                            className="cursor-pointer text-faint"
+                                            className="text-faint"
                                             onClick={() =>
                                                 setSubtasks((a) => a.filter((_, j) => j !== index))
                                             }
@@ -593,7 +593,7 @@ export function Composer({
                 )}
                 {tab === 'code' && (
                     <textarea
-                        className="min-h-[150px] w-full resize-y rounded-xl border border-border bg-surface2 p-[14px] font-mono text-body leading-[1.7] text-text2 outline-none"
+                        className="min-h-[150px] w-full resize-y rounded-xl border border-border bg-surface2 p-[14px] font-mono text-body leading-[1.7] text-text2"
                         onChange={(e) => setValue(e.target.value)}
                         placeholder="Paste a snippet…"
                         ref={setFieldRef}
@@ -661,7 +661,7 @@ export function Composer({
                             <>
                                 <div
                                     className={cn(
-                                        'flex cursor-pointer flex-col items-center gap-[9px] rounded-xl border-[1.5px] border-dashed p-[34px] text-center',
+                                        'flex flex-col items-center gap-[9px] rounded-xl border-[1.5px] border-dashed p-[34px] text-center',
                                         dragging ? 'border-accent bg-accent-tint' : 'border-dash',
                                     )}
                                     onClick={() => fileInputRef.current?.click()}
@@ -709,7 +709,7 @@ export function Composer({
                             </>
                         )}
                         <input
-                            className="mt-3 w-full rounded-lg border border-border px-[10px] py-[6px] font-[inherit] text-body-lg text-text outline-none"
+                            className="mt-3 w-full rounded-lg border border-border px-[10px] py-[6px] font-[inherit] text-body-lg text-text"
                             onChange={(e) => setValue(e.target.value)}
                             onKeyDown={onFieldKeyDown}
                             placeholder="Title (optional)"
@@ -723,7 +723,7 @@ export function Composer({
                     <span className={SECTION_LABEL}>Tags</span>
                     {tags.map((t) => (
                         <span
-                            className="inline-flex cursor-pointer items-center gap-[5px] rounded-md bg-accent-tint px-2 py-[3px] font-mono text-caption text-accent"
+                            className="inline-flex items-center gap-[5px] rounded-md bg-accent-tint px-2 py-[3px] font-mono text-caption text-accent"
                             key={t}
                             onClick={() => removeTag(t)}
                         >
@@ -756,7 +756,7 @@ export function Composer({
                         />
                     ) : (
                         <span
-                            className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-dashed border-dash bg-transparent px-[7px] py-[2px] font-mono text-caption text-text3"
+                            className="inline-flex items-center gap-1 rounded-md border border-dashed border-dash bg-transparent px-[7px] py-[2px] font-mono text-caption text-text3"
                             onClick={() => setAddingTag(true)}
                         >
                             <Plus size={9} sw={2.4} />
@@ -771,7 +771,7 @@ export function Composer({
                     <span className={SECTION_LABEL}>Collection</span>
                     <div className="relative" ref={collRef}>
                         <span
-                            className="inline-flex cursor-pointer items-center gap-[7px] rounded-lg bg-sel px-[10px] py-[5px] text-body-lg text-text2"
+                            className="inline-flex items-center gap-[7px] rounded-lg bg-sel px-[10px] py-[5px] text-body-lg text-text2"
                             onClick={() => setCollOpen((o) => !o)}
                         >
                             <span
@@ -794,7 +794,7 @@ export function Composer({
                                 {collections.map((c) => (
                                     <div
                                         className={cn(
-                                            'flex cursor-pointer items-center gap-2 rounded-7 px-[10px] py-[7px] text-body-lg',
+                                            'flex items-center gap-2 rounded-7 px-[10px] py-[7px] text-body-lg',
                                             c.id === collectionId
                                                 ? 'bg-accent-tint font-semibold text-accent'
                                                 : 'bg-transparent font-normal text-text2',
@@ -828,7 +828,7 @@ export function Composer({
                 </span>
                 <span className="flex items-center gap-2">
                     <span
-                        className="cursor-pointer rounded-lg px-3 py-[6px] text-body-lg text-text2"
+                        className="rounded-lg px-3 py-[6px] text-body-lg text-text2"
                         onClick={onCancel}
                     >
                         Cancel
@@ -836,9 +836,7 @@ export function Composer({
                     <span
                         className={cn(
                             'inline-flex items-center gap-[7px] rounded-lg bg-accent px-[14px] py-[7px] text-body-lg font-semibold text-white',
-                            canSave && !saving
-                                ? 'cursor-pointer opacity-100'
-                                : 'cursor-default opacity-55',
+                            canSave && !saving ? 'opacity-100' : 'cursor-default opacity-55',
                         )}
                         onClick={() => void save()}
                     >

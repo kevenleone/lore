@@ -48,14 +48,14 @@ export function CommentsSection({ item }: { item: Item }) {
                                 )}
                                 <span>{formatSavedDate(comment.at)}</span>
                                 <span
-                                    className="ml-auto cursor-pointer text-body-lg leading-none"
+                                    className="ml-auto text-body-lg leading-none"
                                     onClick={() => void removeComment(item.id, comment.id)}
                                     title="Delete comment"
                                 >
                                     ×
                                 </span>
                             </div>
-                            <div className="text-body leading-[1.55] text-text2">
+                            <div className="text-body leading-[1.55] text-text2 select-text">
                                 <Suspense
                                     fallback={
                                         <div className="whitespace-pre-wrap">{comment.body}</div>
@@ -70,7 +70,7 @@ export function CommentsSection({ item }: { item: Item }) {
             )}
 
             <textarea
-                className="min-h-[58px] w-full resize-y rounded-9 border border-border bg-surface px-[10px] py-2 font-[inherit] text-body leading-[1.5] text-text outline-none"
+                className="min-h-[58px] w-full resize-y rounded-9 border border-border bg-surface px-[10px] py-2 font-[inherit] text-body leading-[1.5] text-text"
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit();
@@ -83,7 +83,7 @@ export function CommentsSection({ item }: { item: Item }) {
                     className={cn(
                         'rounded-lg border-none px-3 py-[5px] font-[inherit] text-body-sm font-semibold',
                         draft.trim()
-                            ? 'cursor-pointer bg-accent text-white'
+                            ? 'bg-accent text-white'
                             : 'cursor-default bg-surface3 text-faint',
                     )}
                     disabled={!draft.trim()}
