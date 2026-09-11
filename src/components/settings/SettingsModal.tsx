@@ -34,18 +34,78 @@ interface PaneDef {
     icon: SettingsIconName;
     id: SettingsPane;
     label: string;
+    /**
+     * What the pane holds, for the rail's search. Searching for a setting by
+     * its own name is the point — matching only the nine pane labels sends the
+     * user who types "density" away with "No matching settings".
+     */
+    terms: string;
 }
 
 const PANES: PaneDef[] = [
-    { Body: GeneralPane, icon: 'gear', id: 'general', label: 'General' },
-    { Body: VaultPane, icon: 'folder', id: 'vault', label: 'Vault' },
-    { Body: LookPane, icon: 'palette', id: 'look', label: 'Appearance' },
-    { Body: KeysPane, icon: 'keyboard', id: 'keys', label: 'Keyboard Shortcuts' },
-    { Body: NotifPane, icon: 'bell', id: 'notif', label: 'Notifications' },
-    { Body: CapturePane, icon: 'sparkle', id: 'capture', label: 'Capture & AI' },
-    { Body: FocusPane, icon: 'timer', id: 'focus', label: 'Focus & Timer' },
-    { Body: CalendarPane, icon: 'calendar', id: 'cal', label: 'Calendar' },
-    { Body: AboutPane, icon: 'info', id: 'about', label: 'About' },
+    {
+        Body: GeneralPane,
+        icon: 'gear',
+        id: 'general',
+        label: 'General',
+        terms: 'captures collection inbox file default capture type link note task code image',
+    },
+    {
+        Body: VaultPane,
+        icon: 'folder',
+        id: 'vault',
+        label: 'Vault',
+        terms: 'folder workspace library markdown files finder reveal open local storage',
+    },
+    {
+        Body: LookPane,
+        icon: 'palette',
+        id: 'look',
+        label: 'Appearance',
+        terms: 'colour color mode light dark auto theme style accent layout list cards table drawer page density cozy compact roomy text size counts sidebar status bar motion block editor markdown',
+    },
+    {
+        Body: KeysPane,
+        icon: 'keyboard',
+        id: 'keys',
+        label: 'Keyboard Shortcuts',
+        terms: 'shortcuts keys hotkeys chords capture search focus sidebar properties views',
+    },
+    {
+        Body: NotifPane,
+        icon: 'bell',
+        id: 'notif',
+        label: 'Notifications',
+        terms: 'alerts banner alert sound quiet hours focus session end',
+    },
+    {
+        Body: CapturePane,
+        icon: 'sparkle',
+        id: 'capture',
+        label: 'Capture & AI',
+        terms: 'ai summary summarize automatic',
+    },
+    {
+        Body: FocusPane,
+        icon: 'timer',
+        id: 'focus',
+        label: 'Focus & Timer',
+        terms: 'pomodoro timer focus short long break duration minutes sessions log',
+    },
+    {
+        Body: CalendarPane,
+        icon: 'calendar',
+        id: 'cal',
+        label: 'Calendar',
+        terms: 'week starts monday sunday tasks focus sessions events',
+    },
+    {
+        Body: AboutPane,
+        icon: 'info',
+        id: 'about',
+        label: 'About',
+        terms: 'version build licence source github release notes issue telemetry account',
+    },
 ];
 
 export function SettingsModal() {
@@ -69,8 +129,11 @@ export function SettingsModal() {
     }, [close]);
 
     const visible = useMemo(() => {
-        const q = filter.trim().toLowerCase();
-        return q ? PANES.filter((p) => p.label.toLowerCase().includes(q)) : PANES;
+        const query = filter.trim().toLowerCase();
+        if (!query) return PANES;
+        return PANES.filter(
+            (p) => p.label.toLowerCase().includes(query) || p.terms.includes(query),
+        );
     }, [filter]);
 
     const active = PANES.find((p) => p.id === pane) ?? PANES[0];
