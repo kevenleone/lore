@@ -15,6 +15,7 @@
 // `notification` is what tells the user a focus interval ended while they were
 // looking at something else.
 
+mod app_menu;
 mod commands;
 mod focus_tray;
 mod mode;
@@ -128,6 +129,7 @@ pub fn run() {
                     );
                 }
 
+                app_menu::install(app)?;
                 commands::build_tray(app.handle())?;
                 #[cfg(target_os = "macos")]
                 focus_tray::use_monospaced_digits();

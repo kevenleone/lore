@@ -6,9 +6,7 @@
 // Before any of that is reachable, `Lore Onboarding` covers the window until
 // the user has chosen a folder to hold their vault.
 
-import { useEffect } from 'react';
-
-import type { View } from './store/types';
+import { useEffect, useMemo } from 'react';
 
 import { CalendarView } from './components/calendar/CalendarView';
 import { CaptureDrawer } from './components/capture/CaptureDrawer';
@@ -26,20 +24,14 @@ import { StatusBar } from './components/kb/StatusBar';
 import { TitleBar } from './components/kb/TitleBar';
 import { Onboarding } from './components/onboarding/Onboarding';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { APP_LINKS, openExternal } from './lib/appInfo';
 import { cn } from './lib/cn';
 import { DRAWER_MS } from './lib/motion';
+import { SEARCH_COMMAND } from './lib/searchCommand';
 import { isTypingTarget } from './lib/typingTarget';
 import { useMountTransition } from './lib/useMountTransition';
 import { useStore } from './store/useStore';
 import { effectiveTheme, paintTheme } from './theme/tokens';
-
-/** ⌘1–⌘4; the Calendar is not a Library view, so ⌘5 is handled beside them. */
-const LIBRARY_KEYS: Record<string, View['kind']> = {
-    Digit1: 'all',
-    Digit2: 'inbox',
-    Digit3: 'today',
-    Digit4: 'starred',
-};
 
 export default function App() {
     const hydrate = useStore((s) => s.hydrate);
@@ -82,38 +74,14 @@ export default function App() {
         void hydrate();
     }, [hydrate]);
 
-    // The window shortcuts the new surfaces claim, as listed in Settings →
-    // Keyboard Shortcuts. ⌘K lives with the search box it focuses. ⌘N is the
-    // in-window capture: ⌥Space is the global one, for when Lore is behind
-    // something else, and Rust routes it here as `capture:toggle`.
+    // Escape is the one shortcut the menu bar cannot own: what it closes
+    // depends on what is open. Every other command is a menu item now — see
+    // `app_menu.rs` — and ⌥⇧F reaches here from the tray as well.
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            const command = (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey;
-            // A bare ⌘ chord would otherwise fire mid-sentence in the editor,
-            // the search box or a title field.
-            const typing = isTypingTarget(e.target);
-            const libraryKind = command ? LIBRARY_KEYS[e.code] : undefined;
             if (e.altKey && e.shiftKey && e.code === 'KeyF') {
                 e.preventDefault();
                 toggleFocus();
-            } else if (command && e.code === 'KeyN') {
-                e.preventDefault();
-                toggleCapture();
-            } else if (command && !typing && e.code === 'KeyB') {
-                e.preventDefault();
-                toggleSidebar();
-            } else if (command && !typing && e.code === 'KeyL') {
-                e.preventDefault();
-                toggleProperties();
-            } else if (command && e.code === 'Comma') {
-                e.preventDefault();
-                openSettings();
-            } else if (command && !typing && libraryKind) {
-                e.preventDefault();
-                selectView(libraryKind, null);
-            } else if (command && !typing && e.code === 'Digit5') {
-                e.preventDefault();
-                setMainView('calendar');
             } else if (e.key === 'Escape') {
                 // The capture drawer lies over everything else, so it is the first
                 // thing Escape takes away; under it, both ways of opening an item
@@ -124,18 +92,28 @@ export default function App() {
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [
-        captureOpen,
-        closeCapture,
-        closeOpenItem,
-        openSettings,
-        selectView,
-        setMainView,
-        toggleCapture,
-        toggleFocus,
-        toggleProperties,
-        toggleSidebar,
-    ]);
+    }, [captureOpen, closeCapture, closeOpenItem, toggleFocus]);
+
+    // What the menu bar's items do. The ids are `app_menu.rs`'s.
+    const menuCommands = useMemo<Record<string, () => void>>(
+        () => ({
+            capture: () => toggleCapture(),
+            contribute: () => void openExternal(APP_LINKS.issues),
+            documentation: () => void openExternal(APP_LINKS.readme),
+            'open-vault': () => openSettings('vault'),
+            properties: () => toggleProperties(),
+            search: () => window.dispatchEvent(new CustomEvent(SEARCH_COMMAND)),
+            'select-all': selectAllInFocusedField,
+            settings: () => openSettings(),
+            sidebar: () => toggleSidebar(),
+            'view-all': () => selectView('all', null),
+            'view-calendar': () => setMainView('calendar'),
+            'view-inbox': () => selectView('inbox', null),
+            'view-starred': () => selectView('starred', null),
+            'view-today': () => selectView('today', null),
+        }),
+        [openSettings, selectView, setMainView, toggleCapture, toggleProperties, toggleSidebar],
+    );
 
     // Paint the token set for the effective theme, and repaint when the OS
     // switches while Color mode is on Auto.
@@ -161,12 +139,13 @@ export default function App() {
                 const { listen } = await import('@tauri-apps/api/event');
                 unlisteners.push(await listen('item:created', () => void refresh()));
                 unlisteners.push(await listen('capture:toggle', () => toggleCapture()));
+                unlisteners.push(await listen<string>('menu', (e) => menuCommands[e.payload]?.()));
             } catch {
                 // Outside Tauri — no event bus.
             }
         })();
         return () => unlisteners.forEach((off) => off());
-    }, [refresh, toggleCapture]);
+    }, [menuCommands, refresh, toggleCapture]);
 
     // List keeps a permanent detail column; Cards and Table open an item over or
     // instead of themselves, which is what `openMode` chooses between.
@@ -264,10 +243,7 @@ export default function App() {
                             {drawer.mounted && !chatOpen && !asPage && (
                                 <>
                                     <div
-                                        className={cn(
-                                            'absolute inset-0 z-20 cursor-pointer bg-scrim',
-                                            scrimClass,
-                                        )}
+                                        className={cn('absolute inset-0 z-20 bg-scrim', scrimClass)}
                                         onClick={closeOpenItem}
                                     />
                                     <div
@@ -341,4 +317,23 @@ export default function App() {
             {!onboarded && <Onboarding />}
         </div>
     );
+}
+
+/**
+ * Select All, as a desktop app means it: the focused field's text, or nothing.
+ * A list of items is not a page of text to select — and the library has no
+ * selection of its own yet.
+ */
+function selectAllInFocusedField(): void {
+    const target = document.activeElement;
+    if (!isTypingTarget(target)) return;
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+        target.select();
+        return;
+    }
+    const selection = document.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(target as HTMLElement);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
 }
