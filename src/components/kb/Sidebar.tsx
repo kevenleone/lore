@@ -17,8 +17,13 @@ import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 /** Fixed while the pane collapses, so the contents don't reflow mid-transition. */
 export const SIDEBAR_WIDTH = 248;
 
+/**
+ * Every row here is a button: the sidebar is how the library is navigated, so
+ * each one has to be reachable by keyboard as well as by pointer. The reset
+ * strips the chrome a `<button>` brings with it, leaving the row it replaced.
+ */
 const ROW_BASE =
-    'text-subhead flex cursor-pointer items-center gap-[9px] rounded-7 px-[9px] py-[6px]';
+    'text-subhead flex w-full items-center gap-[9px] rounded-7 border-none bg-transparent px-[9px] py-[6px] text-left font-[inherit]';
 
 const SECTION_LABEL =
     'text-caption px-[9px] pt-[15px] pb-[5px] font-[680] tracking-[.06em] text-faint uppercase';
@@ -26,7 +31,7 @@ const SECTION_LABEL =
 const COUNT = 'text-body-sm tabular-nums opacity-50';
 
 const FOOTER_ROW =
-    'flex cursor-pointer items-center gap-[9px] rounded-7 px-[9px] py-[8px] text-text2 hover:bg-hover';
+    'flex w-full items-center gap-[9px] rounded-7 border-none bg-transparent px-[9px] py-[8px] text-left font-[inherit] text-text2 hover:bg-hover';
 
 /** Selected rows carry the accent; the rest only light up under the pointer. */
 function rowClass(active: boolean): string {
@@ -77,26 +82,29 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
             <WorkspaceSwitcher />
 
             {/* Quick Capture */}
-            <div
-                className="mb-[10px] flex cursor-pointer items-center gap-[9px] rounded-9 border border-accent-border bg-accent-tint px-[11px] py-[9px] font-[590] text-accent"
+            <button
+                className="mb-[10px] flex w-full items-center gap-[9px] rounded-9 border border-accent-border bg-accent-tint px-[11px] py-[9px] text-left font-[inherit] font-[590] text-accent"
                 onClick={onCapture}
+                type="button"
             >
                 <Sparkle size={15} />
                 Quick Capture
                 <span className="ml-auto font-mono text-caption opacity-75">
                     {captureShortcut()}
                 </span>
-            </div>
+            </button>
 
             {/* Library */}
             <div className={cn(SECTION_LABEL, 'pt-[6px]')}>Library</div>
             {LIB_VIEWS.map((v) => {
                 const active = mainView === 'library' && isViewActive(view, v.kind);
                 return (
-                    <div
+                    <button
+                        aria-current={active ? 'page' : undefined}
                         className={rowClass(active)}
                         key={v.kind}
                         onClick={() => selectView(v.kind, null)}
+                        type="button"
                     >
                         <span className="flex flex-none">
                             <Icon name={v.icon} />
@@ -104,21 +112,23 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                         <span className="flex-1">{v.label}</span>
                         {showCounts && <span className={COUNT}>{counts[v.countKey]}</span>}
                         <span className={KEY_CAP}>{v.keys}</span>
-                    </div>
+                    </button>
                 );
             })}
 
             {/* The calendar is a surface rather than a filter, so it sits apart. */}
-            <div
+            <button
+                aria-current={mainView === 'calendar' ? 'page' : undefined}
                 className={rowClass(mainView === 'calendar')}
                 onClick={() => setMainView('calendar')}
+                type="button"
             >
                 <span className="flex flex-none">
                     <Icon name="calendar" />
                 </span>
                 <span className="flex-1">Calendar</span>
                 <span className={KEY_CAP}>⌘5</span>
-            </div>
+            </button>
 
             {/* Collections (add / edit / remove) */}
             <CollectionsSection />
@@ -128,24 +138,26 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
             {tags.map((t) => {
                 const active = isViewActive(view, 'tag', t.name);
                 return (
-                    <div
+                    <button
+                        aria-current={active ? 'page' : undefined}
                         className={rowClass(active)}
                         key={t.name}
                         onClick={() => selectView('tag', t.name)}
+                        type="button"
                     >
                         <span className="flex flex-none opacity-60">
                             <Icon name="hash" />
                         </span>
                         <span className="flex-1">{t.name}</span>
                         {showCounts && <span className={COUNT}>{t.count}</span>}
-                    </div>
+                    </button>
                 );
             })}
 
             <div className="min-h-4 flex-1" />
 
             {/* Footer */}
-            <div className={FOOTER_ROW} onClick={toggleChat}>
+            <button className={FOOTER_ROW} onClick={toggleChat} type="button">
                 <span className="flex flex-none text-accent">
                     <Message />
                 </span>
@@ -153,13 +165,13 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                 <span className="ml-auto rounded-5 bg-accent-tint px-[6px] py-[1px] text-caption font-semibold text-accent">
                     AI
                 </span>
-            </div>
-            <div className={FOOTER_ROW} onClick={() => openSettings()}>
+            </button>
+            <button className={FOOTER_ROW} onClick={() => openSettings()} type="button">
                 <span className="flex flex-none">
                     <Settings />
                 </span>
                 Settings
-            </div>
+            </button>
         </div>
     );
 }
