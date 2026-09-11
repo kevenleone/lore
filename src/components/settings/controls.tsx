@@ -127,12 +127,14 @@ export function KeyCap({ children }: { children: ReactNode }) {
 export function PillButton({
     children,
     className,
+    disabled,
     onClick,
     style,
     tone = 'neutral',
 }: {
     children: ReactNode;
     className?: string;
+    disabled?: boolean;
     onClick?: () => void;
     style?: CSSProperties;
     tone?: 'danger' | 'neutral';
@@ -140,6 +142,7 @@ export function PillButton({
     return (
         <button
             className={cn(PILL_BUTTON, tone === 'danger' && 'text-danger', className)}
+            disabled={disabled}
             onClick={onClick}
             style={style}
             type="button"

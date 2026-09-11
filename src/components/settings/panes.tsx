@@ -4,14 +4,18 @@
 // feature does not exist yet is not shown at all, because a switch that quietly
 // does nothing is worse than a missing one.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
+import type { VaultSize } from '../../data/repository';
 import type { Appearance } from '../../theme/tokens';
 
+import { getRepository } from '../../data';
 import { APP_LINKS, APP_VERSION, openExternal } from '../../lib/appInfo';
 import { APP_MODE, captureShortcutKeys } from '../../lib/appMode';
 import { cn } from '../../lib/cn';
+import { formatBytes } from '../../lib/format';
 import { revealPath } from '../../lib/reveal';
+import { workspaceName } from '../../lib/workspace';
 import {
     type Accent,
     ACCENT_NAMES,
@@ -129,8 +133,12 @@ export function VaultPane() {
     const workspacePath = useStore((s) => s.workspacePath);
     const openWorkspacePicker = useStore((s) => s.openWorkspacePicker);
     const setStep = useStore((s) => s.setOnboardingStep);
+    const exportVault = useStore((s) => s.exportVault);
+    const trashVault = useStore((s) => s.trashVault);
     const items = useStore((s) => s.items);
     const pushToast = useStore((s) => s.pushToast);
+    const [confirming, setConfirming] = useState(false);
+    const size = useVaultSize();
 
     return (
         <>
@@ -148,8 +156,9 @@ export function VaultPane() {
                         {workspacePath ?? 'The default vault, beside Lore’s own data'}
                     </div>
                     <div className="mt-[6px] text-body-sm text-text3">
-                        {items.length} {items.length === 1 ? 'item' : 'items'} · Markdown files with
-                        YAML frontmatter
+                        {items.length} {items.length === 1 ? 'item' : 'items'}
+                        {size && ` · ${formatBytes(size.content)} of Markdown`}
+                        {size && size.derived > 0 && ` · ${formatBytes(size.derived)} of index`}
                     </div>
                 </div>
             </div>
@@ -176,7 +185,97 @@ export function VaultPane() {
                     Reveal in Finder
                 </PillButton>
             </div>
+
+            <SectionLabel>Your data</SectionLabel>
+            <Row
+                desc="A copy of every note, exactly as it sits on disk. The index is left behind — it rebuilds itself."
+                title="Export as Markdown"
+            >
+                <PillButton onClick={() => void exportVault()}>Choose a folder…</PillButton>
+            </Row>
+            <Row
+                desc="Moves the whole folder to the Trash, where it stays until you empty it. Lore starts over with a new vault."
+                last
+                title="Delete this vault"
+            >
+                <PillButton onClick={() => setConfirming(true)} tone="danger">
+                    Delete…
+                </PillButton>
+            </Row>
+
+            {confirming && (
+                <ConfirmDelete
+                    name={workspacePath ? workspaceName(workspacePath) : 'Lore Vault'}
+                    onCancel={() => setConfirming(false)}
+                    onConfirm={() => {
+                        setConfirming(false);
+                        void trashVault();
+                    }}
+                />
+            )}
         </>
+    );
+}
+
+/**
+ * Deleting the vault is the one thing in Settings that cannot be undone from
+ * inside Lore, so it asks for the folder's name rather than for a click: the
+ * name has to be read off the screen, which is the same act as checking that it
+ * is the folder you meant.
+ */
+function ConfirmDelete({
+    name,
+    onCancel,
+    onConfirm,
+}: {
+    name: string;
+    onCancel: () => void;
+    onConfirm: () => void;
+}) {
+    const [typed, setTyped] = useState('');
+    const matches = typed.trim() === name;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-6">
+            <div
+                aria-labelledby="confirm-delete-title"
+                aria-modal="true"
+                className="w-[min(420px,100%)] rounded-2xl border border-border bg-surface p-5 shadow-sheet"
+                role="dialog"
+            >
+                <div className="text-subhead font-semibold" id="confirm-delete-title">
+                    Move “{name}” to the Trash?
+                </div>
+                <p className="mt-2 mb-0 text-body leading-[1.5] text-text3">
+                    Every note in it goes with it. The folder stays in the Trash until you empty it,
+                    and Lore will ask you to set up a new vault.
+                </p>
+                <label className="mt-4 block text-body text-text2">
+                    Type <span className="font-mono text-text">{name}</span> to confirm
+                    <input
+                        autoFocus
+                        className="mt-[6px] w-full rounded-lg border border-border bg-surface2 px-[10px] py-[7px] font-[inherit] text-text outline-none focus-visible:border-accent"
+                        onChange={(e) => setTyped(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Escape') onCancel();
+                            if (e.key === 'Enter' && matches) onConfirm();
+                        }}
+                        value={typed}
+                    />
+                </label>
+                <div className="mt-4 flex justify-end gap-2">
+                    <PillButton onClick={onCancel}>Cancel</PillButton>
+                    <PillButton
+                        className={cn(!matches && 'cursor-default opacity-45')}
+                        disabled={!matches}
+                        onClick={onConfirm}
+                        tone="danger"
+                    >
+                        Move to Trash
+                    </PillButton>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -204,6 +303,36 @@ function useSwitch(key: keyof Switches) {
     const on = useStore((s) => s.prefs.switches[key]);
     const toggle = useStore((s) => s.toggleSwitch);
     return { on, onChange: () => toggle(key) };
+}
+
+/**
+ * The vault's weight on disk, or null before the engine has answered — and in
+ * the browser preview, where there is no vault to weigh.
+ */
+function useVaultSize(): null | VaultSize {
+    const [size, setSize] = useState<null | VaultSize>(null);
+    const items = useStore((s) => s.items);
+
+    useEffect(() => {
+        let cancelled = false;
+        const repo = getRepository();
+        if (!repo.size) return;
+        void repo
+            .size()
+            .then((result) => {
+                if (!cancelled) setSize(result);
+            })
+            .catch(() => {
+                if (!cancelled) setSize(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+        // Re-measured whenever the library changes, so the figure is never a
+        // stale one left over from the pane's first open.
+    }, [items]);
+
+    return size;
 }
 
 const APPEARANCES: { id: Appearance; label: string; swatch: string }[] = [
