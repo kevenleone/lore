@@ -77,7 +77,25 @@ export function GeneralPane() {
 
     return (
         <>
-            <SectionLabel first>Captures</SectionLabel>
+            <SectionLabel first>Startup</SectionLabel>
+            <SwitchRow
+                desc="Lore starts quietly in the menu bar when you sign in."
+                name="launchAtLogin"
+                title="Launch at login"
+            />
+            <SwitchRow
+                desc={`Hiding it leaves ${captureShortcutKeys().join('')} as the way in.`}
+                name="menuBarIcon"
+                title="Show icon in the menu bar"
+            />
+            <SwitchRow
+                desc="Also decides whether Lore appears in the app switcher."
+                last
+                name="dockIcon"
+                title="Show icon in the Dock"
+            />
+
+            <SectionLabel>Captures</SectionLabel>
             <Row
                 desc="Where quick capture files an item unless you pick somewhere else."
                 title="File new captures into"

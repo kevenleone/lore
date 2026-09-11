@@ -30,6 +30,7 @@ import { DRAWER_MS } from './lib/motion';
 import { SEARCH_COMMAND } from './lib/searchCommand';
 import { isTypingTarget } from './lib/typingTarget';
 import { useMountTransition } from './lib/useMountTransition';
+import { useStartupPrefs } from './lib/useStartupPrefs';
 import { useStore } from './store/useStore';
 import { effectiveTheme, paintTheme } from './theme/tokens';
 
@@ -73,6 +74,8 @@ export default function App() {
     useEffect(() => {
         void hydrate();
     }, [hydrate]);
+
+    useStartupPrefs();
 
     // Escape is the one shortcut the menu bar cannot own: what it closes
     // depends on what is open. Every other command is a menu item now — see
