@@ -3,7 +3,7 @@
 // match the prototype; the window uses `decorations:false`, so the dots drive
 // the real window controls.
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
@@ -11,6 +11,15 @@ import { Plus, Search, SidebarToggle, Sparkle } from '../common/glyphs';
 import { ModeAccentBar, ModeBadge } from '../common/ModeBadge';
 import { Tooltip } from '../common/Tooltip';
 import { FocusChip } from '../focus/FocusChip';
+
+/**
+ * macOS draws the real traffic lights (see `window_frame.rs`); everywhere else
+ * a frameless window has no controls at all, so the drawn ones stand in.
+ */
+const NATIVE_WINDOW_CONTROLS = navigator.userAgent.includes('Macintosh');
+
+/** The width the system's three buttons take, so the bar starts clear of them. */
+const WINDOW_CONTROLS_WIDTH = 52;
 
 /** The round chrome button beside the Capture button. */
 const CHROME_BUTTON =
@@ -20,9 +29,14 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
     const toggleSidebar = useStore((s) => s.toggleSidebar);
     const toggleChat = useStore((s) => s.toggleChat);
     const chatOpen = useStore((s) => s.chatOpen);
+    const textSize = useStore((s) => s.prefs.textSize);
     const search = useStore((s) => s.search);
     const setSearch = useStore((s) => s.setSearch);
     const inputRef = useRef<HTMLInputElement>(null);
+    const barRef = useRef<HTMLDivElement>(null);
+    // Fullscreen takes the system's buttons away with the titlebar, so the room
+    // kept for them goes too.
+    const [fullscreen, setFullscreen] = useState(false);
 
     // ⌘K / Ctrl+K focuses the search box.
     useEffect(() => {
@@ -37,6 +51,58 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
         return () => window.removeEventListener('keydown', onKey);
     }, []);
 
+    useEffect(() => {
+        if (!NATIVE_WINDOW_CONTROLS) return;
+
+        let unlisten: (() => void) | undefined;
+        let mounted = true;
+
+        void (async () => {
+            try {
+                const { getCurrentWindow } = await import('@tauri-apps/api/window');
+                const currentWindow = getCurrentWindow();
+                const sync = async () => setFullscreen(await currentWindow.isFullscreen());
+
+                await sync();
+                // Entering and leaving fullscreen both resize the window.
+                const stop = await currentWindow.onResized(() => void sync());
+                if (mounted) unlisten = stop;
+                else stop();
+            } catch {
+                // Running outside Tauri (e.g. Vite preview) — never fullscreen.
+            }
+        })();
+
+        return () => {
+            mounted = false;
+            unlisten?.();
+        };
+    }, []);
+
+    // The system centres its window buttons in a titlebar of its own height, so
+    // it has to be told how tall this bar is. `zoom` scales the bar without
+    // changing its layout box, which is why this follows the Text size
+    // preference rather than a ResizeObserver.
+    useEffect(() => {
+        const bar = barRef.current;
+        if (!NATIVE_WINDOW_CONTROLS || !bar) return;
+
+        const align = async () => {
+            try {
+                const { invoke } = await import('@tauri-apps/api/core');
+                // The rect is in screen pixels, zoom included — which is the
+                // height AppKit needs, not the 46 the class asks for.
+                await invoke('set_title_bar_height', {
+                    height: bar.getBoundingClientRect().height,
+                });
+            } catch {
+                // Running outside Tauri (e.g. Vite preview) — no window to align.
+            }
+        };
+
+        void align();
+    }, [textSize]);
+
     return (
         <div
             // z-35 keeps it above every pane below, so a tooltip hanging off the
@@ -45,14 +111,25 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
             // "deep" drags from anywhere in the bar, not only its bare gaps; Tauri
             // exempts the real controls, which is why they are all buttons.
             data-tauri-drag-region="deep"
+            ref={barRef}
         >
             <ModeAccentBar />
 
-            <div className="flex items-center gap-2">
-                <TrafficLight action="close" color="#ff5f57" label="Close" />
-                <TrafficLight action="minimize" color="#febc2e" label="Minimize" />
-                <TrafficLight action="toggleMaximize" color="#28c840" label="Zoom" />
-            </div>
+            {NATIVE_WINDOW_CONTROLS ? (
+                !fullscreen && (
+                    <span
+                        // A layout constant shared with AppKit, not a class: it is
+                        // the span of buttons the system draws over this corner.
+                        style={{ width: WINDOW_CONTROLS_WIDTH }}
+                    />
+                )
+            ) : (
+                <div className="flex items-center gap-2">
+                    <TrafficLight action="close" color="#ff5f57" label="Close" />
+                    <TrafficLight action="minimize" color="#febc2e" label="Minimize" />
+                    <TrafficLight action="toggleMaximize" color="#28c840" label="Zoom" />
+                </div>
+            )}
 
             <ModeBadge />
 
