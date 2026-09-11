@@ -14,12 +14,19 @@ import { MockAiProvider } from '../ai/mockAiProvider';
 import { getRepository } from '../data';
 import { ensureWorkspaceOpen, setWorkspace } from '../data';
 import { migrateSqlite } from '../data/migrateSqlite';
+import { defaultVaultPath } from '../data/vaultRepository';
 import { formatTime } from '../lib/calendar';
 import { primeChime } from '../lib/focusChime';
 import { ensureNotificationPermission, notifyIntervalEnd } from '../lib/focusNotify';
 import { nextPhase, phaseSeconds, remainingSeconds } from '../lib/focusTimer';
 import { initVaultGit } from '../lib/vaultGit';
-import { broadcastWorkspaceChange, pickWorkspaceFolder, rememberWorkspace } from '../lib/workspace';
+import {
+    broadcastWorkspaceChange,
+    pickExportFolder,
+    pickWorkspaceFolder,
+    rememberWorkspace,
+    workspaceName,
+} from '../lib/workspace';
 import { effectiveTheme } from '../theme/tokens';
 import { loadPersisted, savePersisted } from './persisted';
 import { SEED_CHAT, SEED_COLLECTIONS, SEED_ITEMS } from './seed';
@@ -27,6 +34,7 @@ import {
     type Accent,
     type ChatMessage,
     type Collection,
+    DEFAULT_PREFS,
     type Durations,
     EMPTY_FILTERS,
     type FilterFacet,
@@ -126,6 +134,12 @@ interface StoreState {
      * the user chose.
      */
     expandOpenItem: () => void;
+    /**
+     * Copies the vault into a folder the user picks. Reports what happened —
+     * an export is silent on screen otherwise, the files landing somewhere the
+     * app is not showing.
+     */
+    exportVault: () => Promise<void>;
     /** Filter-bar state, applied on top of `view` and `search`. */
     filters: Filters;
     /**
@@ -138,9 +152,9 @@ interface StoreState {
     focus: FocusState;
     /** True while the full Focus surface (frame 1f) covers the window. */
     focusModeOpen: boolean;
+
     /** True while the menu-bar-style focus popover (frame 1e) is open. */
     focusPopoverOpen: boolean;
-
     /** Finished intervals, newest last. Drawn on the calendar. */
     focusSessions: FocusSession[];
     // lifecycle
@@ -151,18 +165,18 @@ interface StoreState {
      * backlinks. Null until the panel is open and a response has landed.
      */
     itemMeta: ItemMeta | null;
+
     // data
     items: Item[];
 
     loadDetail: (id: string) => Promise<void>;
-
     loadItemMeta: (id: string) => Promise<void>;
     /** Which surface the window's main area shows: the library or the calendar. */
     mainView: MainView;
     /** Set once by a migration so the UI can say what happened. */
     migrationNotice: null | string;
-    onboarded: boolean;
 
+    onboarded: boolean;
     onboardingStep: OnboardingStep;
     /**
      * Overrides `prefs.openMode` for the item currently open, or null to follow
@@ -193,16 +207,18 @@ interface StoreState {
     removeComment: (id: string, commentId: string) => Promise<void>;
     removeTag: (id: string, tag: string) => Promise<void>;
     renameItemFile: (id: string, stem: string) => Promise<void>;
-
     /** Puts the current interval back to its full length, still paused. */
     resetFocusInterval: () => void;
+    /** Puts every preference back to its default. */
+    restoreDefaultPrefs: () => void;
+
     /** Item id → ISO time it sits at on the calendar. */
     schedule: Record<string, string>;
     /** Places an item on the calendar, or clears it when `at` is null. */
     scheduleItem: (id: string, at: Date | null) => void;
     search: string;
-
     searching: boolean;
+
     /**
      * Ids the index matched, or null when the query is too short to run one and
      * the client-side filter is doing the work instead.
@@ -215,12 +231,12 @@ interface StoreState {
     sendChat: (question: string) => Promise<void>;
     setAccent: (accent: Accent) => void;
     setAiAssist: (on: boolean) => void;
-
     setAppearance: (appearance: Appearance) => void;
+
     setEditorDirty: (id: null | string) => void;
     setFilters: (patch: Partial<Filters>) => void;
-
     setFocusTask: (id: null | string) => void;
+
     setMainView: (view: MainView) => void;
     // onboarding actions
     setOnboardingStep: (step: OnboardingStep) => void;
@@ -237,8 +253,8 @@ interface StoreState {
     sidebarVisible: boolean;
     /** Ends the current interval early and moves to the next one. */
     skipFocusInterval: () => void;
-
     sort: SortOrder;
+
     /**
      * Ends the session: back to a fresh first interval, which is also what
      * clears the countdown from the menu bar.
@@ -264,6 +280,8 @@ interface StoreState {
     toggleSidebar: () => void;
     toggleStar: (id: string) => Promise<void>;
     toggleSwitch: (key: keyof Switches) => void;
+    /** Moves the vault to the Trash and sends the user back to onboarding. */
+    trashVault: () => Promise<void>;
     updateCollection: (id: string, patch: CollectionPatch) => Promise<void>;
     updateItem: (id: string, patch: ItemPatch) => Promise<void>;
     // ui
@@ -677,8 +695,24 @@ export const useStore = create<StoreState>((set, get) => ({
 
     /* ---------------- focus timer ---------------- */
 
-    filters: EMPTY_FILTERS,
+    async exportVault() {
+        const repo = getRepository();
+        if (!repo.exportTo) return;
 
+        const destination = await pickExportFolder();
+        if (!destination) return;
+
+        try {
+            const { files, path } = await repo.exportTo(destination);
+            get().pushToast(
+                `Exported ${files} ${files === 1 ? 'file' : 'files'} to ${workspaceName(path)}.`,
+            );
+        } catch (e) {
+            get().pushToast(e instanceof Error ? e.message : 'The export failed.');
+        }
+    },
+
+    filters: EMPTY_FILTERS,
     async finishOnboarding({ git, path, starter }) {
         set({ workspaceError: null });
 
@@ -727,8 +761,8 @@ export const useStore = create<StoreState>((set, get) => ({
         taskId: null,
     },
     focusModeOpen: false,
-    focusPopoverOpen: false,
 
+    focusPopoverOpen: false,
     focusSessions: persisted.focusSessions,
     async hydrate() {
         if (hydrating) return hydrating;
@@ -742,6 +776,7 @@ export const useStore = create<StoreState>((set, get) => ({
         return hydrating;
     },
     hydrated: false,
+
     itemMeta: null,
 
     items: [],
@@ -771,14 +806,13 @@ export const useStore = create<StoreState>((set, get) => ({
         const meta = repo.itemMeta ? await repo.itemMeta(id).catch(() => null) : null;
         if (get().selectedId === id) set({ itemMeta: meta });
     },
-
     mainView: 'library',
     migrationNotice: null,
     onboarded: persisted.onboarded,
+
     onboardingStep: 'pick',
 
     openAs: null,
-
     openCapture() {
         set({ captureOpen: true, focusPopoverOpen: false });
     },
@@ -786,11 +820,14 @@ export const useStore = create<StoreState>((set, get) => ({
     openSettings(pane) {
         set({ settingsOpen: true, ...(pane ? { settingsPane: pane } : {}) });
     },
+
     async openWorkspacePicker() {
         const path = await pickWorkspaceFolder();
         if (path) await get().switchWorkspace(path);
     },
+
     prefs: persisted.prefs,
+
     pushToast(message) {
         const toast = { id: crypto.randomUUID(), message };
         // A burst of actions should not stack into a column that covers the
@@ -798,7 +835,6 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ toasts: [...get().toasts, toast].slice(-3) });
     },
     recentWorkspaces: persisted.recentWorkspaces,
-
     async refresh() {
         const repo = getRepository();
         const [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
@@ -807,7 +843,6 @@ export const useStore = create<StoreState>((set, get) => ({
         const id = get().selectedId;
         if (id) void get().loadDetail(id);
     },
-
     async refreshSource(id) {
         const repo = getRepository();
         if (!repo.refreshItem) return;
@@ -853,6 +888,12 @@ export const useStore = create<StoreState>((set, get) => ({
         }));
     },
 
+    restoreDefaultPrefs() {
+        set({ prefs: DEFAULT_PREFS });
+        persist(get());
+        get().pushToast('Preferences are back to their defaults.');
+    },
+
     schedule: persisted.schedule,
 
     scheduleItem(id, at) {
@@ -868,6 +909,7 @@ export const useStore = create<StoreState>((set, get) => ({
     search: '',
 
     searching: false,
+
     searchResults: null,
     selectedId: 'i1',
     selectItem(id) {
@@ -914,12 +956,11 @@ export const useStore = create<StoreState>((set, get) => ({
     setAccent(accent) {
         get().setPref('accent', accent);
     },
-
-    /* ---------------- onboarding ---------------- */
-
     setAiAssist(on) {
         set({ aiAssist: on });
     },
+
+    /* ---------------- onboarding ---------------- */
 
     setAppearance(appearance) {
         get().setPref('appearance', appearance);
@@ -929,11 +970,11 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ editorDirtyId: id });
     },
 
-    /* ---------------- settings ---------------- */
-
     setFilters(patch) {
         set((s) => ({ filters: { ...s.filters, ...patch } }));
     },
+
+    /* ---------------- settings ---------------- */
 
     setFocusTask(id) {
         set((s) => ({ focus: { ...s.focus, taskId: id } }));
@@ -942,6 +983,7 @@ export const useStore = create<StoreState>((set, get) => ({
     setMainView(view) {
         set({ mainView: view });
     },
+
     setOnboardingStep(step) {
         set({ onboardingStep: step });
     },
@@ -955,7 +997,6 @@ export const useStore = create<StoreState>((set, get) => ({
         set((s) => ({ prefs: { ...s.prefs, [key]: value } }));
         persist(get());
     },
-
     setSearch(q) {
         set({ search: q });
         runSearch(get, q);
@@ -964,10 +1005,10 @@ export const useStore = create<StoreState>((set, get) => ({
     setSettingsPane(pane) {
         set({ settingsPane: pane });
     },
+
     setSort(sort) {
         set({ sort });
     },
-
     setTheme(id) {
         const mode = effectiveTheme(get().prefs.appearance);
         get().setPref(mode === 'dark' ? 'darkTheme' : 'lightTheme', id);
@@ -1126,6 +1167,7 @@ export const useStore = create<StoreState>((set, get) => ({
     toggleFocusPopover() {
         set((s) => ({ focusPopoverOpen: !s.focusPopoverOpen }));
     },
+
     toggleProperties() {
         const open = !get().prefs.propertiesOpen;
         get().setPref('propertiesOpen', open);
@@ -1133,7 +1175,6 @@ export const useStore = create<StoreState>((set, get) => ({
         if (open && id) void get().loadItemMeta(id);
         else if (!open) set({ itemMeta: null });
     },
-
     toggleSidebar() {
         set((s) => ({ sidebarVisible: !s.sidebarVisible }));
     },
@@ -1161,6 +1202,42 @@ export const useStore = create<StoreState>((set, get) => ({
             prefs: { ...s.prefs, switches: { ...s.prefs.switches, [key]: !s.prefs.switches[key] } },
         }));
         persist(get());
+    },
+
+    async trashVault() {
+        const path = get().workspacePath ?? (await defaultVaultPath().catch(() => null));
+        if (!path) {
+            get().pushToast('There is no vault folder to delete.');
+            return;
+        }
+
+        // Let go of the folder first: the engine holds a watcher and an index
+        // open on it, and both would write back into a folder on its way out.
+        await setWorkspace(null);
+
+        try {
+            const { invoke } = await import('@tauri-apps/api/core');
+            await invoke('trash_path', { path });
+        } catch (e) {
+            // The vault is still there, so put the app back on it.
+            await setWorkspace(get().workspacePath);
+            get().pushToast(typeof e === 'string' ? e : 'Could not move the vault to the Trash.');
+            return;
+        }
+
+        set({
+            collections: [],
+            detail: null,
+            items: [],
+            onboarded: false,
+            onboardingStep: 'pick',
+            recentWorkspaces: get().recentWorkspaces.filter((r) => r.path !== path),
+            selectedId: null,
+            settingsOpen: false,
+            workspacePath: null,
+        });
+        persist(get());
+        get().pushToast('The vault is in the Trash — recoverable until you empty it.');
     },
 
     async updateCollection(id, patch) {

@@ -56,6 +56,17 @@ export async function onWorkspaceChanged(
     }
 }
 
+/** Opens the native folder picker for an export destination. */
+export async function pickExportFolder(): Promise<null | string> {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const picked = await open({
+        directory: true,
+        multiple: false,
+        title: 'Export the vault into…',
+    });
+    return typeof picked === 'string' ? picked : null;
+}
+
 /**
  * Opens the native folder picker. Resolves to null when the user cancels.
  */
