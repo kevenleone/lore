@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '../../lib/cn';
+import { SEARCH_COMMAND } from '../../lib/searchCommand';
 import { useStore } from '../../store/useStore';
 import { Plus, Search, SidebarToggle, Sparkle } from '../common/glyphs';
 import { ModeAccentBar, ModeBadge } from '../common/ModeBadge';
@@ -38,17 +39,14 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
     // kept for them goes too.
     const [fullscreen, setFullscreen] = useState(false);
 
-    // ⌘K / Ctrl+K focuses the search box.
+    // View → Search (⌘K) reaches the box that has the input.
     useEffect(() => {
-        const onKey = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-                e.preventDefault();
-                inputRef.current?.focus();
-                inputRef.current?.select();
-            }
+        const onSearch = () => {
+            inputRef.current?.focus();
+            inputRef.current?.select();
         };
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
+        window.addEventListener(SEARCH_COMMAND, onSearch);
+        return () => window.removeEventListener(SEARCH_COMMAND, onSearch);
     }, []);
 
     useEffect(() => {
