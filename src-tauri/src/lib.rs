@@ -14,6 +14,7 @@
 // folder is the one filesystem decision the user makes directly.
 // `notification` is what tells the user a focus interval ended while they were
 // looking at something else.
+// `autostart` owns the login item behind Settings → General → Launch at login.
 
 mod app_menu;
 mod commands;
@@ -48,9 +49,12 @@ pub fn run() {
                 window_frame::TitleBarHeight::default()
             }
         })
+        .manage(commands::DockPreference::default())
         .invoke_handler(tauri::generate_handler![
             commands::hide_capture,
             commands::open_focus_mode,
+            commands::set_dock_visible,
+            commands::set_tray_visible,
             focus_tray::focus_snapshot,
             focus_tray::sync_focus,
             sidecar::sidecar_endpoint,
@@ -109,7 +113,16 @@ pub fn run() {
             {
                 use std::str::FromStr;
 
+                use tauri_plugin_autostart::MacosLauncher;
                 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
+
+                // Launch at login. The plugin owns the login item, so it — not
+                // the renderer's stored preference — is the truth about whether
+                // Lore starts with the machine; `App.tsx` reads it back on boot.
+                app.handle().plugin(tauri_plugin_autostart::init(
+                    MacosLauncher::LaunchAgent,
+                    None,
+                ))?;
 
                 let capture = Shortcut::from_str(mode::CAPTURE_SHORTCUT)
                     .expect("the mode's capture shortcut is not a shortcut");
