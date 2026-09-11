@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.7.0](https://github.com/kevenleone/lore/compare/v1.6.0...v1.7.0) (2026-09-11)
+
+
+### Features
+
+* **app:** give Lore its own menu bar ([18d4cf4](https://github.com/kevenleone/lore/commit/18d4cf4bf7f2cf18a232870efc2a6a51c8ed6b95))
+* **window:** give the main window the system's rounded frame ([54a2486](https://github.com/kevenleone/lore/commit/54a2486277d87aee2f355e41f975e3968bac0e90))
+* **window:** remember where the main window was ([afa9fee](https://github.com/kevenleone/lore/commit/afa9fee095cca7b2fd8e4a386adde991522a3579))
+* **window:** use the system's own window buttons ([a0ffb51](https://github.com/kevenleone/lore/commit/a0ffb5193d1294e808b8b257ad408da78c2dd2c2))
+
+
+### Bug Fixes
+
+* **app:** stop a menu command reaching the tray's handler ([2690e1a](https://github.com/kevenleone/lore/commit/2690e1a9754bbd1270d974b7babe9448973c2e04))
+* **ui:** keep the webview's own chrome off the window ([993dc84](https://github.com/kevenleone/lore/commit/993dc845762199fc1881e813f0bea890904e73df))
+* **ui:** let a menu command fire once, not twice ([6f1a59f](https://github.com/kevenleone/lore/commit/6f1a59f1ad2af3f144a270800be5f79c19bd3b7e))
+* **ui:** stop the chrome behaving like a page ([5cee958](https://github.com/kevenleone/lore/commit/5cee9581d8215de4312e722462043a27b8e6e6f3))
+* **window:** drag the main window by its title bar ([85a8cd9](https://github.com/kevenleone/lore/commit/85a8cd9838edd37094146cd3abe01889a862acf1))
+
+
+### Refactoring
+
+* **kb:** drop the title bar's dead view and sort buttons ([0c3b484](https://github.com/kevenleone/lore/commit/0c3b484d55e1032e8445a2981d6179cf94cb31e1))
+* **ui:** give buttons the arrow cursor ([41fe2ff](https://github.com/kevenleone/lore/commit/41fe2ff3d55a7d0ea0c3b0fd885c9fd77747dc1b))
+
 ## [1.6.0](https://github.com/kevenleone/lore/compare/v1.5.0...v1.6.0) (2026-09-09)
 
 
