@@ -1,9 +1,8 @@
 // The repeating pieces every settings pane is built from: section labels,
 // label/description rows with a trailing control, the pill toggle, segmented
-// controls, and the "value + chevron" stand-in for a menu that has no backend
-// behind it yet.
+// controls, and the menu the choosers open.
 
-import type { CSSProperties, ReactNode } from 'react';
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react';
 
 import { cn } from '../../lib/cn';
 import { SettingsIcon } from '../common/settingsGlyphs';
@@ -25,33 +24,93 @@ const SEG_ITEM = 'text-body rounded-7 border-none bg-transparent px-[11px] py-[5
 /** Slide durations for the toggle; `ease` rather than a Tailwind easing token. */
 const SWITCH_TRANSITION = 'duration-[160ms] ease-[ease]';
 
+/** One option in a `Chooser`: the value written, and the text the row reads. */
+export interface ChoiceOption<T> {
+    label: string;
+    value: T;
+}
+
 /**
- * A menu-shaped control whose options need a backend that does not exist yet
- * (calendars to file into, digest schedules, week start). It renders the
- * current value and cycles through `options` on click so the row is not dead.
+ * A pill that opens a menu of its options. Every chooser in the sheet writes a
+ * preference, so there is no disabled variant — a row with nothing behind it
+ * does not belong in Settings at all.
  */
 export function Chooser<T extends number | string>({
-    leading,
+    label,
     onChange,
     options,
     value,
 }: {
-    leading?: ReactNode;
-    onChange?: (v: T) => void;
-    options: readonly T[];
+    /** Names the control for assistive tech; the trigger only shows the value. */
+    label: string;
+    onChange: (v: T) => void;
+    options: readonly ChoiceOption<T>[];
     value: T;
 }) {
-    const next = () => {
-        if (!onChange) return;
-        const i = options.indexOf(value);
-        onChange(options[(i + 1) % options.length]);
-    };
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+    const current = options.find((o) => o.value === value);
+
+    useEffect(() => {
+        if (!open) return;
+        const onDown = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        // Capture, and stop there: the settings sheet closes on a bubbling Esc,
+        // and dismissing a menu must not take the whole sheet with it.
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key !== 'Escape') return;
+            e.stopPropagation();
+            setOpen(false);
+        };
+        window.addEventListener('mousedown', onDown);
+        window.addEventListener('keydown', onKey, true);
+        return () => {
+            window.removeEventListener('mousedown', onDown);
+            window.removeEventListener('keydown', onKey, true);
+        };
+    }, [open]);
+
     return (
-        <button className={PILL_BUTTON} disabled={!onChange} onClick={next} type="button">
-            {leading}
-            {value}
-            <SettingsIcon name="chevronDown" size={13} sw={2} />
-        </button>
+        <div className="relative flex-none" ref={ref}>
+            <button
+                aria-expanded={open}
+                aria-haspopup="listbox"
+                aria-label={label}
+                className={PILL_BUTTON}
+                onClick={() => setOpen((o) => !o)}
+                type="button"
+            >
+                {current?.label ?? value}
+                <SettingsIcon name="chevronDown" size={13} sw={2} />
+            </button>
+            {open && (
+                <div
+                    className="absolute top-[calc(100%+4px)] right-0 z-40 max-h-[260px] min-w-[180px] overflow-y-auto rounded-10 border border-border bg-surface p-[5px] shadow-sheet"
+                    role="listbox"
+                >
+                    {options.map((o) => (
+                        <button
+                            aria-selected={o.value === value}
+                            className={cn(
+                                'flex w-full items-center gap-2 rounded-7 border-none bg-transparent px-2 py-[6px] text-left font-[inherit] text-body hover:bg-hover',
+                                o.value === value ? 'font-[590] text-accent' : 'text-text2',
+                            )}
+                            key={o.value}
+                            onClick={() => {
+                                onChange(o.value);
+                                setOpen(false);
+                            }}
+                            role="option"
+                            type="button"
+                        >
+                            <span className="min-w-0 flex-1 truncate">{o.label}</span>
+                            {o.value === value && <SettingsIcon name="check" size={13} sw={2.4} />}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
     );
 }
 
