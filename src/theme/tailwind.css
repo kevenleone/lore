@@ -315,10 +315,50 @@
         -webkit-font-smoothing: antialiased;
     }
 
-    /* Preflight gives buttons `cursor: default`; every button in Lore is a
-       pointer target. */
-    button:not(:disabled) {
-        cursor: pointer;
+    /* A desktop window is chrome, not a document: dragging across a sidebar or a
+       toolbar selects nothing, and ⌘A has no page to select. Text the user came
+       to read says so for itself, below. */
+    body {
+        user-select: none;
+    }
+
+    :is(
+        input,
+        textarea,
+        [contenteditable='true'],
+        .lore-editor .ProseMirror,
+        .lore-document,
+        .select-text
+    ) {
+        user-select: text;
+    }
+
+    ::selection {
+        background: var(--ac-tint);
+    }
+
+    /* The caret belongs to the app, not to the engine's default blue. */
+    :is(input, textarea, [contenteditable='true']) {
+        caret-color: var(--ac);
+    }
+
+    /* Keyboard focus has to be visible — a native control shows a focus ring —
+       but a click must not leave one behind. */
+    :focus-visible {
+        outline: 2px solid var(--ac);
+        outline-offset: 2px;
+    }
+
+    /* Icons and previews are furniture; dragging one out as a ghost image is the
+       webview showing through. */
+    :is(img, svg) {
+        -webkit-user-drag: none;
+    }
+
+    /* Every pane scrolls its own content, and none of them is a page: a scroller
+       that runs out must not bounce, or chain its scroll to the window. */
+    * {
+        overscroll-behavior: none;
     }
 
     ::-webkit-scrollbar {

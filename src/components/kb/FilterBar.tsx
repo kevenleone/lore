@@ -119,7 +119,7 @@ export function FilterBar() {
 
             {count > 0 && (
                 <button
-                    className="ml-[2px] cursor-pointer border-none bg-transparent px-[6px] py-1 font-[inherit] text-body text-text3 hover:bg-hover"
+                    className="ml-[2px] border-none bg-transparent px-[6px] py-1 font-[inherit] text-body text-text3 hover:bg-hover"
                     onClick={() => {
                         clearFilters();
                         setMenu(null);
@@ -169,7 +169,7 @@ function DateField({
         <label className="flex items-center gap-2 px-2 py-[5px] text-body text-text2">
             <span className="w-[34px]">{label}</span>
             <input
-                className="min-w-0 flex-1 rounded-7 border border-border bg-surface3 px-[7px] py-1 font-[inherit] text-text outline-none"
+                className="min-w-0 flex-1 rounded-7 border border-border bg-surface3 px-[7px] py-1 font-[inherit] text-text"
                 onChange={(e) => onChange(e.target.value || null)}
                 type="date"
                 value={value ?? ''}
@@ -213,7 +213,7 @@ function Menu({
             <button
                 aria-expanded={open}
                 className={cn(
-                    'flex cursor-pointer items-center gap-[5px] rounded-lg border px-2 py-1 font-[inherit] text-body',
+                    'flex items-center gap-[5px] rounded-lg border px-2 py-1 font-[inherit] text-body',
                     active
                         ? 'border-transparent bg-accent-tint font-[590] text-accent'
                         : 'border-border bg-surface font-medium text-text2',
@@ -252,7 +252,7 @@ function Option({
     return (
         <div
             className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-7 px-[9px] py-[6px] text-body-lg hover:bg-hover',
+                'flex items-center gap-2 rounded-7 px-[9px] py-[6px] text-body-lg hover:bg-hover',
                 checked ? 'font-[590] text-accent' : 'font-normal text-text2',
             )}
             onClick={onClick}

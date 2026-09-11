@@ -59,7 +59,7 @@ export function InfoSection({ item, meta }: { item: Item; meta: ItemMeta | null 
                     />
                 ) : (
                     <span
-                        className="min-w-0 cursor-text truncate font-mono"
+                        className="min-w-0 cursor-text truncate font-mono select-text"
                         onClick={() => {
                             if (!path) return;
                             setNameDraft(stem);

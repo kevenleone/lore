@@ -22,7 +22,9 @@ export function AiSummaryCard({
                     auto-generated
                 </span>
             </div>
-            <p className="mt-[10px] mb-0 text-title leading-[1.6] text-text2">{summary}</p>
+            <p className="mt-[10px] mb-0 text-title leading-[1.6] text-text2 select-text">
+                {summary}
+            </p>
             {showPoints && (
                 <div className="mt-[13px] flex flex-col gap-[7px]">
                     {points.map((p, i) => (

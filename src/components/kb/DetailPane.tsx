@@ -214,7 +214,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
             {chrome && (
                 <div className="flex flex-none items-center gap-2 border-b border-border bg-surface2 px-3 py-[9px]">
                     <button
-                        className="inline-flex cursor-pointer items-center gap-[7px] rounded-7 border-none bg-transparent px-[9px] py-[5px] font-[inherit] text-body font-[560] text-text2"
+                        className="inline-flex items-center gap-[7px] rounded-7 border-none bg-transparent px-[9px] py-[5px] font-[inherit] text-body font-[560] text-text2"
                         onClick={closeOpenItem}
                         type="button"
                     >
@@ -224,7 +224,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     {chrome === 'drawer' && (
                         <button
                             aria-label="Open full screen"
-                            className="ml-auto inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-7 border-none bg-transparent p-0 text-text3"
+                            className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-7 border-none bg-transparent p-0 text-text3"
                             onClick={expandOpenItem}
                             title="Open full screen"
                             type="button"
@@ -261,7 +261,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     <span className="ml-auto flex items-center gap-2">
                         {linkUrl && (
                             <span
-                                className="inline-flex cursor-pointer items-center gap-[6px] rounded-lg border border-border px-[11px] py-[5px] text-body text-text2"
+                                className="inline-flex items-center gap-[6px] rounded-lg border border-border px-[11px] py-[5px] text-body text-text2"
                                 onClick={() => void openExternal(linkUrl)}
                             >
                                 <External />
@@ -272,7 +272,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                             <button
                                 aria-pressed={raw}
                                 className={cn(
-                                    'inline-flex cursor-pointer border-none bg-none p-1',
+                                    'inline-flex border-none bg-none p-1',
                                     raw ? 'text-accent' : 'text-[#c4c4cc]',
                                 )}
                                 onClick={() => setRaw((current) => !current)}
@@ -285,7 +285,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                         <button
                             aria-pressed={propertiesOpen}
                             className={cn(
-                                'inline-flex cursor-pointer border-none bg-none p-1',
+                                'inline-flex border-none bg-none p-1',
                                 propertiesOpen ? 'text-accent' : 'text-[#c4c4cc]',
                             )}
                             onClick={toggleProperties}
@@ -296,7 +296,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                         </button>
                         <button
                             className={cn(
-                                'inline-flex cursor-pointer border-none bg-none p-1',
+                                'inline-flex border-none bg-none p-1',
                                 sel.flags.starred ? 'text-accent' : 'text-[#c4c4cc]',
                             )}
                             onClick={() => void toggleStar(sel.id)}
@@ -308,7 +308,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                             />
                         </button>
                         <button
-                            className="inline-flex cursor-pointer border-none bg-none p-1 text-faint"
+                            className="inline-flex border-none bg-none p-1 text-faint"
                             onClick={() => setConfirmDelete(true)}
                             title="Delete"
                             type="button"
@@ -327,13 +327,13 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                             </div>
                             <div className="mt-[14px] flex justify-end gap-2">
                                 <span
-                                    className="cursor-pointer rounded-lg px-3 py-[6px] text-body-lg text-text2"
+                                    className="rounded-lg px-3 py-[6px] text-body-lg text-text2"
                                     onClick={() => setConfirmDelete(false)}
                                 >
                                     Cancel
                                 </span>
                                 <span
-                                    className="cursor-pointer rounded-lg bg-[#c0392b] px-[14px] py-[6px] text-body-lg font-semibold text-white"
+                                    className="rounded-lg bg-[#c0392b] px-[14px] py-[6px] text-body-lg font-semibold text-white"
                                     onClick={() => {
                                         setConfirmDelete(false);
                                         void deleteItem(sel.id);
@@ -361,7 +361,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     />
                 ) : (
                     <h1
-                        className="mt-[14px] mb-0 cursor-text text-[23px] leading-[1.25] font-bold tracking-[-.015em] text-text"
+                        className="mt-[14px] mb-0 cursor-text text-[23px] leading-[1.25] font-bold tracking-[-.015em] text-text select-text"
                         onClick={() => {
                             setTitleDraft(sel.title);
                             setEditingTitle(true);
@@ -394,7 +394,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                             Read-only
                         </span>
                         <span
-                            className="cursor-pointer truncate text-text2 underline decoration-border underline-offset-2"
+                            className="truncate text-text2 underline decoration-border underline-offset-2"
                             onClick={() => void openExternal(sel.source!.raw)}
                             title={sel.source.raw}
                         >
@@ -403,7 +403,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                         <span className="opacity-50">·</span>
                         <span>Fetched {formatRelative(sel.source.fetched)}</span>
                         <span
-                            className="ml-auto cursor-pointer rounded-7 px-[9px] py-[4px] text-body-lg text-text2 hover:bg-hover"
+                            className="ml-auto rounded-7 px-[9px] py-[4px] text-body-lg text-text2 hover:bg-hover"
                             onClick={() => void refreshSource(sel.id)}
                         >
                             Refresh
@@ -456,7 +456,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                     />
                 ) : flags.detIsCode ? (
                     <pre
-                        className="mt-5 mb-1 cursor-text overflow-auto rounded-11 border border-border bg-surface3 p-4 font-mono text-body-lg leading-[1.7] whitespace-pre text-text2"
+                        className="mt-5 mb-1 cursor-text overflow-auto rounded-11 border border-border bg-surface3 p-4 font-mono text-body-lg leading-[1.7] whitespace-pre text-text2 select-text"
                         onClick={startBody}
                         title="Click to edit"
                     >
@@ -465,7 +465,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                 ) : bodyField === 'body' ? (
                     <p
                         className={cn(
-                            'mt-[18px] mb-1 cursor-text text-title-lg leading-[1.65]',
+                            'mt-[18px] mb-1 cursor-text text-title-lg leading-[1.65] select-text',
                             bodyValue ? 'text-text2' : 'text-faint',
                         )}
                         onClick={startBody}
@@ -476,7 +476,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                 ) : sel.type === 'link' ? (
                     <p
                         className={cn(
-                            'mt-[18px] mb-1 cursor-text text-[14.5px] leading-[1.6]',
+                            'mt-[18px] mb-1 cursor-text text-[14.5px] leading-[1.6] select-text',
                             sel.description ? 'text-text2' : 'text-faint',
                         )}
                         onClick={startBody}
@@ -505,7 +505,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                                 >
                                     <span
                                         className={cn(
-                                            'mt-[3px] flex h-[16px] w-[16px] flex-none cursor-pointer items-center justify-center rounded-[5px] border',
+                                            'mt-[3px] flex h-[16px] w-[16px] flex-none items-center justify-center rounded-[5px] border',
                                             subtask.done
                                                 ? 'border-accent bg-accent text-white'
                                                 : 'border-border text-transparent',
@@ -518,7 +518,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                                     </span>
                                     <span
                                         className={cn(
-                                            'flex-1 cursor-pointer text-title leading-[1.5]',
+                                            'flex-1 text-title leading-[1.5]',
                                             subtask.done ? 'text-text3 line-through' : 'text-text2',
                                         )}
                                         onClick={() =>
@@ -529,7 +529,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                                     </span>
                                     <span
                                         aria-label="Remove subtask"
-                                        className="mt-[3px] flex-none cursor-pointer text-faint opacity-0 group-hover:opacity-100"
+                                        className="mt-[3px] flex-none text-faint opacity-0 group-hover:opacity-100"
                                         onClick={() =>
                                             writeSubtasks(subtasks.filter((_, j) => j !== index))
                                         }
@@ -581,7 +581,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                             >
                                 #{tag}
                                 <span
-                                    className="cursor-pointer text-body-lg leading-none opacity-55"
+                                    className="text-body-lg leading-none opacity-55"
                                     onClick={() => void removeTag(sel.id, tag)}
                                     title="Remove tag"
                                 >
@@ -607,7 +607,7 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                             />
                         ) : (
                             <span
-                                className="cursor-pointer rounded-7 border border-dashed border-dash px-[9px] py-[3px] font-mono text-body-sm text-faint"
+                                className="rounded-7 border border-dashed border-dash px-[9px] py-[3px] font-mono text-body-sm text-faint"
                                 onClick={() => setAddingTag(true)}
                             >
                                 + add

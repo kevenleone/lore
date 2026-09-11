@@ -23,7 +23,7 @@ const WINDOW_CONTROLS_WIDTH = 52;
 
 /** The round chrome button beside the Capture button. */
 const CHROME_BUTTON =
-    'flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-lg border-none bg-transparent';
+    'flex h-[30px] w-[30px] items-center justify-center rounded-lg border-none bg-transparent';
 
 export function TitleBar({ onCapture }: { onCapture: () => void }) {
     const toggleSidebar = useStore((s) => s.toggleSidebar);
@@ -136,7 +136,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
             <Tooltip keys="⌘B" label="Toggle sidebar">
                 <button
                     aria-label="Toggle sidebar"
-                    className="ml-1 flex cursor-pointer border-none bg-transparent p-0 text-faint"
+                    className="ml-1 flex border-none bg-transparent p-0 text-faint"
                     onClick={toggleSidebar}
                     type="button"
                 >
@@ -150,6 +150,8 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
             <label
                 className={cn(
                     'absolute top-1/2 left-1/2 flex w-[min(420px,38vw)] [transform:translate(-50%,-50%)] items-center gap-2 rounded-9 bg-surface3 px-[11px] py-[7px] text-body-lg',
+                    // The input is bare; the box around it is the field.
+                    'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent',
                     search ? 'text-text' : 'text-text3',
                 )}
             >
@@ -184,7 +186,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                     </button>
                 </Tooltip>
                 <button
-                    className="ml-1 inline-flex cursor-pointer items-center gap-[7px] rounded-lg border-none bg-accent px-[11px] py-[6px] font-[inherit] text-body font-semibold text-white"
+                    className="ml-1 inline-flex items-center gap-[7px] rounded-lg border-none bg-accent px-[11px] py-[6px] font-[inherit] text-body font-semibold text-white"
                     onClick={onCapture}
                     type="button"
                 >
@@ -211,7 +213,7 @@ function TrafficLight({
     return (
         <button
             aria-label={label}
-            className="h-3 w-3 cursor-pointer rounded-full border-none p-0"
+            className="h-3 w-3 rounded-full border-none p-0"
             onClick={() => windowControl(action)}
             // The macOS traffic-light colours are fixed, not themed.
             style={{ background: color }}
