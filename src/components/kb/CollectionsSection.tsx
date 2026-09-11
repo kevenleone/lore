@@ -154,10 +154,8 @@ export function CollectionsSection() {
 
                 if (confirmId === c.id) {
                     return (
-                        <div className={cn(ROW_BASE, 'cursor-default bg-[#fbecec]')} key={c.id}>
-                            <span className="flex-1 text-body text-[#a23b30]">
-                                Delete “{c.name}”?
-                            </span>
+                        <div className={cn(ROW_BASE, 'bg-danger-tint')} key={c.id}>
+                            <span className="flex-1 text-body text-danger">Delete “{c.name}”?</span>
                             <button
                                 aria-label={`Keep ${c.name}`}
                                 className={cn(BARE_BUTTON, 'flex text-text3')}
