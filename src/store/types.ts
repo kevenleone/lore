@@ -252,12 +252,18 @@ export type SortOrder = 'newest' | 'oldest' | 'title';
  */
 export interface Switches {
     autoBreak: boolean;
-    // Capture & AI
-    autoSum: boolean;
     /** Edit note bodies in the block editor rather than a plain textarea. */
     blockEditor: boolean;
     // Look & Feel
     counts: boolean;
+    /**
+     * Show a note's `summary`, `points` and `related` sections in the detail
+     * pane. Named for what it does: nothing in Lore writes those fields, so a
+     * switch called `autoSum` promising a summary after every capture was the
+     * design's copy rather than the behaviour.
+     */
+    // Capture & AI
+    detailSections: boolean;
     focusEnd: boolean;
     /**
      * Registered as a login item. The login item itself is the truth; this is
@@ -302,9 +308,9 @@ export type WeekStart = 'Monday' | 'Sunday';
 
 export const DEFAULT_SWITCHES: Switches = {
     autoBreak: true,
-    autoSum: true,
     blockEditor: false,
     counts: true,
+    detailSections: true,
     focusEnd: true,
     launchAtLogin: false,
     logFocus: false,
