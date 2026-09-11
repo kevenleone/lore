@@ -78,6 +78,9 @@ const NEUTRALS: Record<'dark' | 'light', Record<string, string>> = {
     },
 };
 
+/** Kept in step with `--color-danger` in `tailwind.css`, which is theme-fixed. */
+const DANGER = '#b4442f';
+
 export function buildTokens(seed: ThemeSeed): Record<string, string> {
     const dark = seed.mode === 'dark';
     const tint = (hue: string): string => mix(hue, seed.surface, dark ? 0.18 : 0.12);
@@ -98,6 +101,9 @@ export function buildTokens(seed: ThemeSeed): Record<string, string> {
         '--border': seed.border,
         '--border-soft': mix(seed.border, seed.surface, 0.5),
         '--canvas': seed.canvas,
+        // Destructive surfaces. `--color-danger` itself is fixed across themes;
+        // the wash behind it cannot be, or it is a pink row in a dark sidebar.
+        '--danger-tint': tint(DANGER),
         '--dash': mix(seed.border, seed.text3, 0.65),
         '--faint': mix(seed.text3, seed.surface, 0.65),
         '--hover': mix(seed.surface2, seed.text, 0.94),

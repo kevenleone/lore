@@ -41,8 +41,10 @@
     --color-white: #fff;
     --color-black: #000;
 
-    /* Destructive actions. The one design colour that is not theme-dependent. */
+    /* Destructive actions. The foreground is the one design colour that is not
+       theme-dependent; the wash behind it has to be, so it comes from the map. */
     --color-danger: #b4442f;
+    --color-danger-tint: var(--danger-tint);
 
     --color-surface: var(--surface);
     --color-surface2: var(--surface2);
