@@ -174,16 +174,3 @@ export const SEED_ITEMS: Item[] = [
 ];
 
 /** Canned Ask Lore conversation from the prototype's `messages`. */
-export const SEED_CHAT = [
-    {
-        id: 'm1',
-        role: 'user' as const,
-        text: 'What did I save about color and design systems?',
-    },
-    {
-        id: 'm2',
-        role: 'ai' as const,
-        sources: [{ itemId: 'i6' }, { itemId: 'i8' }],
-        text: 'You’ve saved a few relevant things. The OKLCH Color Picker covers perceptually-uniform color, and “The Design of Everyday Things” grounds the principles behind a good system.',
-    },
-];
