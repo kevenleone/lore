@@ -250,12 +250,15 @@ function Option({
     onClick: () => void;
 }) {
     return (
-        <div
+        <button
+            aria-checked={checked}
             className={cn(
-                'flex items-center gap-2 rounded-7 px-[9px] py-[6px] text-body-lg hover:bg-hover',
+                'flex w-full items-center gap-2 rounded-7 border-none bg-transparent px-[9px] py-[6px] text-left font-[inherit] text-body-lg hover:bg-hover',
                 checked ? 'font-[590] text-accent' : 'font-normal text-text2',
             )}
             onClick={onClick}
+            role="checkbox"
+            type="button"
         >
             <Checkbox checked={checked} />
             {color && (
@@ -269,7 +272,7 @@ function Option({
             {count !== undefined && (
                 <span className="text-label font-normal text-faint tabular-nums">{count}</span>
             )}
-        </div>
+        </button>
     );
 }
 

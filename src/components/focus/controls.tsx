@@ -61,14 +61,17 @@ export function QueueRow({ item }: { item: Item }) {
     const collection = collections.find((c) => c.id === item.collectionId)?.name;
 
     return (
-        <div
+        <button
+            aria-current={active ? 'true' : undefined}
             className={cn(
-                'flex items-start gap-[10px] rounded-10 border px-[11px] py-[10px] hover:bg-hover',
+                'flex w-full items-start gap-[10px] rounded-10 border px-[11px] py-[10px] text-left font-[inherit] hover:bg-hover',
                 active
                     ? 'border-accent-border bg-surface shadow-[0_1px_3px_rgba(0,0,0,.05)]'
                     : 'border-transparent bg-transparent',
             )}
-            onClick={() => !done && setFocusTask(item.id)}
+            disabled={done}
+            onClick={() => setFocusTask(item.id)}
+            type="button"
         >
             <button
                 aria-checked={done}
@@ -105,7 +108,7 @@ export function QueueRow({ item }: { item: Item }) {
                         .join(' · ') || 'Task'}
                 </div>
             </div>
-        </div>
+        </button>
     );
 }
 

@@ -103,36 +103,43 @@ export function ListPane() {
                 </span>
                 <span className="ml-auto flex items-center gap-2">
                     {!isList && <OpenModePicker />}
-                    <span
+                    <button
                         aria-label="Filter"
                         aria-pressed={showFilters}
-                        className={cn('flex cursor-pointer items-center gap-[3px]', filterColor)}
+                        className={cn(
+                            'flex items-center gap-[3px] border-none bg-transparent p-0 font-[inherit]',
+                            filterColor,
+                        )}
                         onClick={() => setFiltersOpen((o) => !o)}
-                        title="Filter"
+                        type="button"
                     >
                         <Filter />
                         {filterCount > 0 && (
                             <span className="text-caption font-[650]">{filterCount}</span>
                         )}
-                    </span>
+                    </button>
                     <ViewModePicker />
                     <div className="relative" ref={sortRef}>
-                        <span
+                        <button
+                            aria-expanded={sortOpen}
+                            aria-haspopup="listbox"
+                            aria-label={`Sort: ${SORT_LABELS[sort]}`}
                             className={cn(
-                                'flex cursor-pointer',
+                                'flex border-none bg-transparent p-0',
                                 sortOpen ? 'text-text' : 'text-faint',
                             )}
                             onClick={() => setSortOpen((o) => !o)}
-                            title={`Sort: ${SORT_LABELS[sort]}`}
+                            type="button"
                         >
                             <Sort />
-                        </span>
+                        </button>
                         {sortOpen && (
                             <div className="absolute top-[26px] right-0 z-20 min-w-[150px] rounded-10 border border-border bg-surface p-[5px] shadow-[0_12px_30px_-10px_rgba(24,24,48,.3)]">
                                 {(Object.keys(SORT_LABELS) as SortOrder[]).map((key) => (
-                                    <div
+                                    <button
+                                        aria-selected={key === sort}
                                         className={cn(
-                                            'cursor-pointer rounded-7 px-[10px] py-[7px] text-body-lg',
+                                            'w-full rounded-7 border-none px-[10px] py-[7px] text-left font-[inherit] text-body-lg',
                                             key === sort
                                                 ? 'bg-accent-tint font-semibold text-accent'
                                                 : 'bg-transparent font-normal text-text2',
@@ -142,9 +149,11 @@ export function ListPane() {
                                             setSort(key);
                                             setSortOpen(false);
                                         }}
+                                        role="option"
+                                        type="button"
                                     >
                                         {SORT_LABELS[key]}
-                                    </div>
+                                    </button>
                                 ))}
                             </div>
                         )}

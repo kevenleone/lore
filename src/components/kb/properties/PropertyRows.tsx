@@ -144,16 +144,17 @@ export function PropertyRows({ item }: { item: Item }) {
                         value={urlDraft}
                     />
                 ) : (
-                    <span
-                        className="min-w-0 cursor-text overflow-hidden select-text"
+                    <button
+                        className="min-w-0 overflow-hidden border-none bg-transparent p-0 text-left font-[inherit] text-[inherit]"
                         onClick={() => {
                             setUrlDraft(item.url ?? '');
                             setEditingUrl(true);
                         }}
                         title={item.url ?? 'Click to edit'}
+                        type="button"
                     >
                         <ReadOnly>{item.url}</ReadOnly>
-                    </span>
+                    </button>
                 )}
             </Row>
         </div>

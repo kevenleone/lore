@@ -85,15 +85,17 @@ export function ContextMenuItem({
     onClick: () => void;
 }) {
     return (
-        <div
+        <button
             className={cn(
-                'flex items-center gap-[8px] rounded-7 px-2 py-[6px] text-body hover:bg-hover',
+                'flex w-full items-center gap-[8px] rounded-7 border-none bg-transparent px-2 py-[6px] text-left font-[inherit] text-body hover:bg-hover',
                 danger ? 'text-danger' : 'text-text2',
             )}
             onClick={onClick}
+            role="menuitem"
+            type="button"
         >
             {children}
-        </div>
+        </button>
     );
 }
 

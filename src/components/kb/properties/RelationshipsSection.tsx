@@ -85,14 +85,15 @@ export function RelationshipsSection({ item }: { item: Item }) {
                                 <Empty>No matches</Empty>
                             ) : (
                                 suggestions.map((s) => (
-                                    <div
-                                        className="flex items-center gap-[7px] rounded-7 border border-transparent px-[7px] py-[5px] text-body text-text2 hover:border-border hover:bg-surface2"
+                                    <button
+                                        className="flex w-full items-center gap-[7px] rounded-7 border border-transparent bg-transparent px-[7px] py-[5px] text-left font-[inherit] text-body text-text2 hover:border-border hover:bg-surface2"
                                         key={s.id}
                                         onClick={() => add(s.id)}
+                                        type="button"
                                     >
                                         <Icon name={s.type} size={12} />
                                         <span className="truncate">{s.title}</span>
-                                    </div>
+                                    </button>
                                 ))
                             )}
                         </div>
@@ -128,10 +129,15 @@ function RelationCard({ item, onRemove }: { item: Item; onRemove?: () => void })
     const meta = typeMeta(item.type);
 
     return (
-        <div
-            className="flex items-center gap-2 rounded-9 border border-border px-[9px] py-[7px] hover:border-border hover:bg-surface2"
-            onClick={() => selectItem(item.id)}
-        >
+        // The card holds two controls — open it, unlink it — so the whole card
+        // is a button laid under the row, and the unlink sits above it.
+        <div className="relative flex items-center gap-2 rounded-9 border border-border px-[9px] py-[7px] hover:bg-surface2">
+            <button
+                aria-label={`Open ${item.title}`}
+                className="absolute inset-0 rounded-9 border-none bg-transparent"
+                onClick={() => selectItem(item.id)}
+                type="button"
+            />
             <span
                 className={cn(
                     'flex h-[22px] w-[22px] flex-none items-center justify-center rounded-md',
@@ -144,16 +150,14 @@ function RelationCard({ item, onRemove }: { item: Item; onRemove?: () => void })
                 {item.title}
             </span>
             {onRemove && (
-                <span
-                    className="flex-none text-title leading-none text-faint"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onRemove();
-                    }}
-                    title="Remove link"
+                <button
+                    aria-label={`Unlink ${item.title}`}
+                    className="relative flex-none border-none bg-transparent p-0 font-[inherit] text-title leading-none text-faint"
+                    onClick={onRemove}
+                    type="button"
                 >
                     ×
-                </span>
+                </button>
             )}
         </div>
     );

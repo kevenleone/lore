@@ -47,13 +47,14 @@ export function CommentsSection({ item }: { item: Item }) {
                                     </span>
                                 )}
                                 <span>{formatSavedDate(comment.at)}</span>
-                                <span
-                                    className="ml-auto text-body-lg leading-none"
+                                <button
+                                    aria-label="Delete comment"
+                                    className="ml-auto border-none bg-transparent p-0 font-[inherit] text-body-lg leading-none"
                                     onClick={() => void removeComment(item.id, comment.id)}
-                                    title="Delete comment"
+                                    type="button"
                                 >
                                     ×
-                                </span>
+                                </button>
                             </div>
                             <div className="text-body leading-[1.55] text-text2 select-text">
                                 <Suspense
