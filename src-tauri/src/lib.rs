@@ -34,6 +34,12 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .manage(sidecar::SidecarState::default())
         .manage(focus_tray::FocusTray::default())
+        .manage({
+            #[cfg(target_os = "macos")]
+            {
+                window_frame::TitleBarHeight::default()
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             commands::hide_capture,
             commands::open_focus_mode,
@@ -41,7 +47,9 @@ pub fn run() {
             focus_tray::sync_focus,
             sidecar::sidecar_endpoint,
             sidecar::default_vault_path,
-            sidecar::backup_legacy_db
+            sidecar::backup_legacy_db,
+            #[cfg(target_os = "macos")]
+            window_frame::set_title_bar_height
         ])
         .on_window_event(|window, event| {
             // Closing the main window hides it (tray-app pattern) so it can be
@@ -56,6 +64,12 @@ pub fn run() {
                 // A menu-bar popover goes away as soon as you look elsewhere.
                 tauri::WindowEvent::Focused(false) if window.label() == focus_tray::PANEL_LABEL => {
                     let _ = window.hide();
+                }
+                // AppKit re-lays the titlebar out on resize, which puts the
+                // window buttons back where it wants them.
+                #[cfg(target_os = "macos")]
+                tauri::WindowEvent::Resized(_) if window.label() == "main" => {
+                    window_frame::restore_button_position(window);
                 }
                 _ => {}
             }
@@ -80,7 +94,7 @@ pub fn run() {
 
             #[cfg(target_os = "macos")]
             if let Some(window) = app.get_webview_window("main") {
-                window_frame::adopt_system_frame(&window);
+                window_frame::adopt_system_frame(&window.as_ref().window());
             }
 
             #[cfg(desktop)]
