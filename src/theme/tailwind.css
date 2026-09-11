@@ -1,6 +1,6 @@
 /*
- * Lore's Tailwind entry. Imported by all three window entries (main, capture,
- * focus); there is no other stylesheet.
+ * Lore's Tailwind entry. Imported by all four window entries (main, capture,
+ * focus, print); there is no other stylesheet.
  *
  * Two things here are deliberately unlike a stock Tailwind setup:
  *
@@ -458,5 +458,56 @@
         display: block;
         font-family: var(--font-mono, ui-monospace, monospace);
         white-space: pre-wrap;
+    }
+}
+
+/*
+ * Paper. Only the print window is ever printed, and it is the light token map
+ * by construction (src/print.tsx), so nothing here restates a colour.
+ *
+ * The page margins belong to NSPrintInfo in src-tauri/src/print_pdf.rs, not
+ * here: WebKit honours `@page { margin }` only partially, and setting both
+ * would add them together.
+ */
+@page {
+    margin: 0;
+}
+
+@media print {
+    .lore-print-header {
+        break-after: avoid;
+    }
+
+    /* A page break through a code block or a table row is unreadable; through a
+       heading it orphans the heading from what it introduces. */
+    .lore-print-body :is(pre, table, blockquote, figure, img) {
+        break-inside: avoid;
+    }
+
+    .lore-print-body :is(h1, h2, h3, h4, h5, h6) {
+        break-after: avoid;
+        break-inside: avoid;
+    }
+
+    .lore-print-body :is(p, li) {
+        orphans: 3;
+        widows: 3;
+    }
+
+    /* On screen these scroll sideways. On paper the overflow is simply gone, so
+       wrap instead of clipping. */
+    .lore-print-body pre {
+        overflow: visible;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .lore-print-body :is(table, .overflow-x-auto) {
+        overflow: visible;
+    }
+
+    /* An image that never loaded would print as an empty box with a border. */
+    .lore-print-body img[data-print-unloaded] {
+        display: none;
     }
 }
