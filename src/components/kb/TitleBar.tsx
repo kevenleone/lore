@@ -7,12 +7,12 @@ import { useEffect, useRef } from 'react';
 
 import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
-import { Plus, Search, SidebarToggle, Sort, Sparkle, ViewList } from '../common/glyphs';
+import { Plus, Search, SidebarToggle, Sparkle } from '../common/glyphs';
 import { ModeAccentBar, ModeBadge } from '../common/ModeBadge';
 import { Tooltip } from '../common/Tooltip';
 import { FocusChip } from '../focus/FocusChip';
 
-/** The three round chrome buttons either side of the Capture button. */
+/** The round chrome button beside the Capture button. */
 const CHROME_BUTTON =
     'flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-lg border-none bg-transparent';
 
@@ -106,16 +106,6 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                         <Sparkle />
                     </button>
                 </Tooltip>
-                <Tooltip label="View options">
-                    <ChromeButton label="View options">
-                        <ViewList />
-                    </ChromeButton>
-                </Tooltip>
-                <Tooltip label="Sort">
-                    <ChromeButton label="Sort">
-                        <Sort />
-                    </ChromeButton>
-                </Tooltip>
                 <button
                     className="ml-1 inline-flex cursor-pointer items-center gap-[7px] rounded-lg border-none bg-accent px-[11px] py-[6px] font-[inherit] text-body font-semibold text-white"
                     onClick={onCapture}
@@ -129,14 +119,6 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                 </button>
             </div>
         </div>
-    );
-}
-
-function ChromeButton({ children, label }: { children: React.ReactNode; label: string }) {
-    return (
-        <button aria-label={label} className={cn(CHROME_BUTTON, 'text-text2')} type="button">
-            {children}
-        </button>
     );
 }
 
