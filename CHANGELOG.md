@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.8.1](https://github.com/kevenleone/lore/compare/v1.8.0...v1.8.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **kb:** open Ask Lore empty, not mid-conversation ([be0366e](https://github.com/kevenleone/lore/commit/be0366eec6a5270f7ba1ff538826ad4c9041c942))
+* **kb:** stop crediting the reader's own notes to an AI ([f47101e](https://github.com/kevenleone/lore/commit/f47101e0d824e25c49572e2479141915aeb2d54c))
+* **settings:** name the summary switch after what it does ([ae9b2f9](https://github.com/kevenleone/lore/commit/ae9b2f98a5f2b1829231419504bca6a1cc99be2d))
+
 ## [1.8.0](https://github.com/kevenleone/lore/compare/v1.7.0...v1.8.0) (2026-09-11)
 
 
