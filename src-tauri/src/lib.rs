@@ -33,6 +33,13 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        // The panels are placed by the app — the capture window centres itself
+        // on every open — so only the main window's geometry is the user's.
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                .with_denylist(&["capture", "focus"])
+                .build(),
+        )
         .manage(sidecar::SidecarState::default())
         .manage(focus_tray::FocusTray::default())
         .manage({
