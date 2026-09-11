@@ -55,6 +55,7 @@ pub fn run() {
             commands::open_focus_mode,
             commands::set_dock_visible,
             commands::set_tray_visible,
+            commands::trash_path,
             focus_tray::focus_snapshot,
             focus_tray::sync_focus,
             sidecar::sidecar_endpoint,

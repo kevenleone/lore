@@ -11,6 +11,7 @@ import type {
     KnowledgeRepository,
     NewCollection,
     NewItem,
+    VaultSize,
 } from './repository';
 
 import { matchesView } from '../store/views';
@@ -56,8 +57,6 @@ export class VaultRepository implements KnowledgeRepository {
         );
     }
 
-    /* ---------------- items ---------------- */
-
     dispose(): void {
         this.events?.close();
         this.events = null;
@@ -73,6 +72,17 @@ export class VaultRepository implements KnowledgeRepository {
      */
     async ensureOpen(): Promise<void> {
         await this.ready();
+    }
+
+    /* ---------------- items ---------------- */
+
+    async exportTo(path: string): Promise<{ files: number; path: string }> {
+        return this.call(() =>
+            request<{ files: number; path: string }>('/workspace/export', {
+                body: JSON.stringify({ path }),
+                method: 'POST',
+            }),
+        );
     }
 
     async getItem(id: string): Promise<Item | null> {
@@ -106,11 +116,11 @@ export class VaultRepository implements KnowledgeRepository {
         return view ? items.filter((i) => matchesView(i, view)) : items;
     }
 
-    /* ---------------- collections ---------------- */
-
     async listTags(): Promise<TagCount[]> {
         return this.call(() => request<TagCount[]>('/tags'));
     }
+
+    /* ---------------- collections ---------------- */
 
     async refreshItem(id: string): Promise<Item> {
         return this.call(() =>
@@ -129,6 +139,10 @@ export class VaultRepository implements KnowledgeRepository {
 
     async search(query: string): Promise<Item[]> {
         return this.call(() => request<Item[]>(`/search?q=${encodeURIComponent(query)}`));
+    }
+
+    async size(): Promise<VaultSize> {
+        return this.call(() => request<VaultSize>('/workspace/size'));
     }
 
     /**

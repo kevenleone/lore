@@ -23,6 +23,12 @@ export interface KnowledgeRepository {
 
     /** Releases connections/streams so a workspace switch can rebuild cleanly. */
     dispose?(): Promise<void> | void;
+    /**
+     * Copies the vault's own files into a folder the user picked, leaving the
+     * derived index behind. Optional: only a store backed by files has anything
+     * to export.
+     */
+    exportTo?(path: string): Promise<{ files: number; path: string }>;
     getItem(id: string): Promise<Item | null>;
     /**
      * Per-file facts for the Properties panel. Optional: only the vault knows a
@@ -50,6 +56,9 @@ export interface KnowledgeRepository {
     /** ⌘K full-text search across titles, snippets, summaries, tags. */
     search(query: string): Promise<Item[]>;
 
+    /** Bytes on disk, split into the vault's own files and the index. */
+    size?(): Promise<VaultSize>;
+
     /**
      * Optional reactive hook — implemented by the vault store's file watcher;
      * returns an unsubscribe.
@@ -70,3 +79,11 @@ export interface KnowledgeRepository {
 export type NewCollection = Omit<Collection, 'id'>;
 
 export type NewItem = Omit<Item, 'createdAt' | 'deletedAt' | 'id' | 'updatedAt'>;
+
+export interface VaultSize {
+    /** Bytes outside `.lore/`: the Markdown and anything pasted beside it. */
+    content: number;
+    /** Bytes under `.lore/` — the index, rebuilt whenever it is missing. */
+    derived: number;
+    files: number;
+}
