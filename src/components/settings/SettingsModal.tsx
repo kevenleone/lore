@@ -112,6 +112,7 @@ export function SettingsModal() {
     const pane = useStore((s) => s.settingsPane);
     const setPane = useStore((s) => s.setSettingsPane);
     const close = useStore((s) => s.closeSettings);
+    const restoreDefaults = useStore((s) => s.restoreDefaultPrefs);
     const [filter, setFilter] = useState('');
     const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -203,13 +204,22 @@ export function SettingsModal() {
                     </div>
 
                     <div className="min-h-3 flex-1" />
-                    <div className="flex items-center gap-[9px] border-t border-border px-[10px] py-[9px] text-label text-text3">
-                        <span className="inline-flex text-text2">
-                            <LoreMark size={13} />
-                        </span>
-                        <span>
-                            {APP_MODE.productName} {APP_VERSION}
-                        </span>
+                    <div className="flex flex-col gap-[6px] border-t border-border px-[10px] py-[9px]">
+                        <button
+                            className="rounded-md border-none bg-transparent px-0 py-px text-left font-[inherit] text-label text-text3 hover:text-text"
+                            onClick={restoreDefaults}
+                            type="button"
+                        >
+                            Restore defaults
+                        </button>
+                        <div className="flex items-center gap-[9px] text-label text-text3">
+                            <span className="inline-flex text-text2">
+                                <LoreMark size={13} />
+                            </span>
+                            <span>
+                                {APP_MODE.productName} {APP_VERSION}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
