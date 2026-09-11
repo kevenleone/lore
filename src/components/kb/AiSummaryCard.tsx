@@ -1,4 +1,9 @@
-// The auto-generated AI summary block shown in the detail pane.
+// The summary block in the detail pane.
+//
+// Its text is the file's own `summary` frontmatter, so the card says where it
+// came from rather than crediting a generator. Nothing in Lore writes that
+// field yet — `AiProvider.summarize` has no caller — and when something does,
+// this is the badge that has to change with it.
 
 import { Sparkle } from '../common/glyphs';
 
@@ -17,9 +22,9 @@ export function AiSummaryCard({
                 <span className="flex text-accent">
                     <Sparkle size={15} />
                 </span>
-                <span className="text-body-lg font-[680] text-text">AI Summary</span>
+                <span className="text-body-lg font-[680] text-text">Summary</span>
                 <span className="ml-[2px] rounded-5 border border-accent-border bg-surface px-[6px] py-px text-micro text-faint">
-                    auto-generated
+                    from the file
                 </span>
             </div>
             <p className="mt-[10px] mb-0 text-title leading-[1.6] text-text2 select-text">
