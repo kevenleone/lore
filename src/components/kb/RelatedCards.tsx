@@ -1,11 +1,14 @@
-// "Related" section in the detail pane — AI-surfaced item cards.
+// "Related" section in the detail pane.
+//
+// These are the file's own `related` wikilinks — the Properties panel adds and
+// removes them by hand — so the section names the link, not a discovery.
 
 import type { Item } from '../../store/types';
 
 import { cn } from '../../lib/cn';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
-import { ChevronRight, Sparkle } from '../common/glyphs';
+import { ChevronRight } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 
 export function RelatedCards({ related }: { related: Item[] }) {
@@ -17,10 +20,7 @@ export function RelatedCards({ related }: { related: Item[] }) {
                 <span className="text-caption font-[680] tracking-[.06em] text-faint uppercase">
                     Related
                 </span>
-                <span className="inline-flex items-center gap-1 text-caption text-accent">
-                    <Sparkle size={12} />
-                    surfaced by AI
-                </span>
+                <span className="text-caption text-faint">linked in this note</span>
             </div>
             <div className="flex flex-col gap-2">
                 {related.map((r) => {
