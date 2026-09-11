@@ -3,7 +3,37 @@
 // (registered in lib.rs, and per build mode — see `mode.rs`) and the tray's
 // Quick Capture item both route through toggle.
 
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use tauri::{AppHandle, Emitter, Manager};
+
+/// Whether the user wants Lore in the Dock, so that showing the main window
+/// does not quietly undo the preference.
+///
+/// `show_main` has to decide the activation policy every time it raises the
+/// window, and the renderer — which owns preferences — may not be running yet
+/// when the tray raises it. Hence a copy on the Rust side, written by
+/// `set_dock_visible` and read wherever the policy is set.
+pub struct DockPreference(AtomicBool);
+
+impl Default for DockPreference {
+    /// On until the renderer says otherwise: the tray can raise the window
+    /// before the preference has been read, and a Lore that boots into the Dock
+    /// is what every version so far has done.
+    fn default() -> Self {
+        Self(AtomicBool::new(true))
+    }
+}
+
+impl DockPreference {
+    pub fn get(&self) -> bool {
+        self.0.load(Ordering::Relaxed)
+    }
+
+    fn set(&self, visible: bool) {
+        self.0.store(visible, Ordering::Relaxed);
+    }
+}
 
 /// The capture shortcut, from wherever the user pressed it.
 ///
@@ -54,6 +84,33 @@ pub fn hide_capture(app: AppHandle) {
     }
 }
 
+/// Settings → General → "Show icon in the Dock".
+#[tauri::command]
+pub fn set_dock_visible(app: AppHandle, visible: bool) {
+    app.state::<DockPreference>().set(visible);
+
+    // Dropping the Dock entry while the window is hidden would be the same as
+    // hiding it twice; raising it back is the job of `show_main`.
+    let showing = app
+        .get_webview_window("main")
+        .and_then(|win| win.is_visible().ok())
+        .unwrap_or(false);
+    if showing {
+        set_app_visible_in_switcher(&app, visible);
+    }
+}
+
+/// Settings → General → "Show icon in the menu bar".
+#[tauri::command]
+pub fn set_tray_visible(app: AppHandle, visible: bool) {
+    #[cfg(desktop)]
+    if let Some(tray) = app.tray_by_id(crate::focus_tray::TRAY_ID) {
+        let _ = tray.set_visible(visible);
+    }
+    #[cfg(not(desktop))]
+    let _ = (app, visible);
+}
+
 /// macOS only: `Accessory` keeps Lore in the menu bar but out of the Dock and
 /// the Cmd-Tab switcher; `Regular` puts it back. The quick-capture overlay
 /// stays Accessory on purpose — only the main window earns a Dock entry.
@@ -75,17 +132,40 @@ fn set_app_visible_in_switcher(app: &AppHandle, visible: bool) {
 /// Bring the main window back, restoring the Dock/Cmd-Tab entry first so the
 /// window can actually come to the front instead of opening behind other apps.
 pub fn show_main(app: &AppHandle) {
-    set_app_visible_in_switcher(app, true);
+    let dock = app.state::<DockPreference>().get();
+    set_app_visible_in_switcher(app, dock);
 
     if let Some(win) = app.get_webview_window("main") {
         let _ = win.show();
         let _ = win.unminimize();
         let _ = win.set_focus();
     }
+
+    // An Accessory app is not in the activation order, so `set_focus` alone
+    // leaves the window behind whatever the user was looking at. With the Dock
+    // icon on, the policy change above has already brought Lore forward.
+    #[cfg(target_os = "macos")]
+    if !dock {
+        activate_app();
+    }
+}
+
+/// Brings Lore forward without a Dock tile to click.
+#[cfg(target_os = "macos")]
+fn activate_app() {
+    use objc2::MainThreadMarker;
+    use objc2_app_kit::NSApplication;
+
+    let Some(marker) = MainThreadMarker::new() else {
+        return;
+    };
+    #[allow(deprecated)]
+    NSApplication::sharedApplication(marker).activateIgnoringOtherApps(true);
 }
 
 /// Hide the main window and drop out of the Dock and Cmd-Tab; the tray icon
-/// stays, and is the way back in.
+/// stays, and is the way back in. With the tray icon hidden too, the capture
+/// shortcut is — which is why Settings refuses to turn off the last of them.
 pub fn hide_main(app: &AppHandle) {
     if let Some(win) = app.get_webview_window("main") {
         let _ = win.hide();

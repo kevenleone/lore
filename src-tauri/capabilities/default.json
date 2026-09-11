@@ -20,6 +20,9 @@
         "global-shortcut:default",
         "dialog:allow-open",
         "notification:default",
+        "autostart:allow-enable",
+        "autostart:allow-disable",
+        "autostart:allow-is-enabled",
         "core:window:allow-request-user-attention"
     ],
     "windows": ["main", "capture", "focus"]
