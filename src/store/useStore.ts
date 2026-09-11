@@ -16,6 +16,7 @@ import { ensureWorkspaceOpen, setWorkspace } from '../data';
 import { migrateSqlite } from '../data/migrateSqlite';
 import { defaultVaultPath } from '../data/vaultRepository';
 import { formatTime } from '../lib/calendar';
+import { exportPdf, pdfFileName, pickPdfPath } from '../lib/exportPdf';
 import { primeChime } from '../lib/focusChime';
 import { ensureNotificationPermission, notifyIntervalEnd } from '../lib/focusNotify';
 import { nextPhase, phaseSeconds, remainingSeconds } from '../lib/focusTimer';
@@ -138,6 +139,8 @@ interface StoreState {
      * an export is silent on screen otherwise, the files landing somewhere the
      * app is not showing.
      */
+    /** Writes one item to a PDF the user picks. Defaults to the open item. */
+    exportItemPdf: (id?: string) => Promise<void>;
     exportVault: () => Promise<void>;
     /** Filter-bar state, applied on top of `view` and `search`. */
     filters: Filters;
@@ -691,6 +694,39 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     /* ---------------- focus timer ---------------- */
+
+    async exportItemPdf(id) {
+        const target = id ?? get().selectedId;
+        if (!target) {
+            get().pushToast('Open an item to export it.');
+            return;
+        }
+
+        // `detail` is the only copy carrying a body, and a list row would print
+        // as a title with nothing under it.
+        const item =
+            get().detail?.id === target ? get().detail : await getRepository().getItem(target);
+        if (!item) {
+            get().pushToast('That item could not be read.');
+            return;
+        }
+
+        const destination = await pickPdfPath(item.title);
+        if (!destination) return;
+
+        try {
+            await exportPdf(
+                {
+                    collectionName: get().collections.find((c) => c.id === item.collectionId)?.name,
+                    item,
+                },
+                destination,
+            );
+            get().pushToast(`Exported ${pdfFileName(item.title)}.`);
+        } catch (e) {
+            get().pushToast(e instanceof Error ? e.message : 'The export failed.');
+        }
+    },
 
     async exportVault() {
         const repo = getRepository();

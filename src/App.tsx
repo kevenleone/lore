@@ -57,6 +57,7 @@ export default function App() {
     // The per-item override wins over the saved preference — that is what the
     // drawer's expand button sets.
     const openAs = useStore((s) => s.openAs ?? s.prefs.openMode);
+    const exportItemPdf = useStore((s) => s.exportItemPdf);
     const openCapture = useStore((s) => s.openCapture);
     const openSettings = useStore((s) => s.openSettings);
     const selectView = useStore((s) => s.selectView);
@@ -103,6 +104,7 @@ export default function App() {
             capture: () => toggleCapture(),
             contribute: () => void openExternal(APP_LINKS.issues),
             documentation: () => void openExternal(APP_LINKS.readme),
+            'export-pdf': () => void exportItemPdf(),
             'open-vault': () => openSettings('vault'),
             properties: () => toggleProperties(),
             search: () => window.dispatchEvent(new CustomEvent(SEARCH_COMMAND)),
@@ -115,7 +117,15 @@ export default function App() {
             'view-starred': () => selectView('starred', null),
             'view-today': () => selectView('today', null),
         }),
-        [openSettings, selectView, setMainView, toggleCapture, toggleProperties, toggleSidebar],
+        [
+            exportItemPdf,
+            openSettings,
+            selectView,
+            setMainView,
+            toggleCapture,
+            toggleProperties,
+            toggleSidebar,
+        ],
     );
 
     // Paint the token set for the effective theme, and repaint when the OS

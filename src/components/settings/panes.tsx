@@ -567,6 +567,7 @@ const SHORTCUT_GROUPS = [
         rows: [
             { keys: ['⌘', 'K'], label: 'Search everything' },
             { keys: ['⌘', 'N'], label: 'Capture drawer' },
+            { keys: ['⌘', '⇧', 'E'], label: 'Export the open item as PDF' },
             { keys: ['⌥', '⇧', 'F'], label: 'Start or pause a focus session' },
             { keys: ['⌘', 'B'], label: 'Toggle the sidebar' },
             { keys: ['⌘', 'L'], label: 'Toggle the properties panel' },
