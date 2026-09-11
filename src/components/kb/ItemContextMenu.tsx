@@ -8,7 +8,16 @@ import type { ContextMenuTarget } from '../common/ContextMenu';
 import { copyText } from '../../lib/clipboard';
 import { useStore } from '../../store/useStore';
 import { ContextMenu, ContextMenuItem, ContextMenuSeparator } from '../common/ContextMenu';
-import { Check, Copy, Link, OpenPage, StarOutline, Timer, Trash } from '../common/glyphs';
+import {
+    Check,
+    Copy,
+    FileGlyph,
+    Link,
+    OpenPage,
+    StarOutline,
+    Timer,
+    Trash,
+} from '../common/glyphs';
 import { Icon } from '../common/Icon';
 
 export function ItemContextMenu({
@@ -20,6 +29,7 @@ export function ItemContextMenu({
 }) {
     const item = useStore((s) => s.items.find((i) => i.id === target.id));
     const deleteItem = useStore((s) => s.deleteItem);
+    const exportItemPdf = useStore((s) => s.exportItemPdf);
     const expandOpenItem = useStore((s) => s.expandOpenItem);
     const selectItem = useStore((s) => s.selectItem);
     const toggleStar = useStore((s) => s.toggleStar);
@@ -129,6 +139,11 @@ export function ItemContextMenu({
                             Copy link
                         </ContextMenuItem>
                     )}
+                    <ContextMenuSeparator />
+                    <ContextMenuItem onClick={() => run(() => void exportItemPdf(item.id))}>
+                        <FileGlyph size={14} />
+                        Export as PDF…
+                    </ContextMenuItem>
                     <ContextMenuSeparator />
                     <ContextMenuItem danger onClick={() => setConfirmingDelete(true)}>
                         <Trash size={14} />
