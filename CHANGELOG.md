@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.8.0](https://github.com/kevenleone/lore/compare/v1.7.0...v1.8.0) (2026-09-11)
+
+
+### Features
+
+* **capture:** file new captures by the Settings defaults ([c30334b](https://github.com/kevenleone/lore/commit/c30334bc4d251a3cf042c0abd6c43a283d7b7829))
+* **settings:** apply the Startup preferences on every boot ([3f8883a](https://github.com/kevenleone/lore/commit/3f8883aec0627fe25501c95626dc3bc05474a766))
+* **settings:** export, delete and restore defaults ([03da171](https://github.com/kevenleone/lore/commit/03da171c91b76fa6be6e0209271ee3b8907693d4))
+* **settings:** find a setting by its own name ([ac9cb31](https://github.com/kevenleone/lore/commit/ac9cb31275ea375d639b881cfe04102093f9f71a))
+* **settings:** give the Vault pane its real figures and actions ([a5cbf45](https://github.com/kevenleone/lore/commit/a5cbf4579feb12fc9861106723309a5b4680a56a))
+* **settings:** open a real menu from every chooser ([9f64758](https://github.com/kevenleone/lore/commit/9f64758e5d1ac51426b1f31f3d74c7e56b90d81b))
+* **sidecar:** weigh and copy the vault ([d3e1a03](https://github.com/kevenleone/lore/commit/d3e1a032340dddab389267e971f055f226bdf0d0))
+* **startup:** put the Dock, menu-bar and login-item switches to work ([569ef57](https://github.com/kevenleone/lore/commit/569ef572fe5245c96744a72f5ff132b8ed1c1866))
+* **vault:** move a deleted vault to the Trash ([a88bc89](https://github.com/kevenleone/lore/commit/a88bc89caeda12fb503890dd050735524f8ecceb))
+* **vault:** reveal the vault folder in Finder ([20303a6](https://github.com/kevenleone/lore/commit/20303a6861af0ff9f82856b962782d0924ad7f23))
+
+
+### Bug Fixes
+
+* **settings:** keep one way back into a hidden Lore ([388460e](https://github.com/kevenleone/lore/commit/388460e21e42376eff586c2fced7eb741357b581))
+
+
+### Refactoring
+
+* **settings:** drop the Dock icon switch ([f5235d3](https://github.com/kevenleone/lore/commit/f5235d30f2ea13e79ae7bb75c548a9c4c542c6bf))
+* **settings:** remove the controls nothing reads ([d7d3e7c](https://github.com/kevenleone/lore/commit/d7d3e7cc01fd3eb4a563958662194dab34056ff3))
+
 ## [1.7.0](https://github.com/kevenleone/lore/compare/v1.6.0...v1.7.0) (2026-09-11)
 
 
