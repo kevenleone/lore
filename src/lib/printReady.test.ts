@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { waitForPaint } from './printReady';
+import { nextPaint, waitForPaint } from './printReady';
 
 /**
  * jsdom never loads an image, so `complete` is whatever we say it is. Both
@@ -67,5 +67,32 @@ describe('waitForPaint', () => {
         await waitForPaint();
 
         expect(image.hasAttribute('data-print-unloaded')).toBe(false);
+    });
+});
+
+describe('nextPaint', () => {
+    it('resolves on frames when the window is producing them', async () => {
+        vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+            cb(0);
+            return 0;
+        });
+
+        await expect(nextPaint()).resolves.toBeUndefined();
+
+        vi.unstubAllGlobals();
+    });
+
+    it('resolves anyway when frames never come — the offscreen window is occluded', async () => {
+        // WebKit suspends requestAnimationFrame for an occluded window, so a
+        // callback that never fires is the normal case for the print surface,
+        // not an error. Waiting on frames alone would hang the export here.
+        vi.stubGlobal('requestAnimationFrame', () => 0);
+
+        const done = nextPaint();
+        await vi.advanceTimersByTimeAsync(400);
+
+        await expect(done).resolves.toBeUndefined();
+
+        vi.unstubAllGlobals();
     });
 });
