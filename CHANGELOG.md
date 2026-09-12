@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.9.0](https://github.com/kevenleone/lore/compare/v1.8.1...v1.9.0) (2026-09-12)
+
+
+### Features
+
+* **kb:** export the open document as PDF ([f79eedb](https://github.com/kevenleone/lore/commit/f79eedba719c41fe6cf8370a785a292f90d83239))
+* **kb:** name the PDF after the note's file, and offer to show it ([0f8a12a](https://github.com/kevenleone/lore/commit/0f8a12adfd46d1f75c4a936bad7a6eb4762dd6ee))
+* **print:** render a document as paper in its own window ([9a63da5](https://github.com/kevenleone/lore/commit/9a63da59ad7643dde8e9afb7505bcd8d61bb27b1))
+* **print:** write the print window to a PDF file ([f1652c6](https://github.com/kevenleone/lore/commit/f1652c67e4e9104491a6967f16d83833936a75af))
+
+
+### Bug Fixes
+
+* **capture:** make the composer usable without a pointer ([b2ddc97](https://github.com/kevenleone/lore/commit/b2ddc9771bfa21f43b640fe472a3168b56a49f63))
+* **kb:** make the detail pane's controls buttons ([8febe01](https://github.com/kevenleone/lore/commit/8febe014abdb8b4d6a2daddac8b02ba15dd7abcf))
+* **kb:** make the sidebar reachable from the keyboard ([f582ca2](https://github.com/kevenleone/lore/commit/f582ca21038fdb84b34076eadc5e16439d3841db))
+* **kb:** put the collection counts back on the right edge ([6c9c37f](https://github.com/kevenleone/lore/commit/6c9c37f113d36ccaf01a9b0e084fe7e30ad2c45c))
+* **kb:** show the reason an export failed ([6fba931](https://github.com/kevenleone/lore/commit/6fba93187aa326980ee55cbd312829a76767c391))
+* **print:** capture the page instead of printing it ([dd8be96](https://github.com/kevenleone/lore/commit/dd8be96da9e59581e39a8a5819aa7c528f2bc792))
+* **print:** let the export reach the print operation ([dfa6969](https://github.com/kevenleone/lore/commit/dfa69697973cd10efdb7a893de10f26971923964))
+* **print:** let the paper flow, and stop the page tiling ([13dc226](https://github.com/kevenleone/lore/commit/13dc226468505ef795fa6d82a1a335227825130d))
+* **theme:** give the delete confirmation a token, not a pink hex ([f01b166](https://github.com/kevenleone/lore/commit/f01b16619ccc53facc255f536c6deeaab7cc2730))
+* **ui:** make the remaining controls buttons ([4efed70](https://github.com/kevenleone/lore/commit/4efed705fe213f4291581e858dcecaee1f8f3eac))
+
 ## [1.8.1](https://github.com/kevenleone/lore/compare/v1.8.0...v1.8.1) (2026-09-11)
 
 
