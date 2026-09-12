@@ -30,9 +30,14 @@ const BARE_BUTTON = 'border-none bg-transparent p-0 font-[inherit] text-[inherit
 /**
  * Row actions are revealed by hover *and* by focus: on hover alone a keyboard
  * user can tab to a button that is never drawn, or never reach it at all.
+ *
+ * They are taken out of the row's flow because they must stay focusable while
+ * hidden — `display: none` would drop them out of the tab order, and anything
+ * that merely hides them still occupies the space, which pushed every
+ * collection's count inboard of the shortcuts it lines up with.
  */
 const ROW_ACTIONS =
-    'flex items-center gap-2 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100';
+    'absolute inset-y-0 right-[9px] flex items-center gap-2 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100';
 
 export function CollectionsSection() {
     const items = useStore((s) => s.items);
@@ -187,7 +192,7 @@ export function CollectionsSection() {
                     <div
                         className={cn(
                             ROW_BASE,
-                            'group',
+                            'group relative',
                             active
                                 ? 'bg-accent-tint font-[590] text-accent'
                                 : 'text-text2 hover:bg-hover',
@@ -207,7 +212,7 @@ export function CollectionsSection() {
                         >
                             {c.name}
                         </button>
-                        <span className="text-body-sm tabular-nums opacity-50 group-focus-within:hidden group-hover:hidden">
+                        <span className="text-body-sm tabular-nums opacity-50 group-focus-within:invisible group-hover:invisible">
                             {collectionCount(items, c.id)}
                         </span>
                         <span className={ROW_ACTIONS}>
