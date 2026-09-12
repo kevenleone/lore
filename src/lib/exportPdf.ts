@@ -57,29 +57,34 @@ export async function exportPdf(payload: PrintPayload, destination: string): Pro
     }
 }
 
-/** A PDF's default name: the title, made safe for a filename. */
-export function pdfFileName(title: string): string {
-    const safe = title
-        .replace(/[/\\:*?"<>|]/g, '-')
-        .replace(/\s+/g, ' ')
-        .replace(/^\.+/, '')
-        .trim()
-        .slice(0, 120)
-        .trim();
-    return `${safe || 'Untitled'}.pdf`;
+/**
+ * What the save panel offers.
+ *
+ * The vault already names a note's file after a slug of its title, and that
+ * name is the one the user browses, links to and reads in git — so the PDF
+ * takes it too, and the pair sort together in a folder. Only a store with no
+ * files behind it has to fall back to slugging the title here.
+ */
+export function pdfFileName(item: { path?: string; title: string }): string {
+    const stem = item.path ? fileStem(item.path) : slugify(item.title);
+    return `${stem || 'untitled'}.pdf`;
 }
 
 /** Opens the native save panel. Resolves to null when the user cancels. */
-export async function pickPdfPath(title: string): Promise<null | string> {
+export async function pickPdfPath(item: { path?: string; title: string }): Promise<null | string> {
     const { save } = await import('@tauri-apps/plugin-dialog');
     const picked = await save({
         // A bare filename, not a path, so macOS reuses the folder the user
         // saved to last — which is what a second export expects.
-        defaultPath: pdfFileName(title),
+        defaultPath: pdfFileName(item),
         filters: [{ extensions: ['pdf'], name: 'PDF' }],
         title: 'Export as PDF',
     });
     return typeof picked === 'string' ? picked : null;
+}
+
+function fileStem(path: string): string {
+    return (path.split('/').pop() ?? '').replace(/\.mdx?$/i, '');
 }
 
 /**
@@ -116,4 +121,16 @@ async function ready(listen: Listen, send: () => void): Promise<void> {
         clearTimeout(expire);
         unlisten();
     }
+}
+
+/** Mirrors the vault's own rules closely enough for a filename nobody stores. */
+function slugify(title: string): string {
+    return title
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 80)
+        .replace(/-+$/, '');
 }

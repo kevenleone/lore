@@ -12,3 +12,9 @@ export const DRAWER_MS = 240;
  * and this timer is what actually takes it off the screen.
  */
 export const TOAST_MS = 2600;
+
+/**
+ * A toast carrying an action has to outlast a glance: 2.6s is long enough to
+ * read a confirmation but not to notice a button, decide, and reach it.
+ */
+export const TOAST_ACTION_MS = 8000;

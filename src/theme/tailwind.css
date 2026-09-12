@@ -169,9 +169,11 @@
     --animate-surface-in: fade-in 160ms ease;
     --animate-ring-pulse: ring-pulse 1.8s ease-in-out infinite;
 
-    /* One animation for a toast's whole life. TOAST_MS in src/lib/motion.ts
-       must stay equal to the 2600ms below — it drives the removal timer. */
+    /* One animation for a toast's whole life. TOAST_MS and TOAST_ACTION_MS in
+       src/lib/motion.ts must stay equal to the durations below — they drive the
+       removal timers. */
     --animate-toast-life: toast-life 2600ms ease forwards;
+    --animate-toast-life-long: toast-life 8000ms ease forwards;
 
     @keyframes drawer-in {
         from {
