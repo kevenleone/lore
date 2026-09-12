@@ -473,6 +473,20 @@
     margin: 0;
 }
 
+/*
+ * The app shell clips its root — `html, body, #root { height: 100%; overflow:
+ * hidden }` — so the three panes scroll on their own. A page being paginated
+ * needs the opposite: it must flow to its natural height, or WebKit tries to
+ * break up a document clipped to one viewport and never finishes. Unlayered, so
+ * it outranks the base layer it is correcting.
+ */
+.lore-paper,
+.lore-paper body,
+.lore-paper #root {
+    height: auto;
+    overflow: visible;
+}
+
 @media print {
     .lore-print-header {
         break-after: avoid;

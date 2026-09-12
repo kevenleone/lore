@@ -28,16 +28,6 @@ export function nextPaint(): Promise<void> {
     return Promise.race([twoFrames(), delay(PAINT_MS)]);
 }
 
-function twoFrames(): Promise<void> {
-    return new Promise((resolve) => {
-        if (typeof requestAnimationFrame !== 'function') {
-            resolve();
-            return;
-        }
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-    });
-}
-
 export async function waitForPaint(root: Document = document): Promise<void> {
     await Promise.race([Promise.all([waitForFonts(root), waitForImages(root)]), delay(OVERALL_MS)]);
 }
@@ -65,6 +55,16 @@ function settled(image: HTMLImageElement): Promise<void> {
         const timer = setTimeout(done, IMAGE_MS);
         image.addEventListener('load', done);
         image.addEventListener('error', done);
+    });
+}
+
+function twoFrames(): Promise<void> {
+    return new Promise((resolve) => {
+        if (typeof requestAnimationFrame !== 'function') {
+            resolve();
+            return;
+        }
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
 }
 
