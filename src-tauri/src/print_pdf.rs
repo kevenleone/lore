@@ -59,7 +59,9 @@ pub async fn export_webview_pdf(
 #[cfg(target_os = "macos")]
 fn print_to_file(webview: &tauri::webview::PlatformWebview, destination: &str) -> Result<(), String> {
     use objc2::runtime::ProtocolObject;
-    use objc2_app_kit::{NSPrintInfo, NSPrintJobSavingURL, NSPrintSaveJob};
+    use objc2_app_kit::{
+        NSPrintInfo, NSPrintJobSavingURL, NSPrintSaveJob, NSPrintingPaginationMode,
+    };
     use objc2_foundation::{NSString, NSURL};
     use objc2_web_kit::WKWebView;
 
@@ -83,6 +85,14 @@ fn print_to_file(webview: &tauri::webview::PlatformWebview, destination: &str) -
         // of the sheet instead of starting it at the top margin.
         info.setHorizontallyCentered(false);
         info.setVerticallyCentered(false);
+
+        // The webview is wider than the printable area, and the default
+        // (Automatic) answer to that is to tile the overflow onto further
+        // columns of pages — which is how a two-word note printed hundreds of
+        // megabytes. Fit scales the page to the paper instead; only the
+        // vertical axis may break into more pages.
+        info.setHorizontalPagination(NSPrintingPaginationMode::Fit);
+        info.setVerticalPagination(NSPrintingPaginationMode::Automatic);
 
         let url = NSURL::fileURLWithPath(&NSString::from_str(destination));
         info.dictionary()

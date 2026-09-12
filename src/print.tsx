@@ -17,6 +17,9 @@ import { DEFAULT_LIGHT_THEME } from './theme/themes';
 import { paintTheme } from './theme/tokens';
 import './theme/tailwind.css';
 
+// Opts this window out of the app shell's clipped root; see `.lore-paper`.
+document.documentElement.classList.add('lore-paper');
+
 paintTheme({
     accent: loadPersisted().prefs.accent,
     mode: 'light',

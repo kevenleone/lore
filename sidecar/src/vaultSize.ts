@@ -10,28 +10,12 @@ import { join } from 'node:path';
 import { LORE_DIR } from './vault';
 
 export interface VaultSize {
+    /** Bytes outside `.lore/`: the Markdown and anything pasted beside it. */
+    content: number;
     /** Bytes under `.lore/` — the index and its caches. */
     derived: number;
     /** Files outside `.lore/`. */
     files: number;
-    /** Bytes outside `.lore/`: the Markdown and anything pasted beside it. */
-    content: number;
-}
-
-export async function measureVault(root: string): Promise<VaultSize> {
-    const size: VaultSize = { content: 0, derived: 0, files: 0 };
-
-    await walk(root, async (path, bytes, derived) => {
-        if (derived) {
-            size.derived += bytes;
-            return;
-        }
-        size.content += bytes;
-        size.files += 1;
-        void path;
-    });
-
-    return size;
 }
 
 /**
@@ -60,6 +44,31 @@ export async function exportVault(
     return { files, path: target };
 }
 
+export async function measureVault(root: string): Promise<VaultSize> {
+    const size: VaultSize = { content: 0, derived: 0, files: 0 };
+
+    await walk(root, async (path, bytes, derived) => {
+        if (derived) {
+            size.derived += bytes;
+            return;
+        }
+        size.content += bytes;
+        size.files += 1;
+        void path;
+    });
+
+    return size;
+}
+
+async function exists(path: string): Promise<boolean> {
+    try {
+        await stat(path);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 function exportName(root: string): string {
     const name = root.split('/').filter(Boolean).pop() ?? 'vault';
     const day = new Date().toISOString().slice(0, 10);
@@ -72,15 +81,6 @@ async function freeFolder(destination: string, name: string): Promise<string> {
         if (!(await exists(candidate))) return candidate;
     }
     throw new Error('a hundred exports in one day is enough');
-}
-
-async function exists(path: string): Promise<boolean> {
-    try {
-        await stat(path);
-        return true;
-    } catch {
-        return false;
-    }
 }
 
 /** Depth-first over every file, saying whether it is derived. */
