@@ -724,7 +724,10 @@ export const useStore = create<StoreState>((set, get) => ({
             );
             get().pushToast(`Exported ${pdfFileName(item.title)}.`);
         } catch (e) {
-            get().pushToast(e instanceof Error ? e.message : 'The export failed.');
+            // A rejected `invoke` arrives as a plain string, not an Error, so the
+            // reason Rust gave would be dropped by an `instanceof` check alone.
+            if (typeof e === 'string') get().pushToast(e);
+            else get().pushToast(e instanceof Error ? e.message : 'The export failed.');
         }
     },
 
