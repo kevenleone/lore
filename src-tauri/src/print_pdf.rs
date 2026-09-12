@@ -1,23 +1,26 @@
-// Printing a webview straight to a PDF file.
+// Asking a webview for a PDF of itself.
 //
-// macOS will paginate a WKWebView for a printer, and a print operation whose
-// job disposition is "save" writes that pagination to a file instead. That is
-// the whole trick: the renderer lays the document out as paper, and AppKit does
-// the page breaking, the text (which stays selectable) and the file.
+// The obvious tool here is a print operation, and it is the wrong one: driven
+// over an offscreen webview it paginates without bound — a two-word note came
+// out at hundreds of megabytes, still growing, with a core pegged. `createPDF`
+// cannot do that, because it does not paginate at all. It answers with the
+// whole page as a single continuous sheet, which for a note is what you want to
+// read anyway, and makes a runaway impossible rather than merely unlikely.
 
 use std::{sync::mpsc, time::Duration};
 
 use tauri::AppHandle;
 
-/// How long AppKit gets to paginate and write the file.
-const PRINT_TIMEOUT: Duration = Duration::from_secs(30);
+/// How long the webview gets to answer with its bytes.
+const CAPTURE_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Writes the given window's current page to `destination` as a PDF.
 ///
-/// `with_webview` only queues its closure onto the main thread and returns, so
-/// the result comes back over a channel. The wait must not happen on the main
-/// thread — that would block the very thread the closure needs — which is why
-/// it is handed to `spawn_blocking` rather than awaited here.
+/// `with_webview` only queues its closure onto the main thread and returns, and
+/// the capture itself then calls back later on that same thread — so the bytes
+/// come home over a channel. The wait must not happen on the main thread, which
+/// is why it is handed to `spawn_blocking` rather than awaited here: blocking
+/// the main thread would stall the very callback being waited on.
 #[tauri::command]
 pub async fn export_webview_pdf(
     app: AppHandle,
@@ -32,21 +35,21 @@ pub async fn export_webview_pdf(
             .get_webview_window(&label)
             .ok_or_else(|| "The print window is not available.".to_string())?;
 
-        let (sender, receiver) = mpsc::channel::<Result<(), String>>();
+        let (sender, receiver) = mpsc::channel::<Result<Vec<u8>, String>>();
 
         window
-            .with_webview(move |webview| {
-                let _ = sender.send(print_to_file(&webview, &destination));
-            })
+            .with_webview(move |webview| capture_pdf(&webview, sender))
             .map_err(|e| e.to_string())?;
 
-        tauri::async_runtime::spawn_blocking(move || {
+        let bytes = tauri::async_runtime::spawn_blocking(move || {
             receiver
-                .recv_timeout(PRINT_TIMEOUT)
-                .unwrap_or_else(|_| Err("Writing the PDF timed out.".to_string()))
+                .recv_timeout(CAPTURE_TIMEOUT)
+                .unwrap_or_else(|_| Err("The PDF took too long to render.".to_string()))
         })
         .await
-        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())??;
+
+        std::fs::write(&destination, bytes).map_err(|e| e.to_string())
     }
 
     #[cfg(not(target_os = "macos"))]
@@ -57,57 +60,35 @@ pub async fn export_webview_pdf(
 }
 
 #[cfg(target_os = "macos")]
-fn print_to_file(webview: &tauri::webview::PlatformWebview, destination: &str) -> Result<(), String> {
-    use objc2::runtime::ProtocolObject;
-    use objc2_app_kit::{
-        NSPrintInfo, NSPrintJobSavingURL, NSPrintSaveJob, NSPrintingPaginationMode,
-    };
-    use objc2_foundation::{NSString, NSURL};
+fn capture_pdf(
+    webview: &tauri::webview::PlatformWebview,
+    sender: mpsc::Sender<Result<Vec<u8>, String>>,
+) {
+    use block2::RcBlock;
+    use objc2_foundation::{NSData, NSError};
     use objc2_web_kit::WKWebView;
 
     // Sound only because `with_webview` runs this on the main thread, which is
-    // the only thread WKWebView and NSPrintOperation may be touched from.
+    // the only thread a WKWebView may be touched from.
     unsafe {
         let view: &WKWebView = &*webview.inner().cast();
 
-        let info = NSPrintInfo::new();
-        info.setJobDisposition(NSPrintSaveJob);
+        let handler = RcBlock::new(move |data: *mut NSData, error: *mut NSError| {
+            let result = if data.is_null() {
+                Err(error
+                    .as_ref()
+                    .map(|e| e.localizedDescription().to_string())
+                    .unwrap_or_else(|| "The webview produced no PDF.".to_string()))
+            } else {
+                Ok((*data).to_vec())
+            };
+            // The receiver is gone only if the command already timed out, and
+            // there is nothing left to tell.
+            let _ = sender.send(result);
+        });
 
-        // The margins belong here and not to `@page`: WebKit's support for
-        // `@page { margin }` is partial, while these are honoured always, and
-        // setting both would add them together.
-        info.setTopMargin(48.0);
-        info.setBottomMargin(48.0);
-        info.setLeftMargin(44.0);
-        info.setRightMargin(44.0);
-
-        // Both default to on, which would float a two-line note in the middle
-        // of the sheet instead of starting it at the top margin.
-        info.setHorizontallyCentered(false);
-        info.setVerticallyCentered(false);
-
-        // The webview is wider than the printable area, and the default
-        // (Automatic) answer to that is to tile the overflow onto further
-        // columns of pages — which is how a two-word note printed hundreds of
-        // megabytes. Fit scales the page to the paper instead; only the
-        // vertical axis may break into more pages.
-        info.setHorizontalPagination(NSPrintingPaginationMode::Fit);
-        info.setVerticalPagination(NSPrintingPaginationMode::Automatic);
-
-        let url = NSURL::fileURLWithPath(&NSString::from_str(destination));
-        info.dictionary()
-            .setObject_forKey(&url, ProtocolObject::from_ref(NSPrintJobSavingURL));
-
-        let operation = view.printOperationWithPrintInfo(&info);
-        operation.setShowsPrintPanel(false);
-        operation.setShowsProgressPanel(false);
-
-        // Paper size is left at the user's default — Letter in the US, A4 in
-        // most of the world. Forcing one would be wrong in the other place.
-        if operation.runOperation() {
-            Ok(())
-        } else {
-            Err("macOS could not write the PDF.".to_string())
-        }
+        // A null configuration means the whole page rather than a chosen rect,
+        // which is the entire point: the document decides its own length.
+        view.createPDFWithConfiguration_completionHandler(None, &handler);
     }
 }

@@ -462,23 +462,14 @@
 }
 
 /*
- * Paper. Only the print window is ever printed, and it is the light token map
- * by construction (src/print.tsx), so nothing here restates a colour.
+ * Paper. Only the print window uses this, and it is the light token map by
+ * construction (src/print.tsx), so nothing here restates a colour.
  *
- * The page margins belong to NSPrintInfo in src-tauri/src/print_pdf.rs, not
- * here: WebKit honours `@page { margin }` only partially, and setting both
- * would add them together.
- */
-@page {
-    margin: 0;
-}
-
-/*
  * The app shell clips its root — `html, body, #root { height: 100%; overflow:
- * hidden }` — so the three panes scroll on their own. A page being paginated
- * needs the opposite: it must flow to its natural height, or WebKit tries to
- * break up a document clipped to one viewport and never finishes. Unlayered, so
- * it outranks the base layer it is correcting.
+ * hidden }` — so its three panes scroll on their own. A page being captured
+ * must do the opposite and stand at its full height: `createPDF` photographs
+ * the content rect, so a clipped root would come out truncated to the first
+ * screenful. Unlayered, so it outranks the base layer it is correcting.
  */
 .lore-paper,
 .lore-paper body,
@@ -487,41 +478,17 @@
     overflow: visible;
 }
 
-@media print {
-    .lore-print-header {
-        break-after: avoid;
-    }
+/* Nothing scrolls on paper; a sideways scroller would simply lose its tail. */
+.lore-paper .lore-print-body :is(pre, table, .overflow-x-auto) {
+    overflow: visible;
+}
 
-    /* A page break through a code block or a table row is unreadable; through a
-       heading it orphans the heading from what it introduces. */
-    .lore-print-body :is(pre, table, blockquote, figure, img) {
-        break-inside: avoid;
-    }
+.lore-paper .lore-print-body pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
 
-    .lore-print-body :is(h1, h2, h3, h4, h5, h6) {
-        break-after: avoid;
-        break-inside: avoid;
-    }
-
-    .lore-print-body :is(p, li) {
-        orphans: 3;
-        widows: 3;
-    }
-
-    /* On screen these scroll sideways. On paper the overflow is simply gone, so
-       wrap instead of clipping. */
-    .lore-print-body pre {
-        overflow: visible;
-        white-space: pre-wrap;
-        word-break: break-word;
-    }
-
-    .lore-print-body :is(table, .overflow-x-auto) {
-        overflow: visible;
-    }
-
-    /* An image that never loaded would print as an empty box with a border. */
-    .lore-print-body img[data-print-unloaded] {
-        display: none;
-    }
+/* An image that never loaded would otherwise leave an empty bordered box. */
+.lore-paper .lore-print-body img[data-print-unloaded] {
+    display: none;
 }
