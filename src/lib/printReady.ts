@@ -12,6 +12,32 @@ const IMAGE_MS = 3000;
 /** The ceiling on the whole wait, however many images there are. */
 const OVERALL_MS = 8000;
 
+/** How long to wait for frames that an occluded window may never produce. */
+const PAINT_MS = 250;
+
+/**
+ * Two animation frames, or a timer — whichever lands first.
+ *
+ * Frames are the accurate signal that React's commit has been painted, but the
+ * print window is parked offscreen, where WebKit treats it as occluded and can
+ * suspend `requestAnimationFrame` altogether. Waiting on frames alone hangs
+ * there forever, so a timer runs the same race and the frames stay an
+ * optimisation rather than a dependency.
+ */
+export function nextPaint(): Promise<void> {
+    return Promise.race([twoFrames(), delay(PAINT_MS)]);
+}
+
+function twoFrames(): Promise<void> {
+    return new Promise((resolve) => {
+        if (typeof requestAnimationFrame !== 'function') {
+            resolve();
+            return;
+        }
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
+}
+
 export async function waitForPaint(root: Document = document): Promise<void> {
     await Promise.race([Promise.all([waitForFonts(root), waitForImages(root)]), delay(OVERALL_MS)]);
 }

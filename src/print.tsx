@@ -11,7 +11,7 @@ import type { PrintPayload } from './components/print/PrintDocument';
 
 import { PrintDocument } from './components/print/PrintDocument';
 import { PRINT_DOCUMENT, PRINT_READY } from './lib/exportPdf';
-import { waitForPaint } from './lib/printReady';
+import { nextPaint, waitForPaint } from './lib/printReady';
 import { loadPersisted } from './store/persisted';
 import { DEFAULT_LIGHT_THEME } from './theme/themes';
 import { paintTheme } from './theme/tokens';
@@ -33,13 +33,10 @@ async function listen(): Promise<void> {
         // the readiness wait below would race the second pass.
         root.render(<PrintDocument {...event.payload} />);
 
-        // Two frames, then the bounded wait for fonts and images: one frame
-        // gets React's commit painted, the second gets the layout it caused.
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                void waitForPaint().then(() => emit(PRINT_READY));
-            });
-        });
+        // Let the commit paint, then wait — bounded — on fonts and images.
+        void nextPaint()
+            .then(() => waitForPaint())
+            .then(() => emit(PRINT_READY));
     });
 }
 
