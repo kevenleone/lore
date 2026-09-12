@@ -20,6 +20,7 @@ import { exportPdf, pdfFileName, pickPdfPath } from '../lib/exportPdf';
 import { primeChime } from '../lib/focusChime';
 import { ensureNotificationPermission, notifyIntervalEnd } from '../lib/focusNotify';
 import { nextPhase, phaseSeconds, remainingSeconds } from '../lib/focusTimer';
+import { revealPath } from '../lib/reveal';
 import { initVaultGit } from '../lib/vaultGit';
 import {
     broadcastWorkspaceChange,
@@ -53,6 +54,7 @@ import {
     type SortOrder,
     type Switches,
     type Toast,
+    type ToastAction,
     type VaultSetup,
     type View,
     type ViewMode,
@@ -197,7 +199,7 @@ interface StoreState {
     // onboarding + preferences (persisted)
     prefs: Prefs;
     /** Confirms an action whose effect the user cannot see happen. */
-    pushToast: (message: string) => void;
+    pushToast: (message: string, action?: ToastAction) => void;
     recentWorkspaces: WorkspaceRef[];
     // data actions
     refresh: () => Promise<void>;
@@ -711,7 +713,7 @@ export const useStore = create<StoreState>((set, get) => ({
             return;
         }
 
-        const destination = await pickPdfPath(item.title);
+        const destination = await pickPdfPath(item);
         if (!destination) return;
 
         try {
@@ -722,7 +724,10 @@ export const useStore = create<StoreState>((set, get) => ({
                 },
                 destination,
             );
-            get().pushToast(`Exported ${pdfFileName(item.title)}.`);
+            get().pushToast(`Exported ${pdfFileName(item)}.`, {
+                label: 'Show in Finder',
+                run: () => void revealPath(destination),
+            });
         } catch (e) {
             // A rejected `invoke` arrives as a plain string, not an Error, so the
             // reason Rust gave would be dropped by an `instanceof` check alone.
@@ -864,8 +869,8 @@ export const useStore = create<StoreState>((set, get) => ({
 
     prefs: persisted.prefs,
 
-    pushToast(message) {
-        const toast = { id: crypto.randomUUID(), message };
+    pushToast(message, action) {
+        const toast = { action, id: crypto.randomUUID(), message };
         // A burst of actions should not stack into a column that covers the
         // list it is reporting on.
         set({ toasts: [...get().toasts, toast].slice(-3) });

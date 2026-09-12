@@ -5,6 +5,8 @@ import type { Item } from './types';
 import { DEFAULT_PREFS } from './types';
 import { useStore } from './useStore';
 
+vi.mock('../lib/reveal', () => ({ revealPath: vi.fn().mockResolvedValue(true) }));
+
 vi.mock('../lib/exportPdf', async () => {
     const actual = await vi.importActual<typeof import('../lib/exportPdf')>('../lib/exportPdf');
     return { ...actual, exportPdf: vi.fn(), pickPdfPath: vi.fn() };
@@ -20,6 +22,7 @@ const ITEM: Item = {
     createdAt: '2026-01-02T03:04:05.000Z',
     flags: {},
     id: 'i1',
+    path: 'Reading List/how-linear-builds-product.md',
     related: [],
     tags: ['product'],
     title: 'How Linear builds product',
@@ -59,18 +62,43 @@ describe('exportItemPdf', () => {
     });
 
     it('sends the body and the collection name, and names the file it wrote', async () => {
-        picked.mockResolvedValue('/tmp/out/How Linear builds product.pdf');
+        picked.mockResolvedValue('/tmp/out/how-linear-builds-product.pdf');
         exported.mockResolvedValue();
 
         await useStore.getState().exportItemPdf();
 
         expect(exported).toHaveBeenCalledWith(
             { collectionName: 'Reading List', item: ITEM },
-            '/tmp/out/How Linear builds product.pdf',
+            '/tmp/out/how-linear-builds-product.pdf',
         );
         expect(useStore.getState().toasts[0].message).toBe(
-            'Exported How Linear builds product.pdf.',
+            'Exported how-linear-builds-product.pdf.',
         );
+    });
+
+    it('offers to show the file, because only the export knows where it went', async () => {
+        const { revealPath } = await import('../lib/reveal');
+        picked.mockResolvedValue('/tmp/out/how-linear-builds-product.pdf');
+        exported.mockResolvedValue();
+
+        await useStore.getState().exportItemPdf();
+
+        const action = useStore.getState().toasts[0].action;
+        expect(action?.label).toBe('Show in Finder');
+
+        action?.run();
+        expect(vi.mocked(revealPath)).toHaveBeenCalledWith(
+            '/tmp/out/how-linear-builds-product.pdf',
+        );
+    });
+
+    it('leaves a failure with nothing to click', async () => {
+        picked.mockResolvedValue('/tmp/out/note.pdf');
+        exported.mockRejectedValue(new Error('nope'));
+
+        await useStore.getState().exportItemPdf();
+
+        expect(useStore.getState().toasts[0].action).toBeUndefined();
     });
 
     it('says so when the export fails, rather than looking like it worked', async () => {

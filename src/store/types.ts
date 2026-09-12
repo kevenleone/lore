@@ -429,6 +429,16 @@ export type MainView = 'calendar' | 'library';
 
 /** A transient confirmation, shown for `TOAST_MS` and then dropped. */
 export interface Toast {
+    /**
+     * An optional next step. A toast reporting a file it just wrote is the one
+     * moment the user wants to go look at it, and the path is only known here.
+     */
+    action?: ToastAction;
     id: string;
     message: string;
+}
+
+export interface ToastAction {
+    label: string;
+    run: () => void;
 }
