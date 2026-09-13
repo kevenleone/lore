@@ -347,7 +347,9 @@ export function Composer({
         <div
             className={cn(
                 'flex min-h-0 flex-col overflow-hidden bg-surface',
-                inDrawer ? 'h-full' : 'rounded-2xl border border-border shadow-float',
+                // The panel is a fixed-height window: the card stops at its edge
+                // so the footer stays on screen, and tall captures scroll.
+                inDrawer ? 'h-full' : 'max-h-full rounded-2xl border border-border shadow-float',
             )}
         >
             {/* type tabs */}
@@ -372,12 +374,7 @@ export function Composer({
                 })}
             </div>
 
-            <div
-                className={cn(
-                    'min-h-0 px-4 py-[15px]',
-                    inDrawer ? 'flex-1 overflow-y-auto' : 'flex-none overflow-y-visible',
-                )}
-            >
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-[15px]">
                 {/* per-type content */}
                 {tab === 'link' && (
                     <>

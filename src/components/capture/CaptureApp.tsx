@@ -112,7 +112,7 @@ export function CaptureApp() {
                 </Toggle>
             </div>
 
-            <div className="w-full max-w-[560px]">
+            <div className="flex min-h-0 w-full max-w-[560px] flex-1 flex-col">
                 {mode === 'A' ? (
                     <CommandBar
                         collectionId={prefs.defaultCollection}
