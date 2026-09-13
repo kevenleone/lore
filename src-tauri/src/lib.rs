@@ -169,7 +169,7 @@ pub fn run() {
             tauri::RunEvent::Exit => app.state::<sidecar::SidecarState>().shutdown(),
             // Clicking the Dock icon while the window is hidden.
             #[cfg(target_os = "macos")]
-            tauri::RunEvent::Reopen { .. } => commands::show_main(app),
+            tauri::RunEvent::Reopen { .. } => commands::reopen_main(app),
             _ => {}
         });
 }

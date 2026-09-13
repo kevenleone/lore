@@ -49,6 +49,11 @@ pub fn toggle_capture_window(app: &AppHandle) {
             let _ = win.center();
             let _ = win.show();
             let _ = win.set_focus();
+            // Being shown is what resets the form, and only this knows it: the
+            // window gains focus for reasons of its own — a file dialog closing
+            // raises it twice — and a reset there would wipe the capture the
+            // user is in the middle of.
+            let _ = win.emit("capture:shown", ());
         }
     }
 }
@@ -135,6 +140,25 @@ fn set_app_visible_in_switcher(app: &AppHandle, visible: bool) {
     }
     #[cfg(not(target_os = "macos"))]
     let _ = (app, visible);
+}
+
+/// macOS asks the app to reopen whenever it is activated with no ordinary
+/// window on screen, and the file dialog the Quick Capture panel opens counts:
+/// the panel is a floating panel, so with the main window hidden AppKit sees
+/// nothing and asks for it back. Raising it there takes the focus the panel is
+/// dismissed by, which is the whole capture — so a visible panel means the
+/// reopen has already been answered.
+pub fn reopen_main(app: &AppHandle) {
+    let capturing = app
+        .get_webview_window("capture")
+        .and_then(|win| win.is_visible().ok())
+        .unwrap_or(false);
+
+    if capturing {
+        return;
+    }
+
+    show_main(app);
 }
 
 /// Bring the main window back, restoring the Dock/Cmd-Tab entry first so the

@@ -18,13 +18,29 @@ export const captureAi = new MockAiProvider();
  */
 const LAST_COLLECTION_KEY = 'lore.capture.lastCollection';
 
+/**
+ * Whether a blur is the panel's own doing and must not dismiss it.
+ *
+ * A native file dialog takes focus away from the panel, which is the same event
+ * the panel uses to dismiss itself — so picking an image would close capture
+ * before the file ever arrived. One flag rather than a count: only one dialog
+ * can be open at a time, and a count that fails to drain would pin the panel
+ * open for the rest of the session.
+ */
+let dismissHeld = false;
+
 export async function hideCapture(): Promise<void> {
+    dismissHeld = false;
     try {
         const { invoke } = await import('@tauri-apps/api/core');
         await invoke('hide_capture');
     } catch {
         // Outside Tauri — no window to hide.
     }
+}
+
+export function holdCaptureDismiss(): void {
+    dismissHeld = true;
 }
 
 /** Best-effort hostname for a URL (for link titles/domains). */
@@ -36,12 +52,23 @@ export function hostOf(url: string): string {
     }
 }
 
+export function isCaptureDismissHeld(): boolean {
+    return dismissHeld;
+}
+
 export function lastCollectionId(): null | string {
     try {
         return localStorage.getItem(LAST_COLLECTION_KEY);
     } catch {
         return null;
     }
+}
+
+/** Releases the hold, reporting whether there was one to release. */
+export function releaseCaptureDismiss(): boolean {
+    if (!dismissHeld) return false;
+    dismissHeld = false;
+    return true;
 }
 
 export function rememberCollectionId(id: string | undefined): void {

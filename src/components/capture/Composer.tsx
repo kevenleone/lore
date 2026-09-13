@@ -18,6 +18,7 @@ import { captureShortcut } from '../../lib/appMode';
 import { addDays } from '../../lib/calendar';
 import {
     hideCapture,
+    holdCaptureDismiss,
     hostOf,
     lastCollectionId,
     rememberCollectionId,
@@ -688,7 +689,13 @@ export function Composer({
                                         'flex w-full flex-col items-center gap-[9px] rounded-xl border-[1.5px] border-dashed bg-transparent p-[34px] text-center font-[inherit]',
                                         dragging ? 'border-accent bg-accent-tint' : 'border-dash',
                                     )}
-                                    onClick={() => fileInputRef.current?.click()}
+                                    onClick={() => {
+                                        // The picker blurs the capture panel; without
+                                        // this the panel would dismiss itself the moment
+                                        // the dialog opened.
+                                        holdCaptureDismiss();
+                                        fileInputRef.current?.click();
+                                    }}
                                     onDragLeave={() => setDragging(false)}
                                     onDragOver={(e) => {
                                         // Without this the browser navigates to the file
