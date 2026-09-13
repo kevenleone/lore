@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react';
 
 import { setWorkspace } from '../../data';
-import { hideCapture } from '../../lib/captureActions';
+import { hideCapture, isCaptureDismissHeld, releaseCaptureDismiss } from '../../lib/captureActions';
 import { cn } from '../../lib/cn';
 import { onWorkspaceChanged } from '../../lib/workspace';
 import { loadPersisted } from '../../store/persisted';
@@ -29,22 +29,33 @@ export function CaptureApp() {
     // text/state from the previous capture).
     const [sessionKey, setSessionKey] = useState(0);
 
-    // Esc closes; clicking the backdrop closes; losing focus closes; gaining focus
-    // (i.e. being shown) resets the form.
+    // Esc closes; clicking the backdrop closes; losing focus closes. The form is
+    // reset by `capture:shown` rather than by focus: the window is focused again
+    // for reasons that are not a new capture, and a file dialog closing raises it
+    // more than once.
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === 'Escape') void hideCapture();
         };
         window.addEventListener('keydown', onKey);
 
-        let unlisten: (() => void) | undefined;
+        const unlisteners: (() => void)[] = [];
         (async () => {
             try {
                 const { getCurrentWindow } = await import('@tauri-apps/api/window');
-                unlisten = await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
-                    if (focused) setSessionKey((k) => k + 1);
-                    else void hideCapture();
-                });
+                const current = getCurrentWindow();
+                unlisteners.push(
+                    await current.onFocusChanged(({ payload: focused }) => {
+                        if (focused) {
+                            releaseCaptureDismiss();
+                            return;
+                        }
+                        // A native file dialog blurs the panel too; dismissing there
+                        // would throw away the capture the user is still building.
+                        if (!isCaptureDismissHeld()) void hideCapture();
+                    }),
+                    await current.listen('capture:shown', () => setSessionKey((k) => k + 1)),
+                );
             } catch {
                 // Outside Tauri.
             }
@@ -52,7 +63,7 @@ export function CaptureApp() {
 
         return () => {
             window.removeEventListener('keydown', onKey);
-            unlisten?.();
+            for (const unlisten of unlisteners) unlisten();
         };
     }, []);
 
