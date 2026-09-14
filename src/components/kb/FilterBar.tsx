@@ -10,7 +10,6 @@ import { useEffect, useRef, useState } from 'react';
 import type { FilterFacet, ItemType } from '../../store/types';
 
 import { cn } from '../../lib/cn';
-import { SEED_TAG_ORDER } from '../../store/seed';
 import { TYPE_META } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
 import { activeFilterCount, tagCounts } from '../../store/views';
@@ -28,7 +27,6 @@ export function FilterBar() {
     const toggleFilter = useStore((s) => s.toggleFilter);
     const setFilters = useStore((s) => s.setFilters);
     const clearFilters = useStore((s) => s.clearFilters);
-    const vaultTagOrder = useStore((s) => s.tagOrder);
 
     const [menu, setMenu] = useState<MenuId | null>(null);
     const barRef = useRef<HTMLDivElement>(null);
@@ -42,7 +40,7 @@ export function FilterBar() {
         return () => window.removeEventListener('mousedown', onDown);
     }, [menu]);
 
-    const tags = tagCounts(items, vaultTagOrder.length ? vaultTagOrder : SEED_TAG_ORDER);
+    const tags = tagCounts(items);
     const count = activeFilterCount(filters);
 
     return (

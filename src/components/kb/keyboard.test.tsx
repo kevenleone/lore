@@ -5,7 +5,7 @@
 // missing semantics cost more than the missing tab stop — a tick box that
 // announces itself as a tick box, and navigation that says which row is current.
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_PREFS } from '../../store/types';
@@ -17,23 +17,58 @@ afterEach(() => {
     useStore.setState({ prefs: DEFAULT_PREFS, view: { kind: 'all', val: null } });
 });
 
+/** The Library landmark, which scopes the rows Tasks also has a name for. */
+function library(): HTMLElement {
+    return screen.getByRole('navigation', { name: 'Library' });
+}
+
 describe('the sidebar', () => {
     it('is a column of buttons, not of clickable text', () => {
         render(<Sidebar onCapture={vi.fn()} />);
 
-        for (const name of ['All Items', 'Inbox', 'Today', 'Starred', 'Calendar', 'Settings']) {
+        for (const name of ['Calendar', 'Settings']) {
             expect(screen.getByRole('button', { name: new RegExp(name) }), name).toBeTruthy();
         }
+        for (const name of ['Everything', 'Inbox', 'Notes', 'Links', 'Files']) {
+            expect(
+                within(library()).getByRole('button', { name: new RegExp(name) }),
+                name,
+            ).toBeTruthy();
+        }
+    });
+
+    // The Library names the five rows the design gives it; Today and Starred
+    // are views without a row, reachable from the View menu.
+    it('gives the Library exactly the rows the design names', () => {
+        render(<Sidebar onCapture={vi.fn()} />);
+
+        const labels = within(library())
+            .getAllByRole('button')
+            .map((b) => b.textContent?.replace(/[\d,]+|⌘\d/g, '').trim());
+        expect(labels).toEqual(['Everything', 'Inbox', 'Notes', 'Links', 'Files']);
+    });
+
+    it('keeps the task views out of the Library', () => {
+        render(<Sidebar onCapture={vi.fn()} />);
+
+        expect(within(library()).queryByRole('button', { name: /Summary/ })).toBeNull();
+        expect(
+            within(screen.getByRole('navigation', { name: 'Tasks' })).getByRole('button', {
+                name: /Summary/,
+            }),
+        ).toBeTruthy();
     });
 
     it('marks the open view as current, so it is not colour alone', () => {
         useStore.setState({ view: { kind: 'inbox', val: null } });
         render(<Sidebar onCapture={vi.fn()} />);
 
-        const inbox = screen.getByRole('button', { name: /Inbox/ });
+        const inbox = within(library()).getByRole('button', { name: /Inbox/ });
         expect(inbox.getAttribute('aria-current')).toBe('page');
         expect(
-            screen.getByRole('button', { name: /All Items/ }).getAttribute('aria-current'),
+            within(library())
+                .getByRole('button', { name: /Everything/ })
+                .getAttribute('aria-current'),
         ).toBeNull();
     });
 
