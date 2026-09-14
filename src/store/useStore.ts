@@ -9,6 +9,7 @@ import type { CollectionPatch, ItemPatch, NewCollection, NewItem } from '../data
 import type { ThemeId } from '../theme/themes';
 import type { Appearance } from '../theme/tokens';
 import type { WorkspaceRef } from './persisted';
+import type { BoardFilter } from './tasks';
 
 import { MockAiProvider } from '../ai/mockAiProvider';
 import { getRepository } from '../data';
@@ -20,7 +21,7 @@ import { exportPdf, pdfFileName, pickPdfPath } from '../lib/exportPdf';
 import { primeChime } from '../lib/focusChime';
 import { ensureNotificationPermission, notifyIntervalEnd } from '../lib/focusNotify';
 import { nextPhase, phaseSeconds, remainingSeconds } from '../lib/focusTimer';
-import { revealPath } from '../lib/reveal';
+import { revealPath, revealVaultFile } from '../lib/reveal';
 import { initVaultGit } from '../lib/vaultGit';
 import {
     broadcastWorkspaceChange,
@@ -32,8 +33,13 @@ import {
 import { effectiveTheme } from '../theme/tokens';
 import { loadPersisted, savePersisted } from './persisted';
 import { SEED_COLLECTIONS, SEED_ITEMS } from './seed';
+import { boardFor, EMPTY_BOARD_FILTER } from './tasks';
 import {
     type Accent,
+    type BoardColumnConfig,
+    type BoardConfig,
+    type BoardViewMode,
+    type CapturePreset,
     type ChatMessage,
     type Collection,
     DEFAULT_PREFS,
@@ -53,6 +59,7 @@ import {
     type SettingsPane,
     type SortOrder,
     type Switches,
+    type TaskView,
     type Toast,
     type ToastAction,
     type VaultSetup,
@@ -89,9 +96,21 @@ let searchTimer: null | ReturnType<typeof setTimeout> = null;
 let searchSeq = 0;
 
 interface StoreState {
+    /** Appends a column to the open board. */
+    addBoardColumn: (name: string) => Promise<void>;
     /** Appends a comment to the item's frontmatter. */
     addComment: (id: string, body: string) => Promise<void>;
     addTag: (id: string, tag: string) => Promise<void>;
+    /** What the open board is filtered by. Empty everywhere means unfiltered. */
+    boardFilter: BoardFilter;
+    /**
+     * The project whose board the Projects tab is showing — a collection id, or
+     * `UNFILED_BOARD`. Null is the overview: the tab's other state, listing
+     * every project rather than opening one.
+     */
+    boardId: null | string;
+    /** Every board, keyed by collection id. Absent means `DEFAULT_BOARD`. */
+    boards: Record<string, BoardConfig>;
     bumpDuration: (key: keyof Durations, delta: number) => void;
     /**
      * True while the in-window capture drawer is open. The floating capture
@@ -99,16 +118,26 @@ interface StoreState {
      * capture started from inside the window happens here instead.
      */
     captureOpen: boolean;
+
+    /**
+     * Fields a capture should open with, set by the surface that asked for it —
+     * the `+` on a board column knows the collection and the column, which the
+     * drawer has no way to work out for itself.
+     */
+    capturePreset: CapturePreset | null;
+
     chat: ChatMessage[];
+
     chatOpen: boolean;
-
     clearFilters: () => void;
-
+    /** Back to the list of projects, from one project's board. */
+    closeBoard: () => void;
     closeCapture: () => void;
-
     /** Puts an item opened from Cards or Table away again. */
     closeOpenItem: () => void;
     closeSettings: () => void;
+    /** Closes the Tasks surface's rail. The task stays selected. */
+    closeTask: () => void;
     collections: Collection[];
     createCollection: (input: NewCollection) => Promise<void>;
     createItem: (input: NewItem) => Promise<Item>;
@@ -156,7 +185,6 @@ interface StoreState {
     focus: FocusState;
     /** True while the full Focus surface (frame 1f) covers the window. */
     focusModeOpen: boolean;
-
     /** True while the menu-bar-style focus popover (frame 1e) is open. */
     focusPopoverOpen: boolean;
     /** Finished intervals, newest last. Drawn on the calendar. */
@@ -164,22 +192,24 @@ interface StoreState {
     // lifecycle
     hydrate: () => Promise<void>;
     hydrated: boolean;
+
     /**
      * Per-file facts for the Properties panel — size, mtime, word count and
      * backlinks. Null until the panel is open and a response has landed.
      */
     itemMeta: ItemMeta | null;
-
     // data
     items: Item[];
-
     loadDetail: (id: string) => Promise<void>;
     loadItemMeta: (id: string) => Promise<void>;
     /** Which surface the window's main area shows: the library or the calendar. */
     mainView: MainView;
+
     /** Set once by a migration so the UI can say what happened. */
     migrationNotice: null | string;
 
+    /** Drops a column onto another's place, from a drag of its handle. */
+    moveBoardColumn: (columnId: string, targetId: string) => Promise<void>;
     onboarded: boolean;
     onboardingStep: OnboardingStep;
     /**
@@ -187,7 +217,12 @@ interface StoreState {
      * the preference. Cleared with `openId`, so it never outlives its item.
      */
     openAs: null | OpenMode;
+    /** Opens a collection's board. `UNFILED_BOARD` is the one for loose tasks. */
+    openBoard: (boardId: string) => void;
+
     openCapture: () => void;
+    /** Opens the capture drawer with a column's board and status already set. */
+    openCaptureIn: (collectionId: null | string, column: BoardColumnConfig) => void;
     /**
      * The item Cards or Table has opened, or null. List mode never sets it —
      * there the detail pane is a permanent column, so there is nothing to open.
@@ -208,38 +243,59 @@ interface StoreState {
      * the data engine holds the interval, so this carries no policy.
      */
     refreshSource: (id: string) => Promise<void>;
+    /** Drops a column; its cards fall back into the first one. */
+    removeBoardColumn: (columnId: string) => Promise<void>;
     removeComment: (id: string, commentId: string) => Promise<void>;
     removeTag: (id: string, tag: string) => Promise<void>;
+    /** Renames a column in place. The cards do not move — `status` holds the id. */
+    renameBoardColumn: (columnId: string, name: string) => Promise<void>;
     renameItemFile: (id: string, stem: string) => Promise<void>;
+    /** Moves a column one place left or right. */
+    reorderBoardColumn: (columnId: string, direction: -1 | 1) => Promise<void>;
     /** Puts the current interval back to its full length, still paused. */
     resetFocusInterval: () => void;
     /** Puts every preference back to its default. */
     restoreDefaultPrefs: () => void;
-
+    /** Shows the item's file in the OS file manager. */
+    revealItemFile: (id: string) => Promise<void>;
     /** Item id → ISO time it sits at on the calendar. */
     schedule: Record<string, string>;
+
     /** Places an item on the calendar, or clears it when `at` is null. */
     scheduleItem: (id: string, at: Date | null) => void;
     search: string;
     searching: boolean;
-
     /**
      * Ids the index matched, or null when the query is too short to run one and
      * the client-side filter is doing the work instead.
      */
     searchResults: null | string[];
+
     selectedId: null | string;
     selectItem: (id: string) => void;
+    /**
+     * Selection from inside the Tasks surface. `selectItem` sends the window
+     * back to the library, which is right when an item is opened from the
+     * calendar or the chat and wrong here: the rail sits beside the list it was
+     * chosen from.
+     */
+    selectTask: (id: string) => void;
     // ui actions
     selectView: (kind: View['kind'], val?: null | string) => void;
     sendChat: (question: string) => Promise<void>;
     setAccent: (accent: Accent) => void;
     setAppearance: (appearance: Appearance) => void;
+    /** Marks which column completes a task, or none when it is already set. */
+    setBoardDoneColumn: (columnId: string) => Promise<void>;
 
+    /** Narrows the open board. Passing null clears every facet. */
+    setBoardFilter: (patch: null | Partial<BoardFilter>) => void;
+    /** Switches the open board between cards and a list. */
+    setBoardView: (view: BoardViewMode) => Promise<void>;
     setEditorDirty: (id: null | string) => void;
+
     setFilters: (patch: Partial<Filters>) => void;
     setFocusTask: (id: null | string) => void;
-
     setMainView: (view: MainView) => void;
     // onboarding actions
     setOnboardingStep: (step: OnboardingStep) => void;
@@ -248,16 +304,17 @@ interface StoreState {
     setSearch: (q: string) => void;
     setSettingsPane: (pane: SettingsPane) => void;
     setSort: (sort: SortOrder) => void;
+    setTaskView: (view: TaskView) => void;
     setTheme: (id: ThemeId) => void;
     // settings sheet
     settingsOpen: boolean;
     settingsPane: SettingsPane;
     setViewMode: (mode: ViewMode) => void;
     sidebarVisible: boolean;
+
     /** Ends the current interval early and moves to the next one. */
     skipFocusInterval: () => void;
     sort: SortOrder;
-
     /**
      * Ends the session: back to a fresh first interval, which is also what
      * clears the countdown from the menu bar.
@@ -265,8 +322,10 @@ interface StoreState {
     stopFocus: () => void;
     switchWorkspace: (path: null | string) => Promise<void>;
     // vault
-    /** Sidebar tag order for the open vault; empty falls back to the seed order. */
-    tagOrder: string[];
+    /** Whether the Tasks surface is showing the selected task beside its list. */
+    taskRailOpen: boolean;
+    /** Which tab the Tasks surface is on. */
+    taskView: TaskView;
     /** Recomputes the countdown from the clock, and rolls over at zero. */
     tickFocus: () => void;
     /** Shows or hides the right-hand Properties panel. Persisted with the prefs. */
@@ -292,6 +351,24 @@ interface StoreState {
     /** Set when a vault cannot be opened — an unmounted drive, a deleted folder. */
     workspaceError: null | string;
     workspacePath: null | string;
+}
+
+/**
+ * A column id derived from its name, kept unique within the board. The id is
+ * what every task's `status` holds, so it is minted once and never rewritten —
+ * renaming a column later leaves every card exactly where it is.
+ */
+function columnId(board: BoardConfig, name: string): string {
+    const base =
+        name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '') || 'column';
+    const taken = new Set(board.columns.map((c) => c.id));
+    if (!taken.has(base)) return base;
+    let n = 2;
+    while (taken.has(`${base}-${n}`)) n++;
+    return `${base}-${n}`;
 }
 
 /**
@@ -434,15 +511,8 @@ async function hydrateOnce(
         }
     }
 
-    // A vault can carry its own tag order in .lore/workspace.json.
-    let tagOrder: string[] = [];
-    const withTagOrder = repo as { tagOrder?: () => Promise<string[]> };
-    if (withTagOrder.tagOrder) {
-        tagOrder = await withTagOrder.tagOrder().catch(() => []);
-    }
-
     const selectedId = items.find((i) => i.id === get().selectedId)?.id ?? items[0]?.id ?? null;
-    set({ collections, hydrated: true, items, selectedId, tagOrder });
+    set({ collections, hydrated: true, items, selectedId });
     if (selectedId) void get().loadDetail(selectedId);
 
     // Edits made outside Lore — a git pull, Obsidian, vim — arrive here.
@@ -594,7 +664,51 @@ async function seedDefaultVault(): Promise<void> {
     }
 }
 
+/**
+ * Dates a task the moment it is finished, and undates it when it is reopened.
+ *
+ * Here rather than at each call site because every route to `done` comes
+ * through `updateItem` — the card checkbox, the board, the context menu, the
+ * Properties chips — and a timeline built on a field only some of them stamped
+ * would be quietly wrong.
+ */
+function stampCompletion(current: Item | undefined, patch: ItemPatch): ItemPatch {
+    const next = patch.flags?.done;
+    if (next === undefined || next === !!current?.flags.done) return patch;
+    return { ...patch, completedAt: next ? new Date().toISOString() : undefined };
+}
+
+/**
+ * Applies an edit to the open board and persists it. The board is written whole
+ * rather than patched: it is a handful of columns, and a partial write is how
+ * two edits in the same tick lose one of themselves.
+ */
+async function writeBoard(
+    get: () => StoreState,
+    set: (partial: Partial<StoreState>) => void,
+    edit: (board: BoardConfig) => BoardConfig,
+): Promise<void> {
+    const { boardId, boards } = get();
+    // Every column edit comes from a board that is open, so this is unreachable
+    // — but the overview has no board to write to, and saying so is cheaper
+    // than a non-null assertion on every caller.
+    if (boardId === null) return;
+    const next = edit(boardFor(boards, boardId));
+    set({ boards: { ...boards, [boardId]: next } });
+    // A store with nowhere to keep a board still gets the edit on screen; it
+    // just does not survive a reload. See `KnowledgeRepository.saveBoard`.
+    await getRepository().saveBoard?.(boardId, next);
+}
+
 export const useStore = create<StoreState>((set, get) => ({
+    async addBoardColumn(name) {
+        const label = name.trim();
+        if (!label) return;
+        await writeBoard(get, set, (board) => ({
+            ...board,
+            columns: [...board.columns, { id: columnId(board, label), name: label }],
+        }));
+    },
     async addComment(id, body) {
         const text = body.trim();
         const item = currentItem(get(), id);
@@ -612,6 +726,9 @@ export const useStore = create<StoreState>((set, get) => ({
         if (!clean || !item || item.tags.includes(clean)) return;
         await get().updateItem(id, { tags: [...item.tags, clean] });
     },
+    boardFilter: EMPTY_BOARD_FILTER,
+    boardId: null,
+    boards: {},
     bumpDuration(key, delta) {
         set((s) => ({
             prefs: {
@@ -624,13 +741,20 @@ export const useStore = create<StoreState>((set, get) => ({
         }));
         persist(get());
     },
-    captureOpen: false,
-    chat: [],
 
+    captureOpen: false,
+
+    capturePreset: null,
+    chat: [],
     chatOpen: false,
     clearFilters() {
         set({ filters: EMPTY_FILTERS });
     },
+
+    closeBoard() {
+        set({ boardId: null });
+    },
+
     closeCapture() {
         set({ captureOpen: false });
     },
@@ -640,6 +764,12 @@ export const useStore = create<StoreState>((set, get) => ({
 
     closeSettings() {
         set({ settingsOpen: false });
+    },
+    closeTask() {
+        // The selection survives, the way closing a drawer leaves `selectedId`
+        // alone in the library — and the rail collapses by width rather than
+        // unmounting, so it has to keep drawing the task on the way out.
+        set({ taskRailOpen: false });
     },
     collections: [],
     async createCollection(input) {
@@ -849,15 +979,55 @@ export const useStore = create<StoreState>((set, get) => ({
     },
     mainView: 'library',
     migrationNotice: null,
+    /**
+     * The column goes; its cards stay tasks. They fall into the first column on
+     * the next render because their `status` now names nothing — no rewrite of
+     * every file, and undoing the delete puts them back where they were.
+     */
+    async moveBoardColumn(columnId, targetId) {
+        await writeBoard(get, set, (board) => {
+            const from = board.columns.findIndex((c) => c.id === columnId);
+            const to = board.columns.findIndex((c) => c.id === targetId);
+            if (from < 0 || to < 0 || from === to) return board;
+            const columns = board.columns.slice();
+            // Lifted out and put back in, not swapped: dragging a column three
+            // places along should carry it past the others, not trade with the
+            // one it landed on.
+            const [moved] = columns.splice(from, 1);
+            columns.splice(to, 0, moved);
+            return { ...board, columns };
+        });
+    },
+
     onboarded: persisted.onboarded,
 
     onboardingStep: 'pick',
-
     openAs: null,
+
+    openBoard(boardId) {
+        // The filter belongs to the board being looked at, not to the surface:
+        // carrying one board's filter onto the next hides cards for no reason
+        // the user can see.
+        set({ boardFilter: EMPTY_BOARD_FILTER, boardId, mainView: 'tasks', taskView: 'board' });
+    },
+
     openCapture() {
-        set({ captureOpen: true, focusPopoverOpen: false });
+        set({ captureOpen: true, capturePreset: null, focusPopoverOpen: false });
+    },
+    openCaptureIn(collectionId, column) {
+        set({
+            captureOpen: true,
+            capturePreset: {
+                collectionId,
+                done: !!column.done,
+                status: column.id,
+                type: 'task',
+            },
+            focusPopoverOpen: false,
+        });
     },
     openId: null,
+
     openSettings(pane) {
         set({ settingsOpen: true, ...(pane ? { settingsPane: pane } : {}) });
     },
@@ -868,7 +1038,6 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     prefs: persisted.prefs,
-
     pushToast(message, action) {
         const toast = { action, id: crypto.randomUUID(), message };
         // A burst of actions should not stack into a column that covers the
@@ -878,12 +1047,17 @@ export const useStore = create<StoreState>((set, get) => ({
     recentWorkspaces: persisted.recentWorkspaces,
     async refresh() {
         const repo = getRepository();
-        const [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
-        set({ collections, items });
+        const [items, collections, boards] = await Promise.all([
+            repo.listItems(),
+            repo.listCollections(),
+            repo.listBoards?.() ?? {},
+        ]);
+        set({ boards, collections, items });
         // Re-read the body: a mutation may have changed it.
         const id = get().selectedId;
         if (id) void get().loadDetail(id);
     },
+
     async refreshSource(id) {
         const repo = getRepository();
         if (!repo.refreshItem) return;
@@ -894,6 +1068,13 @@ export const useStore = create<StoreState>((set, get) => ({
         if (item.updatedAt === get().detail?.updatedAt) return;
         await get().refresh();
         await get().loadDetail(id);
+    },
+
+    async removeBoardColumn(columnId) {
+        await writeBoard(get, set, (board) => {
+            if (board.columns.length <= 1) return board;
+            return { ...board, columns: board.columns.filter((c) => c.id !== columnId) };
+        });
     },
 
     async removeComment(id, commentId) {
@@ -910,11 +1091,31 @@ export const useStore = create<StoreState>((set, get) => ({
         await get().updateItem(id, { tags: item.tags.filter((t) => t !== tag) });
     },
 
+    async renameBoardColumn(columnId, name) {
+        const label = name.trim();
+        if (!label) return;
+        await writeBoard(get, set, (board) => ({
+            ...board,
+            columns: board.columns.map((c) => (c.id === columnId ? { ...c, name: label } : c)),
+        }));
+    },
+
     async renameItemFile(id, stem) {
         const repo = getRepository();
         if (!repo.renameItem) return;
         await repo.renameItem(id, stem);
         await get().refresh();
+    },
+
+    async reorderBoardColumn(columnId, direction) {
+        await writeBoard(get, set, (board) => {
+            const from = board.columns.findIndex((c) => c.id === columnId);
+            const to = from + direction;
+            if (from < 0 || to < 0 || to >= board.columns.length) return board;
+            const columns = board.columns.slice();
+            [columns[from], columns[to]] = [columns[to], columns[from]];
+            return { ...board, columns };
+        });
     },
 
     resetFocusInterval() {
@@ -933,6 +1134,13 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ prefs: DEFAULT_PREFS });
         persist(get());
         get().pushToast('Preferences are back to their defaults.');
+    },
+
+    async revealItemFile(id) {
+        const path = currentItem(get(), id)?.path;
+        if (!path) return;
+        const shown = await revealVaultFile(get().workspacePath, path);
+        if (!shown) get().pushToast('Could not show the file.');
     },
 
     schedule: persisted.schedule,
@@ -971,6 +1179,18 @@ export const useStore = create<StoreState>((set, get) => ({
         });
         void get().loadDetail(id);
     },
+    selectTask(id) {
+        set({
+            chatOpen: false,
+            detail: null,
+            itemMeta: null,
+            openAs: null,
+            openId: null,
+            selectedId: id,
+            taskRailOpen: true,
+        });
+        void get().loadDetail(id);
+    },
     selectView(kind, val = null) {
         set({
             chatOpen: false,
@@ -1002,6 +1222,27 @@ export const useStore = create<StoreState>((set, get) => ({
 
     setAppearance(appearance) {
         get().setPref('appearance', appearance);
+    },
+
+    /** Exactly one column can complete a task; choosing the current one clears it. */
+    async setBoardDoneColumn(columnId) {
+        await writeBoard(get, set, (board) => ({
+            ...board,
+            columns: board.columns.map((c) => {
+                const done = c.id === columnId && !c.done;
+                return done ? { ...c, done: true } : { ...c, done: undefined };
+            }),
+        }));
+    },
+
+    setBoardFilter(patch) {
+        set({
+            boardFilter: patch ? { ...get().boardFilter, ...patch } : EMPTY_BOARD_FILTER,
+        });
+    },
+
+    async setBoardView(view) {
+        await writeBoard(get, set, (board) => ({ ...board, view }));
     },
 
     setEditorDirty(id) {
@@ -1046,6 +1287,12 @@ export const useStore = create<StoreState>((set, get) => ({
 
     setSort(sort) {
         set({ sort });
+    },
+    setTaskView(view) {
+        // Choosing the tab means the overview. A single board is opened by
+        // clicking it — in the overview or in the sidebar — so the tab itself
+        // is always the way back out of one.
+        set({ boardId: null, mainView: 'tasks', taskView: view });
     },
     setTheme(id) {
         const mode = effectiveTheme(get().prefs.appearance);
@@ -1129,7 +1376,8 @@ export const useStore = create<StoreState>((set, get) => ({
         await broadcastWorkspaceChange(path);
     },
 
-    tagOrder: [],
+    taskRailOpen: false,
+    taskView: 'summary',
 
     tickFocus() {
         const state = get();
@@ -1149,7 +1397,10 @@ export const useStore = create<StoreState>((set, get) => ({
     toasts: [],
 
     toggleCapture() {
-        set((s) => ({ captureOpen: !s.captureOpen, focusPopoverOpen: false }));
+        // Clears the preset with it: a capture opened from the menu or ⌥Space
+        // is not the one a board column asked for, and a stale column would
+        // file the next task somewhere the user never chose.
+        set((s) => ({ captureOpen: !s.captureOpen, capturePreset: null, focusPopoverOpen: false }));
     },
 
     toggleChat() {
@@ -1272,7 +1523,7 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     async updateItem(id, patch) {
-        await getRepository().updateItem(id, patch);
+        await getRepository().updateItem(id, stampCompletion(currentItem(get(), id), patch));
         await get().refresh();
     },
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Collection, Item } from './types';
 
-import { SEED_ITEMS, SEED_TAG_ORDER } from './seed';
+import { SEED_ITEMS } from './seed';
 import { EMPTY_FILTERS } from './types';
 import {
     activeFilterCount,
@@ -13,6 +13,7 @@ import {
     filterByView,
     localDateKey,
     matchesFilters,
+    matchesView,
     queueItems,
     relatedItems,
     sortItems,
@@ -70,12 +71,11 @@ describe('sortItems', () => {
 });
 
 describe('tagCounts', () => {
-    it('respects the seed order and counts occurrences', () => {
-        const tags = tagCounts(SEED_ITEMS, SEED_TAG_ORDER);
+    it('lists tags alphabetically and counts occurrences', () => {
+        const tags = tagCounts(SEED_ITEMS);
         const names = tags.map((t) => t.name);
-        expect(names.slice(0, SEED_TAG_ORDER.length)).toEqual(
-            SEED_TAG_ORDER.filter((t) => names.includes(t)),
-        );
+        expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+
         const design = tags.find((t) => t.name === 'design');
         expect(design?.count).toBe(SEED_ITEMS.filter((i) => i.tags.includes('design')).length);
     });
@@ -89,9 +89,34 @@ describe('collectionCount', () => {
     });
 });
 
+describe('the type views', () => {
+    it('sort every item into exactly one Library row', () => {
+        const rows = ['notes', 'links', 'files'] as const;
+        for (const item of SEED_ITEMS) {
+            const matched = rows.filter((kind) => matchesView(item, { kind, val: null }));
+            // A task has no Library row of its own — it has the Tasks surface.
+            expect(matched.length, `${item.title} (${item.type})`).toBe(
+                item.type === 'task' ? 0 : 1,
+            );
+        }
+    });
+
+    it('counts each type view off the same rule it filters by', () => {
+        const c = viewCounts(SEED_ITEMS);
+        for (const kind of ['notes', 'links', 'files'] as const) {
+            expect(c[kind], kind).toBe(
+                SEED_ITEMS.filter((i) => matchesView(i, { kind, val: null })).length,
+            );
+        }
+    });
+});
+
 describe('viewTitle', () => {
     it('maps each view kind to a label', () => {
-        expect(viewTitle({ kind: 'all', val: null }, COLLECTIONS)).toBe('All Items');
+        expect(viewTitle({ kind: 'all', val: null }, COLLECTIONS)).toBe('Everything');
+        expect(viewTitle({ kind: 'notes', val: null }, COLLECTIONS)).toBe('Notes');
+        expect(viewTitle({ kind: 'links', val: null }, COLLECTIONS)).toBe('Links');
+        expect(viewTitle({ kind: 'files', val: null }, COLLECTIONS)).toBe('Files');
         expect(viewTitle({ kind: 'starred', val: null }, COLLECTIONS)).toBe('Starred');
         expect(viewTitle({ kind: 'collection', val: 'work' }, COLLECTIONS)).toBe('Work');
         expect(viewTitle({ kind: 'tag', val: 'design' }, COLLECTIONS)).toBe('#design');

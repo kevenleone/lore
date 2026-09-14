@@ -24,6 +24,7 @@ import { StatusBar } from './components/kb/StatusBar';
 import { TitleBar } from './components/kb/TitleBar';
 import { Onboarding } from './components/onboarding/Onboarding';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { TasksView } from './components/tasks/TasksView';
 import { APP_LINKS, openExternal } from './lib/appInfo';
 import { cn } from './lib/cn';
 import { DRAWER_MS } from './lib/motion';
@@ -48,6 +49,7 @@ export default function App() {
     const chatOpen = useStore((s) => s.chatOpen);
     const closeCapture = useStore((s) => s.closeCapture);
     const closeOpenItem = useStore((s) => s.closeOpenItem);
+    const closeTask = useStore((s) => s.closeTask);
     const focusModeOpen = useStore((s) => s.focusModeOpen);
     const focusPopoverOpen = useStore((s) => s.focusPopoverOpen);
     const mainView = useStore((s) => s.mainView);
@@ -62,6 +64,7 @@ export default function App() {
     const openSettings = useStore((s) => s.openSettings);
     const selectView = useStore((s) => s.selectView);
     const setMainView = useStore((s) => s.setMainView);
+    const setTaskView = useStore((s) => s.setTaskView);
     const settingsOpen = useStore((s) => s.settingsOpen);
     const statusBarVisible = useStore((s) => s.prefs.switches.statusBar);
     const toggleCapture = useStore((s) => s.toggleCapture);
@@ -89,14 +92,16 @@ export default function App() {
             } else if (e.key === 'Escape') {
                 // The capture drawer lies over everything else, so it is the first
                 // thing Escape takes away; under it, both ways of opening an item
-                // from Cards or Table are dismissible too.
+                // from Cards or Table are dismissible too, and so is the rail the
+                // Tasks surface opens beside its list.
                 if (captureOpen) closeCapture();
+                else if (mainView === 'tasks') closeTask();
                 else closeOpenItem();
             }
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [captureOpen, closeCapture, closeOpenItem, toggleFocus]);
+    }, [captureOpen, closeCapture, closeOpenItem, closeTask, mainView, toggleFocus]);
 
     // What the menu bar's items do. The ids are `app_menu.rs`'s.
     const menuCommands = useMemo<Record<string, () => void>>(
@@ -113,8 +118,12 @@ export default function App() {
             sidebar: () => toggleSidebar(),
             'view-all': () => selectView('all', null),
             'view-calendar': () => setMainView('calendar'),
+            'view-files': () => selectView('files', null),
             'view-inbox': () => selectView('inbox', null),
+            'view-links': () => selectView('links', null),
+            'view-notes': () => selectView('notes', null),
             'view-starred': () => selectView('starred', null),
+            'view-tasks': () => setTaskView('summary'),
             'view-today': () => selectView('today', null),
         }),
         [
@@ -122,6 +131,7 @@ export default function App() {
             openSettings,
             selectView,
             setMainView,
+            setTaskView,
             toggleCapture,
             toggleProperties,
             toggleSidebar,
@@ -243,6 +253,8 @@ export default function App() {
                     </div>
                     {mainView === 'calendar' ? (
                         <CalendarView onCapture={openCapture} />
+                    ) : mainView === 'tasks' ? (
+                        <TasksView />
                     ) : (
                         <>
                             {/*
