@@ -143,6 +143,24 @@ export function Globe({ className, size = 13, style, sw = 1.8 }: GlyphProps) {
     );
 }
 
+/** The six-dot handle a column is dragged by. */
+export function Grip({ className, size = 12, style }: GlyphProps) {
+    return (
+        <svg
+            className={className}
+            fill="currentColor"
+            height={size}
+            style={{ display: 'block', ...style }}
+            viewBox="0 0 12 12"
+            width={size}
+        >
+            {[2, 6, 10].map((y) =>
+                [3, 9].map((x) => <circle cx={x} cy={y} key={`${x}-${y}`} r={1.15} />),
+            )}
+        </svg>
+    );
+}
+
 export function History({ className, size = 13, style, sw = 1.8 }: GlyphProps) {
     return (
         <Stroke className={className} size={size} style={style} sw={sw}>
@@ -273,6 +291,40 @@ export function Plus({ className, size = 14, style, sw = 2.2 }: GlyphProps) {
             <line x1="12" x2="12" y1="5" y2="19" />
             <line x1="5" x2="19" y1="12" y2="12" />
         </Stroke>
+    );
+}
+
+/**
+ * Priority as a rising bar chart: taller and more of it the more urgent. The
+ * level is in the label beside it, so the bars are decoration for a reader and
+ * a scanning aid for everyone else — `aria-hidden` on purpose.
+ */
+export function PriorityBars({ className, level, size = 11 }: { level: 1 | 2 | 3 } & GlyphProps) {
+    const heights = [4, 7, 10];
+    return (
+        <svg
+            aria-hidden
+            className={className}
+            fill="currentColor"
+            height={size}
+            style={{ display: 'block' }}
+            viewBox="0 0 12 12"
+            width={size}
+        >
+            {heights.map((h, i) => (
+                <rect
+                    height={h}
+                    key={h}
+                    // Bars past the level are drawn faintly rather than dropped,
+                    // so every level is the same width and the chips line up.
+                    opacity={i < level ? 1 : 0.25}
+                    rx={0.8}
+                    width={2.4}
+                    x={i * 4}
+                    y={12 - h}
+                />
+            ))}
+        </svg>
     );
 }
 
