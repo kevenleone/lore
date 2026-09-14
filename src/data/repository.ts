@@ -10,7 +10,7 @@
 // `matchesView` used to live here; it moved to store/views.ts so the data layer
 // no longer imports from the store and vice versa.
 
-import type { Collection, Item, ItemMeta, TagCount, View } from '../store/types';
+import type { BoardConfig, Collection, Item, ItemMeta, TagCount, View } from '../store/types';
 
 export type CollectionPatch = Partial<Omit<Collection, 'id'>>;
 export type ItemPatch = Partial<Omit<Item, 'createdAt' | 'id'>>;
@@ -35,6 +35,16 @@ export interface KnowledgeRepository {
      * file's size or who links to it, so the other stores simply do not answer.
      */
     itemMeta?(id: string): Promise<ItemMeta | null>;
+    /**
+     * Every board, keyed by collection id; `UNFILED_BOARD` is the one for tasks
+     * in no collection. A board with no entry uses `DEFAULT_BOARD`, so a vault
+     * that has never had a column edited stores nothing at all.
+     *
+     * Optional, alongside `itemMeta` and `exportTo`: a store with nowhere to put
+     * a board answers with nothing rather than with a lie, and every board falls
+     * back to the default columns.
+     */
+    listBoards?(): Promise<Record<string, BoardConfig>>;
     listCollections(): Promise<Collection[]>;
     listItems(view?: View): Promise<Item[]>;
 
@@ -52,6 +62,9 @@ export interface KnowledgeRepository {
      * inbound link and churns history, so it only happens when asked for.
      */
     renameItem?(id: string, stem: string): Promise<Item>;
+
+    /** Replaces one board; null drops it back to `DEFAULT_BOARD`. Optional. */
+    saveBoard?(id: string, board: BoardConfig | null): Promise<void>;
 
     /** ⌘K full-text search across titles, snippets, summaries, tags. */
     search(query: string): Promise<Item[]>;

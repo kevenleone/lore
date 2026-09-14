@@ -6,6 +6,50 @@ import type { ThemeId } from '../theme/themes';
 
 import { DEFAULT_DARK_THEME, DEFAULT_LIGHT_THEME } from '../theme/themes';
 
+/**
+ * A board column. The `id` is what a task's `status` holds, so renaming a
+ * column leaves every card where it is.
+ */
+export interface BoardColumnConfig {
+    /** Header tint; absent uses the neutral one. */
+    color?: string;
+    /**
+     * Cards here are finished. Dropping one writes `done` and dragging it out
+     * clears it, so Today, the counts and the focus queue stay true while the
+     * column itself can be renamed, moved, or left out.
+     */
+    done?: boolean;
+    id: string;
+    name: string;
+}
+
+/**
+ * A collection's board. Boards are per collection because a project's columns
+ * are the project's own — "Needs review" means nothing to the reading list.
+ */
+export interface BoardConfig {
+    columns: BoardColumnConfig[];
+    view: BoardViewMode;
+}
+
+/** How a board lays its cards out. */
+export type BoardViewMode = 'cards' | 'list';
+
+/** Fields a capture surface should open with, set by whatever asked for it. */
+export interface CapturePreset {
+    collectionId: null | string;
+    /**
+     * Whether the column completes the task. A task captured into the Done
+     * column has to arrive already `done`, or `boardColumnFor` reads it as an
+     * open task sitting in the completing column and puts it back in the first
+     * one — which looked like the column refusing to take a new task at all.
+     */
+    done?: boolean;
+    /** The board column the new task lands in. */
+    status?: string;
+    type: ItemType;
+}
+
 export interface ChatMessage {
     id: string;
     role: 'ai' | 'user';
@@ -43,7 +87,8 @@ export interface Filters {
     to: null | string;
 }
 
-export type IconName = 'calendar' | 'file' | 'hash' | 'inbox' | 'layers' | 'star' | ItemType;
+export type IconName =
+    'board' | 'calendar' | 'file' | 'globe' | 'inbox' | 'layers' | 'sun' | 'tag' | ItemType;
 
 export interface Item {
     /**
@@ -53,6 +98,13 @@ export interface Item {
     body?: string;
     collectionId?: string;
     comments?: ItemComment[];
+    /**
+     * ISO 8601, stamped when `done` is turned on and cleared when it is turned
+     * off. `updatedAt` is the file's last write, so a task edited months later
+     * would claim to have been finished then — the timeline needs a date that
+     * only moves when the task actually finishes.
+     */
+    completedAt?: string;
     /** ISO 8601. Display strings (`2m`, `Today, 14:30`) are derived at render. */
     createdAt: string;
     /** Soft-delete tombstone for future Convex sync. */
@@ -79,6 +131,11 @@ export interface Item {
     points?: string[];
     /** Absent means `'normal'`, so an ordinary item carries no priority at all. */
     priority?: Priority;
+    /**
+     * The item's own prose, above any checklist. Derived from `body` and never
+     * persisted — a board card shows it as the task's description.
+     */
+    prose?: string;
     related: string[];
     /**
      * Derived one-line preview for the list pane — `body`'s first line, or a
@@ -92,6 +149,16 @@ export interface Item {
      * takes ownership of the text.
      */
     source?: ItemSource;
+    /**
+     * Which board column this task sits in — a `BoardColumnConfig` id. A task
+     * whose status names no column on its board falls into the first one.
+     */
+    status?: string;
+    /**
+     * Checklist tally, derived from `body` the way `snippet` is. A listed item
+     * carries no body, and a board card has to draw a progress bar without one.
+     */
+    subtasks?: SubtaskCount;
     /** AI-generated summary (distinct from a link's own description). */
     summary?: string;
     tags: string[];
@@ -159,6 +226,31 @@ export interface ItemSource {
 
 export type ItemType = 'code' | 'image' | 'link' | 'note' | 'task';
 
+/** A task's checklist tally, derived from its body and never persisted. */
+export interface SubtaskCount {
+    done: number;
+    total: number;
+}
+
+/**
+ * The board every collection starts with. Copied on first edit rather than
+ * shared, so changing one board cannot move another's cards.
+ */
+export const DEFAULT_BOARD: BoardConfig = {
+    columns: [
+        { id: 'todo', name: 'To do' },
+        { id: 'doing', name: 'In progress' },
+        { done: true, id: 'done', name: 'Done' },
+    ],
+    view: 'cards',
+};
+
+/**
+ * The board holding tasks that are in no collection. A collection id is a
+ * folder name, which can never be empty, so this can never collide with one.
+ */
+export const UNFILED_BOARD = '';
+
 /** A task's urgency. `'normal'` is the default and is never persisted. */
 export type Priority = 'high' | 'low' | 'normal' | 'urgent';
 
@@ -183,8 +275,19 @@ export interface View {
     val: null | string;
 }
 
-/** A library view: the four built-ins, a collection, or a tag. */
-export type ViewKind = 'all' | 'collection' | 'inbox' | 'starred' | 'tag' | 'today';
+/**
+ * A library view: a built-in, a collection, or a tag.
+ *
+ * `notes`, `links` and `files` are type reads — the sidebar's Library section
+ * names every type an item can be except `task`, which has a surface of its
+ * own. `files` is the remainder: the items that are a blob rather than prose or
+ * a URL.
+ */
+export type ViewKind =
+    'all' | 'collection' | 'files' | 'inbox' | 'links' | 'notes' | 'starred' | 'tag' | 'today';
+
+/** The item types the `files` view gathers. */
+export const FILE_TYPES: ItemType[] = ['code', 'image'];
 
 /**
  * Lore's accent palette (`Lore Settings.dc.html` → Look & Feel → Accent).
@@ -425,7 +528,14 @@ export interface FocusState {
 }
 
 /** Which surface the window's main area is showing. */
-export type MainView = 'calendar' | 'library';
+export type MainView = 'calendar' | 'library' | 'tasks';
+
+/**
+ * The tabs inside the Tasks surface. `board` holds both the overview and a
+ * single collection's board — a project *is* a board, so they are one tab with
+ * two states rather than two tabs indexing the same list of collections.
+ */
+export type TaskView = 'board' | 'summary' | 'upcoming';
 
 /** A transient confirmation, shown for `TOAST_MS` and then dropped. */
 export interface Toast {

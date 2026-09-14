@@ -2,7 +2,7 @@
 // and unit tests; the SQLite-backed localRepository replaces it as the real
 // source of truth in Phase 3.
 
-import type { Collection, Item, TagCount, View } from '../store/types';
+import type { BoardConfig, Collection, Item, TagCount, View } from '../store/types';
 
 import { SEED_COLLECTIONS, SEED_ITEMS } from '../store/seed';
 import { matchesView } from '../store/views';
@@ -16,6 +16,7 @@ import {
 } from './repository';
 
 export class MemoryRepository implements KnowledgeRepository {
+    private boards: Record<string, BoardConfig> = {};
     private collections: Collection[];
     private items: Item[];
     private seq = 0;
@@ -61,8 +62,15 @@ export class MemoryRepository implements KnowledgeRepository {
         return this.live().find((i) => i.id === id) ?? null;
     }
 
+    async listBoards(): Promise<Record<string, BoardConfig>> {
+        return structuredClone(this.boards);
+    }
+
     async listCollections(): Promise<Collection[]> {
-        return this.collections.map((c) => ({ ...c }));
+        // By name, the same as the vault's own listing — the two stores must
+        // not disagree about something this visible, or the browser preview
+        // and the app show different sidebars.
+        return this.collections.map((c) => ({ ...c })).sort((a, b) => a.name.localeCompare(b.name));
     }
 
     async listItems(view?: View): Promise<Item[]> {
@@ -82,6 +90,11 @@ export class MemoryRepository implements KnowledgeRepository {
             for (const tag of item.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
         }
         return [...counts.entries()].map(([name, count]) => ({ count, name }));
+    }
+
+    async saveBoard(id: string, board: BoardConfig | null): Promise<void> {
+        if (board) this.boards[id] = structuredClone(board);
+        else delete this.boards[id];
     }
 
     async search(query: string): Promise<Item[]> {

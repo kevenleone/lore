@@ -2,7 +2,7 @@
 // alongside it. Every repository runs these on read, so the rule "`snippet` and
 // `domain` are derived, never written" holds no matter where the data lives.
 
-import type { Item } from '../store/types';
+import type { Item, SubtaskCount } from '../store/types';
 
 import { parseSubtasks, stripSubtasks } from '../lib/subtasks';
 import { firstPlainLine } from './plainText';
@@ -17,6 +17,17 @@ export function deriveDomain(url: string | undefined): string | undefined {
     } catch {
         return undefined;
     }
+}
+
+/**
+ * The item's own words, above any checklist. `snippet` answers "something to
+ * show in a list row, whatever it takes" and falls back to a subtask count when
+ * there is no prose; a board card draws the tally separately, so it needs the
+ * question answered strictly: the prose, or nothing.
+ */
+export function deriveProse(body: string | undefined): string | undefined {
+    const prose = stripSubtasks(body);
+    return prose ? firstPlainLine(prose) || undefined : undefined;
 }
 
 /**
@@ -51,6 +62,18 @@ export function deriveSnippet(
 }
 
 /**
+ * The checklist tally a board card draws its progress bar from. Derived rather
+ * than stored for the same reason `snippet` is: the checklist lives in the body
+ * as plain `- [ ]` Markdown, and a count beside it would be a second copy free
+ * to disagree with the first.
+ */
+export function deriveSubtaskCounts(body: string | undefined): SubtaskCount | undefined {
+    const subtasks = parseSubtasks(body);
+    if (subtasks.length === 0) return undefined;
+    return { done: subtasks.filter((s) => s.done).length, total: subtasks.length };
+}
+
+/**
  * Stamps the derived fields onto a stored item. Callers pass the record as it
  * came out of storage; `domain` is only recomputed when it wasn't stored, so
  * existing rows keep whatever they already had.
@@ -59,12 +82,15 @@ export function withDerived(item: Item): Item {
     return {
         ...item,
         domain: item.domain ?? deriveDomain(item.url),
+        prose: deriveProse(item.body),
         snippet: deriveSnippet(item),
+        subtasks: deriveSubtaskCounts(item.body),
     };
 }
 
 /**
- * Strips the body for list responses. `listItems()` is re-run after every
+ * Strips the body for list responses. The derived fields stay: they are what a
+ * list row and a board card are drawn from. `listItems()` is re-run after every
  * mutation, so shipping every body through it would mean serializing the whole
  * vault on each keystroke-triggered save; `getItem()` is the only method that
  * returns one. Establishing that contract here keeps the eventual move to the
