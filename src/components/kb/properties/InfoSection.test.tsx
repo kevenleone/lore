@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Item } from '../../../store/types';
@@ -83,5 +83,23 @@ describe('InfoSection file row', () => {
         cell.forEach((el) => fireEvent.click(el));
         expect(container.querySelector('input')).toBeNull();
         expect(rename).not.toHaveBeenCalled();
+    });
+});
+
+describe('showing the file', () => {
+    it('reveals it in the OS file manager', () => {
+        const revealItemFile = vi.fn();
+        useStore.setState({ revealItemFile });
+        render(<InfoSection item={item} meta={null} />);
+
+        fireEvent.click(screen.getByLabelText('Show in Finder'));
+        expect(revealItemFile).toHaveBeenCalledWith('i1');
+    });
+
+    // Outside a vault there is no file to show — the browser preview and the
+    // in-memory store both have items with no path at all.
+    it('offers nothing to show when the item has no file', () => {
+        render(<InfoSection item={{ ...item, path: undefined }} meta={null} />);
+        expect(screen.queryByLabelText('Show in Finder')).toBeNull();
     });
 });
