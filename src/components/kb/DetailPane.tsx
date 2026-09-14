@@ -50,9 +50,15 @@ interface DetailPaneProps {
      * exit animation, which outlives the state that started it.
      */
     chrome?: OpenMode;
+    /**
+     * Puts a close button in the header row. A docked pane in the library is
+     * always showing something and has nothing to close; a rail beside a list
+     * of tasks is showing the one you picked, and you can be done with it.
+     */
+    onClose?: () => void;
 }
 
-export function DetailPane({ chrome }: DetailPaneProps) {
+export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     const items = useStore((s) => s.items);
     const collections = useStore((s) => s.collections);
     const view = useStore((s) => s.view);
@@ -316,6 +322,17 @@ export function DetailPane({ chrome }: DetailPaneProps) {
                         >
                             <Trash />
                         </button>
+                        {onClose && (
+                            <button
+                                aria-label="Close"
+                                className="inline-flex border-none bg-none p-1 text-faint"
+                                onClick={onClose}
+                                title="Close (Esc)"
+                                type="button"
+                            >
+                                <Close size={16} sw={2} />
+                            </button>
+                        )}
                     </span>
 
                     {confirmDelete && (

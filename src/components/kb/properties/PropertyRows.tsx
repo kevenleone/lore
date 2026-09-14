@@ -6,13 +6,14 @@
 
 import { useState } from 'react';
 
-import type { Item, ItemFlags, ItemType } from '../../../store/types';
+import type { Item, ItemFlags, ItemType, Priority } from '../../../store/types';
 
 import { cn } from '../../../lib/cn';
 import { formatSavedDate } from '../../../lib/format';
 import { TYPE_META, typeMeta } from '../../../store/typeMeta';
+import { PRIORITIES } from '../../../store/types';
 import { useStore } from '../../../store/useStore';
-import { Calendar, Globe, Link } from '../../common/glyphs';
+import { Calendar, Globe, Link, Timer } from '../../common/glyphs';
 import { Icon } from '../../common/Icon';
 import { MenuItem, Picker, ReadOnly, Row } from './controls';
 
@@ -108,6 +109,53 @@ export function PropertyRows({ item }: { item: Item }) {
                 </Picker>
             </Row>
 
+            {/*
+             * Due and Priority are a task's own fields, and until they were here
+             * they could only be set at capture time — a task could be created
+             * late but never rescheduled.
+             */}
+            {item.type === 'task' && (
+                <>
+                    <Row icon={<Calendar />} label="Due">
+                        <input
+                            className="border-none bg-transparent text-right font-[inherit] text-body text-text2 outline-none"
+                            onChange={(e) =>
+                                void updateItem(item.id, { dueAt: e.target.value || undefined })
+                            }
+                            type="date"
+                            value={item.dueAt ?? ''}
+                        />
+                    </Row>
+
+                    <Row icon={<Timer />} label="Priority">
+                        <Picker
+                            trigger={
+                                <span className="capitalize">{item.priority ?? 'normal'}</span>
+                            }
+                            width={140}
+                        >
+                            {(close) =>
+                                PRIORITIES.map((priority) => (
+                                    <MenuItem
+                                        key={priority}
+                                        onClick={() => {
+                                            close();
+                                            if (priority !== (item.priority ?? 'normal'))
+                                                void updateItem(item.id, {
+                                                    priority: normalize(priority),
+                                                });
+                                        }}
+                                        selected={priority === (item.priority ?? 'normal')}
+                                    >
+                                        <span className="capitalize">{priority}</span>
+                                    </MenuItem>
+                                ))
+                            }
+                        </Picker>
+                    </Row>
+                </>
+            )}
+
             <Row icon={<Calendar />} label="Created">
                 <ReadOnly>{formatSavedDate(item.createdAt)}</ReadOnly>
             </Row>
@@ -177,6 +225,11 @@ function FlagChip({ label, on, onClick }: { label: string; on: boolean; onClick:
             {label}
         </button>
     );
+}
+
+/** `normal` is the absence of a priority, so it is stored as nothing at all. */
+function normalize(priority: Priority): Priority | undefined {
+    return priority === 'normal' ? undefined : priority;
 }
 
 function TypeBadge({ type }: { type: ItemType }) {
