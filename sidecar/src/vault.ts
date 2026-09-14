@@ -1,7 +1,7 @@
 // The vault directory: path safety, the folders-are-collections mapping, and
 // `.lore/`.
 
-import type { Collection } from '@lore/types';
+import type { BoardConfig, Collection } from '@lore/types';
 
 import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -11,6 +11,7 @@ import { slugify } from './slug';
 export const LORE_DIR = '.lore';
 export const TRASH_DIR = `${LORE_DIR}/trash`;
 export const COLLECTIONS_FILE = `${LORE_DIR}/collections.json`;
+export const BOARDS_FILE = `${LORE_DIR}/boards.json`;
 export const WORKSPACE_FILE = `${LORE_DIR}/workspace.json`;
 export const INDEX_FILE = `${LORE_DIR}/index.db`;
 
@@ -51,9 +52,13 @@ export class Vault {
     }
 
     /**
-     * Folders ∪ collections.json. A folder with no entry is still a collection —
-     * cloning a plain folder of Markdown has to Just Work, so the JSON is only
-     * ever an enhancement.
+     * Folders ∪ collections.json, by name. A folder with no entry is still a
+     * collection — cloning a plain folder of Markdown has to Just Work, so the
+     * JSON is only ever an enhancement, and all it adds now is the colour.
+     *
+     * Alphabetical rather than in a stored order: the order that used to be
+     * kept was the order folders were first seen, which nobody chose and no UI
+     * could change, so a sidebar of twenty collections was unscannable.
      */
     async listCollections(): Promise<Collection[]> {
         const [folders, meta] = await Promise.all([
@@ -62,13 +67,11 @@ export class Vault {
         ]);
         return folders
             .map((folder) => ({
-                _order: meta[folder]?.order ?? Number.MAX_SAFE_INTEGER,
                 color: meta[folder]?.color ?? hashColor(folder),
                 id: folder,
                 name: folder,
             }))
-            .sort((a, b) => a._order - b._order || a.name.localeCompare(b.name))
-            .map(({ _order, ...c }) => c);
+            .sort((a, b) => a.name.localeCompare(b.name));
     }
 
     /** Every `.md` file in the vault, as vault-relative paths. */
@@ -107,24 +110,43 @@ export class Vault {
         return readFile(this.path(relPath));
     }
 
-    async readCollectionsFile(): Promise<Record<string, { color?: string; order?: number }>> {
+    /**
+     * Every board, keyed by collection id — the empty key is the board for
+     * tasks in no collection. Its own file rather than a field on each
+     * collection: a board is an authored structure of its own, and the unfiled
+     * one belongs to no folder to hang off.
+     */
+    async readBoardsFile(): Promise<Record<string, BoardConfig>> {
+        try {
+            const parsed = JSON.parse(await this.readText(BOARDS_FILE)) as { boards?: unknown };
+            if (!parsed.boards || typeof parsed.boards !== 'object') return {};
+            const out: Record<string, BoardConfig> = {};
+            for (const [id, value] of Object.entries(parsed.boards as Record<string, unknown>)) {
+                const board = boardConfig(value);
+                if (board) out[id] = board;
+            }
+            return out;
+        } catch {
+            // No file yet, or one we cannot read: every board falls back to the
+            // default set of columns, which is what a fresh vault has anyway.
+            return {};
+        }
+    }
+
+    async readCollectionsFile(): Promise<Record<string, { color?: string }>> {
         try {
             const raw = await this.readText(COLLECTIONS_FILE);
             const parsed = JSON.parse(raw) as { collections?: unknown };
             if (!Array.isArray(parsed.collections)) return {};
-            const out: Record<string, { color?: string; order?: number }> = {};
+            const out: Record<string, { color?: string }> = {};
             for (const c of parsed.collections) {
                 if (
                     c &&
                     typeof c === 'object' &&
                     typeof (c as { folder?: unknown }).folder === 'string'
                 ) {
-                    const { color, folder, order } = c as {
-                        color?: string;
-                        folder: string;
-                        order?: number;
-                    };
-                    out[folder] = { color, order };
+                    const { color, folder } = c as { color?: string; folder: string };
+                    out[folder] = { color };
                 }
             }
             return out;
@@ -171,9 +193,13 @@ export class Vault {
         return rel;
     }
 
+    async writeBoardsFile(boards: Record<string, BoardConfig>): Promise<void> {
+        await this.writeText(BOARDS_FILE, `${JSON.stringify({ boards, version: 1 }, null, 2)}\n`);
+    }
+
     async writeCollectionsFile(collections: readonly Collection[]): Promise<void> {
         const payload = {
-            collections: collections.map((c, i) => ({ color: c.color, folder: c.id, order: i })),
+            collections: collections.map((c) => ({ color: c.color, folder: c.id })),
             version: 1,
         };
         await this.writeText(COLLECTIONS_FILE, `${JSON.stringify(payload, null, 2)}\n`);
@@ -205,6 +231,30 @@ export function hashColor(name: string): string {
     let h = 0;
     for (let i = 0; i < name.length; i += 1) h = (h * 31 + name.charCodeAt(i)) >>> 0;
     return palette[h % palette.length];
+}
+
+/** Parses one board entry, dropping anything malformed rather than throwing. */
+function boardConfig(value: unknown): BoardConfig | null {
+    if (!value || typeof value !== 'object') return null;
+    const { columns, view } = value as { columns?: unknown; view?: unknown };
+    if (!Array.isArray(columns)) return null;
+    const parsed = columns.flatMap((c) => {
+        if (!c || typeof c !== 'object') return [];
+        const { color, done, id, name } = c as Record<string, unknown>;
+        if (typeof id !== 'string' || !id) return [];
+        return [
+            {
+                ...(typeof color === 'string' ? { color } : {}),
+                ...(done === true ? { done: true } : {}),
+                id,
+                name: typeof name === 'string' && name ? name : id,
+            },
+        ];
+    });
+    if (parsed.length === 0) return null;
+    // Anything but `list` is the card layout, which also folds the `board`
+    // this field used to be written as into its new name.
+    return { columns: parsed, view: view === 'list' ? 'list' : 'cards' };
 }
 
 /** Directories that are never collections and are never scanned for items. */

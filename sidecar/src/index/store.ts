@@ -1,10 +1,10 @@
 // The vault store: the index plus the read/write operations the routes expose.
 // This is where the file tree and the derived index are kept in agreement.
 
-import type { Collection, Item, ItemMeta, TagCount } from '@lore/types';
+import type { BoardConfig, Collection, Item, ItemMeta, TagCount } from '@lore/types';
 import type { Database } from 'bun:sqlite';
 
-import { deriveDomain, deriveSnippet } from '@lore/derive';
+import { deriveDomain, deriveProse, deriveSnippet, deriveSubtaskCounts } from '@lore/derive';
 import { mkdir, rm, rmdir, stat } from 'node:fs/promises';
 
 import { parseGithubTarget, resolveDocument } from '../github';
@@ -149,8 +149,20 @@ export class VaultStore {
         };
     }
 
+    async listBoards(): Promise<Record<string, BoardConfig>> {
+        return this.vault.readBoardsFile();
+    }
+
     async listCollections(): Promise<Collection[]> {
         return this.vault.listCollections();
+    }
+
+    /** Replaces one board. Passing null drops it back to the default columns. */
+    async saveBoard(id: string, board: BoardConfig | null): Promise<void> {
+        const boards = await this.vault.readBoardsFile();
+        if (board) boards[id] = board;
+        else delete boards[id];
+        await this.vault.writeBoardsFile(boards);
     }
 
     listItems(): Item[] {
@@ -598,11 +610,15 @@ function rowToItem(row: FileRow, withBody: boolean): Item {
     return {
         ...item,
         domain: item.domain ?? deriveDomain(item.url),
+        prose: deriveProse(row.body),
         snippet: deriveSnippet({
             body: row.body,
             description: item.description,
             type: item.type,
             url: item.url,
         }),
+        // Derived here rather than in the caller: a listed item carries no body,
+        // and a board card draws its progress bar from this.
+        subtasks: deriveSubtaskCounts(row.body),
     };
 }

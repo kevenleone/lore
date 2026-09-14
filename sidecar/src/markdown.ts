@@ -17,6 +17,7 @@ const PRIORITIES: Priority[] = ['low', 'normal', 'high', 'urgent'];
 /** Frontmatter keys Lore owns. Anything else is passed through untouched. */
 const KNOWN_KEYS = new Set([
     'comments',
+    'completed',
     'created',
     'description',
     'done',
@@ -29,6 +30,7 @@ const KNOWN_KEYS = new Set([
     'related',
     'source',
     'starred',
+    'status',
     'summary',
     'tags',
     'title',
@@ -99,11 +101,13 @@ const str = (v: unknown): string | undefined => (typeof v === 'string' && v.trim
 const strArray = (v: unknown): string[] =>
     Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x.trim()) : [];
 
-const iso = (v: unknown, fallback: string): string => {
+function iso(v: unknown, fallback: string): string;
+function iso(v: unknown, fallback: undefined): string | undefined;
+function iso(v: unknown, fallback: string | undefined): string | undefined {
     if (typeof v === 'string' && !Number.isNaN(Date.parse(v))) return new Date(v).toISOString();
     if (v instanceof Date) return v.toISOString();
     return fallback;
-};
+}
 
 /**
  * A `YYYY-MM-DD` deadline. YAML parses an unquoted date into a `Date`, so both
@@ -201,10 +205,15 @@ export function serializeFile(
     if (item.flags.today) fm.today = true;
     if (item.flags.starred) fm.starred = true;
     if (item.flags.done) fm.done = true;
+    // Only meaningful on a finished task, and cleared with the flag.
+    if (item.completedAt && item.flags.done) fm.completed = item.completedAt;
     if (item.dueAt) fm.due = item.dueAt;
     // `normal` is the absence of a priority, so writing it would put a key on
     // every ordinary file for no information.
     if (item.priority && item.priority !== 'normal') fm.priority = item.priority;
+    // The board column the task sits in. Absent means "wherever the board's
+    // first column is", so an untouched task needs no key.
+    if (item.status) fm.status = item.status;
     if (item.image) fm.image = item.image;
     if (item.description) fm.description = item.description;
     if (item.source) fm.source = item.source;
@@ -243,6 +252,7 @@ export function toItem(parsed: ParsedFile, ctx: ToItemContext): Item {
         body: body.trim() ? body.replace(/\s+$/, '') : undefined,
         collectionId: ctx.collectionId || undefined,
         comments: comments.length ? comments : undefined,
+        completedAt: flags.done ? iso(data.completed, undefined) : undefined,
         createdAt: created,
         description: str(data.description),
         dueAt: day(data.due),
@@ -253,6 +263,7 @@ export function toItem(parsed: ParsedFile, ctx: ToItemContext): Item {
         priority: priority(data.priority),
         related: ctx.relatedIds,
         source: source(data.source),
+        status: str(data.status),
         summary: str(data.summary),
         tags: strArray(data.tags).map((t) => t.replace(/^#/, '')),
         // A file written by hand has no `title`; its first heading, then its

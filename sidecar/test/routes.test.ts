@@ -5,7 +5,7 @@
 import type { Item } from '@lore/types';
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -512,5 +512,118 @@ describe('virtual document routes', () => {
     it('404s refreshing an unknown item', async () => {
         await openVault();
         expect((await call('POST', '/items/nope/refresh')).status).toBe(404);
+    });
+});
+
+describe('board routes', () => {
+    const board = {
+        columns: [
+            { id: 'todo', name: 'To do' },
+            { done: true, id: 'done', name: 'Done' },
+        ],
+        view: 'cards' as const,
+    };
+
+    it('round-trips a board over HTTP', async () => {
+        await openVault();
+        expect((await call('GET', '/boards')).body).toEqual({});
+
+        expect((await call('POST', '/boards', { board, id: 'Work' })).status).toBe(200);
+        expect((await call('GET', '/boards')).body).toEqual({ Work: board });
+
+        // The empty id is the board for tasks in no collection.
+        await call('POST', '/boards', { board, id: '' });
+        expect((await call('GET', '/boards')).body).toEqual({ '': board, Work: board });
+
+        await call('POST', '/boards', { board: null, id: 'Work' });
+        expect((await call('GET', '/boards')).body).toEqual({ '': board });
+    });
+
+    it('refuses a save with no id', async () => {
+        await openVault();
+        expect((await call('POST', '/boards', { board })).status).toBe(400);
+    });
+
+    /*
+     * The guard's method list is what a browser asks about before it will send
+     * a cross-origin write at all. A route on a method missing from it is
+     * refused before it arrives — which is invisible from a test that calls the
+     * store directly, and looked like a board that silently would not save.
+     */
+    it('answers the preflight for the method the board route uses', async () => {
+        const res = await app.handle(
+            new Request('http://127.0.0.1/boards', {
+                headers: {
+                    'access-control-request-method': 'POST',
+                    origin: 'tauri://localhost',
+                },
+                method: 'OPTIONS',
+            }),
+        );
+        expect(res.headers.get('Access-Control-Allow-Methods')).toContain('POST');
+    });
+});
+
+/*
+ * The renderer sends `null` for a field it wants emptied, because JSON drops
+ * `undefined` and the patch would otherwise arrive with nothing in it. These
+ * pin the engine's half of that contract: a null lands as an absent value and
+ * the key stops being written to the file.
+ */
+describe('clearing a field', () => {
+    const create = (over: Record<string, unknown>) =>
+        call('POST', '/items', newItem({ title: 'A task', type: 'task', ...over }));
+
+    it('empties a url, a priority, a due date and a status', async () => {
+        await openVault();
+        const { body: made } = await create({
+            dueAt: '2026-09-20',
+            priority: 'urgent',
+            status: 'doing',
+            url: 'https://example.com',
+        });
+
+        const { body: cleared } = await call('PATCH', `/items/${made.id}`, {
+            dueAt: null,
+            priority: null,
+            status: null,
+            url: null,
+        });
+        expect(cleared.dueAt).toBeUndefined();
+        expect(cleared.priority).toBeUndefined();
+        expect(cleared.status).toBeUndefined();
+        expect(cleared.url).toBeUndefined();
+
+        const raw = await readFile(join(root, cleared.path), 'utf8');
+        expect(raw).not.toContain('priority:');
+        expect(raw).not.toContain('status:');
+        expect(raw).not.toContain('due:');
+        expect(raw).not.toContain('url:');
+    });
+
+    it('unfiles an item whose collection is cleared', async () => {
+        await openVault();
+        const { body: made } = await create({ collectionId: 'Work' });
+        expect(made.path).toBe('Work/a-task.md');
+
+        const { body: moved } = await call('PATCH', `/items/${made.id}`, { collectionId: null });
+        expect(moved.collectionId).toBeUndefined();
+        expect(moved.path).toBe('a-task.md');
+    });
+
+    it('drops the completion date when a task is reopened', async () => {
+        await openVault();
+        const { body: made } = await create({
+            completedAt: '2026-09-13T17:30:00.000Z',
+            flags: { done: true },
+        });
+        expect(made.completedAt).toBe('2026-09-13T17:30:00.000Z');
+
+        const { body: reopened } = await call('PATCH', `/items/${made.id}`, {
+            completedAt: null,
+            flags: { done: false },
+        });
+        expect(reopened.completedAt).toBeUndefined();
+        expect(await readFile(join(root, reopened.path), 'utf8')).not.toContain('completed:');
     });
 });

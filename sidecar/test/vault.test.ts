@@ -816,3 +816,120 @@ describe('virtual documents', () => {
         expect((await s.refreshItem(created.id, true))?.body).toBe('mine');
     });
 });
+
+describe('boards', () => {
+    it('round-trips a task’s status through front matter', async () => {
+        const s = await open();
+        const task = await s.createItem(
+            baseItem({ status: 'in-review', title: 'Rewrite the copy', type: 'task' }),
+        );
+
+        const raw = await readFile(join(root, task.path!), 'utf8');
+        expect(raw).toContain('status: in-review');
+        expect(s.getItem(task.id)?.status).toBe('in-review');
+    });
+
+    it('writes no status key for a task that has never been moved', async () => {
+        const s = await open();
+        const task = await s.createItem(baseItem({ title: 'Untouched', type: 'task' }));
+        expect(await readFile(join(root, task.path!), 'utf8')).not.toContain('status:');
+    });
+
+    it('derives the checklist tally, which a listed item has no body for', async () => {
+        const s = await open();
+        const task = await s.createItem(
+            baseItem({
+                body: 'Prose\n\n- [x] one\n- [ ] two\n- [ ] three',
+                title: 'With a checklist',
+                type: 'task',
+            }),
+        );
+
+        const listed = s.listItems().find((i) => i.id === task.id)!;
+        expect(listed.body).toBeUndefined();
+        expect(listed.subtasks).toEqual({ done: 1, total: 3 });
+    });
+
+    it('keeps a board per collection, and answers with nothing before one is saved', async () => {
+        const s = await open();
+        expect(await s.listBoards()).toEqual({});
+
+        const board = { columns: [{ id: 'todo', name: 'To do' }], view: 'cards' as const };
+        await s.saveBoard('Work', board);
+        // The empty key is the board for tasks in no collection.
+        await s.saveBoard('', { ...board, view: 'list' });
+
+        expect(await s.listBoards()).toEqual({ '': { ...board, view: 'list' }, Work: board });
+
+        await s.saveBoard('Work', null);
+        expect(await s.listBoards()).toEqual({ '': { ...board, view: 'list' } });
+    });
+
+    it('drops a malformed board rather than failing the whole file', async () => {
+        const s = await open();
+        await write(
+            '.lore/boards.json',
+            JSON.stringify({
+                boards: {
+                    Bad: { columns: [{ name: 'No id' }] },
+                    Good: { columns: [{ id: 'todo', name: 'To do' }], view: 'list' },
+                },
+            }),
+        );
+        expect(await s.listBoards()).toEqual({
+            Good: { columns: [{ id: 'todo', name: 'To do' }], view: 'list' },
+        });
+    });
+
+    // `cards` used to be written as `board`, before the tab beside it took that
+    // name. Anything that is not `list` is the card layout, so the old value
+    // reads back as the new one without a migration.
+    it('reads a view it does not recognise as the card layout', async () => {
+        const s = await open();
+        await write(
+            '.lore/boards.json',
+            JSON.stringify({
+                boards: { Work: { columns: [{ id: 'todo', name: 'To do' }], view: 'board' } },
+            }),
+        );
+        expect((await s.listBoards()).Work.view).toBe('cards');
+    });
+});
+
+describe('completion dates', () => {
+    it('writes `completed` only for a finished task, and reads it back', async () => {
+        const s = await open();
+        const open_ = await s.createItem(baseItem({ title: 'Open', type: 'task' }));
+        expect(await readFile(join(root, open_.path!), 'utf8')).not.toContain('completed:');
+
+        const at = '2026-09-13T17:30:00.000Z';
+        const done = await s.createItem(
+            baseItem({ completedAt: at, flags: { done: true }, title: 'Done', type: 'task' }),
+        );
+        expect(await readFile(join(root, done.path!), 'utf8')).toContain('completed: ');
+        expect(s.getItem(done.id)?.completedAt).toBe(at);
+    });
+
+    /*
+     * The date belongs to the flag. A file left carrying `completed` after
+     * `done` was removed by hand would put a task that is plainly open on the
+     * timeline's history, so the flag is what decides.
+     */
+    it('ignores a completion date on a task that is not done', async () => {
+        const s = await open();
+        await write(
+            'reopened.md',
+            [
+                '---',
+                'title: Reopened',
+                'type: task',
+                'completed: 2026-09-13T17:30:00.000Z',
+                '---',
+                '',
+            ].join('\n'),
+        );
+        await s.reconcile();
+        const item = s.listItems().find((i) => i.title === 'Reopened')!;
+        expect(item.completedAt).toBeUndefined();
+    });
+});
