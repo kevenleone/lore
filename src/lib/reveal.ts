@@ -18,3 +18,21 @@ export async function revealPath(path: null | string): Promise<boolean> {
         return false;
     }
 }
+
+/**
+ * Shows one of the vault's files in the OS file manager.
+ *
+ * `relPath` is vault-relative, which is all an item carries — the vault root is
+ * the store's, or the default one the host keeps beside its own data, exactly
+ * as `revealPath` resolves it.
+ */
+export async function revealVaultFile(vaultPath: null | string, relPath: string): Promise<boolean> {
+    try {
+        const { revealItemInDir } = await import('@tauri-apps/plugin-opener');
+        const root = vaultPath ?? (await defaultVaultPath());
+        await revealItemInDir(`${root.replace(/\/$/, '')}/${relPath}`);
+        return true;
+    } catch {
+        return false;
+    }
+}

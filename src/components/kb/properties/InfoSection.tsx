@@ -8,11 +8,12 @@ import type { Item, ItemMeta } from '../../../store/types';
 
 import { formatBytes, formatSavedDate } from '../../../lib/format';
 import { useStore } from '../../../store/useStore';
-import { Info } from '../../common/glyphs';
+import { External, Info } from '../../common/glyphs';
 import { ReadOnly, Row, Section } from './controls';
 
 export function InfoSection({ item, meta }: { item: Item; meta: ItemMeta | null }) {
     const renameItemFile = useStore((s) => s.renameItemFile);
+    const revealItemFile = useStore((s) => s.revealItemFile);
     const [editingName, setEditingName] = useState(false);
     const [nameDraft, setNameDraft] = useState('');
 
@@ -58,17 +59,30 @@ export function InfoSection({ item, meta }: { item: Item; meta: ItemMeta | null 
                         value={nameDraft}
                     />
                 ) : (
-                    <span
-                        className="min-w-0 cursor-text truncate font-mono select-text"
-                        onClick={() => {
-                            if (!path) return;
-                            setNameDraft(stem);
-                            setEditingName(true);
-                        }}
-                        title={path ? `${path} — click to rename` : undefined}
-                    >
-                        <ReadOnly>{path ? `${stem}.md` : null}</ReadOnly>
-                    </span>
+                    <>
+                        <span
+                            className="min-w-0 cursor-text truncate font-mono select-text"
+                            onClick={() => {
+                                if (!path) return;
+                                setNameDraft(stem);
+                                setEditingName(true);
+                            }}
+                            title={path ? `${path} — click to rename` : undefined}
+                        >
+                            <ReadOnly>{path ? `${stem}.md` : null}</ReadOnly>
+                        </span>
+                        {path && (
+                            <button
+                                aria-label="Show in Finder"
+                                className="flex h-[22px] w-[22px] flex-none items-center justify-center rounded-7 border-none bg-transparent p-0 font-[inherit] text-faint hover:bg-hover hover:text-text2"
+                                onClick={() => void revealItemFile(item.id)}
+                                title="Show in Finder"
+                                type="button"
+                            >
+                                <External size={12} />
+                            </button>
+                        )}
+                    </>
                 )}
             </Row>
         </Section>
