@@ -4,7 +4,7 @@
 // is a translation layer and nothing more. The one piece of real logic is
 // making sure a workspace is open before the first read.
 
-import type { Collection, Item, ItemMeta, TagCount, View } from '../store/types';
+import type { BoardConfig, Collection, Item, ItemMeta, TagCount, View } from '../store/types';
 import type {
     CollectionPatch,
     ItemPatch,
@@ -21,7 +21,6 @@ interface WorkspaceInfo {
     itemCount: number;
     open: boolean;
     path: null | string;
-    tagOrder?: string[];
 }
 
 export class VaultRepository implements KnowledgeRepository {
@@ -105,6 +104,10 @@ export class VaultRepository implements KnowledgeRepository {
         }
     }
 
+    async listBoards(): Promise<Record<string, BoardConfig>> {
+        return this.call(() => request<Record<string, BoardConfig>>('/boards'));
+    }
+
     async listCollections(): Promise<Collection[]> {
         return this.call(() => request<Collection[]>('/collections'));
     }
@@ -137,6 +140,15 @@ export class VaultRepository implements KnowledgeRepository {
         );
     }
 
+    async saveBoard(id: string, board: BoardConfig | null): Promise<void> {
+        await this.call(() =>
+            request<{ ok: true }>('/boards', {
+                body: JSON.stringify({ board, id }),
+                method: 'POST',
+            }),
+        );
+    }
+
     async search(query: string): Promise<Item[]> {
         return this.call(() => request<Item[]>(`/search?q=${encodeURIComponent(query)}`));
     }
@@ -164,12 +176,6 @@ export class VaultRepository implements KnowledgeRepository {
         };
     }
 
-    /** The sidebar tag order this vault carries, if it has one. */
-    async tagOrder(): Promise<string[]> {
-        const info = await this.call(() => request<WorkspaceInfo>('/workspace'));
-        return info.tagOrder ?? [];
-    }
-
     async updateCollection(id: string, patch: CollectionPatch): Promise<Collection> {
         return this.call(() =>
             request<Collection>(`/collections/${encodeURIComponent(id)}`, {
@@ -184,7 +190,7 @@ export class VaultRepository implements KnowledgeRepository {
     async updateItem(id: string, patch: ItemPatch): Promise<Item> {
         return this.call(() =>
             request<Item>(`/items/${encodeURIComponent(id)}`, {
-                body: JSON.stringify(patch),
+                body: JSON.stringify(clearable(patch)),
                 method: 'PATCH',
             }),
         );
@@ -252,4 +258,19 @@ export class VaultRepository implements KnowledgeRepository {
 export async function defaultVaultPath(): Promise<string> {
     const { invoke } = await import('@tauri-apps/api/core');
     return invoke<string>('default_vault_path');
+}
+
+/**
+ * Turns a cleared field into something JSON can carry.
+ *
+ * `JSON.stringify` drops keys whose value is `undefined`, so a patch meaning
+ * "remove this" arrived as an empty object and the field silently kept its old
+ * value — a URL could not be emptied, a priority could not go back to normal,
+ * an item could not be unfiled, and a reopened task kept its completion date.
+ *
+ * `null` survives the wire, and the engine already treats it the way it treats
+ * an absent value: falsy, so the key is simply not written back to the file.
+ */
+function clearable(patch: ItemPatch): Record<string, unknown> {
+    return Object.fromEntries(Object.entries(patch).map(([key, value]) => [key, value ?? null]));
 }
