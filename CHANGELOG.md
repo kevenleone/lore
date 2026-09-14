@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.10.0](https://github.com/kevenleone/lore/compare/v1.9.0...v1.10.0) (2026-09-14)
+
+
+### Features
+
+* **kb:** edit a task's due date and priority from Properties ([1a88bbf](https://github.com/kevenleone/lore/commit/1a88bbfcfb28f9ebdc480e2f2ee2e4750cc03945))
+* **kb:** name every item type in the Library sidebar ([ad04a38](https://github.com/kevenleone/lore/commit/ad04a388d4a55e17130ed911160398dc964a367f))
+* **kb:** show an item's file in Finder ([12b317d](https://github.com/kevenleone/lore/commit/12b317dae547522c6eb86b109c9afc2abcd99cfc))
+* **tasks:** add the Tasks surface ([6a813dc](https://github.com/kevenleone/lore/commit/6a813dc36d81b0a7bb1535c5bd49fefe75313a06))
+* **tasks:** draw the board, its columns and its filter ([b962155](https://github.com/kevenleone/lore/commit/b962155c515b987c997d698155bc71a4c0c227f6))
+* **vault:** give a task a board column and a completion date ([b162498](https://github.com/kevenleone/lore/commit/b162498a5ac8291dc97001767403cba16ef61081))
+
+
+### Bug Fixes
+
+* **capture:** keep Quick Capture up while its file dialog is open ([d51383c](https://github.com/kevenleone/lore/commit/d51383cdd60133f001e625b2e717ab1dc3c32511))
+* **capture:** keep the footer inside the panel window ([0c047f9](https://github.com/kevenleone/lore/commit/0c047f9d42e8bdd950fc819b59443851ffb4ce02))
+* **data:** let a property be cleared again ([9c5ff81](https://github.com/kevenleone/lore/commit/9c5ff819fc343474902bf78af383f200752f53b4))
+
 ## [1.9.0](https://github.com/kevenleone/lore/compare/v1.8.1...v1.9.0) (2026-09-12)
 
 
