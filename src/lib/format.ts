@@ -15,6 +15,22 @@ export function formatBytes(bytes: number): string {
     return `${(kb / 1024).toFixed(1)} MB`;
 }
 
+/**
+ * Due-date label for a `YYYY-MM-DD` day: "Today", "Tomorrow", "Yesterday", a
+ * weekday within the next week, else a locale date. `today` is passed in rather
+ * than read from the clock so the caller can derive it once for a whole list.
+ */
+export function formatDueDay(day: string, today: string): string {
+    if (day === today) return 'Today';
+    const diff = Math.round((dayStart(day).getTime() - dayStart(today).getTime()) / DAY);
+    if (diff === 1) return 'Tomorrow';
+    if (diff === -1) return 'Yesterday';
+    const date = dayStart(day);
+    if (diff > 1 && diff < 7) return WEEKDAYS[date.getDay()];
+    if (diff < -1 && diff > -7) return `${WEEKDAYS[date.getDay()]}, ${-diff}d ago`;
+    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
+
 /** Compact list-row label: "2m", "1h", "Yesterday", "3d", or a weekday. */
 export function formatRelative(iso: string, now: number = Date.now()): string {
     const then = new Date(iso).getTime();
@@ -26,6 +42,12 @@ export function formatRelative(iso: string, now: number = Date.now()): string {
     if (days === 1) return 'Yesterday';
     if (days < 7) return `${days}d`;
     return WEEKDAYS[new Date(then).getDay()];
+}
+
+/** Midnight local time on a `YYYY-MM-DD` day. */
+function dayStart(day: string): Date {
+    const [year, month, date] = day.split('-').map(Number);
+    return new Date(year, month - 1, date);
 }
 
 const HHMM = (d: Date) =>

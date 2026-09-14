@@ -359,6 +359,15 @@
         -webkit-user-drag: none;
     }
 
+    /* A card in flight leaves the pointer over the columns and the drag ghost,
+       not over the card it was picked up from — so the grabbing cursor has to
+       come from the document. `!important` because every row it passes over has
+       a cursor of its own to beat; `usePointerDrag` sets the attribute. */
+    [data-dragging],
+    [data-dragging] * {
+        cursor: grabbing !important;
+    }
+
     /* Every pane scrolls its own content, and none of them is a page: a scroller
        that runs out must not bounce, or chain its scroll to the window. */
     * {

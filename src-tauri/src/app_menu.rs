@@ -44,7 +44,7 @@ const FILE_COMMANDS: [Command; 3] = [
     },
 ];
 
-const VIEW_COMMANDS: [Command; 8] = [
+const VIEW_COMMANDS: [Command; 12] = [
     Command {
         accelerator: "CmdOrCtrl+B",
         id: "sidebar",
@@ -58,7 +58,7 @@ const VIEW_COMMANDS: [Command; 8] = [
     Command {
         accelerator: "CmdOrCtrl+1",
         id: "view-all",
-        label: "All Items",
+        label: "Everything",
     },
     Command {
         accelerator: "CmdOrCtrl+2",
@@ -67,16 +67,38 @@ const VIEW_COMMANDS: [Command; 8] = [
     },
     Command {
         accelerator: "CmdOrCtrl+3",
+        id: "view-notes",
+        label: "Notes",
+    },
+    Command {
+        accelerator: "CmdOrCtrl+4",
+        id: "view-links",
+        label: "Links",
+    },
+    Command {
+        accelerator: "CmdOrCtrl+5",
+        id: "view-files",
+        label: "Files",
+    },
+    // The sidebar's Library names the five above; these two are views without a
+    // row, so the menu is the whole of their front door.
+    Command {
+        accelerator: "",
         id: "view-today",
         label: "Today",
     },
     Command {
-        accelerator: "CmdOrCtrl+4",
+        accelerator: "",
         id: "view-starred",
         label: "Starred",
     },
     Command {
-        accelerator: "CmdOrCtrl+5",
+        accelerator: "CmdOrCtrl+6",
+        id: "view-tasks",
+        label: "Tasks",
+    },
+    Command {
+        accelerator: "CmdOrCtrl+7",
         id: "view-calendar",
         label: "Calendar",
     },
@@ -148,8 +170,9 @@ pub fn install<R: Runtime>(app: &App<R>) -> tauri::Result<()> {
 
     let mut view = SubmenuBuilder::new(app, "View");
     for (index, command) in VIEW_COMMANDS.iter().enumerate() {
-        // The two panel toggles, then the library views, then search.
-        if index == 2 || index == 7 {
+        // The two panel toggles, then the library views, then the two
+        // surfaces, then search.
+        if index == 2 || index == 9 || index == 11 {
             view = view.separator();
         }
         view = view.item(&command_item(app, command)?);

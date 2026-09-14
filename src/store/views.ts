@@ -5,9 +5,14 @@
 
 import type { Collection, Filters, Item, SortOrder, TagCount, View } from './types';
 
+import { FILE_TYPES } from './types';
+
 export interface ViewCounts {
     all: number;
+    files: number;
     inbox: number;
+    links: number;
+    notes: number;
     starred: number;
     today: number;
 }
@@ -82,8 +87,14 @@ export function matchesView(item: Item, view: View): boolean {
             return true;
         case 'collection':
             return item.collectionId === view.val;
+        case 'files':
+            return FILE_TYPES.includes(item.type);
         case 'inbox':
             return !!item.flags.inbox;
+        case 'links':
+            return item.type === 'link';
+        case 'notes':
+            return item.type === 'note';
         case 'starred':
             return !!item.flags.starred;
         case 'tag':
@@ -121,26 +132,28 @@ export function sortItems(items: Item[], sort: SortOrder): Item[] {
     }
 }
 
-/** Tag counts in a fixed display order; tags not in `order` are appended. */
-export function tagCounts(items: Item[], order: string[]): TagCount[] {
+/**
+ * Tag counts, alphabetically. The list used to lead with a stored order that
+ * no UI could change and most vaults never had, which left the rest in the
+ * order tags happened to be encountered in — not something a reader can scan.
+ */
+export function tagCounts(items: Item[]): TagCount[] {
     const counts = new Map<string, number>();
     for (const item of items) {
         for (const tag of item.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
     }
-    const ordered = order
-        .filter((t) => counts.has(t))
-        .map((name) => ({ count: counts.get(name)!, name }));
-    const seen = new Set(order);
-    const rest = [...counts.entries()]
-        .filter(([name]) => !seen.has(name))
-        .map(([name, count]) => ({ count, name }));
-    return [...ordered, ...rest];
+    return [...counts.entries()]
+        .map(([name, count]) => ({ count, name }))
+        .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function viewCounts(items: Item[]): ViewCounts {
     return {
         all: items.length,
+        files: items.filter((i) => FILE_TYPES.includes(i.type)).length,
         inbox: items.filter((i) => i.flags.inbox).length,
+        links: items.filter((i) => i.type === 'link').length,
+        notes: items.filter((i) => i.type === 'note').length,
         starred: items.filter((i) => i.flags.starred).length,
         today: items.filter((i) => i.flags.today).length,
     };
@@ -209,11 +222,17 @@ export function relatedItems(item: Item, all: Item[]): Item[] {
 export function viewTitle(view: View, collections: Collection[]): string {
     switch (view.kind) {
         case 'all':
-            return 'All Items';
+            return 'Everything';
         case 'collection':
             return collections.find((c) => c.id === view.val)?.name ?? 'Collection';
+        case 'files':
+            return 'Files';
         case 'inbox':
             return 'Inbox';
+        case 'links':
+            return 'Links';
+        case 'notes':
+            return 'Notes';
         case 'starred':
             return 'Starred';
         case 'tag':
@@ -221,6 +240,6 @@ export function viewTitle(view: View, collections: Collection[]): string {
         case 'today':
             return 'Today';
         default:
-            return 'All Items';
+            return 'Everything';
     }
 }
