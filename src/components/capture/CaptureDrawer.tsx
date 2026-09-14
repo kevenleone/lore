@@ -20,6 +20,7 @@ import { useMountTransition } from '../../lib/useMountTransition';
 import { useStore } from '../../store/useStore';
 import { Close } from '../common/glyphs';
 import { Composer } from './Composer';
+import { applyCapturePreset } from './preset';
 
 export function CaptureDrawer() {
     const captureOpen = useStore((s) => s.captureOpen);
@@ -31,6 +32,9 @@ export function CaptureDrawer() {
     const view = useStore((s) => s.view);
     const defaultCollection = useStore((s) => s.prefs.defaultCollection);
     const defaultCaptureType = useStore((s) => s.prefs.defaultCaptureType);
+    // Set by the surface that opened this: a board column knows which board and
+    // which column it is, neither of which the drawer could work out itself.
+    const preset = useStore((s) => s.capturePreset);
     const { mounted, open } = useMountTransition(captureOpen, DRAWER_MS, reduceMotion);
     // False for the length of the slide, so the form does not focus a field that
     // is still off the right edge — see `Composer`'s `focusReady`. A timer rather
@@ -52,8 +56,11 @@ export function CaptureDrawer() {
 
     if (!mounted) return null;
 
+    /** Capture from inside a collection files into it; else Settings decides. */
+    const collectionFromView = () => (view.kind === 'collection' ? view.val : defaultCollection);
+
     const save = async (input: NewItem) => {
-        await createItem(input);
+        await createItem(applyCapturePreset(input, preset));
         closeCapture();
     };
 
@@ -93,10 +100,8 @@ export function CaptureDrawer() {
                 <div className="flex min-h-0 flex-1 flex-col">
                     <Composer
                         chrome="drawer"
-                        defaultCollectionId={
-                            view.kind === 'collection' ? view.val : defaultCollection
-                        }
-                        defaultType={defaultCaptureType}
+                        defaultCollectionId={preset ? preset.collectionId : collectionFromView()}
+                        defaultType={preset ? preset.type : defaultCaptureType}
                         focusReady={settled}
                         onCancel={closeCapture}
                         onSave={save}
