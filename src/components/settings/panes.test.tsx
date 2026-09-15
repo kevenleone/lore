@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { DEFAULT_PREFS } from '../../store/types';
 import { useStore } from '../../store/useStore';
-import { GeneralPane } from './panes';
+import { GeneralPane, LookPane } from './panes';
 
 afterEach(() => {
     cleanup();
@@ -64,5 +64,18 @@ describe('GeneralPane', () => {
         expect(
             screen.getByRole('button', { name: 'File new captures into' }).textContent,
         ).toContain('Inbox');
+    });
+});
+
+describe('LookPane', () => {
+    it('files the thumbnail placement, and starts on the inline one', () => {
+        render(<LookPane />);
+
+        expect(screen.getByRole('button', { name: 'Inline' }).getAttribute('aria-pressed')).toBe(
+            'true',
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Cover' }));
+        expect(useStore.getState().prefs.bannerPlacement).toBe('cover');
     });
 });

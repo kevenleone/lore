@@ -62,7 +62,7 @@ const PANES: PaneDef[] = [
         icon: 'palette',
         id: 'look',
         label: 'Appearance',
-        terms: 'colour color mode light dark auto theme style accent layout list cards table drawer page density cozy compact roomy text size counts sidebar status bar motion block editor markdown',
+        terms: 'colour color mode light dark auto theme style accent layout list cards table drawer page density cozy compact roomy text size counts sidebar status bar motion block editor markdown thumbnail banner cover image placement',
     },
     {
         Body: KeysPane,

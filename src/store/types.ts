@@ -343,6 +343,9 @@ export type Appearance = 'auto' | 'dark' | 'light';
  * Settings
  * ------------------------------------------------------------------ */
 
+/** Where the detail pane puts an item's thumbnail. */
+export type BannerPlacement = 'cover' | 'inline';
+
 export type Density = 'Compact' | 'Cozy' | 'Roomy';
 
 export type NotificationStyle = 'Alert' | 'Banner';
@@ -458,6 +461,7 @@ export interface Durations {
 export interface Prefs {
     accent: Accent;
     appearance: Appearance;
+    bannerPlacement: BannerPlacement;
     /** The theme style used whenever the effective mode is dark. */
     darkTheme: ThemeId;
     /**
@@ -491,6 +495,7 @@ export interface Prefs {
 export const DEFAULT_PREFS: Prefs = {
     accent: DEFAULT_ACCENT,
     appearance: 'light',
+    bannerPlacement: 'inline',
     darkTheme: DEFAULT_DARK_THEME,
     defaultCaptureType: 'auto',
     defaultCollection: null,
