@@ -13,7 +13,13 @@ import { useAssetSrc } from '../../lib/assetSrc';
 import { cn } from '../../lib/cn';
 import { formatRelative, formatSavedDate } from '../../lib/format';
 import { useImageFallback } from '../../lib/imageFallback';
-import { joinBody, parseSubtasks, stripSubtasks, toggleSubtask } from '../../lib/subtasks';
+import {
+    editSubtask,
+    joinBody,
+    parseSubtasks,
+    stripSubtasks,
+    toggleSubtask,
+} from '../../lib/subtasks';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
 import {
@@ -92,6 +98,8 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     const [addingTag, setAddingTag] = useState(false);
     const [tagDraft, setTagDraft] = useState('');
     const [subtaskDraft, setSubtaskDraft] = useState('');
+    const [editingSubtask, setEditingSubtask] = useState<null | number>(null);
+    const [subtaskEdit, setSubtaskEdit] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [raw, setRaw] = useState(rawDefault);
     const tagInputRef = useRef<HTMLInputElement>(null);
@@ -105,6 +113,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
         setAddingTag(false);
         setTagDraft('');
         setSubtaskDraft('');
+        setEditingSubtask(null);
         setConfirmDelete(false);
         setRaw(rawDefault);
     }, [sel?.id, rawDefault]);
@@ -167,6 +176,15 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
         const text = subtaskDraft.trim();
         setSubtaskDraft('');
         if (text) writeSubtasks([...subtasks, { done: false, text }]);
+    };
+    const startSubtaskEdit = (index: number) => {
+        setSubtaskEdit(subtasks[index].text);
+        setEditingSubtask(index);
+    };
+    const commitSubtaskEdit = (index: number) => {
+        setEditingSubtask(null);
+        if (subtaskEdit.trim() === subtasks[index].text) return;
+        writeSubtasks(editSubtask(subtasks, index, subtaskEdit));
     };
 
     const commitTitle = () => {
@@ -535,39 +553,56 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                     className="group flex items-start gap-[10px] rounded-7 px-2 py-[5px] hover:bg-hover"
                                     key={`${index}-${subtask.text}`}
                                 >
-                                    {/* Box and label are one control: two hit
-                                        areas for the same tick, so one button
-                                        rather than two tab stops. */}
+                                    {/* The box ticks it; the label opens it for
+                                        editing. One control for both meant a
+                                        subtask could never be corrected. */}
                                     <button
                                         aria-checked={!!subtask.done}
-                                        className="flex min-w-0 flex-1 items-start gap-[10px] border-none bg-transparent p-0 text-left font-[inherit]"
+                                        aria-label={subtask.text}
+                                        className={cn(
+                                            'mt-[3px] flex h-[16px] w-[16px] flex-none items-center justify-center rounded-[5px] border p-0',
+                                            subtask.done
+                                                ? 'border-accent bg-accent text-white'
+                                                : 'border-border text-transparent',
+                                        )}
                                         onClick={() =>
                                             writeSubtasks(toggleSubtask(subtasks, index))
                                         }
                                         role="checkbox"
                                         type="button"
                                     >
-                                        <span
+                                        <Check size={11} sw={3} />
+                                    </button>
+                                    {editingSubtask === index ? (
+                                        <input
+                                            autoFocus
+                                            className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title leading-[1.5] text-text outline-none"
+                                            onBlur={() => commitSubtaskEdit(index)}
+                                            onChange={(e) => setSubtaskEdit(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    commitSubtaskEdit(index);
+                                                }
+                                                if (e.key === 'Escape') setEditingSubtask(null);
+                                            }}
+                                            value={subtaskEdit}
+                                        />
+                                    ) : (
+                                        <button
                                             className={cn(
-                                                'mt-[3px] flex h-[16px] w-[16px] flex-none items-center justify-center rounded-[5px] border',
-                                                subtask.done
-                                                    ? 'border-accent bg-accent text-white'
-                                                    : 'border-border text-transparent',
-                                            )}
-                                        >
-                                            <Check size={11} sw={3} />
-                                        </span>
-                                        <span
-                                            className={cn(
-                                                'flex-1 text-title leading-[1.5]',
+                                                'min-w-0 flex-1 border-none bg-transparent p-0 text-left font-[inherit] text-title leading-[1.5]',
                                                 subtask.done
                                                     ? 'text-text3 line-through'
                                                     : 'text-text2',
                                             )}
+                                            onClick={() => startSubtaskEdit(index)}
+                                            title="Click to edit"
+                                            type="button"
                                         >
                                             {subtask.text}
-                                        </span>
-                                    </button>
+                                        </button>
+                                    )}
                                     <button
                                         aria-label={`Remove ${subtask.text}`}
                                         className="mt-[3px] flex-none border-none bg-transparent p-0 text-faint opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
