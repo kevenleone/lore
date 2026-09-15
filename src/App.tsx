@@ -18,6 +18,7 @@ import { AskLoreChat } from './components/kb/AskLoreChat';
 import { DetailPane } from './components/kb/DetailPane';
 import { ListPane } from './components/kb/ListPane';
 import { Notice } from './components/kb/Notice';
+import { UnsplashPicker } from './components/kb/properties/UnsplashPicker';
 import { PROPERTIES_WIDTH, PropertiesPanel } from './components/kb/PropertiesPanel';
 import { Sidebar, SIDEBAR_WIDTH } from './components/kb/Sidebar';
 import { StatusBar } from './components/kb/StatusBar';
@@ -66,6 +67,8 @@ export default function App() {
     const setMainView = useStore((s) => s.setMainView);
     const setTaskView = useStore((s) => s.setTaskView);
     const settingsOpen = useStore((s) => s.settingsOpen);
+    const photoPickerOpen = !!useStore((s) => s.photoPickerItemId);
+    const closePhotoPicker = useStore((s) => s.closePhotoPicker);
     const statusBarVisible = useStore((s) => s.prefs.switches.statusBar);
     const toggleCapture = useStore((s) => s.toggleCapture);
     const toggleFocus = useStore((s) => s.toggleFocus);
@@ -90,18 +93,31 @@ export default function App() {
                 e.preventDefault();
                 toggleFocus();
             } else if (e.key === 'Escape') {
-                // The capture drawer lies over everything else, so it is the first
-                // thing Escape takes away; under it, both ways of opening an item
-                // from Cards or Table are dismissible too, and so is the rail the
-                // Tasks surface opens beside its list.
-                if (captureOpen) closeCapture();
+                // The photo picker is a sheet over the whole window, so it goes
+                // first — otherwise Escape dismissed the sheet *and* the item
+                // underneath it, because both listeners sit on `window` and
+                // stopPropagation does not reach a sibling on the same target.
+                // Under it the capture drawer lies over everything else; then both
+                // ways of opening an item from Cards or Table are dismissible too,
+                // and so is the rail the Tasks surface opens beside its list.
+                if (photoPickerOpen) closePhotoPicker();
+                else if (captureOpen) closeCapture();
                 else if (mainView === 'tasks') closeTask();
                 else closeOpenItem();
             }
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [captureOpen, closeCapture, closeOpenItem, closeTask, mainView, toggleFocus]);
+    }, [
+        captureOpen,
+        closeCapture,
+        closeOpenItem,
+        closePhotoPicker,
+        closeTask,
+        mainView,
+        photoPickerOpen,
+        toggleFocus,
+    ]);
 
     // What the menu bar's items do. The ids are `app_menu.rs`'s.
     const menuCommands = useMemo<Record<string, () => void>>(
@@ -352,6 +368,7 @@ export default function App() {
              * which breaks the native drag and slams the value to one end.
              */}
             {focusPopoverOpen && <FocusPopover />}
+            {photoPickerOpen && <UnsplashPicker />}
             {settingsOpen && <SettingsModal />}
             {!onboarded && <Onboarding />}
         </div>

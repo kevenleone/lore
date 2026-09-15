@@ -135,6 +135,7 @@ interface StoreState {
     closeCapture: () => void;
     /** Puts an item opened from Cards or Table away again. */
     closeOpenItem: () => void;
+    closePhotoPicker: () => void;
     closeSettings: () => void;
     /** Closes the Tasks surface's rail. The task stays selected. */
     closeTask: () => void;
@@ -228,9 +229,18 @@ interface StoreState {
      * there the detail pane is a permanent column, so there is nothing to open.
      */
     openId: null | string;
+    /** Opens the photo picker against an item, to choose its thumbnail. */
+    openPhotoPicker: (itemId: string) => void;
     // settings actions
     openSettings: (pane?: SettingsPane) => void;
     openWorkspacePicker: () => Promise<void>;
+    /**
+     * Which item the photo picker is choosing a thumbnail for, or null when it
+     * is closed. It lives here rather than in the Properties panel because the
+     * picker is a window-level sheet, and that panel is a 316px column that
+     * bounds and clips anything positioned inside it.
+     */
+    photoPickerItemId: null | string;
     // onboarding + preferences (persisted)
     prefs: Prefs;
     /** Confirms an action whose effect the user cannot see happen. */
@@ -258,19 +268,19 @@ interface StoreState {
     restoreDefaultPrefs: () => void;
     /** Shows the item's file in the OS file manager. */
     revealItemFile: (id: string) => Promise<void>;
+
     /** Item id → ISO time it sits at on the calendar. */
     schedule: Record<string, string>;
-
     /** Places an item on the calendar, or clears it when `at` is null. */
     scheduleItem: (id: string, at: Date | null) => void;
     search: string;
     searching: boolean;
+
     /**
      * Ids the index matched, or null when the query is too short to run one and
      * the client-side filter is doing the work instead.
      */
     searchResults: null | string[];
-
     selectedId: null | string;
     selectItem: (id: string) => void;
     /**
@@ -285,15 +295,15 @@ interface StoreState {
     sendChat: (question: string) => Promise<void>;
     setAccent: (accent: Accent) => void;
     setAppearance: (appearance: Appearance) => void;
+
     /** Marks which column completes a task, or none when it is already set. */
     setBoardDoneColumn: (columnId: string) => Promise<void>;
-
     /** Narrows the open board. Passing null clears every facet. */
     setBoardFilter: (patch: null | Partial<BoardFilter>) => void;
     /** Switches the open board between cards and a list. */
     setBoardView: (view: BoardViewMode) => Promise<void>;
-    setEditorDirty: (id: null | string) => void;
 
+    setEditorDirty: (id: null | string) => void;
     setFilters: (patch: Partial<Filters>) => void;
     setFocusTask: (id: null | string) => void;
     setMainView: (view: MainView) => void;
@@ -762,6 +772,9 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ openAs: null, openId: null });
     },
 
+    closePhotoPicker() {
+        set({ photoPickerItemId: null });
+    },
     closeSettings() {
         set({ settingsOpen: false });
     },
@@ -1028,6 +1041,10 @@ export const useStore = create<StoreState>((set, get) => ({
     },
     openId: null,
 
+    openPhotoPicker(itemId) {
+        set({ photoPickerItemId: itemId });
+    },
+
     openSettings(pane) {
         set({ settingsOpen: true, ...(pane ? { settingsPane: pane } : {}) });
     },
@@ -1037,6 +1054,7 @@ export const useStore = create<StoreState>((set, get) => ({
         if (path) await get().switchWorkspace(path);
     },
 
+    photoPickerItemId: null,
     prefs: persisted.prefs,
     pushToast(message, action) {
         const toast = { action, id: crypto.randomUUID(), message };
@@ -1045,6 +1063,7 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ toasts: [...get().toasts, toast].slice(-3) });
     },
     recentWorkspaces: persisted.recentWorkspaces,
+
     async refresh() {
         const repo = getRepository();
         const [items, collections, boards] = await Promise.all([
@@ -1158,7 +1177,6 @@ export const useStore = create<StoreState>((set, get) => ({
     search: '',
 
     searching: false,
-
     searchResults: null,
     selectedId: 'i1',
     selectItem(id) {
@@ -1214,11 +1232,12 @@ export const useStore = create<StoreState>((set, get) => ({
         };
         set((s) => ({ chat: [...s.chat, aiMsg] }));
     },
+
+    /* ---------------- onboarding ---------------- */
+
     setAccent(accent) {
         get().setPref('accent', accent);
     },
-
-    /* ---------------- onboarding ---------------- */
 
     setAppearance(appearance) {
         get().setPref('appearance', appearance);
@@ -1249,11 +1268,11 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ editorDirtyId: id });
     },
 
+    /* ---------------- settings ---------------- */
+
     setFilters(patch) {
         set((s) => ({ filters: { ...s.filters, ...patch } }));
     },
-
-    /* ---------------- settings ---------------- */
 
     setFocusTask(id) {
         set((s) => ({ focus: { ...s.focus, taskId: id } }));
@@ -1262,7 +1281,6 @@ export const useStore = create<StoreState>((set, get) => ({
     setMainView(view) {
         set({ mainView: view });
     },
-
     setOnboardingStep(step) {
         set({ onboardingStep: step });
     },
@@ -1276,6 +1294,7 @@ export const useStore = create<StoreState>((set, get) => ({
         set((s) => ({ prefs: { ...s.prefs, [key]: value } }));
         persist(get());
     },
+
     setSearch(q) {
         set({ search: q });
         runSearch(get, q);
@@ -1284,7 +1303,6 @@ export const useStore = create<StoreState>((set, get) => ({
     setSettingsPane(pane) {
         set({ settingsPane: pane });
     },
-
     setSort(sort) {
         set({ sort });
     },
@@ -1294,6 +1312,7 @@ export const useStore = create<StoreState>((set, get) => ({
         // is always the way back out of one.
         set({ boardId: null, mainView: 'tasks', taskView: view });
     },
+
     setTheme(id) {
         const mode = effectiveTheme(get().prefs.appearance);
         get().setPref(mode === 'dark' ? 'darkTheme' : 'lightTheme', id);
