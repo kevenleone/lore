@@ -20,6 +20,7 @@ import {
     type Accent,
     ACCENT_NAMES,
     ACCENTS,
+    type BannerPlacement,
     type Density,
     type ItemType,
     type NotificationStyle,
@@ -341,6 +342,7 @@ const APPEARANCES: { id: Appearance; label: string; swatch: string }[] = [
 /** The ids double as their own labels once capitalised, so one map covers both. */
 const VIEW_MODES: ViewMode[] = ['list', 'cards', 'table'];
 const OPEN_MODES: OpenMode[] = ['drawer', 'page'];
+const BANNER_PLACEMENTS: BannerPlacement[] = ['inline', 'cover'];
 const titleCase = (s: string): string => s[0].toUpperCase() + s.slice(1);
 
 export function LookPane() {
@@ -357,6 +359,7 @@ export function LookPane() {
     const setViewMode = useStore((s) => s.setViewMode);
     const openMode = useStore((s) => s.prefs.openMode);
     const setOpenMode = useStore((s) => s.setOpenMode);
+    const bannerPlacement = useStore((s) => s.prefs.bannerPlacement);
     const counts = useSwitch('counts');
     const statusBar = useSwitch('statusBar');
     const blockEditor = useSwitch('blockEditor');
@@ -479,6 +482,17 @@ export function LookPane() {
                     onChange={(v) => setOpenMode(v.toLowerCase() as OpenMode)}
                     options={OPEN_MODES.map(titleCase)}
                     value={titleCase(openMode)}
+                />
+            </Row>
+
+            <Row
+                desc="Cover runs the image full width above the title. Inline keeps the whole image, under the metadata."
+                title="Thumbnail placement"
+            >
+                <Segmented<string>
+                    onChange={(v) => setPref('bannerPlacement', v.toLowerCase() as BannerPlacement)}
+                    options={BANNER_PLACEMENTS.map(titleCase)}
+                    value={titleCase(bannerPlacement)}
                 />
             </Row>
 
