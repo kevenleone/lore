@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.11.0](https://github.com/kevenleone/lore/compare/v1.10.0...v1.11.0) (2026-09-15)
+
+
+### Features
+
+* **data:** carry a picked photo's credit in an item's frontmatter ([9a91555](https://github.com/kevenleone/lore/commit/9a91555c56e9c5c2826a41e33ab373473cc6e862))
+* **kb:** give an empty library view a real empty state ([276cf12](https://github.com/kevenleone/lore/commit/276cf1239694e205dd9be30b0f24a855a9cc291f))
+* **kb:** set an item's thumbnail, and search Unsplash for one ([aa803d7](https://github.com/kevenleone/lore/commit/aa803d74b8647dbcc63f0511dc617e18071e3cfe))
+* **tasks:** give Upcoming the board's card and an empty state ([fd0ce42](https://github.com/kevenleone/lore/commit/fd0ce4208f0a1e8caf03b71ed83408e044e9946a))
+
+
+### Bug Fixes
+
+* **kb:** fall back when a preview image fails to load ([924b52d](https://github.com/kevenleone/lore/commit/924b52da4c1c5694e1967ede6fc52585a5561989))
+* **kb:** let a subtask be edited instead of only ticked ([ba7fd34](https://github.com/kevenleone/lore/commit/ba7fd34f3def421997fecc874aefe46795185ad0))
+* **kb:** show the photo picker over the window, not inside the panel ([36be619](https://github.com/kevenleone/lore/commit/36be619b9e56ee42172f9a0c225e884c323eb7e5))
+
 ## [1.10.0](https://github.com/kevenleone/lore/compare/v1.9.0...v1.10.0) (2026-09-14)
 
 
