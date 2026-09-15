@@ -170,6 +170,42 @@ describe('Summary', () => {
     });
 });
 
+describe('Upcoming', () => {
+    it('draws a task with the same face the board gives it', () => {
+        useStore.setState({
+            collections: COLLECTIONS,
+            items: [
+                task('t9', 'Transcribe the interview', {
+                    dueAt: day(2),
+                    subtasks: { done: 1, total: 4 },
+                }),
+            ],
+            mainView: 'tasks',
+            taskView: 'upcoming',
+        });
+        render(<TasksView />);
+
+        // Progress and the project tag are `TaskCard`'s, and the old column-only
+        // card had neither.
+        expect(screen.getByText('Progress')).toBeTruthy();
+        expect(screen.getByText('1/4')).toBeTruthy();
+        expect(screen.getByText('Onboarding')).toBeTruthy();
+    });
+
+    it('shows an empty state rather than five empty columns', () => {
+        useStore.setState({
+            collections: COLLECTIONS,
+            items: [task('t9', 'No date on this one')],
+            mainView: 'tasks',
+            taskView: 'upcoming',
+        });
+        render(<TasksView />);
+
+        expect(screen.getByText('The week is clear')).toBeTruthy();
+        expect(screen.getByText('Add a task')).toBeTruthy();
+    });
+});
+
 describe('Board', () => {
     it('lays each task out under the column its status names', () => {
         mount('board');

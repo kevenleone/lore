@@ -115,7 +115,7 @@ export function TasksView() {
                 </div>
 
                 {taskView === 'summary' && <SummaryView today={today} />}
-                {taskView === 'upcoming' && <UpcomingView from={now} />}
+                {taskView === 'upcoming' && <UpcomingView from={now} today={today} />}
                 {taskView === 'board' && board && boardId !== null && (
                     <BoardFilterBar tasks={onBoard} />
                 )}
