@@ -8,7 +8,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import type { SortOrder } from '../../store/types';
+import type { IconName, SortOrder, View } from '../../store/types';
 
 import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
@@ -20,6 +20,7 @@ import {
     viewTitle,
 } from '../../store/views';
 import { useContextMenu } from '../common/ContextMenu';
+import { EmptyState } from '../common/EmptyState';
 import { Filter, Sort } from '../common/glyphs';
 import { CardGrid } from './CardGrid';
 import { FilterBar } from './FilterBar';
@@ -49,6 +50,8 @@ export function ListPane() {
     const [filtersOpen, setFiltersOpen] = useState(false);
     const sortRef = useRef<HTMLDivElement>(null);
     const selectItem = useStore((s) => s.selectItem);
+    const clearFilters = useStore((s) => s.clearFilters);
+    const openCapture = useStore((s) => s.openCapture);
     const contextMenu = useContextMenu();
 
     useEffect(() => {
@@ -164,28 +167,98 @@ export function ListPane() {
             {showFilters && <FilterBar />}
 
             <div className="flex-1 overflow-auto">
-                {filtered.length === 0 && (
-                    <div className="px-5 py-7 text-center text-body-lg leading-[1.6] text-text3">
-                        {search && (
-                            <>
-                                Nothing matches <strong className="text-text2">{search}</strong>
-                                {searching && ' yet…'}
-                            </>
+                {/* Either the empty state or a layout — never both. Table drew its
+                    header rule under the message, which read as a broken list. */}
+                {filtered.length === 0 ? (
+                    <LibraryEmpty
+                        filterCount={filterCount}
+                        onCapture={openCapture}
+                        onClearFilters={clearFilters}
+                        search={search}
+                        searching={searching}
+                        view={view}
+                    />
+                ) : (
+                    <>
+                        {viewMode === 'cards' && (
+                            <CardGrid items={filtered} onContextMenu={openMenu} />
                         )}
-                        {!search &&
-                            (filterCount > 0
-                                ? 'Nothing matches these filters.'
-                                : 'Nothing here yet.')}
-                    </div>
+                        {viewMode === 'table' && (
+                            <TableView items={filtered} onContextMenu={openMenu} />
+                        )}
+                        {isList && <ListRows items={filtered} onContextMenu={openMenu} />}
+                    </>
                 )}
-                {viewMode === 'cards' && <CardGrid items={filtered} onContextMenu={openMenu} />}
-                {viewMode === 'table' && <TableView items={filtered} onContextMenu={openMenu} />}
-                {isList && <ListRows items={filtered} onContextMenu={openMenu} />}
             </div>
 
             {contextMenu.target && (
                 <ItemContextMenu onClose={contextMenu.close} target={contextMenu.target} />
             )}
         </div>
+    );
+}
+
+/** The glyph the sidebar already uses for this view, so the two agree. */
+const VIEW_ICON: Record<View['kind'], IconName> = {
+    all: 'layers',
+    collection: 'layers',
+    files: 'file',
+    inbox: 'inbox',
+    links: 'globe',
+    notes: 'note',
+    starred: 'tag',
+    tag: 'tag',
+    today: 'calendar',
+};
+
+function LibraryEmpty({
+    filterCount,
+    onCapture,
+    onClearFilters,
+    search,
+    searching,
+    view,
+}: {
+    filterCount: number;
+    onCapture: () => void;
+    onClearFilters: () => void;
+    search: string;
+    searching: boolean;
+    view: View;
+}) {
+    if (search) {
+        return (
+            <EmptyState
+                hint={
+                    searching
+                        ? 'Still looking through the vault…'
+                        : 'Try fewer words, or search from Everything instead of this view.'
+                }
+                icon="globe"
+                title={
+                    <>
+                        Nothing matches <span className="text-text">{search}</span>
+                    </>
+                }
+            />
+        );
+    }
+    if (filterCount > 0) {
+        return (
+            <EmptyState
+                action={{ label: 'Clear filters', onClick: onClearFilters }}
+                hint="Everything here is hidden by the filters above."
+                icon="tag"
+                title="No items match these filters"
+            />
+        );
+    }
+    return (
+        <EmptyState
+            action={{ label: 'Quick Capture', onClick: onCapture }}
+            hint="Anything you capture — a link, a note, a task — lands here."
+            icon={VIEW_ICON[view.kind]}
+            title="Nothing here yet"
+        />
     );
 }
