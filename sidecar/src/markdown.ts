@@ -4,7 +4,15 @@
 // round-trip control — what gets written back must stay diff-friendly, and
 // unknown keys a user or another tool added must survive being edited in Lore.
 
-import type { Item, ItemComment, ItemFlags, ItemSource, ItemType, Priority } from '@lore/types';
+import type {
+    ImageCredit,
+    Item,
+    ItemComment,
+    ItemFlags,
+    ItemSource,
+    ItemType,
+    Priority,
+} from '@lore/types';
 
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
@@ -24,6 +32,7 @@ const KNOWN_KEYS = new Set([
     'due',
     'id',
     'image',
+    'imageCredit',
     'inbox',
     'points',
     'priority',
@@ -150,6 +159,20 @@ const commentArray = (v: unknown, fallback: string): ItemComment[] => {
 };
 
 /**
+ * A picked photo's attribution. Like `source`, a half-written value degrades to
+ * "no credit" rather than making the file unreadable — the photo still shows,
+ * it just carries no byline.
+ */
+const imageCredit = (v: unknown): ImageCredit | undefined => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+    const raw = v as Record<string, unknown>;
+    const name = str(raw.name);
+    const profileUrl = str(raw.profileUrl);
+    if (str(raw.provider) !== 'unsplash' || !name || !profileUrl) return undefined;
+    return { name, profileUrl, provider: 'unsplash' };
+};
+
+/**
  * A virtual document's origin. Hand-written or half-written `source` degrades to
  * "not virtual" rather than making the file unreadable, like every other field
  * here — an item that loses its source is merely an ordinary note.
@@ -215,6 +238,8 @@ export function serializeFile(
     // first column is", so an untouched task needs no key.
     if (item.status) fm.status = item.status;
     if (item.image) fm.image = item.image;
+    // Only alongside the image it credits: a credit without a photo is a lie.
+    if (item.image && item.imageCredit) fm.imageCredit = item.imageCredit;
     if (item.description) fm.description = item.description;
     if (item.source) fm.source = item.source;
     if (item.summary) fm.summary = item.summary;
@@ -259,6 +284,7 @@ export function toItem(parsed: ParsedFile, ctx: ToItemContext): Item {
         flags,
         id: ctx.id,
         image: str(data.image),
+        imageCredit: imageCredit(data.imageCredit),
         points: strArray(data.points).length ? strArray(data.points) : undefined,
         priority: priority(data.priority),
         related: ctx.relatedIds,

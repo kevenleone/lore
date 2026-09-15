@@ -817,6 +817,54 @@ describe('virtual documents', () => {
     });
 });
 
+describe('image credit', () => {
+    const credit = {
+        name: 'Ada Lovelace',
+        profileUrl: 'https://unsplash.com/@ada?utm_source=lore&utm_medium=referral',
+        provider: 'unsplash' as const,
+    };
+
+    const roundTrip = (item: Item) =>
+        toItem(parseFile(serializeFile(item, [])), {
+            id: 'C1',
+            mtime: '',
+            relatedIds: [],
+            stem: 'c',
+        });
+
+    const withCredit = (over: Partial<Item> = {}) =>
+        ({
+            ...baseItem({
+                image: 'https://images.unsplash.com/p.jpg',
+                imageCredit: credit,
+                ...over,
+            }),
+            createdAt: '2026-01-01T00:00:00.000Z',
+            id: 'C1',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+        }) as Item;
+
+    it('round-trips a photo credit through front matter', () => {
+        expect(roundTrip(withCredit()).imageCredit).toEqual(credit);
+    });
+
+    // The byline exists to say who took *this* photo. Kept without one it would
+    // credit a photographer for an image that is no longer theirs.
+    it('drops the credit when the image it belongs to is gone', () => {
+        const text = serializeFile(withCredit({ image: undefined }), []);
+        expect(text).not.toContain('imageCredit');
+    });
+
+    it('ignores a credit that names no photographer', () => {
+        const text =
+            '---\nid: X\ntitle: T\ntype: note\nimage: https://x/y.jpg\n' +
+            'imageCredit:\n  provider: unsplash\n---\n\nBody\n';
+        const back = toItem(parseFile(text), { id: 'X', mtime: '', relatedIds: [], stem: 'x' });
+        expect(back.imageCredit).toBeUndefined();
+        expect(back.image).toBe('https://x/y.jpg');
+    });
+});
+
 describe('boards', () => {
     it('round-trips a task’s status through front matter', async () => {
         const s = await open();

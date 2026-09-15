@@ -90,6 +90,18 @@ export interface Filters {
 export type IconName =
     'board' | 'calendar' | 'file' | 'globe' | 'inbox' | 'layers' | 'sun' | 'tag' | ItemType;
 
+/**
+ * A picked photo's attribution. Unsplash's API terms require the photographer's
+ * name to link to their profile and the word Unsplash to link back, both
+ * carrying the app's UTM parameters — so the name alone is not enough to store.
+ */
+export interface ImageCredit {
+    name: string;
+    /** The photographer's profile page, without UTM; `creditLinks` adds those. */
+    profileUrl: string;
+    provider: 'unsplash';
+}
+
 export interface Item {
     /**
      * The item's own content: the note/task/code text, or the user's notes on a
@@ -122,6 +134,11 @@ export interface Item {
     id: string;
     /** Preview image URL (e.g. OpenGraph image for links). */
     image?: string;
+    /**
+     * Who took `image`, when it came from a stock provider. Present only for a
+     * picked photo: an OpenGraph image is the page's own and needs no credit.
+     */
+    imageCredit?: ImageCredit;
     /**
      * Vault-relative file path, supplied by the store that owns the file. Read
      * only — renaming goes through `renameItem`, since it has to rewrite every
@@ -462,6 +479,11 @@ export interface Prefs {
     propertiesOpen: boolean;
     switches: Switches;
     textSize: number;
+    /**
+     * Unsplash Access Key for the thumbnail picker. Null disables the search
+     * outright — nothing reaches Unsplash until a key is pasted in Settings.
+     */
+    unsplashKey: null | string;
     viewMode: ViewMode;
     weekStart: WeekStart;
 }
@@ -481,6 +503,7 @@ export const DEFAULT_PREFS: Prefs = {
     propertiesOpen: false,
     switches: DEFAULT_SWITCHES,
     textSize: 1,
+    unsplashKey: null,
     viewMode: 'list',
     weekStart: 'Monday',
 };
