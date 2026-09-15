@@ -12,6 +12,7 @@ import { openExternal } from '../../lib/appInfo';
 import { useAssetSrc } from '../../lib/assetSrc';
 import { cn } from '../../lib/cn';
 import { formatRelative, formatSavedDate } from '../../lib/format';
+import { useImageFallback } from '../../lib/imageFallback';
 import { joinBody, parseSubtasks, stripSubtasks, toggleSubtask } from '../../lib/subtasks';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
@@ -96,6 +97,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     const tagInputRef = useRef<HTMLInputElement>(null);
     // Above the `!sel` return: a hook cannot run conditionally.
     const previewSrc = useAssetSrc(sel?.image);
+    const { broken: previewBroken, onError: onPreviewError } = useImageFallback(previewSrc);
 
     useEffect(() => {
         setEditingTitle(false);
@@ -441,12 +443,20 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                      * got. No width is forced either, so a small preview stays its
                      * own size rather than being blown up to fill the pane. */
                     <div className="mt-5 mb-1 flex justify-center overflow-hidden rounded-[13px] border border-border bg-surface3">
-                        <img
-                            alt={sel.title}
-                            className="block max-h-[420px] max-w-full"
-                            draggable={false}
-                            src={previewSrc}
-                        />
+                        {previewBroken ? (
+                            <div className="flex h-[140px] w-full flex-col items-center justify-center gap-[7px] text-text3">
+                                <Icon name="image" size={22} />
+                                <span className="text-body">Preview image is unavailable</span>
+                            </div>
+                        ) : (
+                            <img
+                                alt={sel.title}
+                                className="block max-h-[420px] max-w-full"
+                                draggable={false}
+                                onError={onPreviewError}
+                                src={previewSrc}
+                            />
+                        )}
                     </div>
                 )}
 
