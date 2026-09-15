@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    editSubtask,
     joinBody,
     parseSubtasks,
     serializeSubtasks,
@@ -74,5 +75,28 @@ describe('toggleSubtask', () => {
         const next = toggleSubtask(subtasks, 1);
         expect(next[1].done).toBe(true);
         expect(subtasks[1].done).toBe(false);
+    });
+});
+
+describe('editSubtask', () => {
+    const subtasks = [
+        { done: true, text: 'a' },
+        { done: false, text: 'b' },
+    ];
+
+    it('renames one entry and keeps its tick', () => {
+        expect(editSubtask(subtasks, 0, '  renamed  ')).toEqual([
+            { done: true, text: 'renamed' },
+            { done: false, text: 'b' },
+        ]);
+    });
+
+    it('removes the entry when the text is emptied', () => {
+        expect(editSubtask(subtasks, 0, '   ')).toEqual([{ done: false, text: 'b' }]);
+    });
+
+    it('copies rather than mutates', () => {
+        editSubtask(subtasks, 1, 'c');
+        expect(subtasks[1].text).toBe('b');
     });
 });
