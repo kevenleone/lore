@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import type { Subtask } from '../../lib/subtasks';
-import type { OpenMode } from '../../store/types';
+import type { ImageCredit, OpenMode } from '../../store/types';
 
 import { openExternal } from '../../lib/appInfo';
 import { useAssetSrc } from '../../lib/assetSrc';
@@ -20,6 +20,7 @@ import {
     stripSubtasks,
     toggleSubtask,
 } from '../../lib/subtasks';
+import { UNSPLASH_HOME } from '../../lib/unsplash';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
 import {
@@ -478,6 +479,13 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                     </div>
                 )}
 
+                {/* The photographer's byline. Unsplash's API terms require it
+                    wherever the photo is shown, which is here — the thumbnail
+                    in a list row has nowhere to put a line of text. */}
+                {flags.showPreview && previewSrc && !previewBroken && sel.imageCredit && (
+                    <PhotoCredit credit={sel.imageCredit} />
+                )}
+
                 {/* body: a virtual document reads, everything else edits */}
                 {virtual ? (
                     <DocumentView className="mt-5" markdown={sel.body ?? ''} />
@@ -697,6 +705,30 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
 
                 {flags.showRelated && <RelatedCards related={related} />}
             </div>
+        </div>
+    );
+}
+
+/** `Photo by <name> on Unsplash`, both halves linked and UTM-tagged. */
+function PhotoCredit({ credit }: { credit: ImageCredit }) {
+    return (
+        <div className="mt-[6px] text-body text-text3">
+            Photo by{' '}
+            <button
+                className="border-none bg-transparent p-0 font-[inherit] text-[inherit] text-text2 underline"
+                onClick={() => openExternal(credit.profileUrl)}
+                type="button"
+            >
+                {credit.name}
+            </button>{' '}
+            on{' '}
+            <button
+                className="border-none bg-transparent p-0 font-[inherit] text-[inherit] text-text2 underline"
+                onClick={() => openExternal(UNSPLASH_HOME)}
+                type="button"
+            >
+                Unsplash
+            </button>
         </div>
     );
 }

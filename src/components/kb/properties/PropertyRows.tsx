@@ -4,18 +4,23 @@
 // capture time is the one thing about a note that should not be rewritable from
 // a dropdown.
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import type { Item, ItemFlags, ItemType, Priority } from '../../../store/types';
 
+import { getRepository } from '../../../data';
+import { useAssetSrc } from '../../../lib/assetSrc';
 import { cn } from '../../../lib/cn';
 import { formatSavedDate } from '../../../lib/format';
+import { useImageFallback } from '../../../lib/imageFallback';
+import { creditFor, trackDownload, type UnsplashPhoto } from '../../../lib/unsplash';
 import { TYPE_META, typeMeta } from '../../../store/typeMeta';
 import { PRIORITIES } from '../../../store/types';
 import { useStore } from '../../../store/useStore';
 import { Calendar, Globe, Link, Timer } from '../../common/glyphs';
 import { Icon } from '../../common/Icon';
 import { MenuItem, Picker, ReadOnly, Row } from './controls';
+import { UnsplashPicker } from './UnsplashPicker';
 
 const TYPES = Object.keys(TYPE_META) as ItemType[];
 
@@ -29,8 +34,15 @@ const FLAGS: { key: keyof ItemFlags; label: string }[] = [
 export function PropertyRows({ item }: { item: Item }) {
     const collections = useStore((s) => s.collections);
     const updateItem = useStore((s) => s.updateItem);
+    const unsplashKey = useStore((s) => s.prefs.unsplashKey);
     const [editingUrl, setEditingUrl] = useState(false);
     const [urlDraft, setUrlDraft] = useState('');
+    const [editingImage, setEditingImage] = useState(false);
+    const [imageDraft, setImageDraft] = useState('');
+    const [picking, setPicking] = useState(false);
+    const fileInput = useRef<HTMLInputElement>(null);
+    const thumbnailSrc = useAssetSrc(item.image);
+    const { broken: thumbnailBroken, onError: onThumbnailError } = useImageFallback(thumbnailSrc);
 
     const collection = collections.find((c) => c.id === item.collectionId);
 
@@ -38,6 +50,27 @@ export function PropertyRows({ item }: { item: Item }) {
         const next = urlDraft.trim();
         setEditingUrl(false);
         if (next !== (item.url ?? '')) void updateItem(item.id, { url: next || undefined });
+    };
+
+    const commitImage = () => {
+        const next = imageDraft.trim();
+        setEditingImage(false);
+        if (next === (item.image ?? '')) return;
+        // A hand-typed URL is nobody's credited photo, so the byline goes with
+        // the image it belonged to.
+        void updateItem(item.id, { image: next || undefined, imageCredit: undefined });
+    };
+
+    const pickPhoto = (photo: UnsplashPhoto) => {
+        setPicking(false);
+        if (unsplashKey) trackDownload(unsplashKey, photo.downloadLocation);
+        void updateItem(item.id, { image: photo.url, imageCredit: creditFor(photo) });
+    };
+
+    /** A picked file is copied into the vault; the item stores the path it lands at. */
+    const uploadThumbnail = async (file: File) => {
+        const stored = await getRepository().uploadAttachment?.(file);
+        if (stored) await updateItem(item.id, { image: stored, imageCredit: undefined });
     };
 
     return (
@@ -177,6 +210,105 @@ export function PropertyRows({ item }: { item: Item }) {
                 </span>
             </Row>
 
+            <Row icon={<Icon name="image" size={13} />} label="Thumbnail">
+                {editingImage ? (
+                    <input
+                        autoFocus
+                        className="w-full min-w-0 border-b-[1.5px] border-none border-b-accent bg-transparent text-right font-[inherit] text-body text-text outline-none"
+                        onBlur={commitImage}
+                        onChange={(e) => setImageDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') commitImage();
+                            if (e.key === 'Escape') setEditingImage(false);
+                        }}
+                        placeholder="https://…/image.png"
+                        value={imageDraft}
+                    />
+                ) : (
+                    <Picker
+                        trigger={
+                            <Thumbnail
+                                broken={thumbnailBroken}
+                                onError={onThumbnailError}
+                                src={thumbnailSrc}
+                            />
+                        }
+                        width={180}
+                    >
+                        {(close) => (
+                            <>
+                                <MenuItem
+                                    onClick={() => {
+                                        close();
+                                        setImageDraft(item.image ?? '');
+                                        setEditingImage(true);
+                                    }}
+                                    selected={false}
+                                >
+                                    Use an image URL…
+                                </MenuItem>
+                                <MenuItem
+                                    onClick={() => {
+                                        close();
+                                        fileInput.current?.click();
+                                    }}
+                                    selected={false}
+                                >
+                                    Choose a file…
+                                </MenuItem>
+                                {/* Absent rather than disabled without a key:
+                                    a menu entry that cannot do anything is
+                                    worse than one that is not offered. */}
+                                {unsplashKey && (
+                                    <MenuItem
+                                        onClick={() => {
+                                            close();
+                                            setPicking(true);
+                                        }}
+                                        selected={false}
+                                    >
+                                        Search Unsplash…
+                                    </MenuItem>
+                                )}
+                                {item.image && (
+                                    <MenuItem
+                                        onClick={() => {
+                                            close();
+                                            void updateItem(item.id, {
+                                                image: undefined,
+                                                imageCredit: undefined,
+                                            });
+                                        }}
+                                        selected={false}
+                                    >
+                                        Remove
+                                    </MenuItem>
+                                )}
+                            </>
+                        )}
+                    </Picker>
+                )}
+            </Row>
+            <input
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    // Cleared so picking the same file twice fires again.
+                    e.target.value = '';
+                    if (file) void uploadThumbnail(file);
+                }}
+                ref={fileInput}
+                type="file"
+            />
+            {picking && (
+                <UnsplashPicker
+                    onClose={() => setPicking(false)}
+                    onPick={pickPhoto}
+                    query={item.title}
+                />
+            )}
+
             <Row icon={<Link />} label="URL">
                 {editingUrl ? (
                     <input
@@ -230,6 +362,32 @@ function FlagChip({ label, on, onClick }: { label: string; on: boolean; onClick:
 /** `normal` is the absence of a priority, so it is stored as nothing at all. */
 function normalize(priority: Priority): Priority | undefined {
     return priority === 'normal' ? undefined : priority;
+}
+
+/** The current thumbnail, at the size the panel's value column allows. */
+function Thumbnail({
+    broken,
+    onError,
+    src,
+}: {
+    broken: boolean;
+    onError: () => void;
+    src?: string;
+}) {
+    if (!src || broken) {
+        return <span className="text-body text-faint">{broken ? 'Broken' : 'None'}</span>;
+    }
+    return (
+        <span className="block h-[22px] w-[34px] overflow-hidden rounded-[5px] border border-border">
+            <img
+                alt=""
+                className="h-full w-full object-cover"
+                draggable={false}
+                onError={onError}
+                src={src}
+            />
+        </span>
+    );
 }
 
 function TypeBadge({ type }: { type: ItemType }) {
