@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import type { Subtask } from '../../lib/subtasks';
-import type { ImageCredit, OpenMode } from '../../store/types';
+import type { ImageCredit, Item, OpenMode } from '../../store/types';
 
 import { openExternal } from '../../lib/appInfo';
 import { useAssetSrc } from '../../lib/assetSrc';
@@ -46,6 +46,7 @@ import { Icon } from '../common/Icon';
 import { BodyEditor } from '../editor/BodyEditor';
 import { DocumentView } from '../editor/DocumentView';
 import { AiSummaryCard } from './AiSummaryCard';
+import { ItemBanner } from './ItemBanner';
 import { RelatedCards } from './RelatedCards';
 
 /** The pane's own section headings (Tags, Related). */
@@ -81,6 +82,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     const propertiesOpen = useStore((s) => s.prefs.propertiesOpen);
     const toggleProperties = useStore((s) => s.toggleProperties);
     const rawDefault = useStore((s) => s.prefs.switches.rawMarkdownDefault);
+    const bannerPlacement = useStore((s) => s.prefs.bannerPlacement);
     const deleteItem = useStore((s) => s.deleteItem);
     const refreshSource = useStore((s) => s.refreshSource);
     const updateItem = useStore((s) => s.updateItem);
@@ -141,6 +143,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     const coll = collectionFor(sel, collections);
     const related = relatedItems(sel, items);
     const flags = detailFlags(sel, showSections, related.length);
+    const cover = flags.showPreview && bannerPlacement === 'cover';
     const linkUrl =
         sel.type === 'link' ? sel.url || (sel.domain ? `https://${sel.domain}` : '') : '';
 
@@ -264,469 +267,506 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
             <div
                 className={cn(
                     'flex-1 overflow-auto',
-                    // A page fills the window, so its column is centred and capped
-                    // rather than run out to a 1200px measure.
-                    asPage ? 'px-[max(48px,calc((100%-700px)/2))] py-[34px]' : 'px-[34px] py-7',
+                    // Over the pane's own left border, which the cover has to reach:
+                    // this box clips its children, so a banner that starts inside it
+                    // leaves that border showing as a seam against the image.
+                    cover && '-ml-px w-[calc(100%+1px)]',
                 )}
             >
-                {/* header row */}
-                <div className="relative flex items-center gap-3">
-                    <span
-                        className={cn(
-                            'inline-flex items-center gap-[6px] rounded-md px-[9px] py-[3px] text-label font-semibold',
-                            meta.chip,
-                        )}
-                    >
-                        <Icon name={sel.type} size={13} /> {meta.label}
-                    </span>
-                    {sel.domain && (
-                        <span className="inline-flex items-center gap-[5px] text-body text-text3">
-                            <Globe />
-                            {sel.domain}
-                        </span>
+                {cover && <CoverBanner item={sel} />}
+                <div
+                    className={cn(
+                        // A page fills the window, so its column is centred and capped
+                        // rather than run out to a 1200px measure.
+                        asPage ? 'px-[max(48px,calc((100%-700px)/2))] py-[34px]' : 'px-[34px] py-7',
                     )}
-                    <span className="ml-auto flex items-center gap-2">
-                        {linkUrl && (
-                            <button
-                                className="inline-flex items-center gap-[6px] rounded-lg border border-border bg-transparent px-[11px] py-[5px] font-[inherit] text-body text-text2 hover:bg-hover"
-                                onClick={() => void openExternal(linkUrl)}
-                                type="button"
-                            >
-                                <External />
-                                Open
-                            </button>
+                >
+                    {/* header row */}
+                    <div className="relative flex items-center gap-3">
+                        <span
+                            className={cn(
+                                'inline-flex items-center gap-[6px] rounded-md px-[9px] py-[3px] text-label font-semibold',
+                                meta.chip,
+                            )}
+                        >
+                            <Icon name={sel.type} size={13} /> {meta.label}
+                        </span>
+                        {sel.domain && (
+                            <span className="inline-flex items-center gap-[5px] text-body text-text3">
+                                <Globe />
+                                {sel.domain}
+                            </span>
                         )}
-                        {useBlockEditor && (
+                        <span className="ml-auto flex items-center gap-2">
+                            {linkUrl && (
+                                <button
+                                    className="inline-flex items-center gap-[6px] rounded-lg border border-border bg-transparent px-[11px] py-[5px] font-[inherit] text-body text-text2 hover:bg-hover"
+                                    onClick={() => void openExternal(linkUrl)}
+                                    type="button"
+                                >
+                                    <External />
+                                    Open
+                                </button>
+                            )}
+                            {useBlockEditor && (
+                                <button
+                                    aria-pressed={raw}
+                                    className={cn(
+                                        'inline-flex border-none bg-none p-1',
+                                        raw ? 'text-accent' : 'text-[#c4c4cc]',
+                                    )}
+                                    onClick={() => setRaw((current) => !current)}
+                                    title={raw ? 'Show the editor' : 'Edit raw Markdown'}
+                                    type="button"
+                                >
+                                    <Source />
+                                </button>
+                            )}
                             <button
-                                aria-pressed={raw}
+                                aria-pressed={propertiesOpen}
                                 className={cn(
                                     'inline-flex border-none bg-none p-1',
-                                    raw ? 'text-accent' : 'text-[#c4c4cc]',
+                                    propertiesOpen ? 'text-accent' : 'text-[#c4c4cc]',
                                 )}
-                                onClick={() => setRaw((current) => !current)}
-                                title={raw ? 'Show the editor' : 'Edit raw Markdown'}
+                                onClick={toggleProperties}
+                                title="Properties (⌘L)"
                                 type="button"
                             >
-                                <Source />
+                                <PanelRight />
                             </button>
-                        )}
-                        <button
-                            aria-pressed={propertiesOpen}
-                            className={cn(
-                                'inline-flex border-none bg-none p-1',
-                                propertiesOpen ? 'text-accent' : 'text-[#c4c4cc]',
-                            )}
-                            onClick={toggleProperties}
-                            title="Properties (⌘L)"
-                            type="button"
-                        >
-                            <PanelRight />
-                        </button>
-                        <button
-                            className={cn(
-                                'inline-flex border-none bg-none p-1',
-                                sel.flags.starred ? 'text-accent' : 'text-[#c4c4cc]',
-                            )}
-                            onClick={() => void toggleStar(sel.id)}
-                            title={sel.flags.starred ? 'Unstar' : 'Star'}
-                            type="button"
-                        >
-                            <StarOutline
-                                style={sel.flags.starred ? { fill: 'var(--ac)' } : undefined}
-                            />
-                        </button>
-                        <button
-                            className="inline-flex border-none bg-none p-1 text-faint"
-                            onClick={() => setConfirmDelete(true)}
-                            title="Delete"
-                            type="button"
-                        >
-                            <Trash />
-                        </button>
-                        {onClose && (
                             <button
-                                aria-label="Close"
-                                className="inline-flex border-none bg-none p-1 text-faint"
-                                onClick={onClose}
-                                title="Close (Esc)"
+                                className={cn(
+                                    'inline-flex border-none bg-none p-1',
+                                    sel.flags.starred ? 'text-accent' : 'text-[#c4c4cc]',
+                                )}
+                                onClick={() => void toggleStar(sel.id)}
+                                title={sel.flags.starred ? 'Unstar' : 'Star'}
                                 type="button"
                             >
-                                <Close size={16} sw={2} />
+                                <StarOutline
+                                    style={sel.flags.starred ? { fill: 'var(--ac)' } : undefined}
+                                />
                             </button>
-                        )}
-                    </span>
+                            <button
+                                className="inline-flex border-none bg-none p-1 text-faint"
+                                onClick={() => setConfirmDelete(true)}
+                                title="Delete"
+                                type="button"
+                            >
+                                <Trash />
+                            </button>
+                            {onClose && (
+                                <button
+                                    aria-label="Close"
+                                    className="inline-flex border-none bg-none p-1 text-faint"
+                                    onClick={onClose}
+                                    title="Close (Esc)"
+                                    type="button"
+                                >
+                                    <Close size={16} sw={2} />
+                                </button>
+                            )}
+                        </span>
 
-                    {confirmDelete && (
-                        <div className="absolute top-9 right-0 z-30 w-[260px] rounded-xl border border-border bg-surface p-4 shadow-[0_16px_40px_-12px_rgba(24,24,48,.35)]">
-                            <div className="text-title font-semibold text-text">
-                                Delete this item?
+                        {confirmDelete && (
+                            <div className="absolute top-9 right-0 z-30 w-[260px] rounded-xl border border-border bg-surface p-4 shadow-[0_16px_40px_-12px_rgba(24,24,48,.35)]">
+                                <div className="text-title font-semibold text-text">
+                                    Delete this item?
+                                </div>
+                                <div className="mt-1 text-body text-text3">
+                                    This removes “{sel.title}” from your knowledge base.
+                                </div>
+                                <div className="mt-[14px] flex justify-end gap-2">
+                                    <button
+                                        className="rounded-lg border-none bg-transparent px-3 py-[6px] font-[inherit] text-body-lg text-text2"
+                                        onClick={() => setConfirmDelete(false)}
+                                        type="button"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        className="rounded-lg border-none bg-danger px-[14px] py-[6px] font-[inherit] text-body-lg font-semibold text-white"
+                                        onClick={() => {
+                                            setConfirmDelete(false);
+                                            void deleteItem(sel.id);
+                                        }}
+                                        type="button"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
                             </div>
-                            <div className="mt-1 text-body text-text3">
-                                This removes “{sel.title}” from your knowledge base.
+                        )}
+                    </div>
+
+                    {/* editable title */}
+                    {editingTitle ? (
+                        <input
+                            autoFocus
+                            className="mt-[14px] w-full border-b-2 border-none border-b-accent bg-transparent text-[23px] leading-[1.25] font-bold tracking-[-.015em] text-text outline-none"
+                            onBlur={commitTitle}
+                            onChange={(e) => setTitleDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') commitTitle();
+                                if (e.key === 'Escape') setEditingTitle(false);
+                            }}
+                            value={titleDraft}
+                        />
+                    ) : (
+                        <h1
+                            className="mt-[14px] mb-0 cursor-text text-[23px] leading-[1.25] font-bold tracking-[-.015em] text-text select-text"
+                            onClick={() => {
+                                setTitleDraft(sel.title);
+                                setEditingTitle(true);
+                            }}
+                            title="Click to edit"
+                        >
+                            {sel.title}
+                        </h1>
+                    )}
+
+                    <div className="mt-[9px] flex items-center gap-[7px] text-body text-text3">
+                        <span
+                            className="h-[9px] w-[9px] rounded-full"
+                            // The collection's own colour, which the user picks.
+                            style={{ background: coll?.color ?? '#c4c4cc' }}
+                        />
+                        {coll?.name ?? 'Unfiled'}
+                        <span className="opacity-50">·</span>
+                        Saved {formatSavedDate(sel.createdAt)}
+                    </div>
+
+                    {/* where a virtual document comes from, and why it does not edit */}
+                    {virtual && sel.source && (
+                        <div className="mt-5 flex flex-wrap items-center gap-x-[10px] gap-y-2 rounded-11 border border-border bg-surface2 px-[14px] py-[10px] text-body text-text3">
+                            <Source size={13} />
+                            <span
+                                className="rounded-md bg-surface3 px-[7px] py-[2px] text-caption font-semibold tracking-[.03em] text-text3 uppercase"
+                                title="Lore keeps this document in step with its origin instead of editing it. Delete the source block from the file to make it your own."
+                            >
+                                Read-only
+                            </span>
+                            <button
+                                className="truncate border-none bg-transparent p-0 font-[inherit] text-text2 underline decoration-border underline-offset-2"
+                                onClick={() => void openExternal(sel.source!.raw)}
+                                title={sel.source.raw}
+                                type="button"
+                            >
+                                {sourceLabel(sel.source.raw)}
+                            </button>
+                            <span className="opacity-50">·</span>
+                            <span>Fetched {formatRelative(sel.source.fetched)}</span>
+                            <button
+                                className="ml-auto rounded-7 border-none bg-transparent px-[9px] py-[4px] font-[inherit] text-body-lg text-text2 hover:bg-hover"
+                                onClick={() => void refreshSource(sel.id)}
+                                type="button"
+                            >
+                                Refresh
+                            </button>
+                        </div>
+                    )}
+
+                    {/* image preview — only when there is an image */}
+                    {flags.showPreview && previewSrc && !cover && (
+                        /* The whole image, never a crop of it. A link preview is
+                         * usually a composed 1200×630 card whose text runs to its
+                         * edges, and a fixed height cut more of it the wider the pane
+                         * got. No width is forced either, so a small preview stays its
+                         * own size rather than being blown up to fill the pane. */
+                        <div className="mt-5 mb-1 flex justify-center overflow-hidden rounded-[13px] border border-border bg-surface3">
+                            {previewBroken ? (
+                                <div className="flex h-[140px] w-full flex-col items-center justify-center gap-[7px] text-text3">
+                                    <Icon name="image" size={22} />
+                                    <span className="text-body">Preview image is unavailable</span>
+                                </div>
+                            ) : (
+                                <img
+                                    alt={sel.title}
+                                    className="block max-h-[420px] max-w-full"
+                                    draggable={false}
+                                    onError={onPreviewError}
+                                    src={previewSrc}
+                                />
+                            )}
+                        </div>
+                    )}
+
+                    {/* The photographer's byline. Unsplash's API terms require it
+                        wherever the photo is shown, which is here — the thumbnail
+                        in a list row has nowhere to put a line of text. */}
+                    {flags.showPreview &&
+                        previewSrc &&
+                        !previewBroken &&
+                        !cover &&
+                        sel.imageCredit && <PhotoCredit credit={sel.imageCredit} />}
+
+                    {/* body: a virtual document reads, everything else edits */}
+                    {virtual ? (
+                        <DocumentView className="mt-5" markdown={sel.body ?? ''} />
+                    ) : useBlockEditor ? (
+                        <BodyEditor
+                            itemId={sel.id}
+                            onCommit={commitBodyMarkdown}
+                            placeholder="Add content…"
+                            raw={raw}
+                            value={bodyValue ?? ''}
+                        />
+                    ) : bodyField && editingBody ? (
+                        <textarea
+                            autoFocus
+                            className={bodyTextareaClass(flags.detIsCode)}
+                            onBlur={commitBody}
+                            onChange={(e) => setBodyDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Escape') setEditingBody(false);
+                                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) commitBody();
+                            }}
+                            placeholder={
+                                bodyField === 'description' ? 'Add a description…' : 'Add content…'
+                            }
+                            value={bodyDraft}
+                        />
+                    ) : flags.detIsCode ? (
+                        <pre
+                            className="mt-5 mb-1 cursor-text overflow-auto rounded-11 border border-border bg-surface3 p-4 font-mono text-body-lg leading-[1.7] whitespace-pre text-text2 select-text"
+                            onClick={startBody}
+                            title="Click to edit"
+                        >
+                            {sel.body}
+                        </pre>
+                    ) : bodyField === 'body' ? (
+                        <p
+                            className={cn(
+                                'mt-[18px] mb-1 cursor-text text-title-lg leading-[1.65] select-text',
+                                bodyValue ? 'text-text2' : 'text-faint',
+                            )}
+                            onClick={startBody}
+                            title="Click to edit"
+                        >
+                            {bodyValue || 'Add content…'}
+                        </p>
+                    ) : sel.type === 'link' ? (
+                        <p
+                            className={cn(
+                                'mt-[18px] mb-1 cursor-text text-[14.5px] leading-[1.6] select-text',
+                                sel.description ? 'text-text2' : 'text-faint',
+                            )}
+                            onClick={startBody}
+                            title="Click to edit"
+                        >
+                            {sel.description || 'Add a description…'}
+                        </p>
+                    ) : null}
+
+                    {/* subtasks — a task's checklist, editable in place */}
+                    {isTask && (
+                        <div className="mt-6">
+                            <div className="flex items-center gap-[9px]">
+                                <span className={SECTION_LABEL}>Subtasks</span>
+                                {subtasks.length > 0 && (
+                                    <span className="font-mono text-caption text-text3">
+                                        {subtasks.filter((t) => t.done).length}/{subtasks.length}
+                                    </span>
+                                )}
                             </div>
-                            <div className="mt-[14px] flex justify-end gap-2">
-                                <button
-                                    className="rounded-lg border-none bg-transparent px-3 py-[6px] font-[inherit] text-body-lg text-text2"
-                                    onClick={() => setConfirmDelete(false)}
-                                    type="button"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    className="rounded-lg border-none bg-danger px-[14px] py-[6px] font-[inherit] text-body-lg font-semibold text-white"
-                                    onClick={() => {
-                                        setConfirmDelete(false);
-                                        void deleteItem(sel.id);
-                                    }}
-                                    type="button"
-                                >
-                                    Delete
-                                </button>
+                            <div className="mt-[10px] flex flex-col gap-[2px]">
+                                {subtasks.map((subtask, index) => (
+                                    <div
+                                        className="group flex items-start gap-[10px] rounded-7 px-2 py-[5px] hover:bg-hover"
+                                        key={`${index}-${subtask.text}`}
+                                    >
+                                        {/* The box ticks it; the label opens it for
+                                            editing. One control for both meant a
+                                            subtask could never be corrected. */}
+                                        <button
+                                            aria-checked={!!subtask.done}
+                                            aria-label={subtask.text}
+                                            className={cn(
+                                                'mt-[3px] flex h-[16px] w-[16px] flex-none items-center justify-center rounded-[5px] border p-0',
+                                                subtask.done
+                                                    ? 'border-accent bg-accent text-white'
+                                                    : 'border-border text-transparent',
+                                            )}
+                                            onClick={() =>
+                                                writeSubtasks(toggleSubtask(subtasks, index))
+                                            }
+                                            role="checkbox"
+                                            type="button"
+                                        >
+                                            <Check size={11} sw={3} />
+                                        </button>
+                                        {editingSubtask === index ? (
+                                            <input
+                                                autoFocus
+                                                className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title leading-[1.5] text-text outline-none"
+                                                onBlur={() => commitSubtaskEdit(index)}
+                                                onChange={(e) => setSubtaskEdit(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        commitSubtaskEdit(index);
+                                                    }
+                                                    if (e.key === 'Escape') setEditingSubtask(null);
+                                                }}
+                                                value={subtaskEdit}
+                                            />
+                                        ) : (
+                                            <button
+                                                className={cn(
+                                                    'min-w-0 flex-1 border-none bg-transparent p-0 text-left font-[inherit] text-title leading-[1.5]',
+                                                    subtask.done
+                                                        ? 'text-text3 line-through'
+                                                        : 'text-text2',
+                                                )}
+                                                onClick={() => startSubtaskEdit(index)}
+                                                title="Click to edit"
+                                                type="button"
+                                            >
+                                                {subtask.text}
+                                            </button>
+                                        )}
+                                        <button
+                                            aria-label={`Remove ${subtask.text}`}
+                                            className="mt-[3px] flex-none border-none bg-transparent p-0 text-faint opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
+                                            onClick={() =>
+                                                writeSubtasks(
+                                                    subtasks.filter((_, j) => j !== index),
+                                                )
+                                            }
+                                            type="button"
+                                        >
+                                            <Close size={13} sw={2} />
+                                        </button>
+                                    </div>
+                                ))}
+                                <div className="flex items-center gap-[10px] px-2 py-[5px]">
+                                    <span className="h-[16px] w-[16px] flex-none rounded-[5px] border border-dashed border-dash" />
+                                    <input
+                                        className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title text-text outline-none placeholder:text-text3"
+                                        onBlur={commitSubtask}
+                                        onChange={(e) => setSubtaskDraft(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            // Enter adds the subtask and keeps the field
+                                            // focused, so a list goes in without reaching
+                                            // for the mouse between lines.
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                commitSubtask();
+                                            }
+                                            if (e.key === 'Escape') setSubtaskDraft('');
+                                        }}
+                                        placeholder="Add a subtask…"
+                                        value={subtaskDraft}
+                                    />
+                                </div>
                             </div>
                         </div>
                     )}
-                </div>
 
-                {/* editable title */}
-                {editingTitle ? (
-                    <input
-                        autoFocus
-                        className="mt-[14px] w-full border-b-2 border-none border-b-accent bg-transparent text-[23px] leading-[1.25] font-bold tracking-[-.015em] text-text outline-none"
-                        onBlur={commitTitle}
-                        onChange={(e) => setTitleDraft(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') commitTitle();
-                            if (e.key === 'Escape') setEditingTitle(false);
-                        }}
-                        value={titleDraft}
-                    />
-                ) : (
-                    <h1
-                        className="mt-[14px] mb-0 cursor-text text-[23px] leading-[1.25] font-bold tracking-[-.015em] text-text select-text"
-                        onClick={() => {
-                            setTitleDraft(sel.title);
-                            setEditingTitle(true);
-                        }}
-                        title="Click to edit"
-                    >
-                        {sel.title}
-                    </h1>
-                )}
+                    {flags.showSummary && sel.summary && (
+                        <AiSummaryCard
+                            points={sel.points ?? []}
+                            showPoints={flags.showPoints}
+                            summary={sel.summary}
+                        />
+                    )}
 
-                <div className="mt-[9px] flex items-center gap-[7px] text-body text-text3">
-                    <span
-                        className="h-[9px] w-[9px] rounded-full"
-                        // The collection's own colour, which the user picks.
-                        style={{ background: coll?.color ?? '#c4c4cc' }}
-                    />
-                    {coll?.name ?? 'Unfiled'}
-                    <span className="opacity-50">·</span>
-                    Saved {formatSavedDate(sel.createdAt)}
-                </div>
-
-                {/* where a virtual document comes from, and why it does not edit */}
-                {virtual && sel.source && (
-                    <div className="mt-5 flex flex-wrap items-center gap-x-[10px] gap-y-2 rounded-11 border border-border bg-surface2 px-[14px] py-[10px] text-body text-text3">
-                        <Source size={13} />
-                        <span
-                            className="rounded-md bg-surface3 px-[7px] py-[2px] text-caption font-semibold tracking-[.03em] text-text3 uppercase"
-                            title="Lore keeps this document in step with its origin instead of editing it. Delete the source block from the file to make it your own."
-                        >
-                            Read-only
-                        </span>
-                        <button
-                            className="truncate border-none bg-transparent p-0 font-[inherit] text-text2 underline decoration-border underline-offset-2"
-                            onClick={() => void openExternal(sel.source!.raw)}
-                            title={sel.source.raw}
-                            type="button"
-                        >
-                            {sourceLabel(sel.source.raw)}
-                        </button>
-                        <span className="opacity-50">·</span>
-                        <span>Fetched {formatRelative(sel.source.fetched)}</span>
-                        <button
-                            className="ml-auto rounded-7 border-none bg-transparent px-[9px] py-[4px] font-[inherit] text-body-lg text-text2 hover:bg-hover"
-                            onClick={() => void refreshSource(sel.id)}
-                            type="button"
-                        >
-                            Refresh
-                        </button>
-                    </div>
-                )}
-
-                {/* image preview — only when there is an image */}
-                {flags.showPreview && previewSrc && (
-                    /* The whole image, never a crop of it. A link preview is
-                     * usually a composed 1200×630 card whose text runs to its
-                     * edges, and a fixed height cut more of it the wider the pane
-                     * got. No width is forced either, so a small preview stays its
-                     * own size rather than being blown up to fill the pane. */
-                    <div className="mt-5 mb-1 flex justify-center overflow-hidden rounded-[13px] border border-border bg-surface3">
-                        {previewBroken ? (
-                            <div className="flex h-[140px] w-full flex-col items-center justify-center gap-[7px] text-text3">
-                                <Icon name="image" size={22} />
-                                <span className="text-body">Preview image is unavailable</span>
-                            </div>
-                        ) : (
-                            <img
-                                alt={sel.title}
-                                className="block max-h-[420px] max-w-full"
-                                draggable={false}
-                                onError={onPreviewError}
-                                src={previewSrc}
-                            />
-                        )}
-                    </div>
-                )}
-
-                {/* The photographer's byline. Unsplash's API terms require it
-                    wherever the photo is shown, which is here — the thumbnail
-                    in a list row has nowhere to put a line of text. */}
-                {flags.showPreview && previewSrc && !previewBroken && sel.imageCredit && (
-                    <PhotoCredit credit={sel.imageCredit} />
-                )}
-
-                {/* body: a virtual document reads, everything else edits */}
-                {virtual ? (
-                    <DocumentView className="mt-5" markdown={sel.body ?? ''} />
-                ) : useBlockEditor ? (
-                    <BodyEditor
-                        itemId={sel.id}
-                        onCommit={commitBodyMarkdown}
-                        placeholder="Add content…"
-                        raw={raw}
-                        value={bodyValue ?? ''}
-                    />
-                ) : bodyField && editingBody ? (
-                    <textarea
-                        autoFocus
-                        className={bodyTextareaClass(flags.detIsCode)}
-                        onBlur={commitBody}
-                        onChange={(e) => setBodyDraft(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Escape') setEditingBody(false);
-                            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) commitBody();
-                        }}
-                        placeholder={
-                            bodyField === 'description' ? 'Add a description…' : 'Add content…'
-                        }
-                        value={bodyDraft}
-                    />
-                ) : flags.detIsCode ? (
-                    <pre
-                        className="mt-5 mb-1 cursor-text overflow-auto rounded-11 border border-border bg-surface3 p-4 font-mono text-body-lg leading-[1.7] whitespace-pre text-text2 select-text"
-                        onClick={startBody}
-                        title="Click to edit"
-                    >
-                        {sel.body}
-                    </pre>
-                ) : bodyField === 'body' ? (
-                    <p
-                        className={cn(
-                            'mt-[18px] mb-1 cursor-text text-title-lg leading-[1.65] select-text',
-                            bodyValue ? 'text-text2' : 'text-faint',
-                        )}
-                        onClick={startBody}
-                        title="Click to edit"
-                    >
-                        {bodyValue || 'Add content…'}
-                    </p>
-                ) : sel.type === 'link' ? (
-                    <p
-                        className={cn(
-                            'mt-[18px] mb-1 cursor-text text-[14.5px] leading-[1.6] select-text',
-                            sel.description ? 'text-text2' : 'text-faint',
-                        )}
-                        onClick={startBody}
-                        title="Click to edit"
-                    >
-                        {sel.description || 'Add a description…'}
-                    </p>
-                ) : null}
-
-                {/* subtasks — a task's checklist, editable in place */}
-                {isTask && (
-                    <div className="mt-6">
-                        <div className="flex items-center gap-[9px]">
-                            <span className={SECTION_LABEL}>Subtasks</span>
-                            {subtasks.length > 0 && (
-                                <span className="font-mono text-caption text-text3">
-                                    {subtasks.filter((t) => t.done).length}/{subtasks.length}
-                                </span>
-                            )}
-                        </div>
-                        <div className="mt-[10px] flex flex-col gap-[2px]">
-                            {subtasks.map((subtask, index) => (
-                                <div
-                                    className="group flex items-start gap-[10px] rounded-7 px-2 py-[5px] hover:bg-hover"
-                                    key={`${index}-${subtask.text}`}
+                    {/* tags */}
+                    <div className="mt-5">
+                        <div className={cn(SECTION_LABEL, 'mb-[9px]')}>Tags</div>
+                        <div className="flex flex-wrap items-center gap-[7px]">
+                            {sel.tags.map((tag) => (
+                                <span
+                                    className="inline-flex items-center gap-[5px] rounded-7 bg-accent-tint px-[9px] py-1 font-mono text-body-sm text-accent"
+                                    key={tag}
                                 >
-                                    {/* The box ticks it; the label opens it for
-                                        editing. One control for both meant a
-                                        subtask could never be corrected. */}
+                                    #{tag}
                                     <button
-                                        aria-checked={!!subtask.done}
-                                        aria-label={subtask.text}
-                                        className={cn(
-                                            'mt-[3px] flex h-[16px] w-[16px] flex-none items-center justify-center rounded-[5px] border p-0',
-                                            subtask.done
-                                                ? 'border-accent bg-accent text-white'
-                                                : 'border-border text-transparent',
-                                        )}
-                                        onClick={() =>
-                                            writeSubtasks(toggleSubtask(subtasks, index))
-                                        }
-                                        role="checkbox"
+                                        aria-label={`Remove tag ${tag}`}
+                                        className="border-none bg-transparent p-0 font-[inherit] text-body-lg leading-none opacity-55"
+                                        onClick={() => void removeTag(sel.id, tag)}
                                         type="button"
                                     >
-                                        <Check size={11} sw={3} />
+                                        ×
                                     </button>
-                                    {editingSubtask === index ? (
-                                        <input
-                                            autoFocus
-                                            className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title leading-[1.5] text-text outline-none"
-                                            onBlur={() => commitSubtaskEdit(index)}
-                                            onChange={(e) => setSubtaskEdit(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault();
-                                                    commitSubtaskEdit(index);
-                                                }
-                                                if (e.key === 'Escape') setEditingSubtask(null);
-                                            }}
-                                            value={subtaskEdit}
-                                        />
-                                    ) : (
-                                        <button
-                                            className={cn(
-                                                'min-w-0 flex-1 border-none bg-transparent p-0 text-left font-[inherit] text-title leading-[1.5]',
-                                                subtask.done
-                                                    ? 'text-text3 line-through'
-                                                    : 'text-text2',
-                                            )}
-                                            onClick={() => startSubtaskEdit(index)}
-                                            title="Click to edit"
-                                            type="button"
-                                        >
-                                            {subtask.text}
-                                        </button>
-                                    )}
-                                    <button
-                                        aria-label={`Remove ${subtask.text}`}
-                                        className="mt-[3px] flex-none border-none bg-transparent p-0 text-faint opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
-                                        onClick={() =>
-                                            writeSubtasks(subtasks.filter((_, j) => j !== index))
-                                        }
-                                        type="button"
-                                    >
-                                        <Close size={13} sw={2} />
-                                    </button>
-                                </div>
+                                </span>
                             ))}
-                            <div className="flex items-center gap-[10px] px-2 py-[5px]">
-                                <span className="h-[16px] w-[16px] flex-none rounded-[5px] border border-dashed border-dash" />
+                            {addingTag ? (
                                 <input
-                                    className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title text-text outline-none placeholder:text-text3"
-                                    onBlur={commitSubtask}
-                                    onChange={(e) => setSubtaskDraft(e.target.value)}
+                                    className="w-20 rounded-7 border border-accent bg-transparent px-2 py-[3px] font-mono text-body-sm text-accent outline-none"
+                                    onBlur={commitTag}
+                                    onChange={(e) => setTagDraft(e.target.value)}
                                     onKeyDown={(e) => {
-                                        // Enter adds the subtask and keeps the field
-                                        // focused, so a list goes in without reaching
-                                        // for the mouse between lines.
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            commitSubtask();
+                                        if (e.key === 'Enter') commitTag();
+                                        if (e.key === 'Escape') {
+                                            setAddingTag(false);
+                                            setTagDraft('');
                                         }
-                                        if (e.key === 'Escape') setSubtaskDraft('');
                                     }}
-                                    placeholder="Add a subtask…"
-                                    value={subtaskDraft}
+                                    placeholder="tag"
+                                    ref={tagInputRef}
+                                    value={tagDraft}
                                 />
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {flags.showSummary && sel.summary && (
-                    <AiSummaryCard
-                        points={sel.points ?? []}
-                        showPoints={flags.showPoints}
-                        summary={sel.summary}
-                    />
-                )}
-
-                {/* tags */}
-                <div className="mt-5">
-                    <div className={cn(SECTION_LABEL, 'mb-[9px]')}>Tags</div>
-                    <div className="flex flex-wrap items-center gap-[7px]">
-                        {sel.tags.map((tag) => (
-                            <span
-                                className="inline-flex items-center gap-[5px] rounded-7 bg-accent-tint px-[9px] py-1 font-mono text-body-sm text-accent"
-                                key={tag}
-                            >
-                                #{tag}
+                            ) : (
                                 <button
-                                    aria-label={`Remove tag ${tag}`}
-                                    className="border-none bg-transparent p-0 font-[inherit] text-body-lg leading-none opacity-55"
-                                    onClick={() => void removeTag(sel.id, tag)}
+                                    className="rounded-7 border border-dashed border-dash bg-transparent px-[9px] py-[3px] font-mono text-body-sm text-faint"
+                                    onClick={() => setAddingTag(true)}
                                     type="button"
                                 >
-                                    ×
+                                    + add
                                 </button>
-                            </span>
-                        ))}
-                        {addingTag ? (
-                            <input
-                                className="w-20 rounded-7 border border-accent bg-transparent px-2 py-[3px] font-mono text-body-sm text-accent outline-none"
-                                onBlur={commitTag}
-                                onChange={(e) => setTagDraft(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') commitTag();
-                                    if (e.key === 'Escape') {
-                                        setAddingTag(false);
-                                        setTagDraft('');
-                                    }
-                                }}
-                                placeholder="tag"
-                                ref={tagInputRef}
-                                value={tagDraft}
-                            />
-                        ) : (
-                            <button
-                                className="rounded-7 border border-dashed border-dash bg-transparent px-[9px] py-[3px] font-mono text-body-sm text-faint"
-                                onClick={() => setAddingTag(true)}
-                                type="button"
-                            >
-                                + add
-                            </button>
-                        )}
+                            )}
+                        </div>
                     </div>
-                </div>
 
-                {flags.showRelated && <RelatedCards related={related} />}
+                    {flags.showRelated && <RelatedCards related={related} />}
+                </div>
             </div>
         </div>
     );
 }
 
-/** `Photo by <name> on Unsplash`, both halves linked and UTM-tagged. */
-function PhotoCredit({ credit }: { credit: ImageCredit }) {
+/**
+ * The full-bleed cover, for the placement that puts the image above everything.
+ * `ItemBanner` fills this box, which owns the height and the clipping.
+ */
+function CoverBanner({ item }: { item: Item }) {
     return (
-        <div className="mt-[6px] text-body text-text3">
+        <div className="relative h-[180px] w-full overflow-hidden bg-surface3">
+            {/* The image bleeds a pixel past the frame that clips it. `zoom`
+                puts the pane's own edge on a fraction of a device pixel, and a
+                flush image rounds inward from there — a light hairline between
+                the banner and the pane's border. */}
+            <div className="absolute -inset-px">
+                <ItemBanner item={item} />
+            </div>
+            {item.imageCredit && <PhotoCredit credit={item.imageCredit} overlay />}
+        </div>
+    );
+}
+
+/** `Photo by <name> on Unsplash`, both halves linked and UTM-tagged. */
+function PhotoCredit({ credit, overlay }: { credit: ImageCredit; overlay?: boolean }) {
+    const link = cn(
+        'border-none bg-transparent p-0 font-[inherit] underline',
+        overlay ? 'text-[inherit]' : 'text-text2',
+    );
+
+    return (
+        <div
+            className={cn(
+                'text-body',
+                overlay
+                    ? 'absolute right-2 bottom-2 rounded-5 bg-[rgba(20,20,28,.42)] px-[6px] py-[2px] text-white'
+                    : 'mt-[6px] text-text3',
+            )}
+        >
             Photo by{' '}
-            <button
-                className="border-none bg-transparent p-0 font-[inherit] text-[inherit] text-text2 underline"
-                onClick={() => openExternal(credit.profileUrl)}
-                type="button"
-            >
+            <button className={link} onClick={() => openExternal(credit.profileUrl)} type="button">
                 {credit.name}
             </button>{' '}
             on{' '}
-            <button
-                className="border-none bg-transparent p-0 font-[inherit] text-[inherit] text-text2 underline"
-                onClick={() => openExternal(UNSPLASH_HOME)}
-                type="button"
-            >
+            <button className={link} onClick={() => openExternal(UNSPLASH_HOME)} type="button">
                 Unsplash
             </button>
         </div>
