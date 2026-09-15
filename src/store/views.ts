@@ -179,14 +179,20 @@ export function collectionFor(item: Item, collections: Collection[]): Collection
 }
 
 /**
- * Which field the detail pane edits. note/task/code edit their own content and a
- * link edits its `description`; a document fetched from an origin edits nothing,
- * because its body is a live copy of someone else's file.
+ * Which field the detail pane's main editor writes. note/task/code/link all edit
+ * their own Markdown body — a link's `description` is what the page says about
+ * itself, edited beside the body rather than in place of it. A document fetched
+ * from an origin edits nothing, because its body is a live copy of someone
+ * else's file.
  */
-export function detailBodyField(item: Item): 'body' | 'description' | null {
+export function detailBodyField(item: Item): 'body' | null {
     if (item.source) return null;
-    if (item.type === 'code' || item.type === 'note' || item.type === 'task') return 'body';
-    return item.type === 'link' ? 'description' : null;
+    const writes =
+        item.type === 'code' ||
+        item.type === 'link' ||
+        item.type === 'note' ||
+        item.type === 'task';
+    return writes ? 'body' : null;
 }
 
 /** Detail-pane section visibility — mirrors the prototype's `sc-if` gates. */

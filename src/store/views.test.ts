@@ -268,12 +268,12 @@ describe('detailBodyField', () => {
         ...over,
     });
 
-    it.each(['code', 'note', 'task'] as const)('edits the body of a %s', (type) => {
+    it.each(['code', 'link', 'note', 'task'] as const)('edits the body of a %s', (type) => {
         expect(detailBodyField(item({ type }))).toBe('body');
     });
 
-    it('edits a link description', () => {
-        expect(detailBodyField(item({ description: 'D' }))).toBe('description');
+    it('sends a link to its body, not to the blurb the page gave it', () => {
+        expect(detailBodyField(item({ description: 'D' }))).toBe('body');
     });
 
     it('edits nothing on a document fetched from an origin', () => {

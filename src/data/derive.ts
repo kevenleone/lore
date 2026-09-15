@@ -31,8 +31,8 @@ export function deriveProse(body: string | undefined): string | undefined {
 }
 
 /**
- * The one-line preview the list pane shows. A link has no body of its own to
- * preview, so it falls back to what the page says about itself, then the URL.
+ * The one-line preview the list pane shows. A link with no notes of its own
+ * falls back to what the page says about itself, then the URL.
  */
 export function deriveSnippet(
     item: Pick<Item, 'body' | 'description' | 'type' | 'url'>,
