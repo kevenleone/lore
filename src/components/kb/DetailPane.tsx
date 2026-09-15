@@ -163,14 +163,21 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     const isTask = sel.type === 'task';
     const subtasks = isTask ? parseSubtasks(sel.body) : [];
     const prose = isTask ? stripSubtasks(sel.body) : (sel.body ?? '');
+    // A link's text is one Markdown field. `description` is where a capture put
+    // the page's own blurb, so it seeds that field until the first edit, which
+    // writes the body and drops the scalar — the two never both hold text.
+    const isLink = sel.type === 'link';
     const bodyValue =
         bodyField === 'body'
             ? isTask
                 ? prose
-                : sel.body
-            : bodyField === 'description'
-              ? sel.description
-              : undefined;
+                : (sel.body ?? (isLink ? sel.description : undefined))
+            : undefined;
+    const bodyPlaceholder = isLink ? 'Add a description…' : 'Add content…';
+
+    const writeBody = (body: string | undefined) => {
+        void updateItem(sel.id, { body, ...(isLink ? { description: undefined } : {}) });
+    };
 
     /** Every checklist edit rewrites the whole body, prose included. */
     const writeSubtasks = (next: readonly Subtask[]) => {
@@ -197,17 +204,18 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
         if (next && next !== sel.title) void updateItem(sel.id, { title: next });
     };
 
-    // Code is not prose, and a bookmark's text is a frontmatter scalar.
+    // Code is not prose; everything else writes Markdown, a bookmark's notes
+    // about the page included.
     const useBlockEditor =
         blockEditorEnabled &&
         bodyLoaded &&
         !virtual &&
-        (sel.type === 'note' || sel.type === 'task');
+        (sel.type === 'link' || sel.type === 'note' || sel.type === 'task');
 
     /** A task's editor holds only the prose; the Subtasks panel owns the rest. */
     const commitBodyMarkdown = (markdown: string) => {
         const body = isTask ? joinBody(markdown, subtasks) : markdown;
-        void updateItem(sel.id, { body: body || undefined });
+        writeBody(body || undefined);
     };
 
     const startBody = () => {
@@ -217,11 +225,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     const commitBody = () => {
         setEditingBody(false);
         if (bodyDraft === (bodyValue ?? '')) return;
-        if (bodyField === 'body')
-            void updateItem(sel.id, {
-                body: (isTask ? joinBody(bodyDraft, subtasks) : bodyDraft) || undefined,
-            });
-        else if (bodyField === 'description') void updateItem(sel.id, { description: bodyDraft });
+        writeBody((isTask ? joinBody(bodyDraft, subtasks) : bodyDraft) || undefined);
     };
 
     const commitTag = () => {
@@ -507,7 +511,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                         <BodyEditor
                             itemId={sel.id}
                             onCommit={commitBodyMarkdown}
-                            placeholder="Add content…"
+                            placeholder={bodyPlaceholder}
                             raw={raw}
                             value={bodyValue ?? ''}
                         />
@@ -521,9 +525,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                 if (e.key === 'Escape') setEditingBody(false);
                                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) commitBody();
                             }}
-                            placeholder={
-                                bodyField === 'description' ? 'Add a description…' : 'Add content…'
-                            }
+                            placeholder={bodyPlaceholder}
                             value={bodyDraft}
                         />
                     ) : flags.detIsCode ? (
@@ -543,18 +545,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                             onClick={startBody}
                             title="Click to edit"
                         >
-                            {bodyValue || 'Add content…'}
-                        </p>
-                    ) : sel.type === 'link' ? (
-                        <p
-                            className={cn(
-                                'mt-[18px] mb-1 cursor-text text-[14.5px] leading-[1.6] select-text',
-                                sel.description ? 'text-text2' : 'text-faint',
-                            )}
-                            onClick={startBody}
-                            title="Click to edit"
-                        >
-                            {sel.description || 'Add a description…'}
+                            {bodyValue || bodyPlaceholder}
                         </p>
                     ) : null}
 
