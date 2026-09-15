@@ -66,6 +66,7 @@ export function loadPersisted(): Persisted {
                 ...saved.prefs,
                 durations: { ...DEFAULT_PREFS.durations, ...saved.prefs?.durations },
                 switches: { ...DEFAULT_SWITCHES, ...saved.prefs?.switches },
+                unsplashKey: saved.prefs?.unsplashKey ?? null,
             },
             recentWorkspaces: saved.recentWorkspaces ?? [],
             schedule: saved.schedule ?? {},
