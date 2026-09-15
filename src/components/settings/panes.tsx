@@ -411,7 +411,7 @@ export function LookPane() {
             <div className="mb-1 text-body leading-[1.5] text-text3">
                 The colours used throughout Lore. Light and dark keep separate picks.
             </div>
-            <div className="mt-[10px] max-h-[300px] overflow-y-auto pr-1">
+            <div className="mt-[10px]">
                 <div className="grid grid-cols-4 gap-[10px]">
                     {themesFor(mode).map((t) => {
                         const active = themeId === t.id;
