@@ -9,6 +9,7 @@ import type { Item } from '../../store/types';
 
 import { useAssetSrc } from '../../lib/assetSrc';
 import { bannerPalette, bannerSeed, bannerStyle } from '../../lib/banner';
+import { useImageFallback } from '../../lib/imageFallback';
 import { useStore } from '../../store/useStore';
 
 interface ItemBannerProps {
@@ -25,7 +26,11 @@ export function ItemBanner({ chip, item }: ItemBannerProps) {
     const [loadedSrc, setLoadedSrc] = useState<null | string>(null);
     const seed = bannerSeed(item);
     const palette = useMemo(() => bannerPalette(seed), [seed]);
-    const src = useAssetSrc(item.image);
+    const resolved = useAssetSrc(item.image);
+    const { broken, onError } = useImageFallback(resolved);
+    // A dead URL leaves the placeholder gradient as the thumbnail, which is a
+    // better answer than the browser's broken-image glyph.
+    const src = broken ? undefined : resolved;
 
     const loaded = !!src && loadedSrc === src;
     const fade = reduceMotion ? undefined : 'opacity .45s ease';
@@ -45,6 +50,7 @@ export function ItemBanner({ chip, item }: ItemBannerProps) {
                     className="absolute inset-0 h-full w-full object-cover"
                     draggable={false}
                     loading="lazy"
+                    onError={onError}
                     onLoad={() => setLoadedSrc(src)}
                     src={src}
                     style={{
@@ -54,7 +60,7 @@ export function ItemBanner({ chip, item }: ItemBannerProps) {
                     }}
                 />
             )}
-            {chip && !loaded && (
+            {chip && !loaded && !broken && (
                 <span className="absolute bottom-2 left-2 rounded-5 bg-[rgba(20,20,28,.42)] px-[6px] py-[2px] font-mono text-[9.5px] tracking-[.03em] text-white">
                     loading preview
                 </span>

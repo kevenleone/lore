@@ -12,6 +12,7 @@ import { deriveTitle } from '../../data/plainText';
 import { captureAi, hideCapture, hostOf, saveCapture } from '../../lib/captureActions';
 import { cn } from '../../lib/cn';
 import { documentTitle, type GithubDocument, resolveGithubDocument } from '../../lib/github';
+import { useImageFallback } from '../../lib/imageFallback';
 import { fetchLinkMetadata, type LinkMetadata } from '../../lib/linkMetadata';
 import { typeMeta } from '../../store/typeMeta';
 import { Globe, Sparkle } from '../common/glyphs';
@@ -34,6 +35,7 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
     const [sourceDocument, setSourceDocument] = useState<GithubDocument | null>(null);
     const [fetching, setFetching] = useState(false);
     const [error, setError] = useState<null | string>(null);
+    const { broken: metaImageBroken, onError: onMetaImageError } = useImageFallback(meta?.image);
 
     // The "Filed to" line names the collection rather than its id, and a
     // collection deleted since the preference was set reads as the Inbox.
@@ -177,11 +179,12 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
                     <div className="h-px bg-hover" />
                     <div className="flex items-start gap-[13px] px-[18px] py-[14px]">
                         <div className="flex h-[46px] w-[46px] flex-none items-center justify-center overflow-hidden rounded-9 bg-[repeating-linear-gradient(45deg,var(--surface3),var(--surface3)_6px,var(--border-soft)_6px,var(--border-soft)_12px)] text-faint">
-                            {meta?.image ? (
+                            {meta?.image && !metaImageBroken ? (
                                 <img
                                     alt=""
                                     className="h-full w-full object-cover"
                                     draggable={false}
+                                    onError={onMetaImageError}
                                     src={meta.image}
                                 />
                             ) : (

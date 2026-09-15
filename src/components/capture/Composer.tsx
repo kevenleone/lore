@@ -26,6 +26,7 @@ import {
 } from '../../lib/captureActions';
 import { cn } from '../../lib/cn';
 import { documentTitle, type GithubDocument, resolveGithubDocument } from '../../lib/github';
+import { useImageFallback } from '../../lib/imageFallback';
 import { fetchLinkMetadata, type LinkMetadata } from '../../lib/linkMetadata';
 import { joinBody } from '../../lib/subtasks';
 import { PRIORITIES } from '../../store/types';
@@ -138,6 +139,9 @@ export function Composer({
     const [file, setFile] = useState<File | null>(null);
     const [imageUrl, setImageUrl] = useState('');
     const [imageUrlBroken, setImageUrlBroken] = useState(false);
+    // A page can advertise an OpenGraph image it no longer serves; the preview
+    // card reads better without the row than with a broken-image glyph in it.
+    const { broken: metaImageBroken, onError: onMetaImageError } = useImageFallback(meta?.image);
     const [preview, setPreview] = useState<null | string>(null);
     const [dragging, setDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -402,11 +406,12 @@ export function Composer({
                         </div>
                         {meta && (
                             <div className="mt-3 overflow-hidden rounded-xl border border-border">
-                                {meta.image && (
+                                {meta.image && !metaImageBroken && (
                                     <img
                                         alt=""
                                         className="block h-[118px] w-full object-cover"
                                         draggable={false}
+                                        onError={onMetaImageError}
                                         src={meta.image}
                                     />
                                 )}
