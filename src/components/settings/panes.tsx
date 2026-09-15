@@ -47,6 +47,8 @@ import {
 import { ThemePreview } from './ThemePreview';
 
 /** The About pane's link list. */
+const UNSPLASH_DEVELOPERS = 'https://unsplash.com/developers';
+
 const ABOUT_LINK =
     'text-body rounded-lg border border-border bg-surface px-[10px] py-[6px] font-[inherit] text-text2 hover:bg-hover hover:text-text';
 
@@ -600,16 +602,19 @@ export function CapturePane() {
             <p className="mt-0 mb-4 text-body leading-[1.5] text-text3">
                 Lore does not summarize or tag anything for you yet. Quick capture guesses a type
                 from what you typed, and that guess is made on this Mac by a placeholder — no key,
-                no account, nothing sent anywhere.
+                no account, nothing sent anywhere. The Unsplash key below is the one exception, and
+                only while you are searching for a thumbnail.
             </p>
 
             <SectionLabel first>In the detail pane</SectionLabel>
             <SwitchRow
                 desc="A note can carry a summary, key points and links in its own frontmatter. This is whether they are shown."
-                last
                 name="detailSections"
                 title="Show a note’s summary and links"
             />
+
+            <SectionLabel>Thumbnails</SectionLabel>
+            <UnsplashKeyRow />
         </>
     );
 }
@@ -708,6 +713,56 @@ export function NotifPane() {
                 title="Quiet hours"
             />
         </>
+    );
+}
+
+/**
+ * The Access Key for the Properties panel's photo search. Stored with the rest
+ * of the preferences, so it sits in this Mac's local storage rather than in the
+ * vault — a key must not travel with a folder that gets synced or shared.
+ */
+function UnsplashKeyRow() {
+    const saved = useStore((s) => s.prefs.unsplashKey);
+    const setPref = useStore((s) => s.setPref);
+    const [draft, setDraft] = useState(saved ?? '');
+
+    // A key pasted in another window (or cleared) should show here too.
+    useEffect(() => setDraft(saved ?? ''), [saved]);
+
+    const commit = () => {
+        const next = draft.trim();
+        if (next !== (saved ?? '')) setPref('unsplashKey', next || null);
+    };
+
+    return (
+        <Row
+            desc="Paste a free Access Key from unsplash.com/developers to search photos from the thumbnail menu. Without one, that menu entry is simply not offered."
+            last
+            title="Unsplash Access Key"
+        >
+            <div className="flex w-[210px] flex-none flex-col items-end gap-[6px]">
+                <input
+                    className="w-full rounded-lg border border-border bg-surface px-[9px] py-[6px] text-right font-mono text-body text-text outline-none focus:border-accent"
+                    onBlur={commit}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') commit();
+                    }}
+                    placeholder="Access Key"
+                    spellCheck={false}
+                    // A key is a secret, and settings get opened over a shoulder.
+                    type="password"
+                    value={draft}
+                />
+                <button
+                    className="border-none bg-transparent p-0 font-[inherit] text-body text-text3 underline"
+                    onClick={() => openExternal(UNSPLASH_DEVELOPERS)}
+                    type="button"
+                >
+                    Get a key
+                </button>
+            </div>
+        </Row>
     );
 }
 
