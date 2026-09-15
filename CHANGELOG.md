@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.12.0](https://github.com/kevenleone/lore/compare/v1.11.0...v1.12.0) (2026-09-15)
+
+
+### Features
+
+* **kb:** edit a link's text as Markdown, in the editor a note gets ([4d2a3e7](https://github.com/kevenleone/lore/commit/4d2a3e701ce9e5709f6952cfd45946eeda170140))
+* **kb:** run an item's thumbnail as a cover above the heading ([d83f52d](https://github.com/kevenleone/lore/commit/d83f52da631383ca96403493f79313b6a72a9512))
+* **settings:** choose where an item's thumbnail sits ([c506c3b](https://github.com/kevenleone/lore/commit/c506c3be1fd0aed5c772b0c3cb4e90a8eee11728))
+
+
+### Bug Fixes
+
+* **settings:** drop the theme grid's own scrollbar ([63cfe82](https://github.com/kevenleone/lore/commit/63cfe82010bc60f1c1ce3147a0b55e4dba2b6716))
+
 ## [1.11.0](https://github.com/kevenleone/lore/compare/v1.10.0...v1.11.0) (2026-09-15)
 
 
