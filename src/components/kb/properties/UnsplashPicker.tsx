@@ -1,6 +1,11 @@
 // The thumbnail picker's Unsplash search: a sheet over the window, because the
 // Properties panel is a 316px column and a grid of photos needs the room.
 //
+// Rendered from `App`, beside the settings sheet, rather than from the panel
+// whose menu opens it: in the drawer layout that panel is an absolutely
+// positioned, overflow-hidden 316px column, so a sheet inside it was sized and
+// clipped by the column instead of by the window.
+//
 // Every result carries its photographer's name, and picking one writes that
 // credit onto the item alongside the URL — Unsplash's API terms require the
 // byline wherever the photo is shown, so it has to survive the pick.
@@ -10,19 +15,31 @@ import { useEffect, useRef, useState } from 'react';
 import type { UnsplashPhoto } from '../../../lib/unsplash';
 
 import { cn } from '../../../lib/cn';
-import { messageFor, searchPhotos, UNSPLASH_HOME } from '../../../lib/unsplash';
+import {
+    creditFor,
+    messageFor,
+    searchPhotos,
+    trackDownload,
+    UNSPLASH_HOME,
+} from '../../../lib/unsplash';
 import { useStore } from '../../../store/useStore';
 import { Close, Search } from '../../common/glyphs';
 
-interface UnsplashPickerProps {
-    onClose: () => void;
-    onPick: (photo: UnsplashPhoto) => void;
-    /** Seeds the field, so the picker opens having already searched the title. */
-    query: string;
-}
-
-export function UnsplashPicker({ onClose, onPick, query }: UnsplashPickerProps) {
+/**
+ * Open whenever the store names an item. The item is looked up here rather than
+ * passed in, so the sheet can be rendered at the window's own level.
+ */
+export function UnsplashPicker() {
+    const itemId = useStore((s) => s.photoPickerItemId);
+    const items = useStore((s) => s.items);
+    const detail = useStore((s) => s.detail);
+    const close = useStore((s) => s.closePhotoPicker);
+    const updateItem = useStore((s) => s.updateItem);
     const key = useStore((s) => s.prefs.unsplashKey);
+
+    const item = detail?.id === itemId ? detail : items.find((i) => i.id === itemId);
+    const query = item?.title ?? '';
+
     const [draft, setDraft] = useState(query);
     // The committed search, separate from what is being typed: the effect below
     // is keyed on it, so Enter is what sends a request and every keystroke is not.
@@ -32,18 +49,12 @@ export function UnsplashPicker({ onClose, onPick, query }: UnsplashPickerProps) 
     const [searching, setSearching] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    // Escape belongs to `App`, which knows this sheet is the topmost layer.
+    // A listener here would only race the one already on `window`.
     useEffect(() => {
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                e.stopPropagation();
-                onClose();
-            }
-        };
-        window.addEventListener('keydown', onKey);
         inputRef.current?.focus();
         inputRef.current?.select();
-        return () => window.removeEventListener('keydown', onKey);
-    }, [onClose]);
+    }, []);
 
     useEffect(() => {
         if (!key || !term) return;
@@ -68,11 +79,20 @@ export function UnsplashPicker({ onClose, onPick, query }: UnsplashPickerProps) 
         };
     }, [key, term]);
 
+    const pick = (photo: UnsplashPhoto) => {
+        close();
+        if (!item) return;
+        if (key) trackDownload(key, photo.downloadLocation);
+        void updateItem(item.id, { image: photo.url, imageCredit: creditFor(photo) });
+    };
+
+    if (!item) return null;
+
     return (
         <>
             <div
                 className="absolute inset-0 z-40 animate-scrim-fade-in bg-scrim backdrop-blur-[2px]"
-                onClick={onClose}
+                onClick={close}
             />
             <div
                 aria-label="Search Unsplash"
@@ -99,7 +119,7 @@ export function UnsplashPicker({ onClose, onPick, query }: UnsplashPickerProps) 
                     <button
                         aria-label="Close"
                         className="flex h-[28px] w-[28px] flex-none items-center justify-center rounded-7 border-none bg-transparent p-0 text-text3 hover:bg-hover"
-                        onClick={onClose}
+                        onClick={close}
                         type="button"
                     >
                         <Close size={16} sw={2} />
@@ -109,7 +129,7 @@ export function UnsplashPicker({ onClose, onPick, query }: UnsplashPickerProps) 
                 <div className="min-h-0 flex-1 overflow-y-auto p-4">
                     <Body
                         error={error}
-                        onPick={onPick}
+                        onPick={pick}
                         photos={photos}
                         searched={!!term}
                         searching={searching}

@@ -13,14 +13,12 @@ import { useAssetSrc } from '../../../lib/assetSrc';
 import { cn } from '../../../lib/cn';
 import { formatSavedDate } from '../../../lib/format';
 import { useImageFallback } from '../../../lib/imageFallback';
-import { creditFor, trackDownload, type UnsplashPhoto } from '../../../lib/unsplash';
 import { TYPE_META, typeMeta } from '../../../store/typeMeta';
 import { PRIORITIES } from '../../../store/types';
 import { useStore } from '../../../store/useStore';
 import { Calendar, Globe, Link, Timer } from '../../common/glyphs';
 import { Icon } from '../../common/Icon';
 import { MenuItem, Picker, ReadOnly, Row } from './controls';
-import { UnsplashPicker } from './UnsplashPicker';
 
 const TYPES = Object.keys(TYPE_META) as ItemType[];
 
@@ -35,11 +33,11 @@ export function PropertyRows({ item }: { item: Item }) {
     const collections = useStore((s) => s.collections);
     const updateItem = useStore((s) => s.updateItem);
     const unsplashKey = useStore((s) => s.prefs.unsplashKey);
+    const openPhotoPicker = useStore((s) => s.openPhotoPicker);
     const [editingUrl, setEditingUrl] = useState(false);
     const [urlDraft, setUrlDraft] = useState('');
     const [editingImage, setEditingImage] = useState(false);
     const [imageDraft, setImageDraft] = useState('');
-    const [picking, setPicking] = useState(false);
     const fileInput = useRef<HTMLInputElement>(null);
     const thumbnailSrc = useAssetSrc(item.image);
     const { broken: thumbnailBroken, onError: onThumbnailError } = useImageFallback(thumbnailSrc);
@@ -59,12 +57,6 @@ export function PropertyRows({ item }: { item: Item }) {
         // A hand-typed URL is nobody's credited photo, so the byline goes with
         // the image it belonged to.
         void updateItem(item.id, { image: next || undefined, imageCredit: undefined });
-    };
-
-    const pickPhoto = (photo: UnsplashPhoto) => {
-        setPicking(false);
-        if (unsplashKey) trackDownload(unsplashKey, photo.downloadLocation);
-        void updateItem(item.id, { image: photo.url, imageCredit: creditFor(photo) });
     };
 
     /** A picked file is copied into the vault; the item stores the path it lands at. */
@@ -263,7 +255,7 @@ export function PropertyRows({ item }: { item: Item }) {
                                     <MenuItem
                                         onClick={() => {
                                             close();
-                                            setPicking(true);
+                                            openPhotoPicker(item.id);
                                         }}
                                         selected={false}
                                     >
@@ -301,14 +293,6 @@ export function PropertyRows({ item }: { item: Item }) {
                 ref={fileInput}
                 type="file"
             />
-            {picking && (
-                <UnsplashPicker
-                    onClose={() => setPicking(false)}
-                    onPick={pickPhoto}
-                    query={item.title}
-                />
-            )}
-
             <Row icon={<Link />} label="URL">
                 {editingUrl ? (
                     <input
