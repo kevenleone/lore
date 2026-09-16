@@ -50,7 +50,11 @@ export const EXTENSIONS: Extensions = [
         codeBlock: { HTMLAttributes: { class: NODE_CLASSES.codeBlock } },
         heading: { levels: [1, 2, 3, 4] },
         horizontalRule: { HTMLAttributes: { class: NODE_CLASSES.horizontalRule } },
-        link: { HTMLAttributes: { class: 'text-accent underline' } },
+        // `window.open` is a no-op in the webview; `LinkBubble` opens links instead.
+        link: {
+            HTMLAttributes: { class: 'cursor-pointer text-accent underline' },
+            openOnClick: false,
+        },
         listItem: { HTMLAttributes: { class: NODE_CLASSES.listItem } },
         orderedList: { HTMLAttributes: { class: NODE_CLASSES.orderedList } },
         paragraph: { HTMLAttributes: { class: NODE_CLASSES.paragraph } },

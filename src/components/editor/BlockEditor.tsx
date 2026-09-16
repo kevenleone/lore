@@ -2,11 +2,13 @@ import { Placeholder } from '@tiptap/extensions';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { useRef, useState } from 'react';
 
+import { openExternal } from '../../lib/appInfo';
 import { applyDocument, diffBlocks } from '../../markdown/apply';
 import { guard } from '../../markdown/fragility';
 import { parse } from '../../markdown/parse';
 import { EXTENSIONS } from '../../markdown/schema';
 import { toDocument } from '../../markdown/to-prosemirror';
+import { LinkBubble } from './LinkBubble';
 
 interface BlockEditorProps {
     autoFocus?: boolean;
@@ -34,11 +36,22 @@ export function BlockEditor({
     const parsedRef = useRef(initial);
     const dirtyRef = useRef<Set<number>>(new Set());
     const rewriteAllRef = useRef(false);
+    const frameRef = useRef<HTMLDivElement>(null);
 
     const editor = useEditor(
         {
             autofocus: autoFocus ? 'end' : false,
             content,
+            editorProps: {
+                handleClick: (_view, _position, event) => {
+                    if (!event.metaKey && !event.ctrlKey) return false;
+                    const anchor = (event.target as HTMLElement | null)?.closest('a');
+                    const href = anchor?.getAttribute('href');
+                    if (!href) return false;
+                    void openExternal(href);
+                    return true;
+                },
+            },
             extensions: [...EXTENSIONS, Placeholder.configure({ placeholder: placeholder ?? '' })],
             onUpdate: ({ editor: instance, transaction }) => {
                 const changed = diffBlocks(transaction.before, transaction.doc);
@@ -55,5 +68,10 @@ export function BlockEditor({
         [],
     );
 
-    return <EditorContent className="lore-editor" editor={editor} />;
+    return (
+        <div className="relative" ref={frameRef}>
+            <EditorContent className="lore-editor" editor={editor} />
+            <LinkBubble editor={editor} frame={frameRef} />
+        </div>
+    );
 }
