@@ -9,7 +9,6 @@ import { Close, External, Pencil } from '../common/glyphs';
 
 interface LinkBubbleProps {
     editor: Editor | null;
-    /** The positioned element the bubble is placed inside. */
     frame: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -82,7 +81,6 @@ export function LinkBubble({ editor, frame }: LinkBubbleProps): null | React.JSX
         } else if (nextText === target.text) {
             chain.setLink({ href: nextHref }).run();
         } else {
-            // Carries bold/italic from the old text so only the words change.
             const marks = editor.state.doc
                 .resolve(target.from + 1)
                 .marks()
@@ -233,16 +231,16 @@ function linkAtSelection(editor: Editor, frame: HTMLDivElement | null): LinkTarg
     const href = String(mark?.attrs.href ?? '');
 
     // Client rects include the Text size `zoom`; the bubble is laid out inside it.
-    const frameRect = frame.getBoundingClientRect();
-    const scale = frame.offsetWidth ? frameRect.width / frame.offsetWidth : 1;
-    const coords = editor.view.coordsAtPos(range.from);
+    const frameBounds = frame.getBoundingClientRect();
+    const scale = frame.offsetWidth ? frameBounds.width / frame.offsetWidth : 1;
+    const caret = editor.view.coordsAtPos(range.from);
 
     return {
         from: range.from,
         href,
-        left: Math.max(0, (coords.left - frameRect.left) / scale),
+        left: Math.max(0, (caret.left - frameBounds.left) / scale),
         text: editor.state.doc.textBetween(range.from, range.to),
         to: range.to,
-        top: (coords.bottom - frameRect.top) / scale + BUBBLE_GAP,
+        top: (caret.bottom - frameBounds.top) / scale + BUBBLE_GAP,
     };
 }
