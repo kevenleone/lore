@@ -1,6 +1,6 @@
-// The version ships from `package.json`; release-please keeps it in lockstep
-// with `tauri.conf.json` and `Cargo.toml`, so the bundled string is the one the
-// packaged app was cut from.
+// The version ships from `package.json`, which `tauri.conf.json` points at and
+// release-please keeps in lockstep with `Cargo.toml`, so the bundled string is
+// the one the packaged app was cut from.
 import { version } from '../../package.json';
 
 export const APP_VERSION: string = version;
