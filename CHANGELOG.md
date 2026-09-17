@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.13.0](https://github.com/kevenleone/lore/compare/v1.12.0...v1.13.0) (2026-09-17)
+
+
+### Features
+
+* **kb:** open, edit and remove a link from a popover in the editor ([c890a4e](https://github.com/kevenleone/lore/commit/c890a4ec121d0cd17dc3b2d90b0d1b079d0ab341))
+
+
+### Refactoring
+
+* **kb:** drop restating comments and abbreviations from the link popover ([25cff14](https://github.com/kevenleone/lore/commit/25cff148febe254908e579a78cb8493287864c4d))
+
+
+### Build System
+
+* let release-please bump the app version in Cargo.lock ([3d720d3](https://github.com/kevenleone/lore/commit/3d720d38e7c2b4b2bdadf5e1336f0518554a6b24))
+* read the Tauri app version from package.json ([432accf](https://github.com/kevenleone/lore/commit/432accfc33a98c732858f4518b24b88109944347))
+
 ## [1.12.0](https://github.com/kevenleone/lore/compare/v1.11.0...v1.12.0) (2026-09-15)
 
 
