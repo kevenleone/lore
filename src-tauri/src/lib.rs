@@ -80,12 +80,6 @@ pub fn run() {
                 tauri::WindowEvent::Focused(false) if window.label() == focus_tray::PANEL_LABEL => {
                     let _ = window.hide();
                 }
-                // AppKit re-lays the titlebar out on resize, which puts the
-                // window buttons back where it wants them.
-                #[cfg(target_os = "macos")]
-                tauri::WindowEvent::Resized(_) if window.label() == "main" => {
-                    window_frame::restore_button_position(window);
-                }
                 _ => {}
             }
         })

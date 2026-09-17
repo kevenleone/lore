@@ -1,6 +1,14 @@
+use std::ptr::NonNull;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 
-use objc2_app_kit::{NSWindow, NSWindowButton, NSWindowStyleMask, NSWindowTitleVisibility};
+use block2::RcBlock;
+use objc2::rc::Retained;
+use objc2_app_kit::{
+    NSButton, NSView, NSViewFrameDidChangeNotification, NSWindow, NSWindowButton,
+    NSWindowStyleMask, NSWindowTitleVisibility,
+};
+use objc2_foundation::{NSNotification, NSNotificationCenter, NSOperationQueue};
 use tauri::{Manager, WebviewWindow, Window};
 
 /// The height `TitleBar` gives the bar until it has measured its own, which it
@@ -9,7 +17,7 @@ const DEFAULT_BAR_HEIGHT: f64 = 46.0;
 
 /// The bar height the window buttons are currently centred in.
 ///
-/// AppKit lays the titlebar out again on every resize, dropping the height set
+/// AppKit lays the titlebar out again whenever it likes, dropping the frames set
 /// here, so the last value the frontend reported has to be kept to re-apply.
 pub struct TitleBarHeight(Mutex<f64>);
 
@@ -46,11 +54,68 @@ pub fn adopt_system_frame(window: &Window) {
     ns_window.setTitleVisibility(NSWindowTitleVisibility::Hidden);
 
     center_buttons(window, DEFAULT_BAR_HEIGHT);
+    follow_titlebar_layout(window);
 }
 
-/// Re-centres the buttons in the height last reported, after AppKit has laid
-/// the titlebar out for a new window size.
-pub fn restore_button_position(window: &Window) {
+/// A re-centring is queued and has not run yet.
+static QUEUED: AtomicBool = AtomicBool::new(false);
+
+/// Re-centres the buttons after every titlebar layout pass.
+///
+/// AppKit puts the buttons back where it wants them on its own layout passes,
+/// not only on a resize, and most of those raise no window event. Their frames
+/// report each move; the fix is queued on the main queue so it lands after
+/// AppKit's pass, not inside it, where the pass would undo it again.
+fn follow_titlebar_layout(window: &Window) {
+    let Some(ns_window) = ns_window(window) else {
+        return;
+    };
+    let Some(TitlebarViews {
+        buttons,
+        titlebar,
+        container,
+    }) = titlebar_views(ns_window)
+    else {
+        return;
+    };
+
+    let handle = window.clone();
+    let block = RcBlock::new(move |_: NonNull<NSNotification>| {
+        if QUEUED.swap(true, Ordering::SeqCst) {
+            return;
+        }
+        let handle = handle.clone();
+        let run = RcBlock::new(move || {
+            QUEUED.store(false, Ordering::SeqCst);
+            restore_button_position(&handle);
+        });
+        // SAFETY: the main queue runs the block on the main thread AppKit needs.
+        unsafe { NSOperationQueue::mainQueue().addOperationWithBlock(&run) };
+    });
+
+    let center = NSNotificationCenter::defaultCenter();
+    let views = [container, titlebar].into_iter().chain(
+        buttons
+            .into_iter()
+            .map(|button| Retained::into_super(Retained::into_super(button))),
+    );
+    for view in views {
+        view.setPostsFrameChangedNotifications(true);
+        // SAFETY: the object is an NSView, the notification is posted on the
+        // main thread, and the observer lives as long as the app.
+        let observer = unsafe {
+            center.addObserverForName_object_queue_usingBlock(
+                Some(NSViewFrameDidChangeNotification),
+                Some(&view),
+                None,
+                &block,
+            )
+        };
+        std::mem::forget(observer);
+    }
+}
+
+fn restore_button_position(window: &Window) {
     let height = window
         .state::<TitleBarHeight>()
         .0
@@ -81,6 +146,44 @@ fn center_buttons(window: &Window, height: f64) {
         return;
     }
 
+    let Some(TitlebarViews {
+        buttons,
+        titlebar,
+        container,
+    }) = titlebar_views(ns_window)
+    else {
+        return;
+    };
+
+    let mut frame = container.frame();
+    frame.size.height = height;
+    // The frame's origin is its bottom-left, so the bar hangs from the top.
+    frame.origin.y = ns_window.frame().size.height - height;
+    if container.frame() != frame {
+        container.setFrame(frame);
+    }
+
+    let titlebar_y = titlebar.frame().origin.y;
+
+    for button in &buttons {
+        let mut origin = button.frame().origin;
+        // Half the bar up from the container's bottom edge is its middle.
+        origin.y = height / 2.0 - button.frame().size.height / 2.0 - titlebar_y;
+        if button.frame().origin != origin {
+            button.setFrameOrigin(origin);
+        }
+    }
+}
+
+struct TitlebarViews {
+    buttons: Vec<Retained<NSButton>>,
+    /// The `NSTitlebarView` the buttons sit in.
+    titlebar: Retained<NSView>,
+    /// The `NSTitlebarContainerView` spanning the top of the frame.
+    container: Retained<NSView>,
+}
+
+fn titlebar_views(ns_window: &NSWindow) -> Option<TitlebarViews> {
     let buttons: Vec<_> = [
         NSWindowButton::CloseButton,
         NSWindowButton::MiniaturizeButton,
@@ -90,37 +193,14 @@ fn center_buttons(window: &Window, height: f64) {
     .filter_map(|button| ns_window.standardWindowButton(button))
     .collect();
 
-    let Some(close) = buttons.first() else {
-        return;
-    };
-
-    // A button sits in an `NSTitlebarView`, itself inside the
-    // `NSTitlebarContainerView` that spans the top of the frame.
     // SAFETY: reading a view's superview, on the main thread.
-    let views = unsafe {
-        close
-            .superview()
-            .and_then(|titlebar| titlebar.superview().map(|container| (titlebar, container)))
-    };
-
-    let Some((titlebar, container)) = views else {
-        return;
-    };
-
-    let mut frame = container.frame();
-    frame.size.height = height;
-    // The frame's origin is its bottom-left, so the bar hangs from the top.
-    frame.origin.y = ns_window.frame().size.height - height;
-    container.setFrame(frame);
-
-    let titlebar_y = titlebar.frame().origin.y;
-
-    for button in &buttons {
-        let mut frame = button.frame();
-        // Half the bar up from the container's bottom edge is its middle.
-        frame.origin.y = height / 2.0 - frame.size.height / 2.0 - titlebar_y;
-        button.setFrame(frame);
-    }
+    let titlebar = unsafe { buttons.first()?.superview()? };
+    let container = unsafe { titlebar.superview()? };
+    Some(TitlebarViews {
+        buttons,
+        titlebar,
+        container,
+    })
 }
 
 fn ns_window(window: &Window) -> Option<&NSWindow> {
