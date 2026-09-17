@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.1](https://github.com/kevenleone/lore/compare/v1.13.0...v1.13.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* **window:** keep the window buttons centred after AppKit re-lays the titlebar ([51264e7](https://github.com/kevenleone/lore/commit/51264e76d00f97d966f2cd5f5cad9d99295cdbd9))
+
 ## [1.13.0](https://github.com/kevenleone/lore/compare/v1.12.0...v1.13.0) (2026-09-17)
 
 
