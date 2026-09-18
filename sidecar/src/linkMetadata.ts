@@ -8,6 +8,8 @@
 // streams, so parsing stops at `</head>` instead of buffering a whole page, and
 // there is a timeout and a size cap where before there was neither.
 
+import { fetchYoutubeMetadata, youtubeVideoId } from './youtube';
+
 export interface LinkMetadata {
     description?: string;
     image?: string;
@@ -29,6 +31,9 @@ export async function fetchLinkMetadata(rawUrl: string): Promise<LinkMetadata> {
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
         throw new Error('unsupported protocol');
     }
+
+    const videoId = youtubeVideoId(target);
+    if (videoId) return fetchYoutubeMetadata(videoId);
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
