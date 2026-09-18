@@ -29,9 +29,19 @@ import { documentTitle, type GithubDocument, resolveGithubDocument } from '../..
 import { useImageFallback } from '../../lib/imageFallback';
 import { fetchLinkMetadata, type LinkMetadata } from '../../lib/linkMetadata';
 import { joinBody } from '../../lib/subtasks';
+import { youtubeVideo } from '../../lib/youtube';
 import { PRIORITIES } from '../../store/types';
 import { localDateKey } from '../../store/views';
-import { Calendar, Check, ChevronDown, Close, FileGlyph, Globe, Plus } from '../common/glyphs';
+import {
+    Calendar,
+    Check,
+    ChevronDown,
+    Close,
+    FileGlyph,
+    Globe,
+    Play,
+    Plus,
+} from '../common/glyphs';
 import { Icon } from '../common/Icon';
 import { CaptureBody } from '../editor/CaptureBody';
 
@@ -407,13 +417,20 @@ export function Composer({
                         {meta && (
                             <div className="mt-3 overflow-hidden rounded-xl border border-border">
                                 {meta.image && !metaImageBroken && (
-                                    <img
-                                        alt=""
-                                        className="block h-[118px] w-full object-cover"
-                                        draggable={false}
-                                        onError={onMetaImageError}
-                                        src={meta.image}
-                                    />
+                                    <div className="relative">
+                                        <img
+                                            alt=""
+                                            className="block h-[118px] w-full object-cover"
+                                            draggable={false}
+                                            onError={onMetaImageError}
+                                            src={meta.image}
+                                        />
+                                        {youtubeVideo(value) && (
+                                            <span className="absolute top-1/2 left-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[rgba(20,20,28,.6)] text-white">
+                                                <Play className="ml-[2px]" size={18} />
+                                            </span>
+                                        )}
+                                    </div>
                                 )}
                                 <div className="px-[14px] py-3">
                                     <div className="text-[14.5px] font-[620]">
