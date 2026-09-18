@@ -21,6 +21,7 @@ import {
     toggleSubtask,
 } from '../../lib/subtasks';
 import { UNSPLASH_HOME } from '../../lib/unsplash';
+import { youtubeThumbnail, youtubeVideo } from '../../lib/youtube';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
 import {
@@ -48,6 +49,7 @@ import { DocumentView } from '../editor/DocumentView';
 import { AiSummaryCard } from './AiSummaryCard';
 import { ItemBanner } from './ItemBanner';
 import { RelatedCards } from './RelatedCards';
+import { VideoPlayer } from './VideoPlayer';
 
 /** The pane's own section headings (Tags, Related). */
 const SECTION_LABEL = 'text-caption font-[680] tracking-[.06em] text-faint uppercase';
@@ -143,9 +145,11 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     const coll = collectionFor(sel, collections);
     const related = relatedItems(sel, items);
     const flags = detailFlags(sel, showSections, related.length);
-    const cover = flags.showPreview && bannerPlacement === 'cover';
     const linkUrl =
         sel.type === 'link' ? sel.url || (sel.domain ? `https://${sel.domain}` : '') : '';
+    const video = sel.type === 'link' ? youtubeVideo(sel.url) : null;
+    // A video plays in the body, so a cover banner would only repeat its thumbnail.
+    const cover = flags.showPreview && bannerPlacement === 'cover' && !video;
 
     // The body is a cached copy of someone else's document until the user takes
     // it over, so nothing here writes to it.
@@ -470,8 +474,17 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                         </div>
                     )}
 
+                    {video && (
+                        <VideoPlayer
+                            key={sel.id}
+                            thumbnail={previewSrc ?? youtubeThumbnail(video.id)}
+                            title={sel.title}
+                            video={video}
+                        />
+                    )}
+
                     {/* image preview — only when there is an image */}
-                    {flags.showPreview && previewSrc && !cover && (
+                    {flags.showPreview && previewSrc && !cover && !video && (
                         /* The whole image, never a crop of it. A link preview is
                          * usually a composed 1200×630 card whose text runs to its
                          * edges, and a fixed height cut more of it the wider the pane
