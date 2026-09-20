@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.14.0](https://github.com/kevenleone/lore/compare/v1.13.0...v1.14.0) (2026-09-20)
+
+
+### Features
+
+* **capture:** mark YouTube previews as video ([1257a15](https://github.com/kevenleone/lore/commit/1257a158c12d9b5a7b4916b18e12733cd615d723))
+* **detail:** play YouTube links inline ([ee763dd](https://github.com/kevenleone/lore/commit/ee763ddd00b0ca820fe1942289a59311e7354938))
+* **sidecar:** describe YouTube links through oEmbed ([dc28c23](https://github.com/kevenleone/lore/commit/dc28c23d682128bb9ba7e65c4f87530dfe478976))
+
+
+### Bug Fixes
+
+* **window:** keep the window buttons centred after AppKit re-lays the titlebar ([51264e7](https://github.com/kevenleone/lore/commit/51264e76d00f97d966f2cd5f5cad9d99295cdbd9))
+
 ## [1.13.0](https://github.com/kevenleone/lore/compare/v1.12.0...v1.13.0) (2026-09-17)
 
 
