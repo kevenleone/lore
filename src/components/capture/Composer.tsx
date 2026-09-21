@@ -832,7 +832,7 @@ export function Composer({
                             type="button"
                         >
                             <span
-                                className="h-[9px] w-[9px] rounded-full"
+                                className="h-[9px] w-[9px] rounded-xs"
                                 // The collection's own colour, which the user picks.
                                 style={{ background: activeCollection?.color ?? '#c4c4cc' }}
                             />
@@ -866,7 +866,7 @@ export function Composer({
                                         type="button"
                                     >
                                         <span
-                                            className="h-[9px] w-[9px] flex-none rounded-full"
+                                            className="h-[9px] w-[9px] flex-none rounded-xs"
                                             style={{ background: c.color }}
                                         />
                                         {c.name}
