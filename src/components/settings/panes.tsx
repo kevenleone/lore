@@ -14,6 +14,7 @@ import { APP_LINKS, APP_VERSION, openExternal } from '../../lib/appInfo';
 import { APP_MODE, captureShortcutKeys } from '../../lib/appMode';
 import { cn } from '../../lib/cn';
 import { formatBytes } from '../../lib/format';
+import { type HotkeyCommand, hotkeyKeys, HOTKEYS } from '../../lib/hotkeys';
 import { revealPath } from '../../lib/reveal';
 import { workspaceName } from '../../lib/workspace';
 import {
@@ -568,44 +569,21 @@ export function LookPane() {
 }
 
 /**
- * Only chords that actually fire. The main-window and view rows are the menu
- * bar's accelerators in `app_menu.rs`; ⌥⇧F and Escape are `App.tsx`'s, and the
- * global row is the one shortcut Rust registers. Shortcuts are not rebindable
- * yet, so nothing here claims to be.
+ * Only chords that actually fire, from the same list the menu bar and the
+ * renderer fire. Shortcuts are not rebindable yet, so nothing here claims to be.
  */
 const SHORTCUT_GROUPS = [
     {
         name: 'Global',
         rows: [{ keys: captureShortcutKeys(), label: 'Quick capture, from any app' }],
     },
-    {
-        name: 'Main window',
-        rows: [
-            { keys: ['⌘', 'K'], label: 'Search everything' },
-            { keys: ['⌘', 'N'], label: 'Capture drawer' },
-            { keys: ['⌘', '⇧', 'E'], label: 'Export the open item as PDF' },
-            { keys: ['⌥', '⇧', 'F'], label: 'Start or pause a focus session' },
-            { keys: ['⌘', 'B'], label: 'Toggle the sidebar' },
-            { keys: ['⌘', 'L'], label: 'Toggle the properties panel' },
-            { keys: ['⌘', ','], label: 'Open Settings' },
-            { keys: ['esc'], label: 'Close the capture drawer or the open item' },
-        ],
-    },
-    {
-        name: 'Views',
-        rows: [
-            { keys: ['⌘', '1'], label: 'All Items' },
-            { keys: ['⌘', '2'], label: 'Inbox' },
-            { keys: ['⌘', '3'], label: 'Today' },
-            { keys: ['⌘', '4'], label: 'Starred' },
-            { keys: ['⌘', '5'], label: 'Calendar' },
-        ],
-    },
+    { name: 'Main window', rows: shortcutRows('main') },
+    { name: 'Views', rows: shortcutRows('views') },
     {
         name: 'Capture window',
         rows: [
-            { keys: ['⏎'], label: 'Save' },
-            { keys: ['esc'], label: 'Dismiss' },
+            { keys: hotkeyKeys('Enter'), label: 'Save' },
+            { keys: hotkeyKeys('Escape'), label: 'Dismiss' },
         ],
     },
 ];
@@ -728,6 +706,16 @@ export function NotifPane() {
             />
         </>
     );
+}
+
+function shortcutRows(group: HotkeyCommand['group']): { keys: string[]; label: string }[] {
+    const commands: readonly HotkeyCommand[] = HOTKEYS;
+    return commands
+        .filter((command) => command.group === group)
+        .map((command) => ({
+            keys: hotkeyKeys(command.hotkey),
+            label: command.label,
+        }));
 }
 
 /**

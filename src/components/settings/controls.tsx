@@ -114,7 +114,7 @@ export function Chooser<T extends number | string>({
     );
 }
 
-/** A ⌘/⇧/K key cap in the shortcuts pane. */
+/** One key cap in the shortcuts pane. */
 export function KeyCap({ children }: { children: ReactNode }) {
     return (
         <span className="min-w-[22px] rounded-md border border-b-2 border-kbd-border bg-kbd-bg px-[6px] py-[2px] text-center font-mono text-label text-text2">

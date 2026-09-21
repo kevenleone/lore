@@ -44,7 +44,7 @@ describe('the sidebar', () => {
 
         const labels = within(library())
             .getAllByRole('button')
-            .map((b) => b.textContent?.replace(/[\d,]+|⌘\d/g, '').trim());
+            .map((b) => b.textContent?.replace(/[\d,]+|⌘\d|Ctrl\+\d/g, '').trim());
         expect(labels).toEqual(['Everything', 'Inbox', 'Notes', 'Links', 'Files']);
     });
 

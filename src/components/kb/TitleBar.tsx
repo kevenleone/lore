@@ -1,4 +1,4 @@
-// Top window bar: traffic lights, sidebar toggle, a window-centered ⌘K search,
+// Top window bar: traffic lights, sidebar toggle, a window-centered search,
 // AI-chat toggle, view/sort buttons, and the Capture button. Custom-drawn to
 // match the prototype; the window uses `decorations:false`, so the dots drive
 // the real window controls.
@@ -6,6 +6,8 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '../../lib/cn';
+import { formatHotkey, hotkeyFor } from '../../lib/hotkeys';
+import { IS_MAC } from '../../lib/platform';
 import { useStore } from '../../store/useStore';
 import { Close, Plus, Search, SidebarToggle, Sparkle } from '../common/glyphs';
 import { ModeAccentBar, ModeBadge } from '../common/ModeBadge';
@@ -16,7 +18,7 @@ import { FocusChip } from '../focus/FocusChip';
  * macOS draws the real traffic lights (see `window_frame.rs`); everywhere else
  * a frameless window has no controls at all, so the drawn ones stand in.
  */
-const NATIVE_WINDOW_CONTROLS = navigator.userAgent.includes('Macintosh');
+const NATIVE_WINDOW_CONTROLS = IS_MAC;
 
 /** The width the system's three buttons take, so the bar starts clear of them. */
 const WINDOW_CONTROLS_WIDTH = 52;
@@ -120,7 +122,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
 
             <ModeBadge />
 
-            <Tooltip keys="⌘B" label="Toggle sidebar">
+            <Tooltip keys={formatHotkey(hotkeyFor('sidebar'))} label="Toggle sidebar">
                 <button
                     aria-label="Toggle sidebar"
                     className="ml-1 flex border-none bg-transparent p-0 text-faint"
@@ -148,7 +150,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                     </span>
                     {!search && (
                         <span className="rounded-5 border border-border bg-surface px-[6px] py-px font-mono text-caption text-faint">
-                            ⌘K
+                            {formatHotkey(hotkeyFor('search'))}
                         </span>
                     )}
                 </button>
@@ -165,10 +167,10 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
             </div>
 
             <div className="flex items-center gap-[6px]">
-                <Tooltip keys="⌥⇧F" label="Focus timer">
+                <Tooltip keys={formatHotkey(hotkeyFor('focus'))} label="Focus timer">
                     <FocusChip />
                 </Tooltip>
-                <Tooltip keys="⌘J" label="Ask Lore">
+                <Tooltip keys={formatHotkey(hotkeyFor('chat'))} label="Ask Lore">
                     <button
                         aria-label="Ask Lore"
                         className={cn(
@@ -189,7 +191,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                     <Plus />
                     Capture
                     <span className="rounded-5 bg-white/22 px-[6px] py-px font-mono text-micro">
-                        ⌘N
+                        {formatHotkey(hotkeyFor('capture'))}
                     </span>
                 </button>
             </div>

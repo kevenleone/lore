@@ -6,6 +6,7 @@ import type { IconName, TaskView, View } from '../../store/types';
 
 import { captureShortcut } from '../../lib/appMode';
 import { cn } from '../../lib/cn';
+import { formatHotkey, hotkeyFor } from '../../lib/hotkeys';
 import { boardRollups, dayKey, taskCounts } from '../../store/tasks';
 import { UNFILED_BOARD } from '../../store/types';
 import { useStore } from '../../store/useStore';
@@ -55,11 +56,41 @@ const LIB_VIEWS: {
     kind: View['kind'];
     label: string;
 }[] = [
-    { countKey: 'all', icon: 'layers', keys: '⌘1', kind: 'all', label: 'Everything' },
-    { countKey: 'inbox', icon: 'inbox', keys: '⌘2', kind: 'inbox', label: 'Inbox' },
-    { countKey: 'notes', icon: 'note', keys: '⌘3', kind: 'notes', label: 'Notes' },
-    { countKey: 'links', icon: 'globe', keys: '⌘4', kind: 'links', label: 'Links' },
-    { countKey: 'files', icon: 'file', keys: '⌘5', kind: 'files', label: 'Files' },
+    {
+        countKey: 'all',
+        icon: 'layers',
+        keys: formatHotkey(hotkeyFor('view-all')),
+        kind: 'all',
+        label: 'Everything',
+    },
+    {
+        countKey: 'inbox',
+        icon: 'inbox',
+        keys: formatHotkey(hotkeyFor('view-inbox')),
+        kind: 'inbox',
+        label: 'Inbox',
+    },
+    {
+        countKey: 'notes',
+        icon: 'note',
+        keys: formatHotkey(hotkeyFor('view-notes')),
+        kind: 'notes',
+        label: 'Notes',
+    },
+    {
+        countKey: 'links',
+        icon: 'globe',
+        keys: formatHotkey(hotkeyFor('view-links')),
+        kind: 'links',
+        label: 'Links',
+    },
+    {
+        countKey: 'files',
+        icon: 'file',
+        keys: formatHotkey(hotkeyFor('view-files')),
+        kind: 'files',
+        label: 'Files',
+    },
 ];
 
 const TASK_VIEWS: {
@@ -71,7 +102,13 @@ const TASK_VIEWS: {
 }[] = [
     // The count is today's workload, which is what the row badges even though
     // the tab it opens also carries the timeline below it.
-    { countKey: 'today', icon: 'sun', keys: '⌘6', label: 'Summary', view: 'summary' },
+    {
+        countKey: 'today',
+        icon: 'sun',
+        keys: formatHotkey(hotkeyFor('view-tasks')),
+        label: 'Summary',
+        view: 'summary',
+    },
     { countKey: 'upcoming', icon: 'calendar', label: 'Upcoming', view: 'upcoming' },
     { countKey: 'boards', icon: 'board', label: 'Board', view: 'board' },
 ];
@@ -160,7 +197,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                     <Icon name="calendar" />
                 </span>
                 <span className="flex-1">Calendar</span>
-                <span className={KEY_CAP}>⌘7</span>
+                <span className={KEY_CAP}>{formatHotkey(hotkeyFor('view-calendar'))}</span>
             </button>
 
             {/* Tasks — a surface of its own, like the calendar, with four reads of it. */}
