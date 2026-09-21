@@ -44,7 +44,7 @@ const FILE_COMMANDS: [Command; 3] = [
     },
 ];
 
-const VIEW_COMMANDS: [Command; 12] = [
+const VIEW_COMMANDS: [Command; 13] = [
     Command {
         accelerator: "CmdOrCtrl+B",
         id: "sidebar",
@@ -54,6 +54,11 @@ const VIEW_COMMANDS: [Command; 12] = [
         accelerator: "CmdOrCtrl+L",
         id: "properties",
         label: "Toggle Properties",
+    },
+    Command {
+        accelerator: "CmdOrCtrl+J",
+        id: "chat",
+        label: "Ask Lore",
     },
     Command {
         accelerator: "CmdOrCtrl+1",
@@ -170,9 +175,9 @@ pub fn install<R: Runtime>(app: &App<R>) -> tauri::Result<()> {
 
     let mut view = SubmenuBuilder::new(app, "View");
     for (index, command) in VIEW_COMMANDS.iter().enumerate() {
-        // The two panel toggles, then the library views, then the two
+        // The three panel toggles, then the library views, then the two
         // surfaces, then search.
-        if index == 2 || index == 9 || index == 11 {
+        if index == 3 || index == 10 || index == 12 {
             view = view.separator();
         }
         view = view.item(&command_item(app, command)?);

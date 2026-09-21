@@ -29,7 +29,9 @@ import { SettingsModal } from './components/settings/SettingsModal';
 import { TasksView } from './components/tasks/TasksView';
 import { APP_LINKS, openExternal } from './lib/appInfo';
 import { cn } from './lib/cn';
+import { hotkeyCommandFor } from './lib/hotkeys';
 import { DRAWER_MS } from './lib/motion';
+import { IS_MAC } from './lib/platform';
 import { isTypingTarget } from './lib/typingTarget';
 import { useMountTransition } from './lib/useMountTransition';
 import { useStartupPrefs } from './lib/useStartupPrefs';
@@ -73,6 +75,7 @@ export default function App() {
     const closePhotoPicker = useStore((s) => s.closePhotoPicker);
     const statusBarVisible = useStore((s) => s.prefs.switches.statusBar);
     const toggleCapture = useStore((s) => s.toggleCapture);
+    const toggleChat = useStore((s) => s.toggleChat);
     const toggleCommandMenu = useStore((s) => s.toggleCommandMenu);
     const toggleFocus = useStore((s) => s.toggleFocus);
     const toggleProperties = useStore((s) => s.toggleProperties);
@@ -88,14 +91,14 @@ export default function App() {
     useStartupPrefs();
 
     // Escape is the one shortcut the menu bar cannot own: what it closes
-    // depends on what is open. Every other command is a menu item now — see
-    // `app_menu.rs` — and ⌥⇧F reaches here from the tray as well.
+    // depends on what is open. ⌥⇧F reaches here from the tray as well.
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            if (e.altKey && e.shiftKey && e.code === 'KeyF') {
+            const command = hotkeyCommandFor(e);
+            if (command === 'focus') {
                 e.preventDefault();
                 toggleFocus();
-            } else if (e.key === 'Escape') {
+            } else if (command === 'close') {
                 // The photo picker is a sheet over the whole window, so it goes
                 // first — otherwise Escape dismissed the sheet *and* the item
                 // underneath it, because both listeners sit on `window` and
@@ -129,6 +132,7 @@ export default function App() {
     const menuCommands = useMemo<Record<string, () => void>>(
         () => ({
             capture: () => toggleCapture(),
+            chat: () => toggleChat(),
             contribute: () => void openExternal(APP_LINKS.issues),
             documentation: () => void openExternal(APP_LINKS.readme),
             'export-pdf': () => void exportItemPdf(),
@@ -155,11 +159,27 @@ export default function App() {
             setMainView,
             setTaskView,
             toggleCapture,
+            toggleChat,
             toggleCommandMenu,
             toggleProperties,
             toggleSidebar,
         ],
     );
+
+    // Without the Mac menu bar the renderer fires its chords. Capture phase, so a
+    // chord reaches the command before the editor, as a menu accelerator would.
+    useEffect(() => {
+        if (IS_MAC) return;
+        const onKey = (e: KeyboardEvent) => {
+            const run = menuCommands[hotkeyCommandFor(e) ?? ''];
+            if (!run) return;
+            e.preventDefault();
+            e.stopPropagation();
+            run();
+        };
+        window.addEventListener('keydown', onKey, true);
+        return () => window.removeEventListener('keydown', onKey, true);
+    }, [menuCommands]);
 
     // Paint the token set for the effective theme, and repaint when the OS
     // switches while Color mode is on Auto.
