@@ -30,13 +30,18 @@ fn emit_mode() {
         .unwrap_or_else(|| panic!("LORE_MODE={mode} is not a mode in lore.modes.json"));
 
     let string = |key: &str| entry[key].as_str().unwrap_or_default().to_string();
+    // Windows keeps Alt+Space for the window menu, so the chord is per platform.
+    let platform = match std::env::var("CARGO_CFG_TARGET_OS").as_deref() {
+        Ok("macos") => "macos",
+        _ => "default",
+    };
 
     println!("cargo:rustc-env=LORE_MODE={mode}");
     println!("cargo:rustc-env=LORE_MODE_LABEL={}", string("label"));
     println!("cargo:rustc-env=LORE_PRODUCT_NAME={}", string("productName"));
     println!(
         "cargo:rustc-env=LORE_CAPTURE_SHORTCUT={}",
-        string("captureShortcut")
+        entry["captureShortcut"][platform].as_str().unwrap_or_default()
     );
     println!(
         "cargo:rustc-env=LORE_SIDECAR_DEV_PORT={}",

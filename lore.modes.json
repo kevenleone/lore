@@ -1,7 +1,7 @@
 {
     "agent": {
         "accent": "#7c5cd6",
-        "captureShortcut": "Alt+Control+Space",
+        "captureShortcut": { "default": "Control+Alt+Shift+K", "macos": "Alt+Control+Space" },
         "identifier": "com.lore.app.agent",
         "label": "AGENT",
         "productName": "Lore Agent",
@@ -10,7 +10,7 @@
     },
     "dev": {
         "accent": "#d98324",
-        "captureShortcut": "Alt+Shift+Space",
+        "captureShortcut": { "default": "Control+Alt+Shift+Space", "macos": "Alt+Shift+Space" },
         "identifier": "com.lore.app.dev",
         "label": "DEV",
         "productName": "Lore Dev",
@@ -19,7 +19,7 @@
     },
     "prod": {
         "accent": null,
-        "captureShortcut": "Alt+Space",
+        "captureShortcut": { "default": "Control+Alt+Space", "macos": "Alt+Space" },
         "identifier": "com.lore.app",
         "label": null,
         "productName": "Lore",

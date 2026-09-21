@@ -6,6 +6,8 @@
 // as `APP_MODE.label ? … : null` and drops out of a production bundle.
 
 import modes from '../../lore.modes.json';
+import { formatHotkey, hotkeyKeys } from './hotkeys';
+import { IS_MAC } from './platform';
 
 export interface AppMode {
     /** The colour a dev or agent build tints itself with; `null` in production. */
@@ -23,25 +25,18 @@ const config = modes[__LORE_MODE__];
 
 export const APP_MODE: AppMode = {
     accent: config.accent,
-    captureShortcut: config.captureShortcut,
+    captureShortcut: IS_MAC ? config.captureShortcut.macos : config.captureShortcut.default,
     label: config.label,
     mode: __LORE_MODE__,
     productName: config.productName,
 };
 
-/** The capture shortcut as one string: `⌥⇧Space` rather than `Alt+Shift+Space`. */
+/** The capture shortcut as one label: `⌥Space` on a Mac, `Ctrl+Alt+Space` elsewhere. */
 export function captureShortcut(): string {
-    return captureShortcutKeys().join('');
+    return formatHotkey(APP_MODE.captureShortcut);
 }
 
 /** The same shortcut split into keys, for the shortcut table's separate chips. */
 export function captureShortcutKeys(): string[] {
-    const symbols: Record<string, string> = {
-        Alt: '⌥',
-        Command: '⌘',
-        Control: '⌃',
-        Shift: '⇧',
-    };
-
-    return APP_MODE.captureShortcut.split('+').map((key) => symbols[key] ?? key);
+    return hotkeyKeys(APP_MODE.captureShortcut);
 }
