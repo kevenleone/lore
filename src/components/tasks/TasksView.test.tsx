@@ -480,7 +480,7 @@ describe('the task rail', () => {
         expect(panel().hasAttribute('inert')).toBe(true);
         expect(panel().className).toContain('transition-[width]');
 
-        fireEvent.click(screen.getByTitle('Properties (⌘L)'));
+        fireEvent.click(screen.getByTitle(/^Properties \(/));
         expect(panel().style.width).toBe('316px');
         expect(panel().hasAttribute('inert')).toBe(false);
     });

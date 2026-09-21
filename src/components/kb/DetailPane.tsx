@@ -12,6 +12,7 @@ import { openExternal } from '../../lib/appInfo';
 import { useAssetSrc } from '../../lib/assetSrc';
 import { cn } from '../../lib/cn';
 import { formatRelative, formatSavedDate } from '../../lib/format';
+import { formatHotkey, hotkeyFor } from '../../lib/hotkeys';
 import { useImageFallback } from '../../lib/imageFallback';
 import {
     editSubtask,
@@ -339,7 +340,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                     propertiesOpen ? 'text-accent' : 'text-[#c4c4cc]',
                                 )}
                                 onClick={toggleProperties}
-                                title="Properties (⌘L)"
+                                title={`Properties (${formatHotkey(hotkeyFor('properties'))})`}
                                 type="button"
                             >
                                 <PanelRight />

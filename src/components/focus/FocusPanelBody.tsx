@@ -9,6 +9,7 @@
 import type { FocusSnapshot } from './focusSnapshot';
 
 import { elapsedFraction, formatClock } from '../../lib/focusTimer';
+import { formatHotkey, hotkeyFor } from '../../lib/hotkeys';
 import { ChevronDown, Expand } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 import { SettingsIcon } from '../common/settingsGlyphs';
@@ -152,7 +153,7 @@ export function FocusPanelBody({
                     Start or pause from anywhere in Lore
                 </span>
                 <span className="rounded-5 border border-b-2 border-kbd-border bg-kbd-bg px-[6px] py-px font-mono text-micro text-text2">
-                    ⌥⇧F
+                    {formatHotkey(hotkeyFor('focus'))}
                 </span>
             </div>
         </>

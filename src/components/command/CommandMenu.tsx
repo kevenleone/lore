@@ -9,6 +9,7 @@ import type { Item, ViewKind } from '../../store/types';
 import { getRepository } from '../../data';
 import { APP_LINKS, openExternal } from '../../lib/appInfo';
 import { cn } from '../../lib/cn';
+import { formatHotkey, hotkeyFor } from '../../lib/hotkeys';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
 import { effectiveTheme } from '../../theme/tokens';
@@ -310,7 +311,7 @@ function useCommands(): CommandEntry[] {
             {
                 icon: <Plus size={14} />,
                 id: 'capture',
-                keys: '⌘N',
+                keys: formatHotkey(hotkeyFor('capture')),
                 label: 'Quick Capture',
                 run: () => store().openCapture(),
                 terms: 'new create add note link task',
@@ -328,14 +329,14 @@ function useCommands(): CommandEntry[] {
             {
                 icon: <SidebarToggle size={14} />,
                 id: 'sidebar',
-                keys: '⌘B',
+                keys: formatHotkey(hotkeyFor('sidebar')),
                 label: 'Toggle Sidebar',
                 run: () => store().toggleSidebar(),
             },
             {
                 icon: <Timer size={14} />,
                 id: 'focus',
-                keys: '⌥⇧F',
+                keys: formatHotkey(hotkeyFor('focus')),
                 label: focusRunning ? 'Stop Focus Timer' : 'Start Focus Timer',
                 run: () => store().toggleFocus(),
                 terms: 'pomodoro timer',
@@ -350,7 +351,7 @@ function useCommands(): CommandEntry[] {
             {
                 icon: <Settings size={14} />,
                 id: 'settings',
-                keys: '⌘,',
+                keys: formatHotkey(hotkeyFor('settings')),
                 label: 'Settings',
                 run: () => store().openSettings(),
                 terms: 'preferences',
@@ -371,14 +372,34 @@ function useCommands(): CommandEntry[] {
         const views: { icon: ReactNode; keys?: string; kind: ViewKind; label: string }[] = [
             {
                 icon: <Icon name="layers" size={14} />,
-                keys: '⌘1',
+                keys: formatHotkey(hotkeyFor('view-all')),
                 kind: 'all',
                 label: 'Everything',
             },
-            { icon: <Icon name="inbox" size={14} />, keys: '⌘2', kind: 'inbox', label: 'Inbox' },
-            { icon: <Icon name="note" size={14} />, keys: '⌘3', kind: 'notes', label: 'Notes' },
-            { icon: <Icon name="globe" size={14} />, keys: '⌘4', kind: 'links', label: 'Links' },
-            { icon: <Icon name="file" size={14} />, keys: '⌘5', kind: 'files', label: 'Files' },
+            {
+                icon: <Icon name="inbox" size={14} />,
+                keys: formatHotkey(hotkeyFor('view-inbox')),
+                kind: 'inbox',
+                label: 'Inbox',
+            },
+            {
+                icon: <Icon name="note" size={14} />,
+                keys: formatHotkey(hotkeyFor('view-notes')),
+                kind: 'notes',
+                label: 'Notes',
+            },
+            {
+                icon: <Icon name="globe" size={14} />,
+                keys: formatHotkey(hotkeyFor('view-links')),
+                kind: 'links',
+                label: 'Links',
+            },
+            {
+                icon: <Icon name="file" size={14} />,
+                keys: formatHotkey(hotkeyFor('view-files')),
+                kind: 'files',
+                label: 'Files',
+            },
             { icon: <Icon name="sun" size={14} />, kind: 'today', label: 'Today' },
             { icon: <StarOutline size={14} />, kind: 'starred', label: 'Starred' },
         ];
@@ -395,7 +416,7 @@ function useCommands(): CommandEntry[] {
                     group: 'Go to',
                     icon: <Icon name="task" size={14} />,
                     id: 'view:tasks',
-                    keys: '⌘6',
+                    keys: formatHotkey(hotkeyFor('view-tasks')),
                     label: 'Tasks',
                     run: () => store().setTaskView('summary'),
                 },
@@ -403,7 +424,7 @@ function useCommands(): CommandEntry[] {
                     group: 'Go to',
                     icon: <Icon name="calendar" size={14} />,
                     id: 'view:calendar',
-                    keys: '⌘7',
+                    keys: formatHotkey(hotkeyFor('view-calendar')),
                     label: 'Calendar',
                     run: () => store().setMainView('calendar'),
                 },
