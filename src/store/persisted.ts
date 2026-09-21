@@ -18,6 +18,10 @@ export interface Persisted {
     /** True once the user has finished `Lore Onboarding` either way. */
     onboarded: boolean;
     prefs: Prefs;
+    /** Items opened in the current vault, newest first. Ids are only meaningful inside it. */
+    recentItemIds: string[];
+    /** Queries committed from the command menu, newest first. */
+    recentSearches: string[];
     /** Most-recently-opened vaults, for the switcher. */
     recentWorkspaces: WorkspaceRef[];
     /**
@@ -42,6 +46,8 @@ export const DEFAULT_PERSISTED: Persisted = {
     migratedAt: null,
     onboarded: false,
     prefs: DEFAULT_PREFS,
+    recentItemIds: [],
+    recentSearches: [],
     recentWorkspaces: [],
     schedule: {},
     workspacePath: null,
@@ -68,6 +74,8 @@ export function loadPersisted(): Persisted {
                 switches: { ...DEFAULT_SWITCHES, ...saved.prefs?.switches },
                 unsplashKey: saved.prefs?.unsplashKey ?? null,
             },
+            recentItemIds: saved.recentItemIds ?? [],
+            recentSearches: saved.recentSearches ?? [],
             recentWorkspaces: saved.recentWorkspaces ?? [],
             schedule: saved.schedule ?? {},
             workspacePath: saved.workspacePath ?? null,

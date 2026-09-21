@@ -105,7 +105,7 @@ const VIEW_COMMANDS: [Command; 12] = [
     Command {
         accelerator: "CmdOrCtrl+K",
         id: "search",
-        label: "Search",
+        label: "Command Menu…",
     },
 ];
 
