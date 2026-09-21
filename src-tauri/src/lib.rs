@@ -16,6 +16,7 @@
 // looking at something else.
 // `autostart` owns the login item behind Settings → General → Launch at login.
 
+#[cfg(target_os = "macos")]
 mod app_menu;
 mod commands;
 mod focus_tray;
@@ -146,6 +147,9 @@ pub fn run() {
                     );
                 }
 
+                // Windows and Linux windows are frameless and the menu is a Mac
+                // app menu; there the renderer fires the same chords itself.
+                #[cfg(target_os = "macos")]
                 app_menu::install(app)?;
                 commands::build_tray(app.handle())?;
                 #[cfg(target_os = "macos")]
