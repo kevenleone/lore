@@ -13,7 +13,7 @@ interface RelatedCardsProps {
 }
 
 export function RelatedCards({ hint, items, label }: RelatedCardsProps) {
-    const selectItem = useStore((s) => s.selectItem);
+    const openLinkedItem = useStore((s) => s.openLinkedItem);
 
     return (
         <div className="mt-[22px]">
@@ -30,7 +30,7 @@ export function RelatedCards({ hint, items, label }: RelatedCardsProps) {
                         <button
                             className="flex w-full items-center gap-[11px] rounded-11 border border-border bg-transparent px-[13px] py-[11px] text-left font-[inherit] hover:bg-surface2"
                             key={r.id}
-                            onClick={() => selectItem(r.id)}
+                            onClick={() => openLinkedItem(r.id)}
                             type="button"
                         >
                             <span

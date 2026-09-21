@@ -125,7 +125,7 @@ export function RelationshipsSection({ item }: { item: Item }) {
 }
 
 function RelationCard({ item, onRemove }: { item: Item; onRemove?: () => void }) {
-    const selectItem = useStore((s) => s.selectItem);
+    const openLinkedItem = useStore((s) => s.openLinkedItem);
     const meta = typeMeta(item.type);
 
     return (
@@ -135,7 +135,7 @@ function RelationCard({ item, onRemove }: { item: Item; onRemove?: () => void })
             <button
                 aria-label={`Open ${item.title}`}
                 className="absolute inset-0 rounded-9 border-none bg-transparent"
-                onClick={() => selectItem(item.id)}
+                onClick={() => openLinkedItem(item.id)}
                 type="button"
             />
             <span
