@@ -92,7 +92,7 @@ export function PropertyRows({ item }: { item: Item }) {
                     trigger={
                         <>
                             <span
-                                className="h-2 w-2 flex-none rounded-full"
+                                className="h-2 w-2 flex-none rounded-xs"
                                 // The collection's own colour, which the user picks.
                                 style={{ background: collection?.color ?? '#c4c4cc' }}
                             />
@@ -123,7 +123,7 @@ export function PropertyRows({ item }: { item: Item }) {
                                     selected={c.id === item.collectionId}
                                 >
                                     <span
-                                        className="h-2 w-2 flex-none rounded-full"
+                                        className="h-2 w-2 flex-none rounded-xs"
                                         style={{ background: c.color }}
                                     />
                                     {c.name}

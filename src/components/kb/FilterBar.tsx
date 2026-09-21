@@ -261,7 +261,7 @@ function Option({
             <Checkbox checked={checked} />
             {color && (
                 <span
-                    className="h-2 w-2 flex-none rounded-full"
+                    className="h-2 w-2 flex-none rounded-xs"
                     // The collection's own colour, which the user picks.
                     style={{ background: color }}
                 />

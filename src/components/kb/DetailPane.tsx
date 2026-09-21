@@ -437,7 +437,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
 
                     <div className="mt-[9px] flex items-center gap-[7px] text-body text-text3">
                         <span
-                            className="h-[9px] w-[9px] rounded-full"
+                            className="h-[9px] w-[9px] rounded-xs"
                             // The collection's own colour, which the user picks.
                             style={{ background: coll?.color ?? '#c4c4cc' }}
                         />
