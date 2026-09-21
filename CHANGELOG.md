@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.15.0](https://github.com/kevenleone/lore/compare/v1.14.0...v1.15.0) (2026-09-21)
+
+
+### Features
+
+* **capture:** pick the quick-capture shortcut per platform ([17cd54e](https://github.com/kevenleone/lore/commit/17cd54e9536db3bf724301392f30b583f768e8d2))
+* **command:** add a global ⌘K command menu ([3727aca](https://github.com/kevenleone/lore/commit/3727aca850d1fd25c3cda009dfd433006671cf1a))
+* **detail:** keep a full page when following related links ([505c1c5](https://github.com/kevenleone/lore/commit/505c1c595608e17d5f754b06731b799e6ab04f64))
+* **detail:** show backlinks in the document body ([68584af](https://github.com/kevenleone/lore/commit/68584af350652b7c2a02a7d38166a2b8bceda880))
+* **hotkeys:** add a cross-platform shortcut registry ([fbd21c6](https://github.com/kevenleone/lore/commit/fbd21c6d66446e47c4a32d5e2b755266ba9c1355))
+* **hotkeys:** fire shortcuts in the renderer on Windows and Linux ([4e2a51f](https://github.com/kevenleone/lore/commit/4e2a51f1946226872687a3d1b6f4d24ef01b7533))
+* **ui:** show shortcuts in the platform's own notation ([b6a75d6](https://github.com/kevenleone/lore/commit/b6a75d63f13bd3633ac74096365719214f5456ee))
+
+
+### Refactoring
+
+* **hotkeys:** leave Ask Lore without a shortcut ([7c0bc94](https://github.com/kevenleone/lore/commit/7c0bc9494c9fcf1e3b63d9becca4e4d1e0fcb921))
+
 ## [1.14.0](https://github.com/kevenleone/lore/compare/v1.13.0...v1.14.0) (2026-09-20)
 
 
