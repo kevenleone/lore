@@ -24,7 +24,6 @@ export const HOTKEYS = [
         label: 'Export the open item as PDF',
     },
     { group: 'main', hotkey: 'Alt+Shift+F', id: 'focus', label: 'Start or pause a focus session' },
-    { group: 'main', hotkey: 'Mod+J', id: 'chat', label: 'Ask Lore' },
     { group: 'main', hotkey: 'Mod+B', id: 'sidebar', label: 'Toggle the sidebar' },
     { group: 'main', hotkey: 'Mod+L', id: 'properties', label: 'Toggle the properties panel' },
     { group: 'main', hotkey: 'Mod+Comma', id: 'settings', label: 'Open Settings' },

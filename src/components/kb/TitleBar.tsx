@@ -170,7 +170,7 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                 <Tooltip keys={formatHotkey(hotkeyFor('focus'))} label="Focus timer">
                     <FocusChip />
                 </Tooltip>
-                <Tooltip keys={formatHotkey(hotkeyFor('chat'))} label="Ask Lore">
+                <Tooltip label="Ask Lore">
                     <button
                         aria-label="Ask Lore"
                         className={cn(

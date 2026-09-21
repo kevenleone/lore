@@ -75,7 +75,6 @@ export default function App() {
     const closePhotoPicker = useStore((s) => s.closePhotoPicker);
     const statusBarVisible = useStore((s) => s.prefs.switches.statusBar);
     const toggleCapture = useStore((s) => s.toggleCapture);
-    const toggleChat = useStore((s) => s.toggleChat);
     const toggleCommandMenu = useStore((s) => s.toggleCommandMenu);
     const toggleFocus = useStore((s) => s.toggleFocus);
     const toggleProperties = useStore((s) => s.toggleProperties);
@@ -132,7 +131,6 @@ export default function App() {
     const menuCommands = useMemo<Record<string, () => void>>(
         () => ({
             capture: () => toggleCapture(),
-            chat: () => toggleChat(),
             contribute: () => void openExternal(APP_LINKS.issues),
             documentation: () => void openExternal(APP_LINKS.readme),
             'export-pdf': () => void exportItemPdf(),
@@ -159,7 +157,6 @@ export default function App() {
             setMainView,
             setTaskView,
             toggleCapture,
-            toggleChat,
             toggleCommandMenu,
             toggleProperties,
             toggleSidebar,
