@@ -6,9 +6,8 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '../../lib/cn';
-import { SEARCH_COMMAND } from '../../lib/searchCommand';
 import { useStore } from '../../store/useStore';
-import { Plus, Search, SidebarToggle, Sparkle } from '../common/glyphs';
+import { Close, Plus, Search, SidebarToggle, Sparkle } from '../common/glyphs';
 import { ModeAccentBar, ModeBadge } from '../common/ModeBadge';
 import { Tooltip } from '../common/Tooltip';
 import { FocusChip } from '../focus/FocusChip';
@@ -33,21 +32,11 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
     const textSize = useStore((s) => s.prefs.textSize);
     const search = useStore((s) => s.search);
     const setSearch = useStore((s) => s.setSearch);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const openCommandMenu = useStore((s) => s.openCommandMenu);
     const barRef = useRef<HTMLDivElement>(null);
     // Fullscreen takes the system's buttons away with the titlebar, so the room
     // kept for them goes too.
     const [fullscreen, setFullscreen] = useState(false);
-
-    // View → Search (⌘K) reaches the box that has the input.
-    useEffect(() => {
-        const onSearch = () => {
-            inputRef.current?.focus();
-            inputRef.current?.select();
-        };
-        window.addEventListener(SEARCH_COMMAND, onSearch);
-        return () => window.removeEventListener(SEARCH_COMMAND, onSearch);
-    }, []);
 
     useEffect(() => {
         if (!NATIVE_WINDOW_CONTROLS) return;
@@ -144,27 +133,36 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
 
             <div className="flex-1" />
 
-            {/* window-centered search */}
-            <label
-                className={cn(
-                    'absolute top-1/2 left-1/2 flex w-[min(420px,38vw)] [transform:translate(-50%,-50%)] items-center gap-2 rounded-9 bg-surface3 px-[11px] py-[7px] text-body-lg',
-                    // The input is bare; the box around it is the field.
-                    'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent',
-                    search ? 'text-text' : 'text-text3',
+            <div className="absolute top-1/2 left-1/2 flex w-[min(420px,38vw)] [transform:translate(-50%,-50%)] items-center rounded-9 bg-surface3 text-body-lg">
+                <button
+                    className={cn(
+                        'flex min-w-0 flex-1 items-center gap-2 rounded-9 border-none bg-transparent px-[11px] py-[7px] text-left font-[inherit]',
+                        search ? 'text-text' : 'text-text3',
+                    )}
+                    onClick={openCommandMenu}
+                    type="button"
+                >
+                    <Search />
+                    <span className="min-w-0 flex-1 truncate">
+                        {search || 'Search or run a command…'}
+                    </span>
+                    {!search && (
+                        <span className="rounded-5 border border-border bg-surface px-[6px] py-px font-mono text-caption text-faint">
+                            ⌘K
+                        </span>
+                    )}
+                </button>
+                {search && (
+                    <button
+                        aria-label="Clear search"
+                        className="mr-[6px] flex h-5 w-5 flex-none items-center justify-center rounded-5 border-none bg-transparent p-0 text-faint hover:bg-hover"
+                        onClick={() => setSearch('')}
+                        type="button"
+                    >
+                        <Close size={12} />
+                    </button>
                 )}
-            >
-                <Search />
-                <input
-                    className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-text outline-none"
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search your knowledge…"
-                    ref={inputRef}
-                    value={search}
-                />
-                <span className="rounded-5 border border-border bg-surface px-[6px] py-px font-mono text-caption text-faint">
-                    ⌘K
-                </span>
-            </label>
+            </div>
 
             <div className="flex items-center gap-[6px]">
                 <Tooltip keys="⌥⇧F" label="Focus timer">

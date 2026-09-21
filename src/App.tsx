@@ -10,6 +10,7 @@ import { useEffect, useMemo } from 'react';
 
 import { CalendarView } from './components/calendar/CalendarView';
 import { CaptureDrawer } from './components/capture/CaptureDrawer';
+import { CommandMenu } from './components/command/CommandMenu';
 import { Toasts } from './components/common/Toasts';
 import { FocusMode } from './components/focus/FocusMode';
 import { FocusPopover } from './components/focus/FocusPopover';
@@ -29,7 +30,6 @@ import { TasksView } from './components/tasks/TasksView';
 import { APP_LINKS, openExternal } from './lib/appInfo';
 import { cn } from './lib/cn';
 import { DRAWER_MS } from './lib/motion';
-import { SEARCH_COMMAND } from './lib/searchCommand';
 import { isTypingTarget } from './lib/typingTarget';
 import { useMountTransition } from './lib/useMountTransition';
 import { useStartupPrefs } from './lib/useStartupPrefs';
@@ -49,6 +49,8 @@ export default function App() {
     const captureOpen = useStore((s) => s.captureOpen);
     const chatOpen = useStore((s) => s.chatOpen);
     const closeCapture = useStore((s) => s.closeCapture);
+    const closeCommandMenu = useStore((s) => s.closeCommandMenu);
+    const commandMenuOpen = useStore((s) => s.commandMenuOpen);
     const closeOpenItem = useStore((s) => s.closeOpenItem);
     const closeTask = useStore((s) => s.closeTask);
     const focusModeOpen = useStore((s) => s.focusModeOpen);
@@ -71,6 +73,7 @@ export default function App() {
     const closePhotoPicker = useStore((s) => s.closePhotoPicker);
     const statusBarVisible = useStore((s) => s.prefs.switches.statusBar);
     const toggleCapture = useStore((s) => s.toggleCapture);
+    const toggleCommandMenu = useStore((s) => s.toggleCommandMenu);
     const toggleFocus = useStore((s) => s.toggleFocus);
     const toggleProperties = useStore((s) => s.toggleProperties);
     const toggleSidebar = useStore((s) => s.toggleSidebar);
@@ -100,7 +103,8 @@ export default function App() {
                 // Under it the capture drawer lies over everything else; then both
                 // ways of opening an item from Cards or Table are dismissible too,
                 // and so is the rail the Tasks surface opens beside its list.
-                if (photoPickerOpen) closePhotoPicker();
+                if (commandMenuOpen) closeCommandMenu();
+                else if (photoPickerOpen) closePhotoPicker();
                 else if (captureOpen) closeCapture();
                 else if (mainView === 'tasks') closeTask();
                 else closeOpenItem();
@@ -111,9 +115,11 @@ export default function App() {
     }, [
         captureOpen,
         closeCapture,
+        closeCommandMenu,
         closeOpenItem,
         closePhotoPicker,
         closeTask,
+        commandMenuOpen,
         mainView,
         photoPickerOpen,
         toggleFocus,
@@ -128,7 +134,7 @@ export default function App() {
             'export-pdf': () => void exportItemPdf(),
             'open-vault': () => openSettings('vault'),
             properties: () => toggleProperties(),
-            search: () => window.dispatchEvent(new CustomEvent(SEARCH_COMMAND)),
+            search: () => toggleCommandMenu(),
             'select-all': selectAllInFocusedField,
             settings: () => openSettings(),
             sidebar: () => toggleSidebar(),
@@ -149,6 +155,7 @@ export default function App() {
             setMainView,
             setTaskView,
             toggleCapture,
+            toggleCommandMenu,
             toggleProperties,
             toggleSidebar,
         ],
@@ -203,7 +210,8 @@ export default function App() {
     // List keeps a permanent detail column; Cards and Table open an item over or
     // instead of themselves, which is what `openMode` chooses between.
     const listMode = viewMode === 'list';
-    const opened = !listMode && openId !== null;
+    // List has no drawer, but a page can still be forced on it (the command menu does).
+    const opened = openId !== null && (!listMode || openAs === 'page');
     const asDrawer = opened && openAs === 'drawer';
     const asPage = opened && openAs === 'page';
     const drawer = useMountTransition(asDrawer && !chatOpen, DRAWER_MS, reduceMotion);
@@ -279,7 +287,7 @@ export default function App() {
                              * and Table because neither leaves a column for it.
                              */}
                             {!(asPage || (chatOpen && !listMode)) && <ListPane />}
-                            {(listMode || (chatOpen && !listMode)) && (
+                            {((listMode && !asPage) || (chatOpen && !listMode)) && (
                                 <div className="flex min-w-0 flex-1 flex-col bg-surface">
                                     {chatOpen ? <AskLoreChat /> : <DetailPane />}
                                 </div>
@@ -370,6 +378,7 @@ export default function App() {
             {focusPopoverOpen && <FocusPopover />}
             {photoPickerOpen && <UnsplashPicker />}
             {settingsOpen && <SettingsModal />}
+            {commandMenuOpen && <CommandMenu />}
             {!onboarded && <Onboarding />}
         </div>
     );

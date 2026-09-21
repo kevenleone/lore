@@ -82,6 +82,10 @@ let unsubscribeVault: (() => void) | null = null;
  */
 const MIN_INDEXED_QUERY = 3;
 
+const MAX_RECENT_ITEMS = 8;
+const MAX_RECENT_SEARCHES = 5;
+const MIN_RECENT_SEARCH = 2;
+
 /**
  * In-flight hydrate, so concurrent callers share one run.
  *
@@ -130,9 +134,11 @@ interface StoreState {
 
     chatOpen: boolean;
     clearFilters: () => void;
+    clearRecents: () => void;
     /** Back to the list of projects, from one project's board. */
     closeBoard: () => void;
     closeCapture: () => void;
+    closeCommandMenu: () => void;
     /** Puts an item opened from Cards or Table away again. */
     closeOpenItem: () => void;
     closePhotoPicker: () => void;
@@ -140,6 +146,7 @@ interface StoreState {
     /** Closes the Tasks surface's rail. The task stays selected. */
     closeTask: () => void;
     collections: Collection[];
+    commandMenuOpen: boolean;
     createCollection: (input: NewCollection) => Promise<void>;
     createItem: (input: NewItem) => Promise<Item>;
     /** Steps "Working on" to the next item in the queue. */
@@ -224,12 +231,17 @@ interface StoreState {
     openCapture: () => void;
     /** Opens the capture drawer with a column's board and status already set. */
     openCaptureIn: (collectionId: null | string, column: BoardColumnConfig) => void;
+    /** Opens the photo picker against an item, to choose its thumbnail. */
+    openCommandMenu: () => void;
     /**
      * The item Cards or Table has opened, or null. List mode never sets it —
      * there the detail pane is a permanent column, so there is nothing to open.
      */
     openId: null | string;
-    /** Opens the photo picker against an item, to choose its thumbnail. */
+    /** Opens an item as a full page, whatever the view mode and open-mode preference say. */
+    openItemPage: (id: string) => void;
+    /** Follows a link from the open item, staying a full page when that is how it is open. */
+    openLinkedItem: (id: string) => void;
     openPhotoPicker: (itemId: string) => void;
     // settings actions
     openSettings: (pane?: SettingsPane) => void;
@@ -245,7 +257,11 @@ interface StoreState {
     prefs: Prefs;
     /** Confirms an action whose effect the user cannot see happen. */
     pushToast: (message: string, action?: ToastAction) => void;
+    recentItemIds: string[];
+    recentSearches: string[];
     recentWorkspaces: WorkspaceRef[];
+    recordRecentItem: (id: string) => void;
+    recordRecentSearch: (query: string) => void;
     // data actions
     refresh: () => Promise<void>;
     /**
@@ -321,9 +337,9 @@ interface StoreState {
     settingsPane: SettingsPane;
     setViewMode: (mode: ViewMode) => void;
     sidebarVisible: boolean;
-
     /** Ends the current interval early and moves to the next one. */
     skipFocusInterval: () => void;
+
     sort: SortOrder;
     /**
      * Ends the session: back to a fresh first interval, which is also what
@@ -342,6 +358,7 @@ interface StoreState {
     toasts: Toast[];
     toggleCapture: () => void;
     toggleChat: () => void;
+    toggleCommandMenu: () => void;
     /** Adds or removes one value from a multi-select filter facet. */
     toggleFilter: <F extends FilterFacet>(facet: F, value: Filters[F][number]) => void;
     /** Starts or pauses the current interval — the ⌥⇧F shortcut and both surfaces. */
@@ -575,7 +592,14 @@ function persist(
         migratedAt?: null | string;
     } & Pick<
         StoreState,
-        'focusSessions' | 'onboarded' | 'prefs' | 'recentWorkspaces' | 'schedule' | 'workspacePath'
+        | 'focusSessions'
+        | 'onboarded'
+        | 'prefs'
+        | 'recentItemIds'
+        | 'recentSearches'
+        | 'recentWorkspaces'
+        | 'schedule'
+        | 'workspacePath'
     >,
 ): void {
     savePersisted({
@@ -583,10 +607,16 @@ function persist(
         migratedAt: s.migratedAt ?? persisted.migratedAt,
         onboarded: s.onboarded,
         prefs: s.prefs,
+        recentItemIds: s.recentItemIds,
+        recentSearches: s.recentSearches,
         recentWorkspaces: s.recentWorkspaces,
         schedule: s.schedule,
         workspacePath: s.workspacePath,
     });
+}
+
+function pushRecent(list: string[], value: string, max: number): string[] {
+    return [value, ...list.filter((entry) => entry !== value)].slice(0, max);
 }
 
 /**
@@ -760,6 +790,10 @@ export const useStore = create<StoreState>((set, get) => ({
     clearFilters() {
         set({ filters: EMPTY_FILTERS });
     },
+    clearRecents() {
+        set({ recentItemIds: [], recentSearches: [] });
+        persist(get());
+    },
 
     closeBoard() {
         set({ boardId: null });
@@ -768,6 +802,10 @@ export const useStore = create<StoreState>((set, get) => ({
     closeCapture() {
         set({ captureOpen: false });
     },
+    closeCommandMenu() {
+        set({ commandMenuOpen: false });
+    },
+
     closeOpenItem() {
         set({ openAs: null, openId: null });
     },
@@ -785,6 +823,7 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ taskRailOpen: false });
     },
     collections: [],
+    commandMenuOpen: false,
     async createCollection(input) {
         await getRepository().createCollection(input);
         await get().refresh();
@@ -1034,7 +1073,22 @@ export const useStore = create<StoreState>((set, get) => ({
             focusPopoverOpen: false,
         });
     },
+    openCommandMenu() {
+        set({ commandMenuOpen: true });
+    },
+
     openId: null,
+
+    openItemPage(id) {
+        get().selectItem(id);
+        set({ openAs: 'page', openId: id });
+    },
+
+    openLinkedItem(id) {
+        const { openAs, openId } = get();
+        if (openAs === 'page' && openId !== null) get().openItemPage(id);
+        else get().selectItem(id);
+    },
 
     openPhotoPicker(itemId) {
         set({ photoPickerItemId: itemId });
@@ -1057,7 +1111,20 @@ export const useStore = create<StoreState>((set, get) => ({
         // list it is reporting on.
         set({ toasts: [...get().toasts, toast].slice(-3) });
     },
+    recentItemIds: persisted.recentItemIds,
+    recentSearches: persisted.recentSearches,
     recentWorkspaces: persisted.recentWorkspaces,
+    recordRecentItem(id) {
+        set({ recentItemIds: pushRecent(get().recentItemIds, id, MAX_RECENT_ITEMS) });
+        persist(get());
+    },
+    recordRecentSearch(query) {
+        const text = query.trim();
+        if (text.length < MIN_RECENT_SEARCH) return;
+        const kept = get().recentSearches.filter((q) => q.toLowerCase() !== text.toLowerCase());
+        set({ recentSearches: [text, ...kept].slice(0, MAX_RECENT_SEARCHES) });
+        persist(get());
+    },
 
     async refresh() {
         const repo = getRepository();
@@ -1190,6 +1257,7 @@ export const useStore = create<StoreState>((set, get) => ({
             openId: opens ? id : null,
             selectedId: id,
         });
+        get().recordRecentItem(id);
         void get().loadDetail(id);
     },
     selectTask(id) {
@@ -1202,6 +1270,7 @@ export const useStore = create<StoreState>((set, get) => ({
             selectedId: id,
             taskRailOpen: true,
         });
+        get().recordRecentItem(id);
         void get().loadDetail(id);
     },
     selectView(kind, val = null) {
@@ -1365,6 +1434,7 @@ export const useStore = create<StoreState>((set, get) => ({
             items: [],
             openAs: null,
             openId: null,
+            recentItemIds: [],
             search: '',
             searchResults: null,
             selectedId: null,
@@ -1419,6 +1489,10 @@ export const useStore = create<StoreState>((set, get) => ({
 
     toggleChat() {
         set((s) => ({ chatOpen: !s.chatOpen }));
+    },
+
+    toggleCommandMenu() {
+        set((s) => ({ commandMenuOpen: !s.commandMenuOpen }));
     },
 
     toggleFilter(facet, value) {
@@ -1519,6 +1593,7 @@ export const useStore = create<StoreState>((set, get) => ({
             items: [],
             onboarded: false,
             onboardingStep: 'pick',
+            recentItemIds: [],
             recentWorkspaces: get().recentWorkspaces.filter((r) => r.path !== path),
             selectedId: null,
             settingsOpen: false,
