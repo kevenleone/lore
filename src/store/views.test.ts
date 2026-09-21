@@ -137,6 +137,13 @@ describe('detailFlags', () => {
         const f = detailFlags(link, false, 2);
         expect(f.showSummary).toBe(false);
         expect(f.showRelated).toBe(false);
+        expect(detailFlags(link, false, 0, 1).showBacklinks).toBe(false);
+    });
+
+    it('shows backlinks only when something links here', () => {
+        expect(detailFlags(link, true, 0, 1).showBacklinks).toBe(true);
+        expect(detailFlags(link, true, 2, 0).showBacklinks).toBe(false);
+        expect(detailFlags(link, true, 2).showBacklinks).toBe(false);
     });
 });
 
