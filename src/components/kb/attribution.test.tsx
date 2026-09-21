@@ -39,7 +39,13 @@ describe('the summary card', () => {
 
 describe('the related section', () => {
     it('does not credit the reader’s own links to an AI', () => {
-        render(<RelatedCards related={[item({ id: 'i2', title: 'Another note' })]} />);
+        render(
+            <RelatedCards
+                hint="linked in this note"
+                items={[item({ id: 'i2', title: 'Another note' })]}
+                label="Related"
+            />,
+        );
 
         expect(screen.getByText('Another note')).toBeTruthy();
         expect(screen.queryByText(/surfaced by AI/i)).toBeNull();
