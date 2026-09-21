@@ -168,6 +168,7 @@ export const SORT_LABELS: Record<SortOrder, string> = {
 export interface DetailFlags {
     detIsCode: boolean;
     detIsText: boolean;
+    showBacklinks: boolean;
     showPoints: boolean;
     showPreview: boolean;
     showRelated: boolean;
@@ -196,10 +197,16 @@ export function detailBodyField(item: Item): 'body' | null {
 }
 
 /** Detail-pane section visibility — mirrors the prototype's `sc-if` gates. */
-export function detailFlags(item: Item, showAI: boolean, relatedCount: number): DetailFlags {
+export function detailFlags(
+    item: Item,
+    showAI: boolean,
+    relatedCount: number,
+    backlinkCount = 0,
+): DetailFlags {
     return {
         detIsCode: item.type === 'code',
         detIsText: item.type === 'note' || item.type === 'task',
+        showBacklinks: showAI && backlinkCount > 0,
         showPoints: showAI && !!item.points && item.points.length > 0,
         // Only show a preview when we actually have an image to show.
         showPreview: !!item.image,

@@ -79,6 +79,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     const detail = useStore((s) => s.detail);
     // The AI sections need both the pane toggle and the Capture & AI setting.
     const showSections = useStore((s) => s.prefs.switches.detailSections);
+    const itemMeta = useStore((s) => s.itemMeta);
     const blockEditorEnabled = useStore((s) => s.prefs.switches.blockEditor);
     const toggleStar = useStore((s) => s.toggleStar);
     const propertiesOpen = useStore((s) => s.prefs.propertiesOpen);
@@ -144,7 +145,8 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     const meta = typeMeta(sel.type);
     const coll = collectionFor(sel, collections);
     const related = relatedItems(sel, items);
-    const flags = detailFlags(sel, showSections, related.length);
+    const backlinks = itemMeta?.backlinks ?? [];
+    const flags = detailFlags(sel, showSections, related.length, backlinks.length);
     const linkUrl =
         sel.type === 'link' ? sel.url || (sel.domain ? `https://${sel.domain}` : '') : '';
     const video = sel.type === 'link' ? youtubeVideo(sel.url) : null;
@@ -723,7 +725,16 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                         </div>
                     </div>
 
-                    {flags.showRelated && <RelatedCards related={related} />}
+                    {flags.showRelated && (
+                        <RelatedCards hint="linked in this note" items={related} label="Related" />
+                    )}
+                    {flags.showBacklinks && (
+                        <RelatedCards
+                            hint="linked from elsewhere"
+                            items={backlinks}
+                            label="Backlinks"
+                        />
+                    )}
                 </div>
             </div>
         </div>
