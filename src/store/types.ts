@@ -213,7 +213,7 @@ export interface ItemFlags {
 }
 
 /**
- * Per-file facts the Properties panel shows, read straight off the index rather
+ * Per-file facts the detail pane shows, read straight off the index rather
  * than carried on `Item`: `listItems()` re-runs after every mutation, so putting
  * file stats on the item would cost the whole vault on each save.
  */

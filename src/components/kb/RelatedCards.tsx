@@ -1,8 +1,3 @@
-// "Related" section in the detail pane.
-//
-// These are the file's own `related` wikilinks — the Properties panel adds and
-// removes them by hand — so the section names the link, not a discovery.
-
 import type { Item } from '../../store/types';
 
 import { cn } from '../../lib/cn';
@@ -11,19 +6,25 @@ import { useStore } from '../../store/useStore';
 import { ChevronRight } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 
-export function RelatedCards({ related }: { related: Item[] }) {
+interface RelatedCardsProps {
+    hint: string;
+    items: Item[];
+    label: string;
+}
+
+export function RelatedCards({ hint, items, label }: RelatedCardsProps) {
     const selectItem = useStore((s) => s.selectItem);
 
     return (
         <div className="mt-[22px]">
             <div className="mb-[11px] flex items-center gap-2">
                 <span className="text-caption font-[680] tracking-[.06em] text-faint uppercase">
-                    Related
+                    {label}
                 </span>
-                <span className="text-caption text-faint">linked in this note</span>
+                <span className="text-caption text-faint">{hint}</span>
             </div>
             <div className="flex flex-col gap-2">
-                {related.map((r) => {
+                {items.map((r) => {
                     const meta = typeMeta(r.type);
                     return (
                         <button

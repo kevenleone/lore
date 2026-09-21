@@ -980,12 +980,7 @@ export const useStore = create<StoreState>((set, get) => ({
         void get().loadItemMeta(id);
     },
 
-    /**
-     * A second round-trip per selection that only the Properties panel reads, so
-     * it is skipped entirely while the panel is closed.
-     */
     async loadItemMeta(id) {
-        if (!get().prefs.propertiesOpen) return;
         const repo = getRepository();
         const meta = repo.itemMeta ? await repo.itemMeta(id).catch(() => null) : null;
         if (get().selectedId === id) set({ itemMeta: meta });
@@ -1479,9 +1474,6 @@ export const useStore = create<StoreState>((set, get) => ({
     toggleProperties() {
         const open = !get().prefs.propertiesOpen;
         get().setPref('propertiesOpen', open);
-        const id = get().selectedId;
-        if (open && id) void get().loadItemMeta(id);
-        else if (!open) set({ itemMeta: null });
     },
     toggleSidebar() {
         set((s) => ({ sidebarVisible: !s.sidebarVisible }));
