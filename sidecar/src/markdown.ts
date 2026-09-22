@@ -116,14 +116,16 @@ function stripLeadingBlank(body: string): string {
     return body.replace(/^\s*\n/, '');
 }
 
-const str = (value: unknown): string | undefined => (typeof value === 'string' && value.trim() ? value : undefined);
+const str = (value: unknown): string | undefined =>
+    typeof value === 'string' && value.trim() ? value : undefined;
 
 const strArray = (value: unknown): string[] =>
-    Array.isArray(value) ? value.filter((x): x is string => typeof x === 'string' && !!x.trim()) : [];
+    Array.isArray(value)
+        ? value.filter((x): x is string => typeof x === 'string' && !!x.trim())
+        : [];
 
 function iso(value: unknown, fallback: string): string;
 function iso(value: unknown, fallback: undefined): string | undefined;
-
 function iso(value: unknown, fallback: string | undefined): string | undefined {
     if (typeof value === 'string' && !Number.isNaN(Date.parse(value))) {
         return new Date(value).toISOString();
