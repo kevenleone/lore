@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.16.1](https://github.com/kevenleone/lore/compare/v1.16.0...v1.16.1) (2026-09-22)
+
+
+### Refactoring
+
+* move window HTML entries into windows/ ([71ba6d7](https://github.com/kevenleone/lore/commit/71ba6d726884ba8ccb44e1331206ab1173a3d990))
+* rename single-letter function parameters ([4c28c65](https://github.com/kevenleone/lore/commit/4c28c6527131ac4e690f7dc4f5195331ffc5b45e))
+
 ## [1.16.0](https://github.com/kevenleone/lore/compare/v1.15.0...v1.16.0) (2026-09-22)
 
 
