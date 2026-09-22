@@ -66,6 +66,9 @@
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "preview": "vite preview",
+        "site:build": "vite build site",
+        "site:dev": "vite site",
+        "site:preview": "vite preview site",
         "tauri": "node scripts/tauri.mjs",
         "test": "vitest run && pnpm test:sidecar",
         "test:sidecar": "pnpm --filter @lore/sidecar test"

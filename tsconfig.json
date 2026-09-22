@@ -20,6 +20,6 @@
         "target": "ES2020",
         "useDefineForClassFields": true
     },
-    "include": ["src"],
+    "include": ["src", "site"],
     "references": [{ "path": "./tsconfig.node.json" }]
 }

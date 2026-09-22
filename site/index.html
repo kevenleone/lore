@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Lore: quick capture into plain Markdown</title>
+        <meta
+            name="description"
+            content="Lore is an offline-first knowledge base for macOS. Press ⌥Space anywhere to capture a link, note, task or snippet into a folder of Markdown files you own."
+        />
+        <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#15151a" media="(prefers-color-scheme: dark)" />
+        <meta property="og:title" content="Lore" />
+        <meta
+            property="og:description"
+            content="Offline-first quick capture for macOS. Your library is a folder of Markdown files."
+        />
+        <meta property="og:type" content="website" />
+        <link rel="icon" type="image/svg+xml" href="../public/lore-icon.svg" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="./styles.css" />
+        <script type="module" src="./main.ts"></script>
+    </head>
+
+    <body>
+        <header class="sticky top-0 z-10 border-b border-transparent bg-page/80 backdrop-blur-md">
+            <nav class="mx-auto flex h-16 max-w-[1200px] items-center gap-8 px-4 md:px-8">
+                <a class="flex items-center gap-2.5 text-text" href="#top" aria-label="Lore home">
+                    <svg class="size-7" viewBox="0 0 64 64" aria-hidden="true">
+                        <path
+                            d="M32 9a23 23 0 1 1-19 10"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-width="4"
+                        />
+                        <path d="M13 19C21 19 27 14 28 6 20 6 14 11 13 19Z" fill="currentColor" />
+                        <path
+                            d="M25.2 22 H33.2 V23.5 H31.5 V39.2 H36.9 V37.1 H38.8 V42 H26.6 L27.1 23.5 H25.2 Z"
+                            fill="currentColor"
+                        />
+                    </svg>
+                    <span class="font-serif text-[28px] leading-none">Lore</span>
+                </a>
+
+                <div class="ml-auto hidden items-center gap-7 text-sm text-text2 md:flex">
+                    <a class="transition-colors hover:text-text" href="#capture">Capture</a>
+                    <a class="transition-colors hover:text-text" href="#vault">The vault</a>
+                    <a class="transition-colors hover:text-text" href="#principles">Principles</a>
+                    <a
+                        class="transition-colors hover:text-text"
+                        href="https://github.com/kevenleone/lore"
+                        >GitHub</a
+                    >
+                </div>
+
+                <a
+                    class="ml-auto inline-flex h-9 items-center rounded-full bg-ink px-4 text-sm font-medium text-ink-fg transition hover:bg-ink-hover active:scale-[0.98] md:ml-0"
+                    data-download
+                    href="https://github.com/kevenleone/lore/releases/latest"
+                    >Download for macOS</a
+                >
+            </nav>
+        </header>
+
+        <main id="top" class="overflow-x-clip">
+            <section class="relative mx-auto max-w-[1200px] px-4 pt-14 md:px-8 md:pt-20">
+                <div class="max-w-[640px]">
+                    <h1
+                        class="rise font-serif text-5xl leading-[1.02] tracking-[-0.01em] text-balance md:text-6xl"
+                    >
+                        Capture in a second. Keep it as <em class="text-text2">Markdown.</em>
+                    </h1>
+                    <p
+                        class="rise mt-6 max-w-[40ch] text-lg leading-relaxed text-pretty text-text2 [--order:1] md:text-xl"
+                    >
+                        Press
+                        <kbd
+                            class="rounded-md border border-border bg-panel px-1.5 font-sans text-base text-text"
+                            >⌥Space</kbd
+                        >
+                        anywhere, drop in a link, note, task or snippet. Lore files it as Markdown
+                        you own.
+                    </p>
+                    <div class="rise mt-9 flex flex-wrap items-center gap-3 [--order:2]">
+                        <a
+                            class="inline-flex h-12 items-center rounded-full bg-ink px-6 text-base font-medium text-ink-fg transition hover:bg-ink-hover active:scale-[0.98]"
+                            data-download
+                            href="https://github.com/kevenleone/lore/releases/latest"
+                            >Download for macOS</a
+                        >
+                        <a
+                            class="inline-flex h-12 items-center rounded-full border border-border bg-panel px-6 text-base font-medium text-text transition hover:border-text3 active:scale-[0.98]"
+                            href="https://github.com/kevenleone/lore"
+                            >View source</a
+                        >
+                    </div>
+                </div>
+
+                <figure class="rise mt-14 [--order:3] md:mt-16 md:-mr-40 md:ml-24">
+                    <img
+                        class="h-auto w-full rounded-xl border border-border shadow-shot"
+                        src="../docs/images/knowledge-base.png"
+                        width="2010"
+                        height="1269"
+                        fetchpriority="high"
+                        alt="The Lore knowledge base: a sidebar of collections and tags, a list of saved items, and the detail of a saved article with an AI summary."
+                    />
+                </figure>
+            </section>
+
+            <section
+                id="capture"
+                class="mx-auto max-w-[1200px] scroll-mt-20 px-4 py-24 md:px-8 md:py-36"
+            >
+                <div class="grid items-start gap-14 md:grid-cols-[5fr_7fr] md:gap-16">
+                    <div class="md:sticky md:top-32" data-reveal>
+                        <div class="flex items-center gap-3" aria-label="Option plus Space">
+                            <span class="keycap [--order:0]">⌥</span>
+                            <span class="text-2xl text-text3" aria-hidden="true">+</span>
+                            <span class="keycap min-w-[180px] text-lg [--order:1]">Space</span>
+                        </div>
+                        <h2 class="mt-10 font-serif text-4xl leading-[1.05] md:text-5xl">
+                            One shortcut, from anywhere.
+                        </h2>
+                        <p class="mt-5 max-w-[46ch] text-lg leading-relaxed text-text2">
+                            A frameless panel floats over whatever you are in. Paste a URL and Lore
+                            titles it, tags it and files it. Press Esc and you are back.
+                        </p>
+                        <ul
+                            class="mt-8 flex flex-wrap gap-2 text-sm font-medium"
+                            aria-label="Item types"
+                        >
+                            <li class="rounded-full bg-type-link-bg px-3 py-1 text-type-link-fg">
+                                Link
+                            </li>
+                            <li class="rounded-full bg-type-note-bg px-3 py-1 text-type-note-fg">
+                                Note
+                            </li>
+                            <li class="rounded-full bg-type-task-bg px-3 py-1 text-type-task-fg">
+                                Task
+                            </li>
+                            <li class="rounded-full bg-type-code-bg px-3 py-1 text-type-code-fg">
+                                Code
+                            </li>
+                            <li class="rounded-full bg-type-image-bg px-3 py-1 text-type-image-fg">
+                                Image
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="relative">
+                        <figure class="[--order:1]" data-reveal>
+                            <img
+                                class="h-auto w-full rounded-xl border border-border shadow-shot"
+                                src="../docs/images/capture-command-bar.png"
+                                width="1140"
+                                height="600"
+                                loading="lazy"
+                                alt="The command bar has recognised a pasted URL as a link, titled it and suggested tags."
+                            />
+                            <figcaption class="mt-3 text-sm text-text2">
+                                The command bar. Type anything and Lore works out what it is.
+                            </figcaption>
+                        </figure>
+                        <figure class="mt-10 [--order:2] md:mt-12 md:ml-28" data-reveal>
+                            <img
+                                class="h-auto w-full rounded-xl border border-border shadow-shot"
+                                src="../docs/images/capture-composer.png"
+                                width="1140"
+                                height="825"
+                                loading="lazy"
+                                alt="The composer, with a tab for each item type above a title and body."
+                            />
+                            <figcaption class="mt-3 text-sm text-text2">
+                                The composer. Pick a type first, then add structure.
+                            </figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </section>
+
+            <section id="vault" class="scroll-mt-16 bg-band py-24 md:py-32">
+                <div class="mx-auto max-w-[1200px] px-4 md:px-8">
+                    <div class="max-w-[640px]" data-reveal>
+                        <h2 class="font-serif text-4xl leading-[1.05] md:text-5xl">
+                            The filesystem is the database.
+                        </h2>
+                        <p class="mt-5 max-w-[52ch] text-lg leading-relaxed text-text2">
+                            Folders are collections and files are items. Edit in vim, move in
+                            Finder, pull on another machine. Lore follows along without a restart.
+                        </p>
+                    </div>
+
+                    <div class="mt-14 grid gap-5 md:grid-cols-[5fr_7fr]">
+                        <pre
+                            class="overflow-x-auto rounded-xl border border-border bg-panel p-6 font-mono text-sm leading-[1.8] text-text [--order:1]"
+                            data-reveal
+                        ><code>&lt;vault&gt;/
+  .lore/
+    collections.json  <span class="text-text3">colours, order</span>
+    index.db          <span class="text-text3">derived, rebuilt</span>
+  Reading List/
+    how-linear-builds-product.md
+  Work/
+    q3-roadmap-sync.md
+  an-unfiled-note.md</code></pre>
+                        <pre
+                            class="overflow-x-auto rounded-xl border border-border bg-panel p-6 font-mono text-sm leading-[1.8] text-text [--order:2]"
+                            data-reveal
+                        ><code><span class="text-text3">---</span>
+<span class="text-text2">type:</span> link
+<span class="text-text2">title:</span> How Linear builds product
+<span class="text-text2">url:</span> https://linear.app/blog/how-linear-builds-product
+<span class="text-text2">tags:</span> [product, research]
+<span class="text-text2">related:</span>
+  - <span class="text-type-link-fg">'[[building-a-second-brain]]'</span>
+<span class="text-text3">---</span>
+
+Your own notes on the link, in plain Markdown.</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mx-auto max-w-[1200px] px-4 py-24 md:px-8 md:py-36">
+                <div
+                    class="flex flex-col items-start gap-8 md:flex-row md:items-end md:justify-between"
+                    data-reveal
+                >
+                    <h2 class="max-w-[16ch] font-serif text-4xl leading-[1.05] md:text-5xl">
+                        Browse it as cards. Triage it as a table.
+                    </h2>
+                    <div
+                        class="inline-flex rounded-full border border-border bg-panel p-1 text-sm font-medium"
+                        role="tablist"
+                        aria-label="Views"
+                    >
+                        <button
+                            class="rounded-full px-5 py-2 text-text2 transition aria-selected:bg-ink aria-selected:text-ink-fg"
+                            id="tab-cards"
+                            role="tab"
+                            type="button"
+                            aria-controls="panel-cards"
+                            aria-selected="true"
+                        >
+                            Cards
+                        </button>
+                        <button
+                            class="rounded-full px-5 py-2 text-text2 transition aria-selected:bg-ink aria-selected:text-ink-fg"
+                            id="tab-table"
+                            role="tab"
+                            type="button"
+                            aria-controls="panel-table"
+                            aria-selected="false"
+                            tabindex="-1"
+                        >
+                            Table
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-12 [--order:1]" data-reveal>
+                    <div id="panel-cards" role="tabpanel" aria-labelledby="tab-cards">
+                        <img
+                            class="h-auto w-full rounded-xl border border-border shadow-shot"
+                            src="../docs/images/view-cards.png"
+                            width="2010"
+                            height="1269"
+                            loading="lazy"
+                            alt="Card view: saved items as a grid of cards with previews, grouped under the sidebar's collections."
+                        />
+                    </div>
+                    <div id="panel-table" role="tabpanel" aria-labelledby="tab-table" hidden>
+                        <picture>
+                            <source
+                                media="(prefers-color-scheme: dark)"
+                                srcset="../docs/images/view-table-dark.png"
+                            />
+                            <img
+                                class="h-auto w-full rounded-xl border border-border shadow-shot"
+                                src="../docs/images/view-table.png"
+                                width="2010"
+                                height="1269"
+                                alt="Table view: items in rows with columns for collection, tags, type and age."
+                            />
+                        </picture>
+                    </div>
+                </div>
+            </section>
+
+            <section
+                id="principles"
+                class="mx-auto max-w-[1200px] scroll-mt-20 px-4 pb-24 md:px-8 md:pb-36"
+            >
+                <h2 class="max-w-[18ch] font-serif text-4xl leading-[1.05] md:text-5xl" data-reveal>
+                    Built so your notes outlive the app.
+                </h2>
+
+                <div class="mt-12 grid gap-4 md:grid-cols-3">
+                    <article
+                        class="flex flex-col justify-between gap-16 rounded-xl bg-type-link-bg p-8 md:col-span-2 md:p-10"
+                        data-reveal
+                    >
+                        <p
+                            class="font-serif text-6xl leading-none text-type-link-fg"
+                            aria-hidden="true"
+                        >
+                            0 accounts
+                        </p>
+                        <div>
+                            <h3 class="text-xl font-semibold">
+                                Offline first. The network is never required.
+                            </h3>
+                            <p class="mt-2 max-w-[52ch] leading-relaxed text-text2">
+                                No sign-up, no sync service, no telemetry. Sync is whatever you
+                                already use for folders.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article
+                        class="rounded-xl border border-border bg-panel p-8 [--order:1]"
+                        data-reveal
+                    >
+                        <h3 class="text-xl font-semibold">Lore never runs git.</h3>
+                        <p class="mt-2 leading-relaxed text-text2">
+                            The vault is a folder. Committing it is up to you, and retitling a note
+                            never renames the file behind your back.
+                        </p>
+                    </article>
+
+                    <article class="rounded-xl border border-border bg-panel p-8" data-reveal>
+                        <h3 class="text-xl font-semibold">Never lose what you typed.</h3>
+                        <p class="mt-2 leading-relaxed text-text2">
+                            Frontmatter keys Lore does not know survive a round-trip. A link to a
+                            note that does not exist yet heals when it appears.
+                        </p>
+                    </article>
+
+                    <article class="rounded-xl bg-type-note-bg p-8 [--order:1]" data-reveal>
+                        <h3 class="text-xl font-semibold">Deletes go to the trash.</h3>
+                        <p class="mt-2 leading-relaxed text-text2">
+                            Nothing is unlinked. Removed items wait in
+                            <code class="font-mono text-sm">.lore/trash</code>
+                            until you decide.
+                        </p>
+                    </article>
+
+                    <article
+                        class="rounded-xl border border-border bg-panel p-8 [--order:2]"
+                        data-reveal
+                    >
+                        <h3 class="text-xl font-semibold">The index is disposable.</h3>
+                        <p class="mt-2 leading-relaxed text-text2">
+                            Delete <code class="font-mono text-sm">.lore/index.db</code> and search
+                            rebuilds it from your files. Your notes are the only source of truth.
+                        </p>
+                    </article>
+                </div>
+            </section>
+
+            <section class="border-t border-border">
+                <div
+                    class="mx-auto flex max-w-[1200px] flex-col items-center px-4 py-24 text-center md:px-8 md:py-32"
+                >
+                    <img
+                        class="size-20"
+                        src="../public/lore-icon.svg"
+                        width="64"
+                        height="64"
+                        alt=""
+                    />
+                    <h2 class="mt-8 font-serif text-4xl leading-[1.05] md:text-5xl" data-reveal>
+                        Get Lore for your Mac.
+                    </h2>
+                    <p class="mt-4 text-text2" data-release-note>
+                        Built and published with every release.
+                    </p>
+                    <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+                        <a
+                            class="inline-flex h-12 items-center rounded-full bg-ink px-6 text-base font-medium text-ink-fg transition hover:bg-ink-hover active:scale-[0.98]"
+                            data-download
+                            href="https://github.com/kevenleone/lore/releases/latest"
+                            >Download for macOS</a
+                        >
+                        <a
+                            class="inline-flex h-12 items-center rounded-full border border-border bg-panel px-6 text-base font-medium text-text transition hover:border-text3 active:scale-[0.98]"
+                            data-download-intel
+                            hidden
+                            >Intel build</a
+                        >
+                    </div>
+                    <p class="mt-10 text-sm text-text2">Or build it from source:</p>
+                    <code
+                        class="mt-3 rounded-md border border-border bg-panel px-4 py-2 font-mono text-sm"
+                        >pnpm install &amp;&amp; pnpm tauri dev</code
+                    >
+                </div>
+            </section>
+        </main>
+
+        <footer class="border-t border-border">
+            <div
+                class="mx-auto flex max-w-[1200px] flex-col gap-4 px-4 py-8 text-sm text-text2 md:flex-row md:items-center md:justify-between md:px-8"
+            >
+                <span class="font-serif text-xl text-text">Lore</span>
+                <div class="flex flex-wrap gap-6">
+                    <a class="hover:text-text" href="https://github.com/kevenleone/lore">GitHub</a>
+                    <a class="hover:text-text" href="https://github.com/kevenleone/lore/releases"
+                        >Releases</a
+                    >
+                    <a
+                        class="hover:text-text"
+                        href="https://github.com/kevenleone/lore/blob/main/CHANGELOG.md"
+                        >Changelog</a
+                    >
+                    <a class="hover:text-text" href="https://github.com/kevenleone/lore/issues"
+                        >Report an issue</a
+                    >
+                </div>
+            </div>
+        </footer>
+    </body>
+</html>
