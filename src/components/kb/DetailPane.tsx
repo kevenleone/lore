@@ -22,7 +22,7 @@ import {
     toggleSubtask,
 } from '../../lib/subtasks';
 import { UNSPLASH_HOME } from '../../lib/unsplash';
-import { youtubeThumbnail, youtubeVideo } from '../../lib/youtube';
+import { linkVideo, videoThumbnail } from '../../lib/video';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
 import {
@@ -150,7 +150,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     const flags = detailFlags(sel, showSections, related.length, backlinks.length);
     const linkUrl =
         sel.type === 'link' ? sel.url || (sel.domain ? `https://${sel.domain}` : '') : '';
-    const video = sel.type === 'link' ? youtubeVideo(sel.url) : null;
+    const video = sel.type === 'link' ? linkVideo(sel.url) : null;
     // A video plays in the body, so a cover banner would only repeat its thumbnail.
     const cover = flags.showPreview && bannerPlacement === 'cover' && !video;
 
@@ -480,7 +480,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                     {video && (
                         <VideoPlayer
                             key={sel.id}
-                            thumbnail={previewSrc ?? youtubeThumbnail(video.id)}
+                            thumbnail={previewSrc ?? videoThumbnail(video)}
                             title={sel.title}
                             video={video}
                         />
