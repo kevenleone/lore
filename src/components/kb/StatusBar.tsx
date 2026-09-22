@@ -23,10 +23,10 @@ const SEGMENT =
 const ICON_SEGMENT = cn(SEGMENT, 'h-[22px] w-[22px] justify-center px-0');
 
 export function StatusBar() {
-    const workspacePath = useStore((s) => s.workspacePath);
-    const appearance = useStore((s) => s.prefs.appearance);
-    const openSettings = useStore((s) => s.openSettings);
-    const setAppearance = useStore((s) => s.setAppearance);
+    const workspacePath = useStore((state) => state.workspacePath);
+    const appearance = useStore((state) => state.prefs.appearance);
+    const openSettings = useStore((state) => state.openSettings);
+    const setAppearance = useStore((state) => state.setAppearance);
 
     const tracked = useVaultTracked();
     const dark = effectiveTheme(appearance) === 'dark';
@@ -116,7 +116,7 @@ function Divider() {
 }
 
 function useVaultTracked(): boolean | null {
-    const workspacePath = useStore((s) => s.workspacePath);
+    const workspacePath = useStore((state) => state.workspacePath);
     const [tracked, setTracked] = useState<boolean | null>(null);
 
     useEffect(() => {

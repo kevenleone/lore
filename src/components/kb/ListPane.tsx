@@ -34,24 +34,24 @@ import { OpenModePicker, ViewModePicker } from './ViewModeControls';
 export const LIST_PANE_WIDTH = 438;
 
 export function ListPane() {
-    const items = useStore((s) => s.items);
-    const collections = useStore((s) => s.collections);
-    const view = useStore((s) => s.view);
-    const viewMode = useStore((s) => s.prefs.viewMode);
-    const search = useStore((s) => s.search)
+    const items = useStore((state) => state.items);
+    const collections = useStore((state) => state.collections);
+    const view = useStore((state) => state.view);
+    const viewMode = useStore((state) => state.prefs.viewMode);
+    const search = useStore((state) => state.search)
         .trim()
         .toLowerCase();
-    const searchResults = useStore((s) => s.searchResults);
-    const searching = useStore((s) => s.searching);
-    const sort = useStore((s) => s.sort);
-    const setSort = useStore((s) => s.setSort);
-    const filters = useStore((s) => s.filters);
+    const searchResults = useStore((state) => state.searchResults);
+    const searching = useStore((state) => state.searching);
+    const sort = useStore((state) => state.sort);
+    const setSort = useStore((state) => state.setSort);
+    const filters = useStore((state) => state.filters);
     const [sortOpen, setSortOpen] = useState(false);
     const [filtersOpen, setFiltersOpen] = useState(false);
     const sortRef = useRef<HTMLDivElement>(null);
-    const selectItem = useStore((s) => s.selectItem);
-    const clearFilters = useStore((s) => s.clearFilters);
-    const openCapture = useStore((s) => s.openCapture);
+    const selectItem = useStore((state) => state.selectItem);
+    const clearFilters = useStore((state) => state.clearFilters);
+    const openCapture = useStore((state) => state.openCapture);
     const contextMenu = useContextMenu();
 
     useEffect(() => {
@@ -59,8 +59,8 @@ export function ListPane() {
             return;
         }
 
-        const onDown = (e: MouseEvent) => {
-            if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        const onDown = (event: MouseEvent) => {
+            if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
                 setSortOpen(false);
             }
         };
@@ -78,8 +78,8 @@ export function ListPane() {
         const hits = searchResults && new Set(searchResults);
 
         filtered = hits
-            ? filtered.filter((i) => hits.has(i.id))
-            : filtered.filter((i) => matchesSearch(i, search));
+            ? filtered.filter((item) => hits.has(item.id))
+            : filtered.filter((item) => matchesSearch(item, search));
     }
 
     const isList = viewMode === 'list';

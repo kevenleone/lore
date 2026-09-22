@@ -49,9 +49,9 @@ export class Vault {
         const entries = await readdir(this.root, { withFileTypes: true });
 
         return entries
-            .filter((e) => e.isDirectory() && !isIgnoredDir(e.name))
-            .map((e) => e.name)
-            .sort((a, b) => a.localeCompare(b));
+            .filter((entry) => entry.isDirectory() && !isIgnoredDir(entry.name))
+            .map((entry) => entry.name)
+            .sort((left, right) => left.localeCompare(right));
     }
 
     /**
@@ -75,7 +75,7 @@ export class Vault {
                 id: folder,
                 name: folder,
             }))
-            .sort((a, b) => a.name.localeCompare(b.name));
+            .sort((left, right) => left.name.localeCompare(right.name));
     }
 
     /** Every `.md` file in the vault, as vault-relative paths. */
@@ -233,7 +233,7 @@ export class Vault {
 
     async writeCollectionsFile(collections: readonly Collection[]): Promise<void> {
         const payload = {
-            collections: collections.map((c) => ({ color: c.color, folder: c.id })),
+            collections: collections.map((collection) => ({ color: collection.color, folder: collection.id })),
             version: 1,
         };
 
@@ -353,12 +353,12 @@ function boardConfig(value: unknown): BoardConfig | null {
         return null;
     }
 
-    const parsed = columns.flatMap((c) => {
-        if (!c || typeof c !== 'object') {
+    const parsed = columns.flatMap((column) => {
+        if (!column || typeof column !== 'object') {
             return [];
         }
 
-        const { color, done, id, name } = c as Record<string, unknown>;
+        const { color, done, id, name } = column as Record<string, unknown>;
 
         if (typeof id !== 'string' || !id) {
             return [];

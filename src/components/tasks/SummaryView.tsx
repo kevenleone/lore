@@ -12,12 +12,12 @@ import { DuePill, PriorityChip, ProjectTag, TaskCheckbox, TitleText } from './Ta
 import { TaskTimeline } from './TaskTimeline';
 
 export function SummaryView({ today }: { today: string }) {
-    const items = useStore((s) => s.items);
-    const collections = useStore((s) => s.collections);
-    const selectedId = useStore((s) => s.selectedId);
-    const selectTask = useStore((s) => s.selectTask);
+    const items = useStore((state) => state.items);
+    const collections = useStore((state) => state.collections);
+    const selectedId = useStore((state) => state.selectedId);
+    const selectTask = useStore((state) => state.selectTask);
 
-    const groups = taskGroups(items, today).filter((g) => g.tasks.length > 0);
+    const groups = taskGroups(items, today).filter((taskGroup) => taskGroup.tasks.length > 0);
 
     return (
         <div className="flex-1 overflow-auto px-5 py-[18px]">
@@ -93,9 +93,9 @@ function TaskListRow({
                     : 'border-border bg-surface hover:border-accent-border',
             )}
             onClick={onSelect}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
+            onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
                     onSelect();
                 }
             }}

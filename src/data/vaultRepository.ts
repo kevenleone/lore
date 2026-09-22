@@ -123,7 +123,7 @@ export class VaultRepository implements KnowledgeRepository {
         // repository, and the selector tests keep covering it.
         const items = await this.call(() => request<Item[]>('/items'));
 
-        return view ? items.filter((i) => matchesView(i, view)) : items;
+        return view ? items.filter((item) => matchesView(item, view)) : items;
     }
 
     async listTags(): Promise<TagCount[]> {
@@ -269,9 +269,9 @@ export class VaultRepository implements KnowledgeRepository {
      */
     private async ready(): Promise<void> {
         if (!this.opening) {
-            this.opening = this.openWorkspace().catch((e) => {
+            this.opening = this.openWorkspace().catch((error) => {
                 this.opening = null;
-                throw e;
+                throw error;
             });
         }
 

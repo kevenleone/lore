@@ -26,7 +26,7 @@ export function BodyEditor({
     raw,
     value,
 }: BodyEditorProps): React.JSX.Element {
-    const setEditorDirty = useStore((s) => s.setEditorDirty);
+    const setEditorDirty = useStore((state) => state.setEditorDirty);
 
     const [draft, setDraft] = useState(value);
 

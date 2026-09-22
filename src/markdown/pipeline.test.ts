@@ -72,9 +72,9 @@ describe('schema coverage over the corpus', () => {
             const parsed = parse(text);
             const guarded = guard(parsed.blocks);
 
-            guarded.forEach((block: Block, i) => {
-                if (block.type === 'unknown' && parsed.blocks[i].type !== 'unknown') {
-                    downgraded.push(`${name}:${parsed.blocks[i].type}`);
+            guarded.forEach((block: Block, index) => {
+                if (block.type === 'unknown' && parsed.blocks[index].type !== 'unknown') {
+                    downgraded.push(`${name}:${parsed.blocks[index].type}`);
                 }
             });
         }

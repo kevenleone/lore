@@ -22,9 +22,9 @@ const GRID_COLUMNS = 'minmax(240px, 1fr) 168px 176px 116px 92px';
 const COLUMNS = ['Item', 'Collection', 'Tags', 'Type', 'Added'];
 
 export function TableView({ items, onContextMenu }: SurfaceProps) {
-    const collections = useStore((s) => s.collections);
-    const selectedId = useStore((s) => s.selectedId);
-    const selectItem = useStore((s) => s.selectItem);
+    const collections = useStore((state) => state.collections);
+    const selectedId = useStore((state) => state.selectedId);
+    const selectItem = useStore((state) => state.selectItem);
 
     return (
         <>
@@ -32,9 +32,9 @@ export function TableView({ items, onContextMenu }: SurfaceProps) {
                 className="sticky top-0 z-2 grid items-center gap-4 border-b border-border bg-surface2 px-[18px] py-[9px] text-micro font-[680] tracking-[.07em] text-faint uppercase"
                 style={{ gridTemplateColumns: GRID_COLUMNS }}
             >
-                {COLUMNS.map((label, i) => (
+                {COLUMNS.map((label, index) => (
                     <span
-                        className={i === COLUMNS.length - 1 ? 'text-right' : 'text-left'}
+                        className={index === COLUMNS.length - 1 ? 'text-right' : 'text-left'}
                         key={label}
                     >
                         {label}
@@ -56,7 +56,7 @@ export function TableView({ items, onContextMenu }: SurfaceProps) {
                         )}
                         key={item.id}
                         onClick={() => selectItem(item.id)}
-                        onContextMenu={(e) => onContextMenu(e, item.id)}
+                        onContextMenu={(event) => onContextMenu(event, item.id)}
                         style={{ gridTemplateColumns: GRID_COLUMNS }}
                     >
                         <div className="flex min-w-0 items-center gap-[11px]">

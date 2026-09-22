@@ -9,21 +9,21 @@ import { FocusPanelBody } from './FocusPanelBody';
 import { useFocusSnapshot } from './useFocusSnapshot';
 
 export function FocusPopover() {
-    const close = useStore((s) => s.toggleFocusPopover);
-    const cycleFocusTask = useStore((s) => s.cycleFocusTask);
-    const openFocusMode = useStore((s) => s.toggleFocusMode);
-    const remainingSec = useStore((s) => s.focus.remainingSec);
-    const reset = useStore((s) => s.resetFocusInterval);
-    const skip = useStore((s) => s.skipFocusInterval);
-    const stop = useStore((s) => s.stopFocus);
-    const toggle = useStore((s) => s.toggleFocus);
+    const close = useStore((state) => state.toggleFocusPopover);
+    const cycleFocusTask = useStore((state) => state.cycleFocusTask);
+    const openFocusMode = useStore((state) => state.toggleFocusMode);
+    const remainingSec = useStore((state) => state.focus.remainingSec);
+    const reset = useStore((state) => state.resetFocusInterval);
+    const skip = useStore((state) => state.skipFocusInterval);
+    const stop = useStore((state) => state.stopFocus);
+    const toggle = useStore((state) => state.toggleFocus);
     const snapshot = useFocusSnapshot();
     const ref = useRef<HTMLDivElement>(null);
 
     // A click anywhere else dismisses it, the way a menu-bar popover does.
     useEffect(() => {
-        const onDown = (e: MouseEvent) => {
-            if (!ref.current?.contains(e.target as Node)) {
+        const onDown = (event: MouseEvent) => {
+            if (!ref.current?.contains(event.target as Node)) {
                 close();
             }
         };

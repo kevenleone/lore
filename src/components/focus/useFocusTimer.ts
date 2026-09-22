@@ -22,8 +22,8 @@ import { useFocusSnapshot } from './useFocusSnapshot';
 export const TICK_MS = 250;
 
 export function useFocusTimer(): void {
-    const running = useStore((s) => s.focus.running);
-    const tick = useStore((s) => s.tickFocus);
+    const running = useStore((state) => state.focus.running);
+    const tick = useStore((state) => state.tickFocus);
 
     useEffect(() => {
         if (!running) {
@@ -52,13 +52,13 @@ export function useFocusTimer(): void {
 
 /** The tray menu's focus lines, and the "this interval is over" wake-up. */
 function useTrayCommands(): void {
-    const cycleFocusTask = useStore((s) => s.cycleFocusTask);
-    const openFocusMode = useStore((s) => s.toggleFocusMode);
-    const reset = useStore((s) => s.resetFocusInterval);
-    const skip = useStore((s) => s.skipFocusInterval);
-    const stop = useStore((s) => s.stopFocus);
-    const tick = useStore((s) => s.tickFocus);
-    const toggleFocus = useStore((s) => s.toggleFocus);
+    const cycleFocusTask = useStore((state) => state.cycleFocusTask);
+    const openFocusMode = useStore((state) => state.toggleFocusMode);
+    const reset = useStore((state) => state.resetFocusInterval);
+    const skip = useStore((state) => state.skipFocusInterval);
+    const stop = useStore((state) => state.stopFocus);
+    const tick = useStore((state) => state.tickFocus);
+    const toggleFocus = useStore((state) => state.toggleFocus);
 
     useEffect(() => {
         let unlisten: (() => void)[] = [];
@@ -114,15 +114,15 @@ function useTrayCommands(): void {
  * down, which is the whole point of the icon: it says work is happening.
  */
 function useTrayMirror(): void {
-    const endsAt = useStore((s) => s.focus.endsAt);
-    const fullSec = useStore((s) => phaseSeconds(s.focus.phase, s.prefs.durations));
-    const label = useStore((s) => PHASE_LABELS[s.focus.phase]);
-    const running = useStore((s) => s.focus.running);
+    const endsAt = useStore((state) => state.focus.endsAt);
+    const fullSec = useStore((state) => phaseSeconds(state.focus.phase, state.prefs.durations));
+    const label = useStore((state) => PHASE_LABELS[state.focus.phase]);
+    const running = useStore((state) => state.focus.running);
     // Only meaningful while paused; it changes on every tick when it is not.
-    const pausedSec = useStore((s) => (s.focus.running ? null : s.focus.remainingSec));
+    const pausedSec = useStore((state) => (state.focus.running ? null : state.focus.remainingSec));
     // Only a running interval belongs in the menu bar: pausing puts the plain
     // mark back, and so does stopping.
-    const canStop = useStore((s) => !isTimerIdle(s.focus, s.prefs.durations));
+    const canStop = useStore((state) => !isTimerIdle(state.focus, state.prefs.durations));
     const snapshot = useFocusSnapshot();
     // The snapshot object is rebuilt on every render; compare its contents so a
     // tick that changes nothing the popover shows does not cross the bridge.

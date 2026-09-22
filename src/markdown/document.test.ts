@@ -123,7 +123,7 @@ describe('fragility gate', () => {
         const parsed = parse('$$\nx\n$$\n\nprose\n');
         const guarded = guard(parsed.blocks);
 
-        expect(guarded.map((b) => b.type)).toEqual(['unknown', 'paragraph']);
+        expect(guarded.map((block) => block.type)).toEqual(['unknown', 'paragraph']);
         expect(guarded[0].source).toBe('$$\nx\n$$');
     });
 
@@ -134,9 +134,9 @@ describe('fragility gate', () => {
 
             expect(guarded.length, name).toBe(parsed.blocks.length);
             expect(
-                guarded.map((b) => b.source),
+                guarded.map((block) => block.source),
                 name,
-            ).toEqual(parsed.blocks.map((b) => b.source));
+            ).toEqual(parsed.blocks.map((block) => block.source));
         }
     });
 });

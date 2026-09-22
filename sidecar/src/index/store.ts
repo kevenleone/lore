@@ -132,7 +132,7 @@ export class VaultStore {
 
         const collections = await this.vault.listCollections();
 
-        await this.vault.writeCollectionsFile(collections.filter((c) => c.id !== id));
+        await this.vault.writeCollectionsFile(collections.filter((collection) => collection.id !== id));
         await this.reconcile();
     }
 
@@ -171,7 +171,7 @@ export class VaultStore {
         return {
             backlinks: this.inboundIds(id)
                 .map((src) => this.getItem(src))
-                .filter((x): x is Item => !!x),
+                .filter((item): item is Item => !!item),
             modifiedAt: new Date(row.mtime_ms).toISOString(),
             path: row.path,
             size: row.size,
@@ -192,7 +192,7 @@ export class VaultStore {
             .query<FileRow, []>('SELECT * FROM files')
             .all()
             .map((r) => rowToItem(r, false))
-            .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+            .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
     }
 
     listTags(): TagCount[] {
@@ -206,7 +206,7 @@ export class VaultStore {
 
         return [...counts.entries()]
             .map(([name, count]) => ({ count, name }))
-            .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+            .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name));
     }
 
     /**
@@ -421,9 +421,9 @@ export class VaultStore {
                 )
                 .all(match)
                 .map((r) => r.id);
-            const byId = new Map(this.listItems().map((i) => [i.id, i]));
+            const byId = new Map(this.listItems().map((item) => [item.id, item]));
 
-            return ids.map((id) => byId.get(id)).filter((i): i is Item => !!i);
+            return ids.map((id) => byId.get(id)).filter((id): id is Item => !!id);
         } catch {
             // A malformed FTS expression should degrade to no results, not a 500.
             return [];
@@ -435,7 +435,7 @@ export class VaultStore {
         patch: { color?: string; name?: string },
     ): Promise<Collection | null> {
         const collections = await this.vault.listCollections();
-        const current = collections.find((c) => c.id === id);
+        const current = collections.find((collection) => collection.id === id);
 
         if (!current) {
             return null;
@@ -451,7 +451,7 @@ export class VaultStore {
 
         const next = { color: patch.color ?? current.color, id: nextId, name: nextId };
 
-        await this.vault.writeCollectionsFile(collections.map((c) => (c.id === id ? next : c)));
+        await this.vault.writeCollectionsFile(collections.map((collection) => (collection.id === id ? next : collection)));
         await this.reconcile();
 
         return next;

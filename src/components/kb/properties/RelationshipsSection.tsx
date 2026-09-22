@@ -20,16 +20,16 @@ import { Empty, Section } from './controls';
 const MAX_SUGGESTIONS = 8;
 
 export function RelationshipsSection({ item }: { item: Item }) {
-    const items = useStore((s) => s.items);
-    const itemMeta = useStore((s) => s.itemMeta);
-    const updateItem = useStore((s) => s.updateItem);
+    const items = useStore((state) => state.items);
+    const itemMeta = useStore((state) => state.itemMeta);
+    const updateItem = useStore((state) => state.updateItem);
     const [adding, setAdding] = useState(false);
     const [query, setQuery] = useState('');
 
     const related = useMemo(() => {
-        const byId = new Map(items.map((i) => [i.id, i]));
+        const byId = new Map(items.map((item) => [item.id, item]));
 
-        return (item.related ?? []).map((id) => byId.get(id)).filter((x): x is Item => !!x);
+        return (item.related ?? []).map((id) => byId.get(id)).filter((item): item is Item => !!item);
     }, [item.related, items]);
 
     const suggestions = useMemo(() => {
@@ -37,8 +37,8 @@ export function RelationshipsSection({ item }: { item: Item }) {
         const taken = new Set([item.id, ...(item.related ?? [])]);
 
         return items
-            .filter((i) => !taken.has(i.id))
-            .filter((i) => !q || i.title.toLowerCase().includes(q))
+            .filter((item) => !taken.has(item.id))
+            .filter((item) => !q || item.title.toLowerCase().includes(q))
             .slice(0, MAX_SUGGESTIONS);
     }, [item.id, item.related, items, query]);
 
@@ -60,8 +60,8 @@ export function RelationshipsSection({ item }: { item: Item }) {
         <Section icon={<Icon name="layers" size={12} />} title="Relationships">
             <SubLabel>Related to</SubLabel>
             <div className="flex flex-col gap-[5px]">
-                {related.map((r) => (
-                    <RelationCard item={r} key={r.id} onRemove={() => remove(r.id)} />
+                {related.map((item) => (
+                    <RelationCard item={item} key={item.id} onRemove={() => remove(item.id)} />
                 ))}
                 {adding ? (
                     <div className="overflow-hidden rounded-9 border border-accent">
@@ -70,14 +70,14 @@ export function RelationshipsSection({ item }: { item: Item }) {
                             <input
                                 autoFocus
                                 className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-body text-text outline-none"
-                                onChange={(e) => setQuery(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Escape') {
+                                onChange={(event) => setQuery(event.target.value)}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Escape') {
                                         setAdding(false);
                                         setQuery('');
                                     }
 
-                                    if (e.key === 'Enter' && suggestions[0]) {
+                                    if (event.key === 'Enter' && suggestions[0]) {
                                         add(suggestions[0].id);
                                     }
                                 }}
@@ -89,15 +89,15 @@ export function RelationshipsSection({ item }: { item: Item }) {
                             {suggestions.length === 0 ? (
                                 <Empty>No matches</Empty>
                             ) : (
-                                suggestions.map((s) => (
+                                suggestions.map((suggestion) => (
                                     <button
                                         className="flex w-full items-center gap-[7px] rounded-7 border border-transparent bg-transparent px-[7px] py-[5px] text-left font-[inherit] text-body text-text2 hover:border-border hover:bg-surface2"
-                                        key={s.id}
-                                        onClick={() => add(s.id)}
+                                        key={suggestion.id}
+                                        onClick={() => add(suggestion.id)}
                                         type="button"
                                     >
-                                        <Icon name={s.type} size={12} />
-                                        <span className="truncate">{s.title}</span>
+                                        <Icon name={suggestion.type} size={12} />
+                                        <span className="truncate">{suggestion.title}</span>
                                     </button>
                                 ))
                             )}
@@ -120,8 +120,8 @@ export function RelationshipsSection({ item }: { item: Item }) {
                 <Empty>Nothing links here yet</Empty>
             ) : (
                 <div className="flex flex-col gap-[5px]">
-                    {backlinks.map((b) => (
-                        <RelationCard item={b} key={b.id} />
+                    {backlinks.map((backlink) => (
+                        <RelationCard item={backlink} key={backlink.id} />
                     ))}
                 </div>
             )}
@@ -130,7 +130,7 @@ export function RelationshipsSection({ item }: { item: Item }) {
 }
 
 function RelationCard({ item, onRemove }: { item: Item; onRemove?: () => void }) {
-    const openLinkedItem = useStore((s) => s.openLinkedItem);
+    const openLinkedItem = useStore((state) => state.openLinkedItem);
     const meta = typeMeta(item.type);
 
     return (

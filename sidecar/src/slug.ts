@@ -15,8 +15,8 @@ const RESERVED = new Set([
     'con',
     'nul',
     'prn',
-    ...Array.from({ length: 9 }, (_, i) => `com${i + 1}`),
-    ...Array.from({ length: 9 }, (_, i) => `lpt${i + 1}`),
+    ...Array.from({ length: 9 }, (_, index) => `com${index + 1}`),
+    ...Array.from({ length: 9 }, (_, index) => `lpt${index + 1}`),
 ]);
 
 /** Lexicographically sortable, time-ordered id. Keeps the vault listing stable. */

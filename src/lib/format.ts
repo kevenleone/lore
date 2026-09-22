@@ -88,8 +88,8 @@ function dayStart(day: string): Date {
     return new Date(year, month - 1, date);
 }
 
-const HHMM = (d: Date) =>
-    `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+const HHMM = (date: Date) =>
+    `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 
 /** Detail-pane "Saved" label: "Today, 14:30" / "Yesterday, 16:20" / "Mon, 17:10". */
 export function formatSavedDate(iso: string, now: number = Date.now()): string {

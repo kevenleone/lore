@@ -8,10 +8,10 @@ import { EmptyState } from '../common/EmptyState';
 import { TaskCard } from './TaskCard';
 
 export function UpcomingView({ from, today }: { from: Date; today: string }) {
-    const items = useStore((s) => s.items);
-    const collections = useStore((s) => s.collections);
-    const selectTask = useStore((s) => s.selectTask);
-    const openCapture = useStore((s) => s.openCapture);
+    const items = useStore((state) => state.items);
+    const collections = useStore((state) => state.collections);
+    const selectTask = useStore((state) => state.selectTask);
+    const openCapture = useStore((state) => state.openCapture);
 
     const days = upcomingDays(items, from, UPCOMING_DAYS);
 

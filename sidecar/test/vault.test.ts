@@ -363,7 +363,7 @@ describe('store: items', () => {
             baseItem({ body: 'Line one\nLine two', title: 'With body' }),
         );
 
-        const listed = s.listItems().find((i) => i.id === created.id)!;
+        const listed = s.listItems().find((item) => item.id === created.id)!;
 
         expect(listed.body).toBeUndefined();
         // The preview still works, because snippet is derived.
@@ -445,8 +445,8 @@ describe('store: collections', () => {
         const s = await open();
         const collections = await s.listCollections();
 
-        expect(collections.map((c) => c.id)).toContain('Imported');
-        expect(collections.find((c) => c.id === 'Imported')!.color).toMatch(/^#/);
+        expect(collections.map((collection) => collection.id)).toContain('Imported');
+        expect(collections.find((collection) => collection.id === 'Imported')!.color).toMatch(/^#/);
     });
 
     it('unfiles children to the root when a collection is deleted', async () => {
@@ -459,7 +459,7 @@ describe('store: collections', () => {
 
         await s.deleteCollection('Work');
 
-        expect((await s.listCollections()).map((c) => c.id)).not.toContain('Work');
+        expect((await s.listCollections()).map((collection) => collection.id)).not.toContain('Work');
         expect(s.getItem(item.id)!.collectionId).toBeUndefined();
         expect(await Bun.file(join(root, 'filed.md')).exists()).toBe(true);
     });
@@ -483,7 +483,7 @@ describe('store: collections', () => {
 
         const s = await open();
 
-        expect((await s.listCollections()).map((c) => c.id)).not.toContain('attachments');
+        expect((await s.listCollections()).map((collection) => collection.id)).not.toContain('attachments');
         expect(s.listItems().length).toBe(0);
     });
 });
@@ -529,8 +529,8 @@ describe('store: wikilinks', () => {
         await write('later.md', '---\ntitle: Later\n---\n\nb');
         await s.reconcile();
 
-        const a = s.listItems().find((i) => i.title === 'A')!;
-        const later = s.listItems().find((i) => i.title === 'Later')!;
+        const a = s.listItems().find((item) => item.title === 'A')!;
+        const later = s.listItems().find((item) => item.title === 'Later')!;
 
         expect(a.related).toEqual([later.id]);
     });
@@ -547,7 +547,7 @@ describe('store: itemMeta', () => {
         expect(meta.path).toBe('target.md');
         expect(meta.words).toBe(3);
         expect(meta.size).toBeGreaterThan(0);
-        expect(meta.backlinks.map((b) => b.id)).toEqual([source.id]);
+        expect(meta.backlinks.map((backlink) => backlink.id)).toEqual([source.id]);
 
         // The inbound side is one-directional: the source has no backlinks of its own.
         expect(s.itemMeta(source.id)!.backlinks).toEqual([]);
@@ -570,7 +570,7 @@ describe('store: index', () => {
         await rm(join(root, '.lore/index.db'), { force: true });
         store = await VaultStore.open(root);
 
-        const item = store.listItems().find((i) => i.title === 'Durable')!;
+        const item = store.listItems().find((item) => item.title === 'Durable')!;
 
         expect(item).toBeDefined();
         expect(store.getItem(item.id)!.body).toBe('content');
@@ -629,7 +629,7 @@ describe('store: search and tags', () => {
 
         const hits = s.search('perceptual');
 
-        expect(hits.map((i) => i.title)).toEqual(['Nothing obvious']);
+        expect(hits.map((hit) => hit.title)).toEqual(['Nothing obvious']);
     });
 
     it('prefix-matches so search works while typing', async () => {
@@ -672,12 +672,12 @@ describe('search reaches what the list pane cannot', () => {
         );
         await s.createItem(baseItem({ body: 'Unrelated.', title: 'Other' }));
 
-        const listed = s.listItems().find((i) => i.title === 'Meeting notes')!;
+        const listed = s.listItems().find((item) => item.title === 'Meeting notes')!;
 
         expect(listed.body).toBeUndefined();
         expect(listed.snippet).toBe('Agenda');
 
-        expect(s.search('antialiasing').map((i) => i.title)).toEqual(['Meeting notes']);
+        expect(s.search('antialiasing').map((item) => item.title)).toEqual(['Meeting notes']);
     });
 
     it("finds a word beyond the derived preview's cut-off", async () => {
@@ -988,7 +988,7 @@ describe('boards', () => {
             }),
         );
 
-        const listed = s.listItems().find((i) => i.id === task.id)!;
+        const listed = s.listItems().find((item) => item.id === task.id)!;
 
         expect(listed.body).toBeUndefined();
         expect(listed.subtasks).toEqual({ done: 1, total: 3 });
@@ -1081,7 +1081,7 @@ describe('completion dates', () => {
         );
         await s.reconcile();
 
-        const item = s.listItems().find((i) => i.title === 'Reopened')!;
+        const item = s.listItems().find((item) => item.title === 'Reopened')!;
 
         expect(item.completedAt).toBeUndefined();
     });

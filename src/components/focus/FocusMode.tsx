@@ -25,21 +25,21 @@ import { Icon } from '../common/Icon';
 import { AddToQueueButton, FocusLabel, QueueRow, SessionPips, Transport } from './controls';
 
 export function FocusMode() {
-    const close = useStore((s) => s.toggleFocusMode);
-    const durations = useStore((s) => s.prefs.durations);
-    const focus = useStore((s) => s.focus);
-    const items = useStore((s) => s.items);
-    const sessions = useStore((s) => s.focusSessions);
-    const totalSessions = useStore((s) => s.prefs.longBreakAfter);
-    const reset = useStore((s) => s.resetFocusInterval);
-    const skip = useStore((s) => s.skipFocusInterval);
-    const stop = useStore((s) => s.stopFocus);
-    const toggle = useStore((s) => s.toggleFocus);
-    const updateItem = useStore((s) => s.updateItem);
+    const close = useStore((state) => state.toggleFocusMode);
+    const durations = useStore((state) => state.prefs.durations);
+    const focus = useStore((state) => state.focus);
+    const items = useStore((state) => state.items);
+    const sessions = useStore((state) => state.focusSessions);
+    const totalSessions = useStore((state) => state.prefs.longBreakAfter);
+    const reset = useStore((state) => state.resetFocusInterval);
+    const skip = useStore((state) => state.skipFocusInterval);
+    const stop = useStore((state) => state.stopFocus);
+    const toggle = useStore((state) => state.toggleFocus);
+    const updateItem = useStore((state) => state.updateItem);
     const [adding, setAdding] = useState(false);
 
     const addToQueue = (id: string) => {
-        const item = items.find((i) => i.id === id);
+        const item = items.find((item) => item.id === id);
 
         if (item) {
             void updateItem(id, { flags: { ...item.flags, today: true } });
@@ -47,9 +47,9 @@ export function FocusMode() {
     };
 
     useEffect(() => {
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                e.stopPropagation();
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                event.stopPropagation();
                 close();
             }
         };
@@ -68,7 +68,7 @@ export function FocusMode() {
     // as ids: Quick Capture saves from its own window and only tells this one to
     // refresh, so there is no id to record at the moment of capture.
     const captured = focus.startedAt
-        ? items.filter((i) => i.createdAt >= focus.startedAt!).slice(0, 6)
+        ? items.filter((item) => item.createdAt >= focus.startedAt!).slice(0, 6)
         : [];
 
     const focusedToday =
@@ -208,15 +208,15 @@ export function FocusMode() {
  * is what putting something in the queue means — the queue is the Today view.
  */
 function QueuePicker({ onPick }: { onPick: (id: string) => void }) {
-    const items = useStore((s) => s.items);
+    const items = useStore((state) => state.items);
     const [query, setQuery] = useState('');
 
     const matches = useMemo(() => {
         const q = query.trim().toLowerCase();
 
         return items
-            .filter((i) => !i.flags.today)
-            .filter((i) => !q || i.title.toLowerCase().includes(q))
+            .filter((item) => !item.flags.today)
+            .filter((item) => !q || item.title.toLowerCase().includes(q))
             .slice(0, 8);
     }, [items, query]);
 
@@ -227,7 +227,7 @@ function QueuePicker({ onPick }: { onPick: (id: string) => void }) {
                 <input
                     autoFocus
                     className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-text outline-none"
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={(event) => setQuery(event.target.value)}
                     placeholder="Find something to work on"
                     value={query}
                 />

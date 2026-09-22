@@ -312,17 +312,17 @@ export function PriorityBars({ className, level, size = 11 }: { level: 1 | 2 | 3
             viewBox="0 0 12 12"
             width={size}
         >
-            {heights.map((h, i) => (
+            {heights.map((height, index) => (
                 <rect
-                    height={h}
-                    key={h}
+                    height={height}
+                    key={height}
                     // Bars past the level are drawn faintly rather than dropped,
                     // so every level is the same width and the chips line up.
-                    opacity={i < level ? 1 : 0.25}
+                    opacity={index < level ? 1 : 0.25}
                     rx={0.8}
                     width={2.4}
-                    x={i * 4}
-                    y={12 - h}
+                    x={index * 4}
+                    y={12 - height}
                 />
             ))}
         </svg>

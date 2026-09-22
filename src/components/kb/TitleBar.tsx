@@ -28,13 +28,13 @@ const CHROME_BUTTON =
     'flex h-[30px] w-[30px] items-center justify-center rounded-lg border-none bg-transparent';
 
 export function TitleBar({ onCapture }: { onCapture: () => void }) {
-    const toggleSidebar = useStore((s) => s.toggleSidebar);
-    const toggleChat = useStore((s) => s.toggleChat);
-    const chatOpen = useStore((s) => s.chatOpen);
-    const textSize = useStore((s) => s.prefs.textSize);
-    const search = useStore((s) => s.search);
-    const setSearch = useStore((s) => s.setSearch);
-    const openCommandMenu = useStore((s) => s.openCommandMenu);
+    const toggleSidebar = useStore((state) => state.toggleSidebar);
+    const toggleChat = useStore((state) => state.toggleChat);
+    const chatOpen = useStore((state) => state.chatOpen);
+    const textSize = useStore((state) => state.prefs.textSize);
+    const search = useStore((state) => state.search);
+    const setSearch = useStore((state) => state.setSearch);
+    const openCommandMenu = useStore((state) => state.openCommandMenu);
     const barRef = useRef<HTMLDivElement>(null);
     // Fullscreen takes the system's buttons away with the titlebar, so the room
     // kept for them goes too.

@@ -75,7 +75,7 @@ export function BlockEditor({
 
                 const doc = instance.state.doc;
                 const dirty = rewriteAllRef.current
-                    ? new Set(Array.from({ length: doc.childCount }, (_, i) => i))
+                    ? new Set(Array.from({ length: doc.childCount }, (_, index) => index))
                     : dirtyRef.current;
 
                 onChange(applyDocument(parsedRef.current, doc, dirty));

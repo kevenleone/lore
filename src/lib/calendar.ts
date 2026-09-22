@@ -14,7 +14,7 @@ export const HOUR_HEIGHT = 56;
 
 export const HOUR_LABELS = Array.from(
     { length: DAY_END_HOUR - DAY_START_HOUR },
-    (_, i) => `${String(DAY_START_HOUR + i).padStart(2, '0')}:00`,
+    (_, index) => `${String(DAY_START_HOUR + index).padStart(2, '0')}:00`,
 );
 
 export interface CalendarEvent {
@@ -117,7 +117,7 @@ export function eventsForDay({
 
             const start = minutesOfDay(session.startedAt);
             const end = minutesOfDay(session.endedAt);
-            const task = session.taskId ? items.find((i) => i.id === session.taskId) : undefined;
+            const task = session.taskId ? items.find((item) => item.id === session.taskId) : undefined;
 
             events.push({
                 // A session that ran past midnight would come back with an end
@@ -133,7 +133,7 @@ export function eventsForDay({
         }
     }
 
-    return events.sort((a, b) => a.startMinutes - b.startMinutes);
+    return events.sort((left, right) => left.startMinutes - right.startMinutes);
 }
 
 export function formatTime(iso: string): string {
@@ -142,11 +142,11 @@ export function formatTime(iso: string): string {
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
-export function isSameDay(a: Date, b: Date): boolean {
+export function isSameDay(left: Date, right: Date): boolean {
     return (
-        a.getFullYear() === b.getFullYear() &&
-        a.getMonth() === b.getMonth() &&
-        a.getDate() === b.getDate()
+        left.getFullYear() === right.getFullYear() &&
+        left.getMonth() === right.getMonth() &&
+        left.getDate() === right.getDate()
     );
 }
 
@@ -161,7 +161,7 @@ export function monthGrid(anchor: Date, weekStart: WeekStart): Date[] {
     const firstOfMonth = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
     const first = startOfWeek(firstOfMonth, weekStart);
 
-    return Array.from({ length: 42 }, (_, i) => addDays(first, i));
+    return Array.from({ length: 42 }, (_, index) => addDays(first, index));
 }
 
 /** The Monday (or Sunday) on or before `date`. */
@@ -190,5 +190,5 @@ export function timeAtOffset(day: Date, offsetY: number): Date {
 export function weekDays(anchor: Date, weekStart: WeekStart): Date[] {
     const first = startOfWeek(anchor, weekStart);
 
-    return Array.from({ length: 7 }, (_, i) => addDays(first, i));
+    return Array.from({ length: 7 }, (_, index) => addDays(first, index));
 }

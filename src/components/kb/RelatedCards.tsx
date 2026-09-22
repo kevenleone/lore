@@ -34,7 +34,7 @@ export function RelatedCards({ hint, items, label }: RelatedCardsProps) {
 }
 
 function RelatedCard({ item }: { item: Item }) {
-    const openLinkedItem = useStore((s) => s.openLinkedItem);
+    const openLinkedItem = useStore((state) => state.openLinkedItem);
     const meta = typeMeta(item.type);
     const video = item.type === 'link' ? linkVideo(item.url) : null;
     const storedImage = useAssetSrc(item.image);

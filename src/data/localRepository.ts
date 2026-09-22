@@ -44,47 +44,47 @@ interface ItemRow {
 }
 
 /** Column values, in INSERT/UPSERT order, for an item. */
-function itemParams(i: Item): unknown[] {
+function itemParams(item: Item): unknown[] {
     return [
-        i.id,
-        i.type,
-        i.title,
-        i.domain ?? null,
-        i.collectionId ?? null,
-        JSON.stringify(i.tags),
-        JSON.stringify(i.flags),
-        i.summary ?? null,
-        i.points ? JSON.stringify(i.points) : null,
-        i.url ?? null,
-        i.body ?? null,
-        i.description ?? null,
-        i.image ?? null,
-        JSON.stringify(i.related),
-        i.createdAt,
-        i.updatedAt,
-        i.deletedAt ?? null,
+        item.id,
+        item.type,
+        item.title,
+        item.domain ?? null,
+        item.collectionId ?? null,
+        JSON.stringify(item.tags),
+        JSON.stringify(item.flags),
+        item.summary ?? null,
+        item.points ? JSON.stringify(item.points) : null,
+        item.url ?? null,
+        item.body ?? null,
+        item.description ?? null,
+        item.image ?? null,
+        JSON.stringify(item.related),
+        item.createdAt,
+        item.updatedAt,
+        item.deletedAt ?? null,
     ];
 }
 
-function rowToItem(r: ItemRow): Item {
+function rowToItem(itemRow: ItemRow): Item {
     return withDerived({
-        body: r.body ?? undefined,
-        collectionId: r.collection_id ?? undefined,
-        createdAt: r.created_at,
-        deletedAt: r.deleted_at,
-        description: r.description ?? undefined,
-        domain: r.domain ?? undefined,
-        flags: JSON.parse(r.flags) as ItemFlags,
-        id: r.id,
-        image: r.image ?? undefined,
-        points: r.points ? (JSON.parse(r.points) as string[]) : undefined,
-        related: JSON.parse(r.related) as string[],
-        summary: r.summary ?? undefined,
-        tags: JSON.parse(r.tags) as string[],
-        title: r.title,
-        type: r.type as Item['type'],
-        updatedAt: r.updated_at,
-        url: r.url ?? undefined,
+        body: itemRow.body ?? undefined,
+        collectionId: itemRow.collection_id ?? undefined,
+        createdAt: itemRow.created_at,
+        deletedAt: itemRow.deleted_at,
+        description: itemRow.description ?? undefined,
+        domain: itemRow.domain ?? undefined,
+        flags: JSON.parse(itemRow.flags) as ItemFlags,
+        id: itemRow.id,
+        image: itemRow.image ?? undefined,
+        points: itemRow.points ? (JSON.parse(itemRow.points) as string[]) : undefined,
+        related: JSON.parse(itemRow.related) as string[],
+        summary: itemRow.summary ?? undefined,
+        tags: JSON.parse(itemRow.tags) as string[],
+        title: itemRow.title,
+        type: itemRow.type as Item['type'],
+        updatedAt: itemRow.updated_at,
+        url: itemRow.url ?? undefined,
     });
 }
 
@@ -179,7 +179,7 @@ export class LocalRepository implements KnowledgeRepository {
 
     async listItems(view?: View): Promise<Item[]> {
         const all = await this.allLive();
-        const filtered = view ? all.filter((i) => matchesView(i, view)) : all;
+        const filtered = view ? all.filter((item) => matchesView(item, view)) : all;
 
         // Bodies are fetched per item by getItem — see derive.withoutBody.
         return filtered.map(withoutBody);
@@ -205,14 +205,14 @@ export class LocalRepository implements KnowledgeRepository {
             return all;
         }
 
-        return all.filter((i) => {
+        return all.filter((item) => {
             const hay = [
-                i.title,
-                i.domain ?? '',
-                i.body ?? '',
-                i.url ?? '',
-                i.summary ?? '',
-                i.tags.join(' '),
+                item.title,
+                item.domain ?? '',
+                item.body ?? '',
+                item.url ?? '',
+                item.summary ?? '',
+                item.tags.join(' '),
             ]
                 .join(' ')
                 .toLowerCase();

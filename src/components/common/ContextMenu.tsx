@@ -50,14 +50,14 @@ export function ContextMenu({
     }, [x, y]);
 
     useEffect(() => {
-        const onPointer = (e: MouseEvent) => {
-            if (!ref.current?.contains(e.target as Node)) {
+        const onPointer = (event: MouseEvent) => {
+            if (!ref.current?.contains(event.target as Node)) {
                 onClose();
             }
         };
 
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
                 onClose();
             }
         };

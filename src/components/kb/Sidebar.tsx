@@ -114,25 +114,25 @@ const TASK_VIEWS: {
 ];
 
 export function Sidebar({ onCapture }: { onCapture: () => void }) {
-    const items = useStore((s) => s.items);
-    const mainView = useStore((s) => s.mainView);
-    const setMainView = useStore((s) => s.setMainView);
-    const view = useStore((s) => s.view);
-    const selectView = useStore((s) => s.selectView);
-    const toggleChat = useStore((s) => s.toggleChat);
-    const openSettings = useStore((s) => s.openSettings);
-    const showCounts = useStore((s) => s.prefs.switches.counts);
-    const boardId = useStore((s) => s.boardId);
-    const collections = useStore((s) => s.collections);
-    const openBoard = useStore((s) => s.openBoard);
-    const setTaskView = useStore((s) => s.setTaskView);
-    const taskView = useStore((s) => s.taskView);
+    const boardId = useStore((state) => state.boardId);
+    const collections = useStore((state) => state.collections);
+    const items = useStore((state) => state.items);
+    const mainView = useStore((state) => state.mainView);
+    const openBoard = useStore((state) => state.openBoard);
+    const openSettings = useStore((state) => state.openSettings);
+    const selectView = useStore((state) => state.selectView);
+    const setMainView = useStore((state) => state.setMainView);
+    const setTaskView = useStore((state) => state.setTaskView);
+    const showCounts = useStore((state) => state.prefs.switches.counts);
+    const taskView = useStore((state) => state.taskView);
+    const toggleChat = useStore((state) => state.toggleChat);
+    const view = useStore((state) => state.view);
 
     const counts = viewCounts(items);
-    const today = dayKey(new Date());
-    const tasks = taskCounts(items, collections, today);
     const projects = boardRollups(items, collections);
     const tags = tagCounts(items);
+    const today = dayKey(new Date());
+    const tasks = taskCounts(items, collections, today);
 
     return (
         <div
@@ -264,8 +264,8 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                  * their progress; these are the shortcut straight into one.
                  */}
                 <div className="ml-[9px] flex flex-col border-l border-border pl-[10px]">
-                    {projects.map((p) => {
-                        const id = p.collectionId ?? UNFILED_BOARD;
+                    {projects.map((project) => {
+                        const id = project.collectionId ?? UNFILED_BOARD;
                         const active =
                             mainView === 'tasks' && taskView === 'board' && boardId === id;
 
@@ -286,10 +286,10 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                                 <span
                                     className="h-[9px] w-[9px] flex-none rounded-xs"
                                     // The collection's own colour, which the user picks.
-                                    style={{ background: p.color }}
+                                    style={{ background: project.color }}
                                 />
-                                <span className="flex-1 truncate">{p.name}</span>
-                                {showCounts && <span className={COUNT}>{p.open}</span>}
+                                <span className="flex-1 truncate">{project.name}</span>
+                                {showCounts && <span className={COUNT}>{project.open}</span>}
                             </button>
                         );
                     })}
@@ -301,22 +301,22 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
 
             {/* Tags */}
             <div className={SECTION_LABEL}>Tags</div>
-            {tags.map((t) => {
-                const active = isViewActive(view, 'tag', t.name);
+            {tags.map((tag) => {
+                const active = isViewActive(view, 'tag', tag.name);
 
                 return (
                     <button
                         aria-current={active ? 'page' : undefined}
                         className={rowClass(active)}
-                        key={t.name}
-                        onClick={() => selectView('tag', t.name)}
+                        key={tag.name}
+                        onClick={() => selectView('tag', tag.name)}
                         type="button"
                     >
                         <span className="flex flex-none opacity-60">
                             <Icon name="tag" />
                         </span>
-                        <span className="flex-1">{t.name}</span>
-                        {showCounts && <span className={COUNT}>{t.count}</span>}
+                        <span className="flex-1">{tag.name}</span>
+                        {showCounts && <span className={COUNT}>{tag.count}</span>}
                     </button>
                 );
             })}

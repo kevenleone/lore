@@ -27,14 +27,14 @@ export function ItemContextMenu({
     onClose: () => void;
     target: ContextMenuTarget;
 }) {
-    const item = useStore((s) => s.items.find((i) => i.id === target.id));
-    const deleteItem = useStore((s) => s.deleteItem);
-    const exportItemPdf = useStore((s) => s.exportItemPdf);
-    const expandOpenItem = useStore((s) => s.expandOpenItem);
-    const selectItem = useStore((s) => s.selectItem);
-    const toggleStar = useStore((s) => s.toggleStar);
-    const pushToast = useStore((s) => s.pushToast);
-    const updateItem = useStore((s) => s.updateItem);
+    const item = useStore((state) => state.items.find((item) => item.id === target.id));
+    const deleteItem = useStore((state) => state.deleteItem);
+    const exportItemPdf = useStore((state) => state.exportItemPdf);
+    const expandOpenItem = useStore((state) => state.expandOpenItem);
+    const selectItem = useStore((state) => state.selectItem);
+    const toggleStar = useStore((state) => state.toggleStar);
+    const pushToast = useStore((state) => state.pushToast);
+    const updateItem = useStore((state) => state.updateItem);
     const [confirmingDelete, setConfirmingDelete] = useState(false);
 
     if (!item) {

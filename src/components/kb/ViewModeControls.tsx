@@ -22,8 +22,8 @@ const OPEN_MODES: { glyph: ReactNode; id: OpenMode; label: string }[] = [
 ];
 
 export function OpenModePicker() {
-    const openMode = useStore((s) => s.prefs.openMode);
-    const setOpenMode = useStore((s) => s.setOpenMode);
+    const openMode = useStore((state) => state.prefs.openMode);
+    const setOpenMode = useStore((state) => state.setOpenMode);
 
     return (
         <span className="flex items-center gap-[7px]">
@@ -52,8 +52,8 @@ export function OpenModePicker() {
 }
 
 export function ViewModePicker() {
-    const viewMode = useStore((s) => s.prefs.viewMode);
-    const setViewMode = useStore((s) => s.setViewMode);
+    const viewMode = useStore((state) => state.prefs.viewMode);
+    const setViewMode = useStore((state) => state.setViewMode);
 
     return (
         <Track>

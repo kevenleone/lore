@@ -17,9 +17,9 @@ import { subtitle } from './itemText';
 const TAG_ROW = 'mt-[6px] flex flex-wrap gap-[5px]';
 
 export function ListRows({ items, onContextMenu }: SurfaceProps) {
-    const selectedId = useStore((s) => s.selectedId);
-    const selectItem = useStore((s) => s.selectItem);
-    const density = useStore((s) => s.prefs.density);
+    const selectedId = useStore((state) => state.selectedId);
+    const selectItem = useStore((state) => state.selectItem);
+    const density = useStore((state) => state.prefs.density);
 
     // "List density" (Settings → Look & Feel): Compact also hides the tag row
     // until the row is hovered, exactly as the setting's description promises.
@@ -44,7 +44,7 @@ export function ListRows({ items, onContextMenu }: SurfaceProps) {
                         )}
                         key={item.id}
                         onClick={() => selectItem(item.id)}
-                        onContextMenu={(e) => onContextMenu(e, item.id)}
+                        onContextMenu={(event) => onContextMenu(event, item.id)}
                     >
                         {hasBanner(item) ? (
                             <span className="relative mt-px h-[38px] w-[56px] flex-none overflow-hidden rounded-7 bg-surface3">

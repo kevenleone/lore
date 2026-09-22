@@ -17,15 +17,15 @@ import { RelationshipsSection } from './properties/RelationshipsSection';
 export const PROPERTIES_WIDTH = 316;
 
 export function PropertiesPanel() {
-    const items = useStore((s) => s.items);
-    const selectedId = useStore((s) => s.selectedId);
-    const detail = useStore((s) => s.detail);
-    const itemMeta = useStore((s) => s.itemMeta);
-    const toggleProperties = useStore((s) => s.toggleProperties);
+    const items = useStore((state) => state.items);
+    const selectedId = useStore((state) => state.selectedId);
+    const detail = useStore((state) => state.detail);
+    const itemMeta = useStore((state) => state.itemMeta);
+    const toggleProperties = useStore((state) => state.toggleProperties);
 
     // Same rule as the detail pane: the list row paints immediately, `detail`
     // lands a tick later carrying the body.
-    const listItem = items.find((i) => i.id === selectedId);
+    const listItem = items.find((item) => item.id === selectedId);
     const item = detail && detail.id === listItem?.id ? detail : listItem;
 
     return (

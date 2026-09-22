@@ -57,8 +57,8 @@ export function parseSubtasks(body: string | undefined): Subtask[] {
 
 export function serializeSubtasks(subtasks: readonly Subtask[]): string {
     return subtasks
-        .filter((s) => s.text.trim())
-        .map((s) => `- [${s.done ? 'x' : ' '}] ${s.text.trim()}`)
+        .filter((subtask) => subtask.text.trim())
+        .map((subtask) => `- [${subtask.done ? 'x' : ' '}] ${subtask.text.trim()}`)
         .join('\n');
 }
 
@@ -76,5 +76,5 @@ export function stripSubtasks(body: string | undefined): string {
 }
 
 export function toggleSubtask(subtasks: readonly Subtask[], index: number): Subtask[] {
-    return subtasks.map((s, i) => (i === index ? { ...s, done: !s.done } : s));
+    return subtasks.map((subtask, i) => (i === index ? { ...subtask, done: !subtask.done } : subtask));
 }

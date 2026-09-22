@@ -40,13 +40,13 @@ const ROW_ACTIONS =
     'absolute inset-y-0 right-[9px] flex items-center gap-2 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100';
 
 export function CollectionsSection() {
-    const items = useStore((s) => s.items);
-    const collections = useStore((s) => s.collections);
-    const view = useStore((s) => s.view);
-    const selectView = useStore((s) => s.selectView);
-    const createCollection = useStore((s) => s.createCollection);
-    const updateCollection = useStore((s) => s.updateCollection);
-    const deleteCollection = useStore((s) => s.deleteCollection);
+    const items = useStore((state) => state.items);
+    const collections = useStore((state) => state.collections);
+    const view = useStore((state) => state.view);
+    const selectView = useStore((state) => state.selectView);
+    const createCollection = useStore((state) => state.createCollection);
+    const updateCollection = useStore((state) => state.updateCollection);
+    const deleteCollection = useStore((state) => state.deleteCollection);
 
     const [editingId, setEditingId] = useState<null | string>(null);
     const [confirmId, setConfirmId] = useState<null | string>(null);
@@ -104,13 +104,13 @@ export function CollectionsSection() {
         >
             <input
                 className="rounded-7 border border-border bg-surface px-[9px] py-[6px] font-[inherit] text-subhead"
-                onChange={(e) => setDraftName(e.target.value)}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                onChange={(event) => setDraftName(event.target.value)}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
                         void save();
                     }
 
-                    if (e.key === 'Escape') {
+                    if (event.key === 'Escape') {
                         cancel();
                     }
                 }}
@@ -171,17 +171,17 @@ export function CollectionsSection() {
                 </button>
             </div>
 
-            {collections.map((c) => {
-                if (editingId === c.id) {
-                    return renderEditor(c.id);
+            {collections.map((collection) => {
+                if (editingId === collection.id) {
+                    return renderEditor(collection.id);
                 }
 
-                if (confirmId === c.id) {
+                if (confirmId === collection.id) {
                     return (
-                        <div className={cn(ROW_BASE, 'bg-danger-tint')} key={c.id}>
-                            <span className="flex-1 text-body text-danger">Delete “{c.name}”?</span>
+                        <div className={cn(ROW_BASE, 'bg-danger-tint')} key={collection.id}>
+                            <span className="flex-1 text-body text-danger">Delete “{collection.name}”?</span>
                             <button
-                                aria-label={`Keep ${c.name}`}
+                                aria-label={`Keep ${collection.name}`}
                                 className={cn(BARE_BUTTON, 'flex text-text3')}
                                 onClick={() => setConfirmId(null)}
                                 type="button"
@@ -189,11 +189,11 @@ export function CollectionsSection() {
                                 <Close size={14} />
                             </button>
                             <button
-                                aria-label={`Delete ${c.name}`}
+                                aria-label={`Delete ${collection.name}`}
                                 className={cn(BARE_BUTTON, 'flex text-danger')}
                                 onClick={() => {
                                     setConfirmId(null);
-                                    void deleteCollection(c.id);
+                                    void deleteCollection(collection.id);
                                 }}
                                 type="button"
                             >
@@ -203,7 +203,7 @@ export function CollectionsSection() {
                     );
                 }
 
-                const active = isViewActive(view, 'collection', c.id);
+                const active = isViewActive(view, 'collection', collection.id);
 
                 return (
                     // The row is a group rather than a button: it holds the
@@ -217,37 +217,37 @@ export function CollectionsSection() {
                                 ? 'bg-accent-tint font-[590] text-accent'
                                 : 'text-text2 hover:bg-hover',
                         )}
-                        key={c.id}
+                        key={collection.id}
                     >
                         <span
                             className="h-[10px] w-[10px] flex-none rounded-[3px]"
                             // The collection's own colour, which the user picks.
-                            style={{ background: c.color }}
+                            style={{ background: collection.color }}
                         />
                         <button
                             aria-current={active ? 'page' : undefined}
                             className={cn(BARE_BUTTON, 'min-w-0 flex-1 truncate text-left')}
-                            onClick={() => selectView('collection', c.id)}
+                            onClick={() => selectView('collection', collection.id)}
                             type="button"
                         >
-                            {c.name}
+                            {collection.name}
                         </button>
                         <span className="text-body-sm tabular-nums opacity-50 group-focus-within:invisible group-hover:invisible">
-                            {collectionCount(items, c.id)}
+                            {collectionCount(items, collection.id)}
                         </span>
                         <span className={ROW_ACTIONS}>
                             <button
-                                aria-label={`Rename ${c.name}`}
+                                aria-label={`Rename ${collection.name}`}
                                 className={cn(BARE_BUTTON, 'flex text-text3')}
-                                onClick={() => startEdit(c.id, c.name, c.color)}
+                                onClick={() => startEdit(collection.id, collection.name, collection.color)}
                                 type="button"
                             >
                                 <Pencil size={13} />
                             </button>
                             <button
-                                aria-label={`Delete ${c.name}`}
+                                aria-label={`Delete ${collection.name}`}
                                 className={cn(BARE_BUTTON, 'flex text-danger')}
-                                onClick={() => setConfirmId(c.id)}
+                                onClick={() => setConfirmId(collection.id)}
                                 type="button"
                             >
                                 <Trash size={13} />

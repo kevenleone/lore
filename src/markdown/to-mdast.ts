@@ -123,7 +123,7 @@ function inline(node: ProseMirrorNode): PhrasingContent[] {
 
         // Innermost first, so the outermost mark wraps everything.
         for (const name of [...MARK_ORDER].reverse()) {
-            const mark = child.marks.find((m) => m.type.name === name);
+            const mark = child.marks.find((mark) => mark.type.name === name);
 
             if (!mark) {
                 continue;

@@ -44,7 +44,7 @@ export async function gitStatus(root: string): Promise<GitStatus> {
  * the caller asked for the vault to be under Git, and it is.
  */
 export async function initGit(root: string): Promise<GitStatus> {
-    if (await gitStatus(root).then((s) => s.tracked)) {
+    if (await gitStatus(root).then((gitStatus) => gitStatus.tracked)) {
         return { tracked: true };
     }
 

@@ -47,8 +47,8 @@ export function isRoundTrippable(block: Block): boolean {
     }
 }
 
-function sameTree(a: MdastNode, b: MdastNode): boolean {
-    return JSON.stringify(strip(a)) === JSON.stringify(strip(b));
+function sameTree(left: MdastNode, right: MdastNode): boolean {
+    return JSON.stringify(strip(left)) === JSON.stringify(strip(right));
 }
 
 /** `position` always differs after regeneration, and `spread` is layout. */

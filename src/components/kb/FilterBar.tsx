@@ -21,12 +21,12 @@ type MenuId = 'date' | FilterFacet;
 const CATEGORIES = Object.keys(TYPE_META) as ItemType[];
 
 export function FilterBar() {
-    const items = useStore((s) => s.items);
-    const collections = useStore((s) => s.collections);
-    const filters = useStore((s) => s.filters);
-    const toggleFilter = useStore((s) => s.toggleFilter);
-    const setFilters = useStore((s) => s.setFilters);
-    const clearFilters = useStore((s) => s.clearFilters);
+    const items = useStore((state) => state.items);
+    const collections = useStore((state) => state.collections);
+    const filters = useStore((state) => state.filters);
+    const toggleFilter = useStore((state) => state.toggleFilter);
+    const setFilters = useStore((state) => state.setFilters);
+    const clearFilters = useStore((state) => state.clearFilters);
 
     const [menu, setMenu] = useState<MenuId | null>(null);
     const barRef = useRef<HTMLDivElement>(null);
@@ -36,8 +36,8 @@ export function FilterBar() {
             return;
         }
 
-        const onDown = (e: MouseEvent) => {
-            if (barRef.current && !barRef.current.contains(e.target as Node)) {
+        const onDown = (event: MouseEvent) => {
+            if (barRef.current && !barRef.current.contains(event.target as Node)) {
                 setMenu(null);
             }
         };
@@ -175,7 +175,7 @@ function DateField({
             <span className="w-[34px]">{label}</span>
             <input
                 className="min-w-0 flex-1 rounded-7 border border-border bg-surface3 px-[7px] py-1 font-[inherit] text-text"
-                onChange={(e) => onChange(e.target.value || null)}
+                onChange={(event) => onChange(event.target.value || null)}
                 type="date"
                 value={value ?? ''}
             />

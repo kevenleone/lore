@@ -44,20 +44,20 @@ const VIEW_TO_TAB: Record<TaskView, TabLabel> = {
 };
 
 export function TasksView() {
-    const closeTask = useStore((s) => s.closeTask);
-    const items = useStore((s) => s.items);
-    const propertiesOpen = useStore((s) => s.prefs.propertiesOpen);
-    const reduceMotion = useStore((s) => s.prefs.switches.motion);
-    const selectedId = useStore((s) => s.selectedId);
-    const closeBoard = useStore((s) => s.closeBoard);
-    const setTaskView = useStore((s) => s.setTaskView);
-    const taskRailOpen = useStore((s) => s.taskRailOpen);
-    const boardId = useStore((s) => s.boardId);
-    const boards = useStore((s) => s.boards);
-    const collections = useStore((s) => s.collections);
-    const setBoardView = useStore((s) => s.setBoardView);
-    const boardFilter = useStore((s) => s.boardFilter);
-    const taskView = useStore((s) => s.taskView);
+    const closeTask = useStore((state) => state.closeTask);
+    const items = useStore((state) => state.items);
+    const propertiesOpen = useStore((state) => state.prefs.propertiesOpen);
+    const reduceMotion = useStore((state) => state.prefs.switches.motion);
+    const selectedId = useStore((state) => state.selectedId);
+    const closeBoard = useStore((state) => state.closeBoard);
+    const setTaskView = useStore((state) => state.setTaskView);
+    const taskRailOpen = useStore((state) => state.taskRailOpen);
+    const boardId = useStore((state) => state.boardId);
+    const boards = useStore((state) => state.boards);
+    const collections = useStore((state) => state.collections);
+    const setBoardView = useStore((state) => state.setBoardView);
+    const boardFilter = useStore((state) => state.boardFilter);
+    const taskView = useStore((state) => state.taskView);
 
     // One clock read for the whole render: every group, pill and column
     // compares against the same day, so a render that straddles midnight
@@ -71,7 +71,7 @@ export function TasksView() {
     const boardName =
         boardId === UNFILED_BOARD
             ? 'Unfiled'
-            : (collections.find((c) => c.id === boardId)?.name ?? 'Project');
+            : (collections.find((collection) => collection.id === boardId)?.name ?? 'Project');
 
     // The filter narrows what the columns show; `onBoard` is what the filter
     // bar offers its tag chips from, so a tag cannot vanish from the list the
@@ -79,7 +79,7 @@ export function TasksView() {
     const onBoard = boardId === null ? [] : boardTasks(items, boardId);
     const shown = filterBoardTasks(onBoard, boardFilter, today);
 
-    const selected = items.find((i) => i.id === selectedId);
+    const selected = items.find((item) => item.id === selectedId);
     const railOpen = taskRailOpen && selected?.type === 'task';
     const panelOpen = railOpen && propertiesOpen;
 

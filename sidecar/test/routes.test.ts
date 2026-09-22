@@ -143,7 +143,7 @@ describe('item meta route', () => {
         expect(meta.body.words).toBe(2);
         expect(meta.body.size).toBeGreaterThan(0);
         expect(meta.body.modifiedAt).toBeTruthy();
-        expect(meta.body.backlinks.map((b: Item) => b.id)).toEqual([source.body.id]);
+        expect(meta.body.backlinks.map((backlink: Item) => backlink.id)).toEqual([source.body.id]);
     });
 
     it('404s an unknown id', async () => {
@@ -214,7 +214,7 @@ describe('derived reads', () => {
 
         const res = await call('GET', '/search?q=perceptual');
 
-        expect(res.body.map((i: Item) => i.title)).toEqual(['Opaque']);
+        expect(res.body.map((item: Item) => item.title)).toEqual(['Opaque']);
     });
 });
 
@@ -232,8 +232,8 @@ describe('events', () => {
 
         const reader = res.body!.getReader();
         // Chunks may arrive as strings or bytes depending on the runtime.
-        const text = (v: unknown) =>
-            typeof v === 'string' ? v : new TextDecoder().decode(v as Uint8Array);
+        const text = (value: unknown) =>
+            typeof value === 'string' ? value : new TextDecoder().decode(value as Uint8Array);
 
         expect(text((await reader.read()).value)).toContain('event: ready');
 
@@ -284,8 +284,8 @@ describe('migration', () => {
         expect(res.body).toMatchObject({ collections: 1, items: 2 });
 
         const items = (await call('GET', '/items')).body as Item[];
-        const linear = items.find((i) => i.title === 'How Linear builds product')!;
-        const brain = items.find((i) => i.title === 'Second brain')!;
+        const linear = items.find((item) => item.title === 'How Linear builds product')!;
+        const brain = items.find((item) => item.title === 'Second brain')!;
 
         // Collections became folders.
         expect(linear.collectionId).toBe('Reading List');
@@ -332,11 +332,11 @@ describe('migration', () => {
         });
 
         const items = (await call('GET', '/items')).body as Item[];
-        const link = items.find((i) => i.title === 'L')!;
+        const link = items.find((item) => item.title === 'L')!;
 
         expect((await call('GET', `/items/${link.id}`)).body.url).toBe('https://x.test');
 
-        const note = items.find((i) => i.title === 'N')!;
+        const note = items.find((item) => item.title === 'N')!;
 
         expect((await call('GET', `/items/${note.id}`)).body.body).toBe('note body');
     });
@@ -396,7 +396,7 @@ describe('migration fidelity', () => {
         });
 
         const items = (await call('GET', '/items')).body as Item[];
-        const a = items.find((i) => i.title === 'A')!;
+        const a = items.find((item) => item.title === 'A')!;
 
         expect(a.updatedAt).toBe('2026-01-01T00:00:00.000Z');
         expect(a.related).toHaveLength(1);

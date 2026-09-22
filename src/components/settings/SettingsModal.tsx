@@ -109,18 +109,18 @@ const PANES: PaneDef[] = [
 ];
 
 export function SettingsModal() {
-    const pane = useStore((s) => s.settingsPane);
-    const setPane = useStore((s) => s.setSettingsPane);
-    const close = useStore((s) => s.closeSettings);
-    const restoreDefaults = useStore((s) => s.restoreDefaultPrefs);
+    const pane = useStore((state) => state.settingsPane);
+    const setPane = useStore((state) => state.setSettingsPane);
+    const close = useStore((state) => state.closeSettings);
+    const restoreDefaults = useStore((state) => state.restoreDefaultPrefs);
     const [filter, setFilter] = useState('');
     const sheetRef = useRef<HTMLDivElement>(null);
 
     // Esc closes; focus moves into the sheet so keyboard users land inside it.
     useEffect(() => {
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                e.stopPropagation();
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                event.stopPropagation();
                 close();
             }
         };
@@ -139,11 +139,11 @@ export function SettingsModal() {
         }
 
         return PANES.filter(
-            (p) => p.label.toLowerCase().includes(query) || p.terms.includes(query),
+            (paneDef) => paneDef.label.toLowerCase().includes(query) || paneDef.terms.includes(query),
         );
     }, [filter]);
 
-    const active = PANES.find((p) => p.id === pane) ?? PANES[0];
+    const active = PANES.find((paneDef) => paneDef.id === pane) ?? PANES[0];
 
     return (
         <>
@@ -168,15 +168,15 @@ export function SettingsModal() {
                         <SettingsIcon name="search" size={14} sw={1.9} />
                         <input
                             className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-text outline-none"
-                            onChange={(e) => setFilter(e.target.value)}
+                            onChange={(event) => setFilter(event.target.value)}
                             placeholder="Search settings"
                             value={filter}
                         />
                     </label>
 
                     <div className="flex flex-col gap-px overflow-auto">
-                        {visible.map((p) => {
-                            const on = p.id === pane;
+                        {visible.map((paneDef) => {
+                            const on = paneDef.id === pane;
 
                             return (
                                 <button
@@ -187,8 +187,8 @@ export function SettingsModal() {
                                             ? 'bg-accent-tint font-semibold text-accent'
                                             : 'text-text2',
                                     )}
-                                    key={p.id}
-                                    onClick={() => setPane(p.id)}
+                                    key={paneDef.id}
+                                    onClick={() => setPane(paneDef.id)}
                                     type="button"
                                 >
                                     <span
@@ -197,9 +197,9 @@ export function SettingsModal() {
                                             on ? 'bg-accent text-white' : 'bg-surface3 text-text2',
                                         )}
                                     >
-                                        <SettingsIcon name={p.icon} size={15} />
+                                        <SettingsIcon name={paneDef.icon} size={15} />
                                     </span>
-                                    <span className="flex-1">{p.label}</span>
+                                    <span className="flex-1">{paneDef.label}</span>
                                 </button>
                             );
                         })}

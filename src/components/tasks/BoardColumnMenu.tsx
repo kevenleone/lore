@@ -28,9 +28,9 @@ export function BoardColumnMenu({
     /** Hands editing back to the header, which owns the rename field. */
     onRename: () => void;
 }) {
-    const removeBoardColumn = useStore((s) => s.removeBoardColumn);
-    const reorderBoardColumn = useStore((s) => s.reorderBoardColumn);
-    const setBoardDoneColumn = useStore((s) => s.setBoardDoneColumn);
+    const removeBoardColumn = useStore((state) => state.removeBoardColumn);
+    const reorderBoardColumn = useStore((state) => state.reorderBoardColumn);
+    const setBoardDoneColumn = useStore((state) => state.setBoardDoneColumn);
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -39,14 +39,14 @@ export function BoardColumnMenu({
             return;
         }
 
-        const onDown = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
+        const onDown = (event: MouseEvent) => {
+            if (ref.current && !ref.current.contains(event.target as Node)) {
                 setOpen(false);
             }
         };
 
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
                 setOpen(false);
             }
         };

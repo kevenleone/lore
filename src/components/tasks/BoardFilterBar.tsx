@@ -17,8 +17,8 @@ const CHIP_ON = 'border-solid border-transparent bg-accent-tint font-semibold te
 const CHIP_OFF = 'border-dashed border-dash bg-transparent font-medium text-faint';
 
 export function BoardFilterBar({ tasks }: { tasks: Item[] }) {
-    const filter = useStore((s) => s.boardFilter);
-    const setBoardFilter = useStore((s) => s.setBoardFilter);
+    const filter = useStore((state) => state.boardFilter);
+    const setBoardFilter = useStore((state) => state.setBoardFilter);
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -27,8 +27,8 @@ export function BoardFilterBar({ tasks }: { tasks: Item[] }) {
             return;
         }
 
-        const onDown = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
+        const onDown = (event: MouseEvent) => {
+            if (ref.current && !ref.current.contains(event.target as Node)) {
                 setOpen(false);
             }
         };
@@ -41,10 +41,10 @@ export function BoardFilterBar({ tasks }: { tasks: Item[] }) {
     const active = boardFilterCount(filter);
     // Only tags that are actually on this board — a facet that can only ever
     // empty the screen is not worth offering.
-    const tags = [...new Set(tasks.flatMap((t) => t.tags))].sort();
+    const tags = [...new Set(tasks.flatMap((task) => task.tags))].sort();
 
     const toggle = <T,>(list: T[], value: T): T[] =>
-        list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+        list.includes(value) ? list.filter((t) => t !== value) : [...list, value];
 
     return (
         <div className="flex flex-none items-center gap-2 border-b border-border px-[14px] py-[8px]">
@@ -53,7 +53,7 @@ export function BoardFilterBar({ tasks }: { tasks: Item[] }) {
                 <input
                     aria-label="Search this board"
                     className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-body text-text outline-none"
-                    onChange={(e) => setBoardFilter({ query: e.target.value })}
+                    onChange={(event) => setBoardFilter({ query: event.target.value })}
                     placeholder="Search tasks…"
                     value={filter.query}
                 />

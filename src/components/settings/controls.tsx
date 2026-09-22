@@ -43,33 +43,33 @@ export function Chooser<T extends number | string>({
 }: {
     /** Names the control for assistive tech; the trigger only shows the value. */
     label: string;
-    onChange: (v: T) => void;
+    onChange: (t: T) => void;
     options: readonly ChoiceOption<T>[];
     value: T;
 }) {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
-    const current = options.find((o) => o.value === value);
+    const current = options.find((option) => option.value === value);
 
     useEffect(() => {
         if (!open) {
             return;
         }
 
-        const onDown = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
+        const onDown = (event: MouseEvent) => {
+            if (ref.current && !ref.current.contains(event.target as Node)) {
                 setOpen(false);
             }
         };
 
         // Capture, and stop there: the settings sheet closes on a bubbling Esc,
         // and dismissing a menu must not take the whole sheet with it.
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key !== 'Escape') {
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') {
                 return;
             }
 
-            e.stopPropagation();
+            event.stopPropagation();
             setOpen(false);
         };
 
@@ -100,23 +100,23 @@ export function Chooser<T extends number | string>({
                     className="absolute top-[calc(100%+4px)] right-0 z-40 max-h-[260px] min-w-[180px] overflow-y-auto rounded-10 border border-border bg-surface p-[5px] shadow-sheet"
                     role="listbox"
                 >
-                    {options.map((o) => (
+                    {options.map((option) => (
                         <button
-                            aria-selected={o.value === value}
+                            aria-selected={option.value === value}
                             className={cn(
                                 'flex w-full items-center gap-2 rounded-7 border-none bg-transparent px-2 py-[6px] text-left font-[inherit] text-body hover:bg-hover',
-                                o.value === value ? 'font-[590] text-accent' : 'text-text2',
+                                option.value === value ? 'font-[590] text-accent' : 'text-text2',
                             )}
-                            key={o.value}
+                            key={option.value}
                             onClick={() => {
-                                onChange(o.value);
+                                onChange(option.value);
                                 setOpen(false);
                             }}
                             role="option"
                             type="button"
                         >
-                            <span className="min-w-0 flex-1 truncate">{o.label}</span>
-                            {o.value === value && <SettingsIcon name="check" size={13} sw={2.4} />}
+                            <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                            {option.value === value && <SettingsIcon name="check" size={13} sw={2.4} />}
                         </button>
                     ))}
                 </div>
@@ -210,26 +210,26 @@ export function Segmented<T extends string>({
     options,
     value,
 }: {
-    onChange: (v: T) => void;
+    onChange: (t: T) => void;
     options: readonly T[];
     value: T;
 }) {
     return (
         <div className="flex flex-none gap-[2px] rounded-9 bg-surface3 p-[3px]">
-            {options.map((o) => (
+            {options.map((option) => (
                 <button
-                    aria-pressed={o === value}
+                    aria-pressed={option === value}
                     className={cn(
                         SEG_ITEM,
-                        o === value
+                        option === value
                             ? 'bg-surface font-semibold text-text shadow-seg'
                             : 'text-text2',
                     )}
-                    key={o}
-                    onClick={() => onChange(o)}
+                    key={option}
+                    onClick={() => onChange(option)}
                     type="button"
                 >
-                    {o}
+                    {option}
                 </button>
             ))}
         </div>

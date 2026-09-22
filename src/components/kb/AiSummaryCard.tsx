@@ -32,13 +32,13 @@ export function AiSummaryCard({
             </p>
             {showPoints && (
                 <div className="mt-[13px] flex flex-col gap-[7px]">
-                    {points.map((p, i) => (
+                    {points.map((point, index) => (
                         <div
                             className="flex items-start gap-[9px] text-subhead leading-[1.5] text-text2"
-                            key={i}
+                            key={index}
                         >
                             <span className="mt-[7px] h-[5px] w-[5px] flex-none rounded-full bg-accent" />
-                            <span>{p}</span>
+                            <span>{point}</span>
                         </div>
                     ))}
                 </div>

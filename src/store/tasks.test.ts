@@ -55,7 +55,7 @@ describe('openTasks', () => {
             task('c', { type: 'note' }),
         ];
 
-        expect(openTasks(items).map((t) => t.id)).toEqual(['a']);
+        expect(openTasks(items).map((item) => item.id)).toEqual(['a']);
     });
 
     it('answers an empty vault with an empty list', () => {
@@ -93,7 +93,7 @@ describe('taskGroups', () => {
             task('finished', { dueAt: '2026-09-09', flags: { done: true } }),
         ];
 
-        expect(taskGroups(items, TODAY).map((g) => [g.kind, g.tasks.map((t) => t.id)])).toEqual([
+        expect(taskGroups(items, TODAY).map((taskGroup) => [taskGroup.kind, taskGroup.tasks.map((task) => task.id)])).toEqual([
             ['overdue', ['late']],
             ['today', ['now']],
             ['noDate', ['queued']],
@@ -109,7 +109,7 @@ describe('taskGroups', () => {
         ];
         const [, due] = taskGroups(items, TODAY);
 
-        expect(due.tasks.map((t) => t.id)).toEqual(['z-urgent', 'a-normal', 'b-normal', 'a-low']);
+        expect(due.tasks.map((task) => task.id)).toEqual(['z-urgent', 'a-normal', 'b-normal', 'a-low']);
     });
 });
 
@@ -198,25 +198,25 @@ describe('filterBoardTasks', () => {
         const byTitle = { ...EMPTY_BOARD_FILTER, query: 'okafor' };
         const byProse = { ...EMPTY_BOARD_FILTER, query: 'transcript' };
 
-        expect(filterBoardTasks(tasks, byTitle, TODAY).map((t) => t.id)).toEqual(['c']);
-        expect(filterBoardTasks(tasks, byProse, TODAY).map((t) => t.id)).toEqual(['c']);
+        expect(filterBoardTasks(tasks, byTitle, TODAY).map((item) => item.id)).toEqual(['c']);
+        expect(filterBoardTasks(tasks, byProse, TODAY).map((item) => item.id)).toEqual(['c']);
     });
 
     it('narrows by priority, counting an absent one as normal', () => {
         const filter = { ...EMPTY_BOARD_FILTER, priorities: ['normal' as const] };
 
-        expect(filterBoardTasks(tasks, filter, TODAY).map((t) => t.id)).toEqual(['c']);
+        expect(filterBoardTasks(tasks, filter, TODAY).map((item) => item.id)).toEqual(['c']);
     });
 
     it('narrows by tag and by overdue', () => {
         expect(
             filterBoardTasks(tasks, { ...EMPTY_BOARD_FILTER, tags: ['research'] }, TODAY).map(
-                (t) => t.id,
+                (item) => item.id,
             ),
         ).toEqual(['c']);
         expect(
             filterBoardTasks(tasks, { ...EMPTY_BOARD_FILTER, overdue: true }, TODAY).map(
-                (t) => t.id,
+                (item) => item.id,
             ),
         ).toEqual(['a']);
     });
@@ -250,8 +250,8 @@ describe('boardTasks', () => {
             task('note', { collectionId: 'c1', type: 'note' }),
         ];
 
-        expect(boardTasks(items, 'c1').map((t) => t.id)).toEqual(['a']);
-        expect(boardTasks(items, UNFILED_BOARD).map((t) => t.id)).toEqual(['c']);
+        expect(boardTasks(items, 'c1').map((item) => item.id)).toEqual(['a']);
+        expect(boardTasks(items, UNFILED_BOARD).map((item) => item.id)).toEqual(['c']);
     });
 });
 
@@ -265,7 +265,7 @@ describe('boardColumns', () => {
         ];
 
         expect(
-            boardColumns(items, BOARD).map((c) => [c.config.id, c.tasks.map((t) => t.id)]),
+            boardColumns(items, BOARD).map((boardColumn) => [boardColumn.config.id, boardColumn.tasks.map((task) => task.id)]),
         ).toEqual([
             ['todo', ['t']],
             ['doing', ['d']],
@@ -285,7 +285,7 @@ describe('taskTimeline', () => {
             { ...task('done-3'), completedAt: at('2026-09-09'), flags: { done: true } },
         ];
 
-        expect(taskTimeline(items, TODAY).map((g) => [g.key, g.tasks.map((t) => t.id)])).toEqual([
+        expect(taskTimeline(items, TODAY).map((timelineGroup) => [timelineGroup.key, timelineGroup.tasks.map((task) => task.id)])).toEqual([
             ['open', ['open-a']],
             // Newest day first, and newest within the day.
             ['2026-09-11', ['done-2', 'done-1']],
@@ -301,7 +301,7 @@ describe('taskTimeline', () => {
     it('keeps undated completions apart rather than guessing a day', () => {
         const items = [{ ...task('old'), flags: { done: true } }];
 
-        expect(taskTimeline(items, TODAY).map((g) => g.key)).toEqual(['undated']);
+        expect(taskTimeline(items, TODAY).map((timelineGroup) => timelineGroup.key)).toEqual(['undated']);
     });
 
     it('drops a group that has nothing in it, and ignores what is not a task', () => {
@@ -319,14 +319,14 @@ describe('upcomingDays', () => {
         ];
         const days = upcomingDays(items, new Date(2026, 8, 14), 5);
 
-        expect(days.map((d) => d.key)).toEqual([
+        expect(days.map((day) => day.key)).toEqual([
             '2026-09-14',
             '2026-09-15',
             '2026-09-16',
             '2026-09-17',
             '2026-09-18',
         ]);
-        expect(days.map((d) => d.tasks.map((t) => t.id))).toEqual([['mon'], [], ['wed'], [], []]);
+        expect(days.map((day) => day.tasks.map((task) => task.id))).toEqual([['mon'], [], ['wed'], [], []]);
     });
 });
 
