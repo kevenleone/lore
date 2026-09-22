@@ -8,6 +8,7 @@
 // streams, so parsing stops at `</head>` instead of buffering a whole page, and
 // there is a timeout and a size cap where before there was neither.
 
+import { fetchVimeoMetadata, vimeoVideo } from './vimeo';
 import { fetchYoutubeMetadata, youtubeVideoId } from './youtube';
 
 export interface LinkMetadata {
@@ -34,6 +35,12 @@ export async function fetchLinkMetadata(rawUrl: string): Promise<LinkMetadata> {
 
     const videoId = youtubeVideoId(target);
     if (videoId) return fetchYoutubeMetadata(videoId);
+
+    const vimeo = vimeoVideo(target);
+    if (vimeo) {
+        const vimeoMetadata = await fetchVimeoMetadata(vimeo);
+        if (vimeoMetadata) return vimeoMetadata;
+    }
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
