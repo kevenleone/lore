@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { LinkVideo } from '../../lib/video';
 
 import { videoEmbedUrl } from '../../lib/video';
+import { useStore } from '../../store/useStore';
 import { Play } from '../common/glyphs';
 
 interface VideoPlayerProps {
@@ -18,6 +19,7 @@ interface VideoPlayerProps {
  */
 export function VideoPlayer({ thumbnail, title, video }: VideoPlayerProps): React.ReactElement {
     const [playing, setPlaying] = useState(false);
+    const textSize = useStore((state) => state.prefs.textSize);
 
     return (
         <div className="relative mt-5 mb-1 aspect-video overflow-hidden rounded-[13px] border border-border bg-surface3">
@@ -28,6 +30,11 @@ export function VideoPlayer({ thumbnail, title, video }: VideoPlayerProps): Reac
                     className="absolute inset-0 h-full w-full border-none"
                     referrerPolicy="strict-origin-when-cross-origin"
                     src={videoEmbedUrl(video)}
+                    // Computed from Text size: WKWebView scales an iframe's content by
+                    // the ancestor `zoom` without resizing its viewport, cropping the
+                    // player above 1 and leaving blank bands below it. Cancelling the
+                    // zoom here keeps the player flush with its box in every engine.
+                    style={{ zoom: 1 / textSize }}
                     title={title}
                 />
             ) : (
