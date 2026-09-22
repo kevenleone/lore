@@ -8,24 +8,24 @@ afterEach(() => {
     globalThis.fetch = realFetch;
 });
 
-const THUMBNAIL = 'https://i.vimeocdn.com/video/2186243529-abc-d_1280?region=us';
+const THUMBNAIL = 'https://i.vimeocdn.com/video/588206796-abc-d_1280?region=us';
 
 describe('vimeoVideo', () => {
     it.each([
-        ['https://vimeo.com/1211345949', { id: '1211345949' }],
-        ['https://www.vimeo.com/1211345949', { id: '1211345949' }],
+        ['https://vimeo.com/180094337', { id: '180094337' }],
+        ['https://www.vimeo.com/180094337', { id: '180094337' }],
         [
-            'https://player.vimeo.com/video/1211345949?title=0&byline=0&portrait=0&autoplay=1&autopause=0&dnt=1&app_id=122963&texttrack=undefined',
-            { id: '1211345949' },
+            'https://player.vimeo.com/video/180094337?title=0&byline=0&portrait=0&autoplay=1&autopause=0&dnt=1&app_id=122963&texttrack=undefined',
+            { id: '180094337' },
         ],
-        ['https://vimeo.com/1211345949/a1b2c3d4e5', { hash: 'a1b2c3d4e5', id: '1211345949' }],
+        ['https://vimeo.com/180094337/a1b2c3d4e5', { hash: 'a1b2c3d4e5', id: '180094337' }],
         [
-            'https://player.vimeo.com/video/1211345949?h=a1b2c3d4e5',
-            { hash: 'a1b2c3d4e5', id: '1211345949' },
+            'https://player.vimeo.com/video/180094337?h=a1b2c3d4e5',
+            { hash: 'a1b2c3d4e5', id: '180094337' },
         ],
-        ['https://vimeo.com/channels/staffpicks/1211345949', { id: '1211345949' }],
-        ['https://vimeo.com/groups/shortfilms/videos/1211345949', { id: '1211345949' }],
-        ['https://vimeo.com/showcase/9876543/video/1211345949', { id: '1211345949' }],
+        ['https://vimeo.com/channels/staffpicks/180094337', { id: '180094337' }],
+        ['https://vimeo.com/groups/shortfilms/videos/180094337', { id: '180094337' }],
+        ['https://vimeo.com/showcase/9876543/video/180094337', { id: '180094337' }],
     ])('reads %s', (url, video) => {
         expect(vimeoVideo(url)).toEqual(video);
     });
@@ -33,7 +33,7 @@ describe('vimeoVideo', () => {
     it.each([
         'https://vimeo.com/',
         'https://vimeo.com/user149406496',
-        'https://notvimeo.com/1211345949',
+        'https://notvimeo.com/180094337',
         'not a url',
     ])('ignores %s', (url) => {
         expect(vimeoVideo(url)).toBeNull();
@@ -51,20 +51,20 @@ describe('fetchVimeoMetadata', () => {
                 title: 'A video',
             });
         }) as unknown as typeof fetch;
-        expect(await fetchVimeoMetadata({ hash: 'a1b2c3d4e5', id: '1211345949' })).toEqual({
+        expect(await fetchVimeoMetadata({ hash: 'a1b2c3d4e5', id: '180094337' })).toEqual({
             description: 'Video by Author',
             image: THUMBNAIL,
             title: 'A video',
         });
         const params = new URL(requested).searchParams;
-        expect(params.get('url')).toBe('https://vimeo.com/1211345949/a1b2c3d4e5');
+        expect(params.get('url')).toBe('https://vimeo.com/180094337/a1b2c3d4e5');
         expect(params.get('width')).toBe('1280');
     });
 
     it('answers null when oEmbed fails', async () => {
         globalThis.fetch = (async () =>
             new Response('', { status: 403 })) as unknown as typeof fetch;
-        expect(await fetchVimeoMetadata({ id: '1211345949' })).toBeNull();
+        expect(await fetchVimeoMetadata({ id: '180094337' })).toBeNull();
     });
 
     it('is what fetchLinkMetadata answers for a video URL', async () => {
@@ -73,7 +73,7 @@ describe('fetchVimeoMetadata', () => {
                 thumbnail_url: THUMBNAIL,
                 title: 'A video',
             })) as unknown as typeof fetch;
-        const metadata = await fetchLinkMetadata('player.vimeo.com/video/1211345949?autoplay=1');
+        const metadata = await fetchLinkMetadata('player.vimeo.com/video/180094337?autoplay=1');
         expect(metadata.title).toBe('A video');
         expect(metadata.image).toBe(THUMBNAIL);
     });
@@ -85,7 +85,7 @@ describe('fetchVimeoMetadata', () => {
                 : new Response('<html><head><title>A video on Vimeo</title></head></html>', {
                       headers: { 'Content-Type': 'text/html' },
                   })) as unknown as typeof fetch;
-        const metadata = await fetchLinkMetadata('https://vimeo.com/1211345949');
+        const metadata = await fetchLinkMetadata('https://vimeo.com/180094337');
         expect(metadata.title).toBe('A video on Vimeo');
     });
 });
