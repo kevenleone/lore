@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.16.0](https://github.com/kevenleone/lore/compare/v1.15.0...v1.16.0) (2026-09-22)
+
+
+### Features
+
+* **capture:** read Vimeo link metadata through oEmbed ([5dfcedd](https://github.com/kevenleone/lore/commit/5dfceddf7ffc2eda6494df45b62bfc2a20428435))
+* **detail:** play Vimeo links inline ([cc69387](https://github.com/kevenleone/lore/commit/cc6938765e712699c804d466a5e9344fcd47c93a))
+* **detail:** show video thumbnails in related and backlink cards ([566aa03](https://github.com/kevenleone/lore/commit/566aa03e59d0adc3bcd7c9d3299a6eec5575cae0))
+
+
+### Bug Fixes
+
+* **detail:** keep embedded players flush under Text size ([b87e030](https://github.com/kevenleone/lore/commit/b87e03025bcbc6fa2a445ffb125e11f1c162e8cb))
+
+
+### Documentation
+
+* add lore-docs skill for writing vault-compatible markdown ([d970e15](https://github.com/kevenleone/lore/commit/d970e157f2c2e197d7862564502284ed11171eeb))
+
 ## [1.15.0](https://github.com/kevenleone/lore/compare/v1.14.0...v1.15.0) (2026-09-21)
 
 
