@@ -15,11 +15,11 @@ import { Icon } from '../common/Icon';
 const DEFAULT_LABEL = 'Local vault';
 
 export function WorkspaceSwitcher() {
-    const workspacePath = useStore((s) => s.workspacePath);
-    const recents = useStore((s) => s.recentWorkspaces);
-    const error = useStore((s) => s.workspaceError);
-    const openPicker = useStore((s) => s.openWorkspacePicker);
-    const switchWorkspace = useStore((s) => s.switchWorkspace);
+    const workspacePath = useStore((state) => state.workspacePath);
+    const recents = useStore((state) => state.recentWorkspaces);
+    const error = useStore((state) => state.workspaceError);
+    const openPicker = useStore((state) => state.openWorkspacePicker);
+    const switchWorkspace = useStore((state) => state.switchWorkspace);
 
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -29,14 +29,14 @@ export function WorkspaceSwitcher() {
             return;
         }
 
-        const onDown = (e: MouseEvent) => {
-            if (!ref.current?.contains(e.target as Node)) {
+        const onDown = (event: MouseEvent) => {
+            if (!ref.current?.contains(event.target as Node)) {
                 setOpen(false);
             }
         };
 
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
                 setOpen(false);
             }
         };
@@ -89,20 +89,20 @@ export function WorkspaceSwitcher() {
                         }}
                     />
 
-                    {recents.filter((r) => r.path !== workspacePath).length > 0 && (
+                    {recents.filter((recent) => recent.path !== workspacePath).length > 0 && (
                         <div className="px-[9px] pt-2 pb-1 text-micro font-[680] tracking-[.07em] text-faint uppercase">
                             Recent
                         </div>
                     )}
-                    {recents.map((r) => (
+                    {recents.map((recent) => (
                         <Row
-                            active={r.path === workspacePath}
-                            hint={r.path}
-                            key={r.path}
-                            label={r.name}
+                            active={recent.path === workspacePath}
+                            hint={recent.path}
+                            key={recent.path}
+                            label={recent.name}
                             onClick={() => {
                                 setOpen(false);
-                                void switchWorkspace(r.path);
+                                void switchWorkspace(recent.path);
                             }}
                         />
                     ))}

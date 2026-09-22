@@ -60,7 +60,7 @@ export function deriveSnippet(
         const subtasks = parseSubtasks(body);
 
         if (subtasks.length) {
-            const done = subtasks.filter((t) => t.done).length;
+            const done = subtasks.filter((subtask) => subtask.done).length;
 
             return `${done}/${subtasks.length} subtasks · ${subtasks[0].text}`.slice(
                 0,
@@ -91,7 +91,7 @@ export function deriveSubtaskCounts(body: string | undefined): SubtaskCount | un
         return undefined;
     }
 
-    return { done: subtasks.filter((s) => s.done).length, total: subtasks.length };
+    return { done: subtasks.filter((subtask) => subtask.done).length, total: subtasks.length };
 }
 
 /**

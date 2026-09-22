@@ -55,7 +55,7 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
                     return;
                 }
 
-                setCollectionName(collections.find((c) => c.id === collectionId)?.name ?? null);
+                setCollectionName(collections.find((collection) => collection.id === collectionId)?.name ?? null);
             });
 
         return () => {
@@ -180,13 +180,13 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
                 <input
                     autoFocus
                     className="min-w-0 flex-1 border-none bg-transparent text-[15.5px] text-text outline-none"
-                    onChange={(e) => setText(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                    onChange={(event) => setText(event.target.value)}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
                             void save();
                         }
 
-                        if (e.key === 'Escape') {
+                        if (event.key === 'Escape') {
                             void hideCapture();
                         }
                     }}
@@ -254,12 +254,12 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
                             <Sparkle className="text-accent" size={11} />
                             AI tags
                         </span>
-                        {tags.map((t) => (
+                        {tags.map((tag) => (
                             <span
                                 className="rounded-md bg-accent-tint px-[7px] py-[2px] font-mono text-caption text-accent"
-                                key={t}
+                                key={tag}
                             >
-                                #{t}
+                                #{tag}
                             </span>
                         ))}
                     </div>

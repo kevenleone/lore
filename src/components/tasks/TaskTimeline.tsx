@@ -14,10 +14,10 @@ import { useStore } from '../../store/useStore';
 import { DuePill, PriorityChip, ProjectTag, TaskCheckbox, TitleText } from './TaskRow';
 
 export function TaskTimeline({ today }: { today: string }) {
-    const items = useStore((s) => s.items);
-    const collections = useStore((s) => s.collections);
-    const selectTask = useStore((s) => s.selectTask);
-    const selectedId = useStore((s) => s.selectedId);
+    const items = useStore((state) => state.items);
+    const collections = useStore((state) => state.collections);
+    const selectTask = useStore((state) => state.selectTask);
+    const selectedId = useStore((state) => state.selectedId);
 
     const groups = taskTimeline(items, today);
 
@@ -103,9 +103,9 @@ function TimelineRow({
                     : 'border-transparent hover:border-border hover:bg-surface2',
             )}
             onClick={onSelect}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
+            onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
                     onSelect();
                 }
             }}

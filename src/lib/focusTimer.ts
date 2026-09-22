@@ -37,14 +37,14 @@ export function focusedSecondsOn(sessions: FocusSession[], day: Date): number {
     const start = startOfDay(day).getTime();
     const end = start + 86_400_000;
 
-    return sessions.reduce((total, s) => {
-        const startedAt = new Date(s.startedAt).getTime();
+    return sessions.reduce((total, session) => {
+        const startedAt = new Date(session.startedAt).getTime();
 
         if (startedAt < start || startedAt >= end) {
             return total;
         }
 
-        return total + Math.max(0, (new Date(s.endedAt).getTime() - startedAt) / 1000);
+        return total + Math.max(0, (new Date(session.endedAt).getTime() - startedAt) / 1000);
     }, 0);
 }
 

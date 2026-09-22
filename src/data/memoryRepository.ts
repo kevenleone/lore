@@ -23,8 +23,8 @@ export class MemoryRepository implements KnowledgeRepository {
 
     constructor(items: Item[] = SEED_ITEMS, collections: Collection[] = SEED_COLLECTIONS) {
         // Clone so callers can't mutate the seed module's arrays.
-        this.items = items.map((i) => ({ ...i }));
-        this.collections = collections.map((c) => ({ ...c }));
+        this.items = items.map((item) => ({ ...item }));
+        this.collections = collections.map((collection) => ({ ...collection }));
     }
 
     async createCollection(input: NewCollection): Promise<Collection> {
@@ -51,7 +51,7 @@ export class MemoryRepository implements KnowledgeRepository {
     }
 
     async deleteCollection(id: string): Promise<void> {
-        this.collections = this.collections.filter((c) => c.id !== id);
+        this.collections = this.collections.filter((collection) => collection.id !== id);
 
         for (const item of this.items) {
             if (item.collectionId === id) {
@@ -61,7 +61,7 @@ export class MemoryRepository implements KnowledgeRepository {
     }
 
     async deleteItem(id: string): Promise<void> {
-        const item = this.items.find((i) => i.id === id);
+        const item = this.items.find((item) => item.id === id);
 
         if (item) {
             item.deletedAt = new Date().toISOString();
@@ -69,7 +69,7 @@ export class MemoryRepository implements KnowledgeRepository {
     }
 
     async getItem(id: string): Promise<Item | null> {
-        return this.live().find((i) => i.id === id) ?? null;
+        return this.live().find((item) => item.id === id) ?? null;
     }
 
     async listBoards(): Promise<Record<string, BoardConfig>> {
@@ -80,18 +80,18 @@ export class MemoryRepository implements KnowledgeRepository {
         // By name, the same as the vault's own listing — the two stores must
         // not disagree about something this visible, or the browser preview
         // and the app show different sidebars.
-        return this.collections.map((c) => ({ ...c })).sort((a, b) => a.name.localeCompare(b.name));
+        return this.collections.map((collection) => ({ ...collection })).sort((left, right) => left.name.localeCompare(right.name));
     }
 
     async listItems(view?: View): Promise<Item[]> {
         const all = this.live();
-        const filtered = view ? all.filter((i) => matchesView(i, view)) : all;
+        const filtered = view ? all.filter((item) => matchesView(item, view)) : all;
 
         // Newest first (createdAt desc) to match the prototype's ordering.
         // Bodies are fetched per item by getItem — see derive.withoutBody.
         return filtered
             .slice()
-            .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+            .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
             .map(withoutBody);
     }
 
@@ -122,14 +122,14 @@ export class MemoryRepository implements KnowledgeRepository {
             return this.listItems();
         }
 
-        return this.live().filter((i) => {
+        return this.live().filter((item) => {
             const haystack = [
-                i.title,
-                i.domain ?? '',
-                i.body ?? '',
-                i.url ?? '',
-                i.summary ?? '',
-                i.tags.join(' '),
+                item.title,
+                item.domain ?? '',
+                item.body ?? '',
+                item.url ?? '',
+                item.summary ?? '',
+                item.tags.join(' '),
             ]
                 .join(' ')
                 .toLowerCase();
@@ -139,7 +139,7 @@ export class MemoryRepository implements KnowledgeRepository {
     }
 
     async updateCollection(id: string, patch: CollectionPatch): Promise<Collection> {
-        const collection = this.collections.find((c) => c.id === id);
+        const collection = this.collections.find((collection) => collection.id === id);
 
         if (!collection) {
             throw new Error(`Collection not found: ${id}`);
@@ -151,7 +151,7 @@ export class MemoryRepository implements KnowledgeRepository {
     }
 
     async updateItem(id: string, patch: ItemPatch): Promise<Item> {
-        const item = this.items.find((i) => i.id === id);
+        const item = this.items.find((item) => item.id === id);
 
         if (!item) {
             throw new Error(`Item not found: ${id}`);
@@ -173,6 +173,6 @@ export class MemoryRepository implements KnowledgeRepository {
     private live(): Item[] {
         // `snippet` / `domain` are derived, never stored — same rule as every
         // other repository, so tests exercise the real shape.
-        return this.items.filter((i) => !i.deletedAt).map(withDerived);
+        return this.items.filter((item) => !item.deletedAt).map(withDerived);
     }
 }

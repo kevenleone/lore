@@ -48,12 +48,12 @@ describe('watcher', () => {
         );
 
         const found = await eventually(() =>
-            workspace.current.listItems().some((i) => i.title === 'Dropped in'),
+            workspace.current.listItems().some((item) => item.title === 'Dropped in'),
         );
 
         expect(found).toBe(true);
 
-        const item = workspace.current.listItems().find((i) => i.title === 'Dropped in')!;
+        const item = workspace.current.listItems().find((item) => item.title === 'Dropped in')!;
 
         expect(item.collectionId).toBe('Reading List');
     });
@@ -64,7 +64,7 @@ describe('watcher', () => {
         let seenAtNotify: string[] = [];
 
         workspace.subscribe(() => {
-            seenAtNotify = workspace.current.listItems().map((i) => i.title);
+            seenAtNotify = workspace.current.listItems().map((item) => item.title);
         });
 
         await writeFile(join(root, 'later.md'), '---\ntitle: Later\n---\n\nb\n', 'utf8');

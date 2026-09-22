@@ -28,13 +28,13 @@ describe('rememberWorkspace', () => {
     it('puts the newest first', () => {
         const next = rememberWorkspace([ref('/a'), ref('/b')], '/c');
 
-        expect(next.map((r) => r.path)).toEqual(['/c', '/a', '/b']);
+        expect(next.map((workspaceRef) => workspaceRef.path)).toEqual(['/c', '/a', '/b']);
     });
 
     it('moves an existing entry to the front instead of duplicating it', () => {
         const next = rememberWorkspace([ref('/a'), ref('/b')], '/b');
 
-        expect(next.map((r) => r.path)).toEqual(['/b', '/a']);
+        expect(next.map((workspaceRef) => workspaceRef.path)).toEqual(['/b', '/a']);
     });
 
     it('caps the list so it cannot grow without bound', () => {

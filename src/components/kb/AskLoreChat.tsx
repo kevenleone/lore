@@ -14,11 +14,11 @@ import { Close, Send, Sparkle } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 
 export function AskLoreChat() {
-    const messages = useStore((s) => s.chat);
-    const items = useStore((s) => s.items);
-    const toggleChat = useStore((s) => s.toggleChat);
-    const sendChat = useStore((s) => s.sendChat);
-    const selectItem = useStore((s) => s.selectItem);
+    const messages = useStore((state) => state.chat);
+    const items = useStore((state) => state.items);
+    const toggleChat = useStore((state) => state.toggleChat);
+    const sendChat = useStore((state) => state.sendChat);
+    const selectItem = useStore((state) => state.selectItem);
     const [draft, setDraft] = useState('');
 
     const submit = () => {
@@ -63,26 +63,26 @@ export function AskLoreChat() {
                         on it.
                     </p>
                 )}
-                {messages.map((m) =>
-                    m.role === 'user' ? (
+                {messages.map((message) =>
+                    message.role === 'user' ? (
                         <div
                             className="max-w-[78%] self-end rounded-[15px_15px_4px_15px] bg-accent px-[15px] py-[10px] text-title leading-[1.5] text-white select-text"
-                            key={m.id}
+                            key={message.id}
                         >
-                            {m.text}
+                            {message.text}
                         </div>
                     ) : (
-                        <div className="max-w-[88%] self-start" key={m.id}>
+                        <div className="max-w-[88%] self-start" key={message.id}>
                             <div className="rounded-[15px_15px_15px_4px] bg-sel p-4 py-3 text-title leading-[1.55] text-text select-text">
-                                {m.text}
+                                {message.text}
                             </div>
-                            {m.sources && m.sources.length > 0 && (
+                            {message.sources && message.sources.length > 0 && (
                                 <div className="mt-[9px] flex flex-wrap items-center gap-[7px]">
                                     <span className="text-micro font-semibold tracking-[.05em] text-faint uppercase">
                                         Sources
                                     </span>
-                                    {m.sources.map((src) => {
-                                        const item = items.find((i) => i.id === src.itemId);
+                                    {message.sources.map((src) => {
+                                        const item = items.find((item) => item.id === src.itemId);
 
                                         if (!item) {
                                             return null;
@@ -120,9 +120,9 @@ export function AskLoreChat() {
             <div className="flex flex-none items-center gap-[10px] border-t border-border px-5 py-[14px]">
                 <input
                     className="flex-1 rounded-11 border-none bg-surface3 px-[14px] py-[11px] text-subhead text-text"
-                    onChange={(e) => setDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                    onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
                             submit();
                         }
                     }}

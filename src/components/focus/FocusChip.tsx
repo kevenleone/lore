@@ -8,10 +8,10 @@ import { useStore } from '../../store/useStore';
 import { Timer } from '../common/glyphs';
 
 export function FocusChip() {
-    const focus = useStore((s) => s.focus);
-    const open = useStore((s) => s.focusPopoverOpen);
-    const togglePopover = useStore((s) => s.toggleFocusPopover);
-    const toggleMode = useStore((s) => s.toggleFocusMode);
+    const focus = useStore((state) => state.focus);
+    const open = useStore((state) => state.focusPopoverOpen);
+    const togglePopover = useStore((state) => state.toggleFocusPopover);
+    const toggleMode = useStore((state) => state.toggleFocusMode);
 
     return (
         <button
@@ -23,7 +23,7 @@ export function FocusChip() {
                     ? 'bg-accent text-white'
                     : cn('bg-transparent', open ? 'text-accent' : 'text-text2'),
             )}
-            onClick={(e) => (e.altKey ? toggleMode() : togglePopover())}
+            onClick={(event) => (event.altKey ? toggleMode() : togglePopover())}
             type="button"
         >
             <Timer size={13} />

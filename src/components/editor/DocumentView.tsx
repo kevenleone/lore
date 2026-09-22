@@ -226,7 +226,7 @@ function cellOf(cell: TableCell, index: number, header: boolean): React.JSX.Elem
  * the images are lifted out — the surrounding tags are dropped, not shown.
  */
 function Html({ value }: { value: string }): null | React.JSX.Element {
-    const sources = [...value.matchAll(/<img\b[^>]*?\bsrc\s*=\s*"([^"]*)"/gi)].map((m) => m[1]);
+    const sources = [...value.matchAll(/<img\b[^>]*?\bsrc\s*=\s*"([^"]*)"/gi)].map((regExpExecArray) => regExpExecArray[1]);
 
     if (!sources.length) {
         return null;

@@ -63,7 +63,7 @@ export function PriorityChip({ priority }: { priority?: Priority }) {
 }
 
 export function ProjectTag({ collections, item }: { collections: Collection[]; item: Item }) {
-    const collection = collections.find((c) => c.id === item.collectionId);
+    const collection = collections.find((collection) => collection.id === item.collectionId);
 
     return (
         <span className="inline-flex min-w-0 items-center gap-[6px] text-label text-text3">
@@ -79,7 +79,7 @@ export function ProjectTag({ collections, item }: { collections: Collection[]; i
 
 /** The checkbox. Ticking writes `done` straight to the file. */
 export function TaskCheckbox({ item, size = 20 }: { item: Item; size?: number }) {
-    const updateItem = useStore((s) => s.updateItem);
+    const updateItem = useStore((state) => state.updateItem);
     const done = !!item.flags.done;
 
     return (
@@ -90,8 +90,8 @@ export function TaskCheckbox({ item, size = 20 }: { item: Item; size?: number })
                 'flex flex-none items-center justify-center rounded-md border-2 p-0',
                 done ? 'border-accent bg-accent text-white' : 'border-dash bg-transparent',
             )}
-            onClick={(e) => {
-                e.stopPropagation();
+            onClick={(event) => {
+                event.stopPropagation();
                 void updateItem(item.id, { flags: { ...item.flags, done: !done } });
             }}
             // Sized by the caller: the board's cards carry a smaller box than

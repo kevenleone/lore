@@ -24,7 +24,7 @@ export function CaptureBody({
     textareaRef,
     value,
 }: CaptureBodyProps): React.JSX.Element {
-    const enabled = useStore((s) => s.prefs.switches.blockEditor);
+    const enabled = useStore((state) => state.prefs.switches.blockEditor);
 
     const textarea = (
         <textarea

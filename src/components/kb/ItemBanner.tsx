@@ -19,7 +19,7 @@ interface ItemBannerProps {
 }
 
 export function ItemBanner({ chip, item }: ItemBannerProps) {
-    const reduceMotion = useStore((s) => s.prefs.switches.motion);
+    const reduceMotion = useStore((state) => state.prefs.switches.motion);
     // Keyed by src rather than a bare boolean: the same component instance can be
     // handed a different item as the list re-sorts, and a stale `true` would show
     // an image that has not arrived.

@@ -32,9 +32,9 @@ describe('viewCounts', () => {
         const c = viewCounts(SEED_ITEMS);
 
         expect(c.all).toBe(SEED_ITEMS.length);
-        expect(c.inbox).toBe(SEED_ITEMS.filter((i) => i.flags.inbox).length);
-        expect(c.today).toBe(SEED_ITEMS.filter((i) => i.flags.today).length);
-        expect(c.starred).toBe(SEED_ITEMS.filter((i) => i.flags.starred).length);
+        expect(c.inbox).toBe(SEED_ITEMS.filter((item) => item.flags.inbox).length);
+        expect(c.today).toBe(SEED_ITEMS.filter((item) => item.flags.today).length);
+        expect(c.starred).toBe(SEED_ITEMS.filter((item) => item.flags.starred).length);
     });
 });
 
@@ -42,7 +42,7 @@ describe('filterByView', () => {
     it('filters by collection and sorts newest first', () => {
         const reading = filterByView(SEED_ITEMS, { kind: 'collection', val: 'reading' });
 
-        expect(reading.every((i) => i.collectionId === 'reading')).toBe(true);
+        expect(reading.every((item) => item.collectionId === 'reading')).toBe(true);
 
         for (let k = 1; k < reading.length; k++) {
             expect(reading[k - 1].createdAt >= reading[k].createdAt).toBe(true);
@@ -52,7 +52,7 @@ describe('filterByView', () => {
     it('filters by tag', () => {
         const design = filterByView(SEED_ITEMS, { kind: 'tag', val: 'design' });
 
-        expect(design.every((i) => i.tags.includes('design'))).toBe(true);
+        expect(design.every((item) => item.tags.includes('design'))).toBe(true);
         expect(design.length).toBeGreaterThan(0);
     });
 
@@ -70,29 +70,29 @@ describe('sortItems', () => {
 
         expect(newest[0].id).toBe(oldest[oldest.length - 1].id);
 
-        const byTitle = sortItems(SEED_ITEMS, 'title').map((i) => i.title);
+        const byTitle = sortItems(SEED_ITEMS, 'title').map((item) => item.title);
 
-        expect(byTitle).toEqual([...byTitle].sort((a, b) => a.localeCompare(b)));
+        expect(byTitle).toEqual([...byTitle].sort((left, right) => left.localeCompare(right)));
     });
 });
 
 describe('tagCounts', () => {
     it('lists tags alphabetically and counts occurrences', () => {
         const tags = tagCounts(SEED_ITEMS);
-        const names = tags.map((t) => t.name);
+        const names = tags.map((tag) => tag.name);
 
-        expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+        expect(names).toEqual([...names].sort((left, right) => left.localeCompare(right)));
 
-        const design = tags.find((t) => t.name === 'design');
+        const design = tags.find((tag) => tag.name === 'design');
 
-        expect(design?.count).toBe(SEED_ITEMS.filter((i) => i.tags.includes('design')).length);
+        expect(design?.count).toBe(SEED_ITEMS.filter((item) => item.tags.includes('design')).length);
     });
 });
 
 describe('collectionCount', () => {
     it('counts items in a collection', () => {
         expect(collectionCount(SEED_ITEMS, 'work')).toBe(
-            SEED_ITEMS.filter((i) => i.collectionId === 'work').length,
+            SEED_ITEMS.filter((item) => item.collectionId === 'work').length,
         );
     });
 });
@@ -116,7 +116,7 @@ describe('the type views', () => {
 
         for (const kind of ['notes', 'links', 'files'] as const) {
             expect(c[kind], kind).toBe(
-                SEED_ITEMS.filter((i) => matchesView(i, { kind, val: null })).length,
+                SEED_ITEMS.filter((item) => matchesView(item, { kind, val: null })).length,
             );
         }
     });
@@ -135,8 +135,8 @@ describe('viewTitle', () => {
 });
 
 describe('detailFlags', () => {
-    const link = SEED_ITEMS.find((i) => i.type === 'link')!;
-    const code = SEED_ITEMS.find((i) => i.type === 'code')!;
+    const link = SEED_ITEMS.find((item) => item.type === 'link')!;
+    const code = SEED_ITEMS.find((item) => item.type === 'code')!;
 
     it('shows a preview only when there is an image; code blocks for code', () => {
         expect(detailFlags(link, true, 2).showPreview).toBe(false);
@@ -164,7 +164,7 @@ describe('relatedItems', () => {
         const item: Item = { ...SEED_ITEMS[0], related: ['i2', 'does-not-exist'] };
         const related = relatedItems(item, SEED_ITEMS);
 
-        expect(related.map((r) => r.id)).toEqual(['i2']);
+        expect(related.map((item) => item.id)).toEqual(['i2']);
     });
 });
 
@@ -184,7 +184,7 @@ describe('queueItems', () => {
     it('takes everything flagged for Today, not only tasks', () => {
         const note: Item = { ...item('n', { today: true }, 1), type: 'note' };
 
-        expect(queueItems([note, item('t', { today: true }, 2)]).map((i) => i.id)).toEqual([
+        expect(queueItems([note, item('t', { today: true }, 2)]).map((item) => item.id)).toEqual([
             't',
             'n',
         ]);
@@ -200,7 +200,7 @@ describe('queueItems', () => {
             item('open', { today: true }, 1),
         ]);
 
-        expect(queue.map((i) => i.id)).toEqual(['open', 'done']);
+        expect(queue.map((item) => item.id)).toEqual(['open', 'done']);
     });
 });
 
@@ -260,8 +260,8 @@ describe('applyFilters', () => {
         const sorted = sortItems(SEED_ITEMS, 'title');
         const filtered = applyFilters(sorted, { ...EMPTY_FILTERS, categories: ['note', 'link'] });
 
-        expect(filtered.map((i) => i.title)).toEqual(
-            sorted.filter((i) => i.type === 'note' || i.type === 'link').map((i) => i.title),
+        expect(filtered.map((item) => item.title)).toEqual(
+            sorted.filter((item) => item.type === 'note' || item.type === 'link').map((item) => item.title),
         );
     });
 });

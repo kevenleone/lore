@@ -51,14 +51,14 @@ export function FocusLabel({ children, className }: { children: ReactNode; class
  * bottom rather than removing it — a finished task should read as finished.
  */
 export function QueueRow({ item }: { item: Item }) {
-    const taskId = useStore((s) => s.focus.taskId);
-    const setFocusTask = useStore((s) => s.setFocusTask);
-    const updateItem = useStore((s) => s.updateItem);
-    const collections = useStore((s) => s.collections);
+    const taskId = useStore((state) => state.focus.taskId);
+    const setFocusTask = useStore((state) => state.setFocusTask);
+    const updateItem = useStore((state) => state.updateItem);
+    const collections = useStore((state) => state.collections);
 
     const done = !!item.flags.done;
     const active = item.id === taskId && !done;
-    const collection = collections.find((c) => c.id === item.collectionId)?.name;
+    const collection = collections.find((collection) => collection.id === item.collectionId)?.name;
 
     return (
         <button
@@ -82,8 +82,8 @@ export function QueueRow({ item }: { item: Item }) {
                         ? 'border-accent bg-accent text-white'
                         : 'border-dash bg-transparent text-transparent',
                 )}
-                onClick={(e) => {
-                    e.stopPropagation();
+                onClick={(event) => {
+                    event.stopPropagation();
                     void updateItem(item.id, { flags: { ...item.flags, done: !done } });
                 }}
                 role="checkbox"
@@ -124,10 +124,10 @@ export function SessionPips({
 }) {
     return (
         <span className="flex items-center gap-[5px]">
-            {Array.from({ length: total }, (_, i) => (
+            {Array.from({ length: total }, (_, index) => (
                 <span
-                    className={cn('rounded-full', i < done ? 'bg-accent' : 'bg-surface3')}
-                    key={i}
+                    className={cn('rounded-full', index < done ? 'bg-accent' : 'bg-surface3')}
+                    key={index}
                     // The pip size is a prop: the two surfaces draw it differently.
                     style={{ height: size, width: size }}
                 />

@@ -391,7 +391,7 @@ function columnId(board: BoardConfig, name: string): string {
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-|-$/g, '') || 'column';
-    const taken = new Set(board.columns.map((c) => c.id));
+    const taken = new Set(board.columns.map((column) => column.id));
 
     if (!taken.has(base)) {
         return base;
@@ -470,7 +470,7 @@ function currentItem(state: StoreState, id: string): Item | undefined {
         return state.detail;
     }
 
-    return state.items.find((i) => i.id === id);
+    return state.items.find((item) => item.id === id);
 }
 
 /** Shared tail of "this interval is over": roll the phase, persist, log, notify. */
@@ -497,7 +497,7 @@ function finishInterval(
     if (logged && before.prefs.switches.logFocus) {
         void logFocusSession(before, logged)
             .then(() => get().refresh())
-            .catch((e) => console.error('lore: could not write the focus log', e));
+            .catch((error) => console.error('lore: could not write the focus log', error));
     }
 }
 
@@ -559,7 +559,7 @@ async function hydrateOnce(
         }
     }
 
-    const selectedId = items.find((i) => i.id === get().selectedId)?.id ?? items[0]?.id ?? null;
+    const selectedId = items.find((item) => item.id === get().selectedId)?.id ?? items[0]?.id ?? null;
 
     set({ collections, hydrated: true, items, selectedId });
 
@@ -587,7 +587,7 @@ async function logFocusSession(state: StoreState, session: FocusSession): Promis
         month: 'long',
         year: 'numeric',
     })}`;
-    const task = session.taskId ? state.items.find((i) => i.id === session.taskId) : undefined;
+    const task = session.taskId ? state.items.find((item) => item.id === session.taskId) : undefined;
     const minutes = Math.round(
         (new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime()) / 60_000,
     );
@@ -596,7 +596,7 @@ async function logFocusSession(state: StoreState, session: FocusSession): Promis
     }`;
 
     const repo = getRepository();
-    const existing = state.items.find((i) => i.title === title);
+    const existing = state.items.find((item) => item.title === title);
 
     if (existing) {
         const current = (await repo.getItem(existing.id))?.body ?? '';
@@ -680,7 +680,7 @@ function runSearch(get: () => StoreState, raw: string): void {
                     return;
                 }
 
-                useStore.setState({ searching: false, searchResults: hits.map((h) => h.id) });
+                useStore.setState({ searching: false, searchResults: hits.map((hit) => hit.id) });
             })
             .catch(() => {
                 // Fall back to the client-side filter rather than showing nothing.
@@ -730,7 +730,7 @@ async function seedDefaultVault(): Promise<void> {
         const { collectionId, createdAt, id, related, updatedAt, ...rest } = item;
         const created = await repo.createItem({
             ...rest,
-            collectionId: SEED_COLLECTIONS.find((c) => c.id === collectionId)?.name,
+            collectionId: SEED_COLLECTIONS.find((collection) => collection.id === collectionId)?.name,
             createdAt,
             related: [],
             updatedAt,
@@ -744,7 +744,7 @@ async function seedDefaultVault(): Promise<void> {
     for (const item of SEED_ITEMS) {
         const newId = idByTitle.get(item.title);
         const related = item.related
-            .map((old) => SEED_ITEMS.find((i) => i.id === old)?.title)
+            .map((old) => SEED_ITEMS.find((item) => item.id === old)?.title)
             .map((title) => (title ? idByTitle.get(title) : undefined))
             .filter((x): x is string => !!x);
 
@@ -830,7 +830,7 @@ export const useStore = create<StoreState>((set, get) => ({
     },
     async addTag(id, tag) {
         const clean = tag.trim().replace(/^#/, '').toLowerCase();
-        const item = get().items.find((i) => i.id === id);
+        const item = get().items.find((item) => item.id === id);
 
         if (!clean || !item || item.tags.includes(clean)) {
             return;
@@ -842,12 +842,12 @@ export const useStore = create<StoreState>((set, get) => ({
     boardId: null,
     boards: {},
     bumpDuration(key, delta) {
-        set((s) => ({
+        set((state) => ({
             prefs: {
-                ...s.prefs,
+                ...state.prefs,
                 durations: {
-                    ...s.prefs.durations,
-                    [key]: Math.max(1, s.prefs.durations[key] + delta),
+                    ...state.prefs.durations,
+                    [key]: Math.max(1, state.prefs.durations[key] + delta),
                 },
             },
         }));
@@ -913,13 +913,13 @@ export const useStore = create<StoreState>((set, get) => ({
         return item;
     },
     cycleFocusTask() {
-        const queue = queueItems(get().items).filter((i) => !i.flags.done);
+        const queue = queueItems(get().items).filter((item) => !item.flags.done);
 
         if (queue.length === 0) {
             return;
         }
 
-        const current = queue.findIndex((i) => i.id === get().focus.taskId);
+        const current = queue.findIndex((item) => item.id === get().focus.taskId);
 
         get().setFocusTask(queue[(current + 1) % queue.length].id);
     },
@@ -995,7 +995,7 @@ export const useStore = create<StoreState>((set, get) => ({
         try {
             await exportPdf(
                 {
-                    collectionName: get().collections.find((c) => c.id === item.collectionId)?.name,
+                    collectionName: get().collections.find((collection) => collection.id === item.collectionId)?.name,
                     item,
                 },
                 destination,
@@ -1151,8 +1151,8 @@ export const useStore = create<StoreState>((set, get) => ({
      */
     async moveBoardColumn(columnId, targetId) {
         await writeBoard(get, set, (board) => {
-            const from = board.columns.findIndex((c) => c.id === columnId);
-            const to = board.columns.findIndex((c) => c.id === targetId);
+            const from = board.columns.findIndex((column) => column.id === columnId);
+            const to = board.columns.findIndex((column) => column.id === targetId);
 
             if (from < 0 || to < 0 || from === to) {
                 return board;
@@ -1257,7 +1257,7 @@ export const useStore = create<StoreState>((set, get) => ({
             return;
         }
 
-        const kept = get().recentSearches.filter((q) => q.toLowerCase() !== text.toLowerCase());
+        const kept = get().recentSearches.filter((recentSearch) => recentSearch.toLowerCase() !== text.toLowerCase());
 
         set({ recentSearches: [text, ...kept].slice(0, MAX_RECENT_SEARCHES) });
         persist(get());
@@ -1310,7 +1310,7 @@ export const useStore = create<StoreState>((set, get) => ({
                 return board;
             }
 
-            return { ...board, columns: board.columns.filter((c) => c.id !== columnId) };
+            return { ...board, columns: board.columns.filter((column) => column.id !== columnId) };
         });
     },
 
@@ -1322,12 +1322,12 @@ export const useStore = create<StoreState>((set, get) => ({
         }
 
         await get().updateItem(id, {
-            comments: item.comments.filter((c) => c.id !== commentId),
+            comments: item.comments.filter((comment) => comment.id !== commentId),
         });
     },
 
     async removeTag(id, tag) {
-        const item = get().items.find((i) => i.id === id);
+        const item = get().items.find((item) => item.id === id);
 
         if (!item) {
             return;
@@ -1345,7 +1345,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
         await writeBoard(get, set, (board) => ({
             ...board,
-            columns: board.columns.map((c) => (c.id === columnId ? { ...c, name: label } : c)),
+            columns: board.columns.map((column) => (column.id === columnId ? { ...column, name: label } : column)),
         }));
     },
 
@@ -1362,7 +1362,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     async reorderBoardColumn(columnId, direction) {
         await writeBoard(get, set, (board) => {
-            const from = board.columns.findIndex((c) => c.id === columnId);
+            const from = board.columns.findIndex((column) => column.id === columnId);
             const to = from + direction;
 
             if (from < 0 || to < 0 || to >= board.columns.length) {
@@ -1378,11 +1378,11 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     resetFocusInterval() {
-        set((s) => ({
+        set((state) => ({
             focus: {
-                ...s.focus,
+                ...state.focus,
                 endsAt: null,
-                remainingSec: phaseSeconds(s.focus.phase, s.prefs.durations),
+                remainingSec: phaseSeconds(state.focus.phase, state.prefs.durations),
                 running: false,
                 startedAt: null,
             },
@@ -1412,8 +1412,8 @@ export const useStore = create<StoreState>((set, get) => ({
     schedule: persisted.schedule,
 
     scheduleItem(id, at) {
-        set((s) => {
-            const schedule = { ...s.schedule };
+        set((state) => {
+            const schedule = { ...state.schedule };
 
             if (at) {
                 schedule[id] = at.toISOString();
@@ -1482,7 +1482,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
         const userMsg: ChatMessage = { id: `u_${Date.now()}`, role: 'user', text };
 
-        set((s) => ({ chat: [...s.chat, userMsg] }));
+        set((state) => ({ chat: [...state.chat, userMsg] }));
 
         const result = await ai.chat(text, get().items);
         const aiMsg: ChatMessage = {
@@ -1492,7 +1492,7 @@ export const useStore = create<StoreState>((set, get) => ({
             text: result.text,
         };
 
-        set((s) => ({ chat: [...s.chat, aiMsg] }));
+        set((state) => ({ chat: [...state.chat, aiMsg] }));
     },
 
     /* ---------------- onboarding ---------------- */
@@ -1509,10 +1509,10 @@ export const useStore = create<StoreState>((set, get) => ({
     async setBoardDoneColumn(columnId) {
         await writeBoard(get, set, (board) => ({
             ...board,
-            columns: board.columns.map((c) => {
-                const done = c.id === columnId && !c.done;
+            columns: board.columns.map((column) => {
+                const done = column.id === columnId && !column.done;
 
-                return done ? { ...c, done: true } : { ...c, done: undefined };
+                return done ? { ...column, done: true } : { ...column, done: undefined };
             }),
         }));
     },
@@ -1534,11 +1534,11 @@ export const useStore = create<StoreState>((set, get) => ({
     /* ---------------- settings ---------------- */
 
     setFilters(patch) {
-        set((s) => ({ filters: { ...s.filters, ...patch } }));
+        set((state) => ({ filters: { ...state.filters, ...patch } }));
     },
 
     setFocusTask(id) {
-        set((s) => ({ focus: { ...s.focus, taskId: id } }));
+        set((state) => ({ focus: { ...state.focus, taskId: id } }));
     },
 
     setMainView(view) {
@@ -1554,7 +1554,7 @@ export const useStore = create<StoreState>((set, get) => ({
         get().setPref('openMode', mode);
     },
     setPref(key, value) {
-        set((s) => ({ prefs: { ...s.prefs, [key]: value } }));
+        set((state) => ({ prefs: { ...state.prefs, [key]: value } }));
         persist(get());
     },
 
@@ -1607,16 +1607,16 @@ export const useStore = create<StoreState>((set, get) => ({
      * same thing in a different folder.
      */
     stopFocus() {
-        set((s) => ({
+        set((state) => ({
             focus: {
                 endsAt: null,
                 phase: 'focus',
-                remainingSec: phaseSeconds('focus', s.prefs.durations),
+                remainingSec: phaseSeconds('focus', state.prefs.durations),
                 running: false,
                 sessionIndex: 1,
                 startedAt: null,
                 // The task stays: stopping ends the session, not the intention.
-                taskId: s.focus.taskId,
+                taskId: state.focus.taskId,
             },
         }));
     },
@@ -1698,25 +1698,25 @@ export const useStore = create<StoreState>((set, get) => ({
         // Clears the preset with it: a capture opened from the menu or ⌥Space
         // is not the one a board column asked for, and a stale column would
         // file the next task somewhere the user never chose.
-        set((s) => ({ captureOpen: !s.captureOpen, capturePreset: null, focusPopoverOpen: false }));
+        set((state) => ({ captureOpen: !state.captureOpen, capturePreset: null, focusPopoverOpen: false }));
     },
 
     toggleChat() {
-        set((s) => ({ chatOpen: !s.chatOpen }));
+        set((state) => ({ chatOpen: !state.chatOpen }));
     },
 
     toggleCommandMenu() {
-        set((s) => ({ commandMenuOpen: !s.commandMenuOpen }));
+        set((state) => ({ commandMenuOpen: !state.commandMenuOpen }));
     },
 
     toggleFilter(facet, value) {
-        set((s) => {
-            const current = s.filters[facet] as string[];
+        set((state) => {
+            const current = state.filters[facet] as string[];
             const next = current.includes(value)
                 ? current.filter((v) => v !== value)
                 : [...current, value];
 
-            return { filters: { ...s.filters, [facet]: next } };
+            return { filters: { ...state.filters, [facet]: next } };
         });
     },
 
@@ -1730,16 +1730,16 @@ export const useStore = create<StoreState>((set, get) => ({
             void ensureNotificationPermission();
         }
 
-        set((s) => {
-            const running = !s.focus.running;
+        set((state) => {
+            const running = !state.focus.running;
             const remaining =
-                s.focus.remainingSec > 0
-                    ? s.focus.remainingSec
-                    : phaseSeconds(s.focus.phase, s.prefs.durations);
+                state.focus.remainingSec > 0
+                    ? state.focus.remainingSec
+                    : phaseSeconds(state.focus.phase, state.prefs.durations);
 
             return {
                 focus: {
-                    ...s.focus,
+                    ...state.focus,
                     endsAt: running ? Date.now() + remaining * 1000 : null,
                     remainingSec: remaining,
                     running,
@@ -1747,19 +1747,19 @@ export const useStore = create<StoreState>((set, get) => ({
                     // resume — otherwise a pause would shorten the block the
                     // calendar draws for it.
                     startedAt: running
-                        ? (s.focus.startedAt ?? new Date().toISOString())
-                        : s.focus.startedAt,
+                        ? (state.focus.startedAt ?? new Date().toISOString())
+                        : state.focus.startedAt,
                 },
             };
         });
     },
 
     toggleFocusMode() {
-        set((s) => ({ focusModeOpen: !s.focusModeOpen, focusPopoverOpen: false }));
+        set((state) => ({ focusModeOpen: !state.focusModeOpen, focusPopoverOpen: false }));
     },
 
     toggleFocusPopover() {
-        set((s) => ({ focusPopoverOpen: !s.focusPopoverOpen }));
+        set((state) => ({ focusPopoverOpen: !state.focusPopoverOpen }));
     },
 
     toggleProperties() {
@@ -1768,11 +1768,11 @@ export const useStore = create<StoreState>((set, get) => ({
         get().setPref('propertiesOpen', open);
     },
     toggleSidebar() {
-        set((s) => ({ sidebarVisible: !s.sidebarVisible }));
+        set((state) => ({ sidebarVisible: !state.sidebarVisible }));
     },
 
     async toggleStar(id) {
-        const item = get().items.find((i) => i.id === id);
+        const item = get().items.find((item) => item.id === id);
 
         if (!item) {
             return;
@@ -1782,8 +1782,8 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     toggleSwitch(key) {
-        set((s) => ({
-            prefs: { ...s.prefs, switches: { ...s.prefs.switches, [key]: !s.prefs.switches[key] } },
+        set((state) => ({
+            prefs: { ...state.prefs, switches: { ...state.prefs.switches, [key]: !state.prefs.switches[key] } },
         }));
         persist(get());
     },
@@ -1820,7 +1820,7 @@ export const useStore = create<StoreState>((set, get) => ({
             onboarded: false,
             onboardingStep: 'pick',
             recentItemIds: [],
-            recentWorkspaces: get().recentWorkspaces.filter((r) => r.path !== path),
+            recentWorkspaces: get().recentWorkspaces.filter((recentWorkspace) => recentWorkspace.path !== path),
             selectedId: null,
             settingsOpen: false,
             workspacePath: null,

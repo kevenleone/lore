@@ -45,12 +45,12 @@ export function applyFilters(items: Item[], filters: Filters): Item[] {
 }
 
 export function collectionCount(items: Item[], collectionId: string): number {
-    return items.filter((i) => i.collectionId === collectionId).length;
+    return items.filter((item) => item.collectionId === collectionId).length;
 }
 
 /** Filter to a view and apply the given sort order (default: newest first). */
 export function filterByView(items: Item[], view: View, sort: SortOrder = 'newest'): Item[] {
-    const filtered = items.filter((i) => matchesView(i, view));
+    const filtered = items.filter((item) => matchesView(item, view));
 
     return sortItems(filtered, sort);
 }
@@ -139,8 +139,8 @@ export function matchesView(item: Item, view: View): boolean {
  * Ticked-off items stay in the list, struck through, and sink to the bottom.
  */
 export function queueItems(items: Item[]): Item[] {
-    const open = items.filter((i) => i.flags.today && !i.flags.done);
-    const done = items.filter((i) => i.flags.today && i.flags.done);
+    const open = items.filter((item) => item.flags.today && !item.flags.done);
+    const done = items.filter((item) => item.flags.today && item.flags.done);
 
     return [...sortItems(open, 'oldest'), ...sortItems(done, 'oldest')];
 }
@@ -150,12 +150,12 @@ export function sortItems(items: Item[], sort: SortOrder): Item[] {
 
     switch (sort) {
         case 'oldest':
-            return copy.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+            return copy.sort((left, right) => left.createdAt.localeCompare(right.createdAt));
         case 'title':
-            return copy.sort((a, b) => a.title.localeCompare(b.title));
+            return copy.sort((left, right) => left.title.localeCompare(right.title));
         case 'newest':
         default:
-            return copy.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+            return copy.sort((left, right) => right.createdAt.localeCompare(left.createdAt));
     }
 }
 
@@ -175,18 +175,18 @@ export function tagCounts(items: Item[]): TagCount[] {
 
     return [...counts.entries()]
         .map(([name, count]) => ({ count, name }))
-        .sort((a, b) => a.name.localeCompare(b.name));
+        .sort((left, right) => left.name.localeCompare(right.name));
 }
 
 export function viewCounts(items: Item[]): ViewCounts {
     return {
         all: items.length,
-        files: items.filter((i) => FILE_TYPES.includes(i.type)).length,
-        inbox: items.filter((i) => i.flags.inbox).length,
-        links: items.filter((i) => i.type === 'link').length,
-        notes: items.filter((i) => i.type === 'note').length,
-        starred: items.filter((i) => i.flags.starred).length,
-        today: items.filter((i) => i.flags.today).length,
+        files: items.filter((item) => FILE_TYPES.includes(item.type)).length,
+        inbox: items.filter((item) => item.flags.inbox).length,
+        links: items.filter((item) => item.type === 'link').length,
+        notes: items.filter((item) => item.type === 'note').length,
+        starred: items.filter((item) => item.flags.starred).length,
+        today: items.filter((item) => item.flags.today).length,
     };
 }
 
@@ -207,7 +207,7 @@ export interface DetailFlags {
 }
 
 export function collectionFor(item: Item, collections: Collection[]): Collection | null {
-    return item.collectionId ? (collections.find((c) => c.id === item.collectionId) ?? null) : null;
+    return item.collectionId ? (collections.find((collection) => collection.id === item.collectionId) ?? null) : null;
 }
 
 /**
@@ -263,9 +263,9 @@ export function previewLabel(item: Item): string {
 }
 
 export function relatedItems(item: Item, all: Item[]): Item[] {
-    const byId = new Map(all.map((i) => [i.id, i]));
+    const byId = new Map(all.map((item) => [item.id, item]));
 
-    return (item.related ?? []).map((id) => byId.get(id)).filter((x): x is Item => !!x);
+    return (item.related ?? []).map((id) => byId.get(id)).filter((item): item is Item => !!item);
 }
 
 export function viewTitle(view: View, collections: Collection[]): string {
@@ -273,7 +273,7 @@ export function viewTitle(view: View, collections: Collection[]): string {
         case 'all':
             return 'Everything';
         case 'collection':
-            return collections.find((c) => c.id === view.val)?.name ?? 'Collection';
+            return collections.find((collection) => collection.id === view.val)?.name ?? 'Collection';
         case 'files':
             return 'Files';
         case 'inbox':

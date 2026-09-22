@@ -65,21 +65,21 @@ const CAPTURE_TYPES: ChoiceOption<'auto' | ItemType>[] = [
 ];
 
 export function GeneralPane() {
-    const collections = useStore((s) => s.collections);
-    const defaultCollection = useStore((s) => s.prefs.defaultCollection);
-    const defaultCaptureType = useStore((s) => s.prefs.defaultCaptureType);
-    const setPref = useStore((s) => s.setPref);
+    const collections = useStore((state) => state.collections);
+    const defaultCollection = useStore((state) => state.prefs.defaultCollection);
+    const defaultCaptureType = useStore((state) => state.prefs.defaultCaptureType);
+    const setPref = useStore((state) => state.setPref);
 
     // A collection deleted since the preference was set falls back to the
     // Inbox rather than leaving the chooser showing an id that no longer reads.
     const targets = useMemo<ChoiceOption<string>[]>(
         () => [
             { label: 'Inbox', value: INBOX_TARGET },
-            ...collections.map((c) => ({ label: c.name, value: c.id })),
+            ...collections.map((collection) => ({ label: collection.name, value: collection.id })),
         ],
         [collections],
     );
-    const target = targets.some((t) => t.value === defaultCollection)
+    const target = targets.some((target) => target.value === defaultCollection)
         ? (defaultCollection ?? INBOX_TARGET)
         : INBOX_TARGET;
 
@@ -129,13 +129,13 @@ export function GeneralPane() {
 const INBOX_TARGET = 'inbox';
 
 export function VaultPane() {
-    const workspacePath = useStore((s) => s.workspacePath);
-    const openWorkspacePicker = useStore((s) => s.openWorkspacePicker);
-    const setStep = useStore((s) => s.setOnboardingStep);
-    const exportVault = useStore((s) => s.exportVault);
-    const trashVault = useStore((s) => s.trashVault);
-    const items = useStore((s) => s.items);
-    const pushToast = useStore((s) => s.pushToast);
+    const workspacePath = useStore((state) => state.workspacePath);
+    const openWorkspacePicker = useStore((state) => state.openWorkspacePicker);
+    const setStep = useStore((state) => state.setOnboardingStep);
+    const exportVault = useStore((state) => state.exportVault);
+    const trashVault = useStore((state) => state.trashVault);
+    const items = useStore((state) => state.items);
+    const pushToast = useStore((state) => state.pushToast);
     const [confirming, setConfirming] = useState(false);
     const size = useVaultSize();
 
@@ -256,13 +256,13 @@ function ConfirmDelete({
                     <input
                         autoFocus
                         className="mt-[6px] w-full rounded-lg border border-border bg-surface2 px-[10px] py-[7px] font-[inherit] text-text outline-none focus-visible:border-accent"
-                        onChange={(e) => setTyped(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Escape') {
+                        onChange={(event) => setTyped(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Escape') {
                                 onCancel();
                             }
 
-                            if (e.key === 'Enter' && matches) {
+                            if (event.key === 'Enter' && matches) {
                                 onConfirm();
                             }
                         }}
@@ -307,8 +307,8 @@ function SwitchRow({
 
 /** Binds a switch key to the store so panes stay declarative. */
 function useSwitch(key: keyof Switches) {
-    const on = useStore((s) => s.prefs.switches[key]);
-    const toggle = useStore((s) => s.toggleSwitch);
+    const on = useStore((state) => state.prefs.switches[key]);
+    const toggle = useStore((state) => state.toggleSwitch);
 
     return { on, onChange: () => toggle(key) };
 }
@@ -319,7 +319,7 @@ function useSwitch(key: keyof Switches) {
  */
 function useVaultSize(): null | VaultSize {
     const [size, setSize] = useState<null | VaultSize>(null);
-    const items = useStore((s) => s.items);
+    const items = useStore((state) => state.items);
 
     useEffect(() => {
         let cancelled = false;
@@ -365,27 +365,27 @@ const BANNER_PLACEMENTS: BannerPlacement[] = ['inline', 'cover'];
 const titleCase = (s: string): string => s[0].toUpperCase() + s.slice(1);
 
 export function LookPane() {
-    const appearance = useStore((s) => s.prefs.appearance);
-    const setAppearance = useStore((s) => s.setAppearance);
-    const accent = useStore((s) => s.prefs.accent);
-    const darkTheme = useStore((s) => s.prefs.darkTheme);
-    const lightTheme = useStore((s) => s.prefs.lightTheme);
-    const setAccent = useStore((s) => s.setAccent);
-    const density = useStore((s) => s.prefs.density);
-    const textSize = useStore((s) => s.prefs.textSize);
-    const setPref = useStore((s) => s.setPref);
-    const viewMode = useStore((s) => s.prefs.viewMode);
-    const setViewMode = useStore((s) => s.setViewMode);
-    const openMode = useStore((s) => s.prefs.openMode);
-    const setOpenMode = useStore((s) => s.setOpenMode);
-    const bannerPlacement = useStore((s) => s.prefs.bannerPlacement);
+    const appearance = useStore((state) => state.prefs.appearance);
+    const setAppearance = useStore((state) => state.setAppearance);
+    const accent = useStore((state) => state.prefs.accent);
+    const darkTheme = useStore((state) => state.prefs.darkTheme);
+    const lightTheme = useStore((state) => state.prefs.lightTheme);
+    const setAccent = useStore((state) => state.setAccent);
+    const density = useStore((state) => state.prefs.density);
+    const textSize = useStore((state) => state.prefs.textSize);
+    const setPref = useStore((state) => state.setPref);
+    const viewMode = useStore((state) => state.prefs.viewMode);
+    const setViewMode = useStore((state) => state.setViewMode);
+    const openMode = useStore((state) => state.prefs.openMode);
+    const setOpenMode = useStore((state) => state.setOpenMode);
+    const bannerPlacement = useStore((state) => state.prefs.bannerPlacement);
     const counts = useSwitch('counts');
     const statusBar = useSwitch('statusBar');
     const blockEditor = useSwitch('blockEditor');
     const rawMarkdownDefault = useSwitch('rawMarkdownDefault');
     const motion = useSwitch('motion');
     const mode = effectiveTheme(appearance);
-    const setTheme = useStore((s) => s.setTheme);
+    const setTheme = useStore((state) => state.setTheme);
     const themeId = mode === 'dark' ? darkTheme : lightTheme;
 
     return (
@@ -433,8 +433,8 @@ export function LookPane() {
             </div>
             <div className="mt-[10px]">
                 <div className="grid grid-cols-4 gap-[10px]">
-                    {themesFor(mode).map((t) => {
-                        const active = themeId === t.id;
+                    {themesFor(mode).map((themeDefinition) => {
+                        const active = themeId === themeDefinition.id;
 
                         return (
                             <button
@@ -445,18 +445,18 @@ export function LookPane() {
                                         ? 'border-accent bg-accent-tint'
                                         : 'border-border bg-transparent',
                                 )}
-                                key={t.id}
-                                onClick={() => setTheme(t.id)}
+                                key={themeDefinition.id}
+                                onClick={() => setTheme(themeDefinition.id)}
                                 type="button"
                             >
-                                <ThemePreview theme={t} />
+                                <ThemePreview theme={themeDefinition} />
                                 <span
                                     className={cn(
                                         'truncate text-caption',
                                         active ? 'font-semibold' : 'font-medium text-text2',
                                     )}
                                 >
-                                    {t.name}
+                                    {themeDefinition.name}
                                 </span>
                             </button>
                         );
@@ -534,7 +534,7 @@ export function LookPane() {
                         className="w-[120px] accent-accent"
                         max={1.2}
                         min={0.9}
-                        onChange={(e) => setPref('textSize', Number(e.target.value))}
+                        onChange={(event) => setPref('textSize', Number(event.target.value))}
                         step={0.05}
                         type="range"
                         value={textSize}
@@ -645,9 +645,9 @@ export function KeysPane() {
         return SHORTCUT_GROUPS.map((g) => ({
             ...g,
             rows: g.rows.filter(
-                (r) =>
-                    r.label.toLowerCase().includes(query) ||
-                    r.keys.join('').toLowerCase().includes(query),
+                (row) =>
+                    row.label.toLowerCase().includes(query) ||
+                    row.keys.join('').toLowerCase().includes(query),
             ),
         })).filter((g) => g.rows.length > 0);
     }, [filter]);
@@ -658,27 +658,27 @@ export function KeysPane() {
                 <SettingsIcon name="search" size={14} sw={1.9} />
                 <input
                     className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-text outline-none"
-                    onChange={(e) => setFilter(e.target.value)}
+                    onChange={(event) => setFilter(event.target.value)}
                     placeholder="Filter shortcuts"
                     value={filter}
                 />
             </label>
 
-            {groups.map((g) => (
-                <div className="mb-[22px]" key={g.name}>
-                    <SectionLabel first>{g.name}</SectionLabel>
-                    {g.rows.map((r, i) => (
+            {groups.map((group) => (
+                <div className="mb-[22px]" key={group.name}>
+                    <SectionLabel first>{group.name}</SectionLabel>
+                    {group.rows.map((row, index) => (
                         <div
                             className={cn(
                                 'flex items-center gap-4 border-b border-border-soft py-[9px]',
-                                i === g.rows.length - 1 && 'border-b-0',
+                                index === group.rows.length - 1 && 'border-b-0',
                             )}
-                            key={`${g.name}:${r.label}`}
+                            key={`${group.name}:${row.label}`}
                         >
-                            <span className="min-w-0 flex-1 text-body-lg">{r.label}</span>
+                            <span className="min-w-0 flex-1 text-body-lg">{row.label}</span>
                             <span className="flex flex-none gap-1">
-                                {r.keys.map((k, ki) => (
-                                    <KeyCap key={ki}>{k}</KeyCap>
+                                {row.keys.map((key, ki) => (
+                                    <KeyCap key={ki}>{key}</KeyCap>
                                 ))}
                             </span>
                         </div>
@@ -693,8 +693,8 @@ export function KeysPane() {
 }
 
 export function NotifPane() {
-    const notifStyle = useStore((s) => s.prefs.notifStyle);
-    const setPref = useStore((s) => s.setPref);
+    const notifStyle = useStore((state) => state.prefs.notifStyle);
+    const setPref = useStore((state) => state.setPref);
     const sounds = useSwitch('sounds');
 
     return (
@@ -750,8 +750,8 @@ function shortcutRows(group: HotkeyCommand['group']): { keys: string[]; label: s
  * vault — a key must not travel with a folder that gets synced or shared.
  */
 function UnsplashKeyRow() {
-    const saved = useStore((s) => s.prefs.unsplashKey);
-    const setPref = useStore((s) => s.setPref);
+    const saved = useStore((state) => state.prefs.unsplashKey);
+    const setPref = useStore((state) => state.setPref);
     const [draft, setDraft] = useState(saved ?? '');
 
     // A key pasted in another window (or cleared) should show here too.
@@ -775,9 +775,9 @@ function UnsplashKeyRow() {
                 <input
                     className="w-full rounded-lg border border-border bg-surface px-[9px] py-[6px] text-right font-mono text-body text-text outline-none focus:border-accent"
                     onBlur={commit}
-                    onChange={(e) => setDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                    onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
                             commit();
                         }
                     }}
@@ -812,8 +812,8 @@ const DURATION_LABELS = [
 ] as const;
 
 export function CalendarPane() {
-    const weekStart = useStore((s) => s.prefs.weekStart);
-    const setPref = useStore((s) => s.setPref);
+    const weekStart = useStore((state) => state.prefs.weekStart);
+    const setPref = useStore((state) => state.setPref);
 
     return (
         <>
@@ -845,10 +845,10 @@ export function CalendarPane() {
 }
 
 export function FocusPane() {
-    const durations = useStore((s) => s.prefs.durations);
-    const bump = useStore((s) => s.bumpDuration);
-    const longBreakAfter = useStore((s) => s.prefs.longBreakAfter);
-    const setPref = useStore((s) => s.setPref);
+    const durations = useStore((state) => state.prefs.durations);
+    const bump = useStore((state) => state.bumpDuration);
+    const longBreakAfter = useStore((state) => state.prefs.longBreakAfter);
+    const setPref = useStore((state) => state.setPref);
 
     return (
         <>
@@ -930,8 +930,8 @@ const ABOUT_LINKS: { href: string; label: string }[] = [
 ];
 
 export function AboutPane() {
-    const items = useStore((s) => s.items);
-    const workspacePath = useStore((s) => s.workspacePath);
+    const items = useStore((state) => state.items);
+    const workspacePath = useStore((state) => state.workspacePath);
 
     const meta = [
         // Which Lore this is, and the vault it opened — the pair that settles

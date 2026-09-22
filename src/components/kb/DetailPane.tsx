@@ -71,31 +71,31 @@ interface DetailPaneProps {
 }
 
 export function DetailPane({ chrome, onClose }: DetailPaneProps) {
-    const items = useStore((s) => s.items);
-    const collections = useStore((s) => s.collections);
-    const view = useStore((s) => s.view);
-    const closeOpenItem = useStore((s) => s.closeOpenItem);
-    const expandOpenItem = useStore((s) => s.expandOpenItem);
-    const selectedId = useStore((s) => s.selectedId);
-    const detail = useStore((s) => s.detail);
+    const items = useStore((state) => state.items);
+    const collections = useStore((state) => state.collections);
+    const view = useStore((state) => state.view);
+    const closeOpenItem = useStore((state) => state.closeOpenItem);
+    const expandOpenItem = useStore((state) => state.expandOpenItem);
+    const selectedId = useStore((state) => state.selectedId);
+    const detail = useStore((state) => state.detail);
     // The AI sections need both the pane toggle and the Capture & AI setting.
-    const showSections = useStore((s) => s.prefs.switches.detailSections);
-    const itemMeta = useStore((s) => s.itemMeta);
-    const blockEditorEnabled = useStore((s) => s.prefs.switches.blockEditor);
-    const toggleStar = useStore((s) => s.toggleStar);
-    const propertiesOpen = useStore((s) => s.prefs.propertiesOpen);
-    const toggleProperties = useStore((s) => s.toggleProperties);
-    const rawDefault = useStore((s) => s.prefs.switches.rawMarkdownDefault);
-    const bannerPlacement = useStore((s) => s.prefs.bannerPlacement);
-    const deleteItem = useStore((s) => s.deleteItem);
-    const refreshSource = useStore((s) => s.refreshSource);
-    const updateItem = useStore((s) => s.updateItem);
-    const addTag = useStore((s) => s.addTag);
-    const removeTag = useStore((s) => s.removeTag);
+    const showSections = useStore((state) => state.prefs.switches.detailSections);
+    const itemMeta = useStore((state) => state.itemMeta);
+    const blockEditorEnabled = useStore((state) => state.prefs.switches.blockEditor);
+    const toggleStar = useStore((state) => state.toggleStar);
+    const propertiesOpen = useStore((state) => state.prefs.propertiesOpen);
+    const toggleProperties = useStore((state) => state.toggleProperties);
+    const rawDefault = useStore((state) => state.prefs.switches.rawMarkdownDefault);
+    const bannerPlacement = useStore((state) => state.prefs.bannerPlacement);
+    const deleteItem = useStore((state) => state.deleteItem);
+    const refreshSource = useStore((state) => state.refreshSource);
+    const updateItem = useStore((state) => state.updateItem);
+    const addTag = useStore((state) => state.addTag);
+    const removeTag = useStore((state) => state.removeTag);
 
     // The list row paints everything but the body instantly; `detail` carries the
     // body and lands a tick later, so prefer it once it matches the selection.
-    const listItem = items.find((i) => i.id === selectedId) ?? items[0];
+    const listItem = items.find((item) => item.id === selectedId) ?? items[0];
     const sel = detail && detail.id === listItem?.id ? detail : listItem;
 
     const [editingTitle, setEditingTitle] = useState(false);
@@ -446,13 +446,13 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                             autoFocus
                             className="mt-[14px] w-full border-b-2 border-none border-b-accent bg-transparent text-[23px] leading-[1.25] font-bold tracking-[-.015em] text-text outline-none"
                             onBlur={commitTitle}
-                            onChange={(e) => setTitleDraft(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
+                            onChange={(event) => setTitleDraft(event.target.value)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
                                     commitTitle();
                                 }
 
-                                if (e.key === 'Escape') {
+                                if (event.key === 'Escape') {
                                     setEditingTitle(false);
                                 }
                             }}
@@ -571,13 +571,13 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                             autoFocus
                             className={bodyTextareaClass(flags.detIsCode)}
                             onBlur={commitBody}
-                            onChange={(e) => setBodyDraft(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Escape') {
+                            onChange={(event) => setBodyDraft(event.target.value)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Escape') {
                                     setEditingBody(false);
                                 }
 
-                                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                                if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
                                     commitBody();
                                 }
                             }}
@@ -612,7 +612,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                 <span className={SECTION_LABEL}>Subtasks</span>
                                 {subtasks.length > 0 && (
                                     <span className="font-mono text-caption text-text3">
-                                        {subtasks.filter((t) => t.done).length}/{subtasks.length}
+                                        {subtasks.filter((subtask) => subtask.done).length}/{subtasks.length}
                                     </span>
                                 )}
                             </div>
@@ -647,14 +647,14 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                                 autoFocus
                                                 className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title leading-[1.5] text-text outline-none"
                                                 onBlur={() => commitSubtaskEdit(index)}
-                                                onChange={(e) => setSubtaskEdit(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault();
+                                                onChange={(event) => setSubtaskEdit(event.target.value)}
+                                                onKeyDown={(event) => {
+                                                    if (event.key === 'Enter') {
+                                                        event.preventDefault();
                                                         commitSubtaskEdit(index);
                                                     }
 
-                                                    if (e.key === 'Escape') {
+                                                    if (event.key === 'Escape') {
                                                         setEditingSubtask(null);
                                                     }
                                                 }}
@@ -694,17 +694,17 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                     <input
                                         className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title text-text outline-none placeholder:text-text3"
                                         onBlur={commitSubtask}
-                                        onChange={(e) => setSubtaskDraft(e.target.value)}
-                                        onKeyDown={(e) => {
+                                        onChange={(event) => setSubtaskDraft(event.target.value)}
+                                        onKeyDown={(event) => {
                                             // Enter adds the subtask and keeps the field
                                             // focused, so a list goes in without reaching
                                             // for the mouse between lines.
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault();
+                                            if (event.key === 'Enter') {
+                                                event.preventDefault();
                                                 commitSubtask();
                                             }
 
-                                            if (e.key === 'Escape') {
+                                            if (event.key === 'Escape') {
                                                 setSubtaskDraft('');
                                             }
                                         }}
@@ -748,13 +748,13 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                 <input
                                     className="w-20 rounded-7 border border-accent bg-transparent px-2 py-[3px] font-mono text-body-sm text-accent outline-none"
                                     onBlur={commitTag}
-                                    onChange={(e) => setTagDraft(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
+                                    onChange={(event) => setTagDraft(event.target.value)}
+                                    onKeyDown={(event) => {
+                                        if (event.key === 'Enter') {
                                             commitTag();
                                         }
 
-                                        if (e.key === 'Escape') {
+                                        if (event.key === 'Escape') {
                                             setAddingTag(false);
                                             setTagDraft('');
                                         }

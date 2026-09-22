@@ -19,8 +19,8 @@ const MarkdownView = lazy(async () => ({
 import { Empty, Section } from './controls';
 
 export function CommentsSection({ item }: { item: Item }) {
-    const addComment = useStore((s) => s.addComment);
-    const removeComment = useStore((s) => s.removeComment);
+    const addComment = useStore((state) => state.addComment);
+    const removeComment = useStore((state) => state.removeComment);
     const [draft, setDraft] = useState('');
 
     const comments = item.comments ?? [];
@@ -77,9 +77,9 @@ export function CommentsSection({ item }: { item: Item }) {
 
             <textarea
                 className="min-h-[58px] w-full resize-y rounded-9 border border-border bg-surface px-[10px] py-2 font-[inherit] text-body leading-[1.5] text-text"
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
                         submit();
                     }
                 }}

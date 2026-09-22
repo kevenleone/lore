@@ -39,47 +39,47 @@ import { useStore } from './store/useStore';
 import { effectiveTheme, paintTheme } from './theme/tokens';
 
 export default function App() {
-    const hydrate = useStore((s) => s.hydrate);
-    const refresh = useStore((s) => s.refresh);
-    const appearance = useStore((s) => s.prefs.appearance);
-    const accent = useStore((s) => s.prefs.accent);
-    const darkTheme = useStore((s) => s.prefs.darkTheme);
-    const lightTheme = useStore((s) => s.prefs.lightTheme);
-    const textSize = useStore((s) => s.prefs.textSize);
-    const sidebarVisible = useStore((s) => s.sidebarVisible);
-    const reduceMotion = useStore((s) => s.prefs.switches.motion);
-    const captureOpen = useStore((s) => s.captureOpen);
-    const chatOpen = useStore((s) => s.chatOpen);
-    const closeCapture = useStore((s) => s.closeCapture);
-    const closeCommandMenu = useStore((s) => s.closeCommandMenu);
-    const commandMenuOpen = useStore((s) => s.commandMenuOpen);
-    const closeOpenItem = useStore((s) => s.closeOpenItem);
-    const closeTask = useStore((s) => s.closeTask);
-    const focusModeOpen = useStore((s) => s.focusModeOpen);
-    const focusPopoverOpen = useStore((s) => s.focusPopoverOpen);
-    const mainView = useStore((s) => s.mainView);
-    const onboarded = useStore((s) => s.onboarded);
-    const openId = useStore((s) => s.openId);
-    const propertiesOpen = useStore((s) => s.prefs.propertiesOpen);
+    const hydrate = useStore((state) => state.hydrate);
+    const refresh = useStore((state) => state.refresh);
+    const appearance = useStore((state) => state.prefs.appearance);
+    const accent = useStore((state) => state.prefs.accent);
+    const darkTheme = useStore((state) => state.prefs.darkTheme);
+    const lightTheme = useStore((state) => state.prefs.lightTheme);
+    const textSize = useStore((state) => state.prefs.textSize);
+    const sidebarVisible = useStore((state) => state.sidebarVisible);
+    const reduceMotion = useStore((state) => state.prefs.switches.motion);
+    const captureOpen = useStore((state) => state.captureOpen);
+    const chatOpen = useStore((state) => state.chatOpen);
+    const closeCapture = useStore((state) => state.closeCapture);
+    const closeCommandMenu = useStore((state) => state.closeCommandMenu);
+    const commandMenuOpen = useStore((state) => state.commandMenuOpen);
+    const closeOpenItem = useStore((state) => state.closeOpenItem);
+    const closeTask = useStore((state) => state.closeTask);
+    const focusModeOpen = useStore((state) => state.focusModeOpen);
+    const focusPopoverOpen = useStore((state) => state.focusPopoverOpen);
+    const mainView = useStore((state) => state.mainView);
+    const onboarded = useStore((state) => state.onboarded);
+    const openId = useStore((state) => state.openId);
+    const propertiesOpen = useStore((state) => state.prefs.propertiesOpen);
     // The per-item override wins over the saved preference — that is what the
     // drawer's expand button sets.
-    const openAs = useStore((s) => s.openAs ?? s.prefs.openMode);
-    const exportItemPdf = useStore((s) => s.exportItemPdf);
-    const openCapture = useStore((s) => s.openCapture);
-    const openSettings = useStore((s) => s.openSettings);
-    const selectView = useStore((s) => s.selectView);
-    const setMainView = useStore((s) => s.setMainView);
-    const setTaskView = useStore((s) => s.setTaskView);
-    const settingsOpen = useStore((s) => s.settingsOpen);
-    const photoPickerOpen = !!useStore((s) => s.photoPickerItemId);
-    const closePhotoPicker = useStore((s) => s.closePhotoPicker);
-    const statusBarVisible = useStore((s) => s.prefs.switches.statusBar);
-    const toggleCapture = useStore((s) => s.toggleCapture);
-    const toggleCommandMenu = useStore((s) => s.toggleCommandMenu);
-    const toggleFocus = useStore((s) => s.toggleFocus);
-    const toggleProperties = useStore((s) => s.toggleProperties);
-    const toggleSidebar = useStore((s) => s.toggleSidebar);
-    const viewMode = useStore((s) => s.prefs.viewMode);
+    const openAs = useStore((state) => state.openAs ?? state.prefs.openMode);
+    const exportItemPdf = useStore((state) => state.exportItemPdf);
+    const openCapture = useStore((state) => state.openCapture);
+    const openSettings = useStore((state) => state.openSettings);
+    const selectView = useStore((state) => state.selectView);
+    const setMainView = useStore((state) => state.setMainView);
+    const setTaskView = useStore((state) => state.setTaskView);
+    const settingsOpen = useStore((state) => state.settingsOpen);
+    const photoPickerOpen = !!useStore((state) => state.photoPickerItemId);
+    const closePhotoPicker = useStore((state) => state.closePhotoPicker);
+    const statusBarVisible = useStore((state) => state.prefs.switches.statusBar);
+    const toggleCapture = useStore((state) => state.toggleCapture);
+    const toggleCommandMenu = useStore((state) => state.toggleCommandMenu);
+    const toggleFocus = useStore((state) => state.toggleFocus);
+    const toggleProperties = useStore((state) => state.toggleProperties);
+    const toggleSidebar = useStore((state) => state.toggleSidebar);
+    const viewMode = useStore((state) => state.prefs.viewMode);
 
     useFocusTimer();
 
@@ -92,11 +92,11 @@ export default function App() {
     // Escape is the one shortcut the menu bar cannot own: what it closes
     // depends on what is open. ⌥⇧F reaches here from the tray as well.
     useEffect(() => {
-        const onKey = (e: KeyboardEvent) => {
-            const command = hotkeyCommandFor(e);
+        const onKey = (event: KeyboardEvent) => {
+            const command = hotkeyCommandFor(event);
 
             if (command === 'focus') {
-                e.preventDefault();
+                event.preventDefault();
                 toggleFocus();
             } else if (command === 'close') {
                 // The photo picker is a sheet over the whole window, so it goes
@@ -179,15 +179,15 @@ export default function App() {
             return;
         }
 
-        const onKey = (e: KeyboardEvent) => {
-            const run = menuCommands[hotkeyCommandFor(e) ?? ''];
+        const onKey = (event: KeyboardEvent) => {
+            const run = menuCommands[hotkeyCommandFor(event) ?? ''];
 
             if (!run) {
                 return;
             }
 
-            e.preventDefault();
-            e.stopPropagation();
+            event.preventDefault();
+            event.stopPropagation();
             run();
         };
 
@@ -235,7 +235,7 @@ export default function App() {
                 const registered = await Promise.all([
                     listen('item:created', () => void refresh()),
                     listen('capture:toggle', () => toggleCapture()),
-                    listen<string>('menu', (e) => menuCommands[e.payload]?.()),
+                    listen<string>('menu', (event) => menuCommands[event.payload]?.()),
                 ]);
 
                 if (live) {

@@ -30,7 +30,7 @@ describe('GeneralPane', () => {
         render(<GeneralPane />);
 
         fireEvent.click(screen.getByRole('button', { name: 'File new captures into' }));
-        expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
+        expect(screen.getAllByRole('option').map((element) => element.textContent)).toEqual([
             'Inbox',
             'Reading List',
             'Work',

@@ -80,27 +80,27 @@ interface LegacyDb {
  * this is where that finally comes apart for good. Phase 0 added the columns
  * and backfilled them, but a database from before that still needs the split.
  */
-export function legacyRowToItem(r: LegacyItemRow, collectionName: (id: string) => string): Item {
-    const isLink = r.type === 'link';
+export function legacyRowToItem(legacyItemRow: LegacyItemRow, collectionName: (id: string) => string): Item {
+    const isLink = legacyItemRow.type === 'link';
 
     return {
-        body: r.body ?? (isLink ? undefined : (r.snippet ?? undefined)),
+        body: legacyItemRow.body ?? (isLink ? undefined : (legacyItemRow.snippet ?? undefined)),
         // The collection becomes a folder, so it is keyed by name from here on.
-        collectionId: r.collection_id ? collectionName(r.collection_id) : undefined,
-        createdAt: r.created_at,
-        description: r.description ?? undefined,
-        domain: r.domain ?? undefined,
-        flags: json<Item['flags']>(r.flags, {}),
-        id: r.id,
-        image: r.image ?? undefined,
-        points: r.points ? json<string[]>(r.points, []) : undefined,
-        related: json<string[]>(r.related, []),
-        summary: r.summary ?? undefined,
-        tags: json<string[]>(r.tags, []),
-        title: r.title,
-        type: r.type as Item['type'],
-        updatedAt: r.updated_at,
-        url: r.url ?? (isLink ? (r.snippet ?? undefined) : undefined),
+        collectionId: legacyItemRow.collection_id ? collectionName(legacyItemRow.collection_id) : undefined,
+        createdAt: legacyItemRow.created_at,
+        description: legacyItemRow.description ?? undefined,
+        domain: legacyItemRow.domain ?? undefined,
+        flags: json<Item['flags']>(legacyItemRow.flags, {}),
+        id: legacyItemRow.id,
+        image: legacyItemRow.image ?? undefined,
+        points: legacyItemRow.points ? json<string[]>(legacyItemRow.points, []) : undefined,
+        related: json<string[]>(legacyItemRow.related, []),
+        summary: legacyItemRow.summary ?? undefined,
+        tags: json<string[]>(legacyItemRow.tags, []),
+        title: legacyItemRow.title,
+        type: legacyItemRow.type as Item['type'],
+        updatedAt: legacyItemRow.updated_at,
+        url: legacyItemRow.url ?? (isLink ? (legacyItemRow.snippet ?? undefined) : undefined),
     };
 }
 
@@ -163,13 +163,13 @@ async function migrateOne(file: string): Promise<{ collections: number; items: n
             return null;
         }
 
-        const nameById = new Map(collectionRows.map((c) => [c.id, c.name]));
-        const collections: Collection[] = collectionRows.map((c) => ({
-            color: c.color,
-            id: c.name,
-            name: c.name,
+        const nameById = new Map(collectionRows.map((collectionRow) => [collectionRow.id, collectionRow.name]));
+        const collections: Collection[] = collectionRows.map((collectionRow) => ({
+            color: collectionRow.color,
+            id: collectionRow.name,
+            name: collectionRow.name,
         }));
-        const items = rows.map((r) => legacyRowToItem(r, (id) => nameById.get(id) ?? id));
+        const items = rows.map((row) => legacyRowToItem(row, (id) => nameById.get(id) ?? id));
 
         // The engine writes the tree in one pass and reindexes.
         await request('/migrate/sqlite', {

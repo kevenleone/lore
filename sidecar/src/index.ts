@@ -45,7 +45,7 @@ async function main(): Promise<void> {
     }
 }
 
-main().catch((e) => {
-    console.error('lore-sidecar: failed to start:', e);
+main().catch((error) => {
+    console.error('lore-sidecar: failed to start:', error);
     process.exit(1);
 });

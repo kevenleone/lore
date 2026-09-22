@@ -23,18 +23,18 @@ import { Composer } from './Composer';
 import { applyCapturePreset } from './preset';
 
 export function CaptureDrawer() {
-    const captureOpen = useStore((s) => s.captureOpen);
-    const closeCapture = useStore((s) => s.closeCapture);
-    const createItem = useStore((s) => s.createItem);
-    const reduceMotion = useStore((s) => s.prefs.switches.motion);
+    const captureOpen = useStore((state) => state.captureOpen);
+    const closeCapture = useStore((state) => state.closeCapture);
+    const createItem = useStore((state) => state.createItem);
+    const reduceMotion = useStore((state) => state.prefs.switches.motion);
     // Capture from inside a collection files into it — the drawer is opened from
     // the library the user is already looking at. Anywhere else, Settings decides.
-    const view = useStore((s) => s.view);
-    const defaultCollection = useStore((s) => s.prefs.defaultCollection);
-    const defaultCaptureType = useStore((s) => s.prefs.defaultCaptureType);
+    const view = useStore((state) => state.view);
+    const defaultCollection = useStore((state) => state.prefs.defaultCollection);
+    const defaultCaptureType = useStore((state) => state.prefs.defaultCaptureType);
     // Set by the surface that opened this: a board column knows which board and
     // which column it is, neither of which the drawer could work out itself.
-    const preset = useStore((s) => s.capturePreset);
+    const preset = useStore((state) => state.capturePreset);
     const { mounted, open } = useMountTransition(captureOpen, DRAWER_MS, reduceMotion);
     // False for the length of the slide, so the form does not focus a field that
     // is still off the right edge — see `Composer`'s `focusReady`. A timer rather

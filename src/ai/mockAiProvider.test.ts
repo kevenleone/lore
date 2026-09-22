@@ -29,7 +29,7 @@ describe('MockAiProvider.chat', () => {
 
         expect(res.sources.length).toBeGreaterThan(0);
 
-        const ids = res.sources.map((s) => s.itemId);
+        const ids = res.sources.map((source) => source.itemId);
 
         // OKLCH color picker (i6) and Design of Everyday Things (i8) should surface.
         expect(ids).toContain('i6');

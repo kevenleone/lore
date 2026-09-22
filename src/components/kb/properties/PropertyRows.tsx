@@ -30,10 +30,10 @@ const FLAGS: { key: keyof ItemFlags; label: string }[] = [
 ];
 
 export function PropertyRows({ item }: { item: Item }) {
-    const collections = useStore((s) => s.collections);
-    const updateItem = useStore((s) => s.updateItem);
-    const unsplashKey = useStore((s) => s.prefs.unsplashKey);
-    const openPhotoPicker = useStore((s) => s.openPhotoPicker);
+    const collections = useStore((state) => state.collections);
+    const updateItem = useStore((state) => state.updateItem);
+    const unsplashKey = useStore((state) => state.prefs.unsplashKey);
+    const openPhotoPicker = useStore((state) => state.openPhotoPicker);
     const [editingUrl, setEditingUrl] = useState(false);
     const [urlDraft, setUrlDraft] = useState('');
     const [editingImage, setEditingImage] = useState(false);
@@ -42,7 +42,7 @@ export function PropertyRows({ item }: { item: Item }) {
     const thumbnailSrc = useAssetSrc(item.image);
     const { broken: thumbnailBroken, onError: onThumbnailError } = useImageFallback(thumbnailSrc);
 
-    const collection = collections.find((c) => c.id === item.collectionId);
+    const collection = collections.find((collection) => collection.id === item.collectionId);
 
     const commitUrl = () => {
         const next = urlDraft.trim();
@@ -129,23 +129,23 @@ export function PropertyRows({ item }: { item: Item }) {
                             >
                                 Unfiled
                             </MenuItem>
-                            {collections.map((c) => (
+                            {collections.map((collection) => (
                                 <MenuItem
-                                    key={c.id}
+                                    key={collection.id}
                                     onClick={() => {
                                         close();
 
-                                        if (c.id !== item.collectionId) {
-                                            void updateItem(item.id, { collectionId: c.id });
+                                        if (collection.id !== item.collectionId) {
+                                            void updateItem(item.id, { collectionId: collection.id });
                                         }
                                     }}
-                                    selected={c.id === item.collectionId}
+                                    selected={collection.id === item.collectionId}
                                 >
                                     <span
                                         className="h-2 w-2 flex-none rounded-xs"
-                                        style={{ background: c.color }}
+                                        style={{ background: collection.color }}
                                     />
-                                    {c.name}
+                                    {collection.name}
                                 </MenuItem>
                             ))}
                         </>
@@ -163,8 +163,8 @@ export function PropertyRows({ item }: { item: Item }) {
                     <Row icon={<Calendar />} label="Due">
                         <input
                             className="border-none bg-transparent text-right font-[inherit] text-body text-text2 outline-none"
-                            onChange={(e) =>
-                                void updateItem(item.id, { dueAt: e.target.value || undefined })
+                            onChange={(event) =>
+                                void updateItem(item.id, { dueAt: event.target.value || undefined })
                             }
                             type="date"
                             value={item.dueAt ?? ''}
@@ -229,13 +229,13 @@ export function PropertyRows({ item }: { item: Item }) {
                         autoFocus
                         className="w-full min-w-0 border-b-[1.5px] border-none border-b-accent bg-transparent text-right font-[inherit] text-body text-text outline-none"
                         onBlur={commitImage}
-                        onChange={(e) => setImageDraft(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                        onChange={(event) => setImageDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
                                 commitImage();
                             }
 
-                            if (e.key === 'Escape') {
+                            if (event.key === 'Escape') {
                                 setEditingImage(false);
                             }
                         }}
@@ -310,11 +310,11 @@ export function PropertyRows({ item }: { item: Item }) {
             <input
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => {
-                    const file = e.target.files?.[0];
+                onChange={(event) => {
+                    const file = event.target.files?.[0];
 
                     // Cleared so picking the same file twice fires again.
-                    e.target.value = '';
+                    event.target.value = '';
 
                     if (file) {
                         void uploadThumbnail(file);
@@ -329,13 +329,13 @@ export function PropertyRows({ item }: { item: Item }) {
                         autoFocus
                         className="w-full min-w-0 border-b-[1.5px] border-none border-b-accent bg-transparent text-right font-[inherit] text-body text-text outline-none"
                         onBlur={commitUrl}
-                        onChange={(e) => setUrlDraft(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                        onChange={(event) => setUrlDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
                                 commitUrl();
                             }
 
-                            if (e.key === 'Escape') {
+                            if (event.key === 'Escape') {
                                 setEditingUrl(false);
                             }
                         }}

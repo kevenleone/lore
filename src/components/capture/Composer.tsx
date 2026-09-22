@@ -204,14 +204,14 @@ export function Composer({
     useEffect(() => {
         void getRepository()
             .listCollections()
-            .then((c) => {
-                setCollections(c);
+            .then((collections) => {
+                setCollections(collections);
 
-                if (!c.length) {
+                if (!collections.length) {
                     return;
                 }
 
-                const has = (id: null | string): boolean => !!id && c.some((x) => x.id === id);
+                const has = (id: null | string): boolean => !!id && collections.some((collection) => collection.id === id);
 
                 setCollectionId((current) => {
                     if (has(current)) {
@@ -224,7 +224,7 @@ export function Composer({
 
                     const last = lastCollectionId();
 
-                    return has(last) ? last! : c[0].id;
+                    return has(last) ? last! : collections[0].id;
                 });
             });
     }, [defaultCollectionId]);
@@ -264,11 +264,11 @@ export function Composer({
         setSubtaskDraft('');
 
         if (text) {
-            setSubtasks((a) => [...a, { done: false, text }]);
+            setSubtasks((subtasks) => [...subtasks, { done: false, text }]);
         }
     };
 
-    const activeCollection = collections.find((c) => c.id === collectionId) ?? null;
+    const activeCollection = collections.find((collection) => collection.id === collectionId) ?? null;
     const collRef = useRef<HTMLDivElement>(null);
     const fieldRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
@@ -293,8 +293,8 @@ export function Composer({
             return;
         }
 
-        const onDown = (e: MouseEvent) => {
-            if (collRef.current && !collRef.current.contains(e.target as Node)) {
+        const onDown = (event: MouseEvent) => {
+            if (collRef.current && !collRef.current.contains(event.target as Node)) {
                 setCollOpen(false);
             }
         };
@@ -333,12 +333,12 @@ export function Composer({
 
     // The footer promises ⏎, so the single-line fields honour it. The note and
     // code textareas — and the task's description — keep Enter for newlines.
-    const onFieldKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key !== 'Enter') {
+    const onFieldKeyDown = (event: React.KeyboardEvent) => {
+        if (event.key !== 'Enter') {
             return;
         }
 
-        e.preventDefault();
+        event.preventDefault();
         void save();
     };
 
@@ -458,7 +458,7 @@ export function Composer({
                             </span>
                             <input
                                 className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-text outline-none"
-                                onChange={(e) => setValue(e.target.value)}
+                                onChange={(event) => setValue(event.target.value)}
                                 onKeyDown={onFieldKeyDown}
                                 placeholder="https://…"
                                 ref={setFieldRef}
@@ -535,7 +535,7 @@ export function Composer({
                         <div className="rounded-xl border border-border p-[14px]">
                             <input
                                 className="w-full border-none bg-transparent font-[inherit] text-title-lg text-text outline-none"
-                                onChange={(e) => setValue(e.target.value)}
+                                onChange={(event) => setValue(event.target.value)}
                                 onKeyDown={onFieldKeyDown}
                                 placeholder="What needs doing?"
                                 ref={setFieldRef}
@@ -570,7 +570,7 @@ export function Composer({
                                 <Calendar size={12} />
                                 <input
                                     className="border-none bg-transparent font-[inherit] text-caption text-text2 outline-none"
-                                    onChange={(e) => setDueAt(e.target.value)}
+                                    onChange={(event) => setDueAt(event.target.value)}
                                     type="date"
                                     value={dueAt}
                                 />
@@ -646,9 +646,9 @@ export function Composer({
                                                     : 'border-border text-transparent',
                                             )}
                                             onClick={() =>
-                                                setSubtasks((a) =>
-                                                    a.map((x, j) =>
-                                                        j === index ? { ...x, done: !x.done } : x,
+                                                setSubtasks((subtasks) =>
+                                                    subtasks.map((subtask, j) =>
+                                                        j === index ? { ...subtask, done: !subtask.done } : subtask,
                                                     ),
                                                 )
                                             }
@@ -668,7 +668,7 @@ export function Composer({
                                             aria-label={`Remove ${subtask.text}`}
                                             className="border-none bg-transparent p-0 text-faint"
                                             onClick={() =>
-                                                setSubtasks((a) => a.filter((_, j) => j !== index))
+                                                setSubtasks((subtasks) => subtasks.filter((_, j) => j !== index))
                                             }
                                             type="button"
                                         >
@@ -678,16 +678,16 @@ export function Composer({
                                 ))}
                                 <input
                                     className="w-full border-none bg-transparent font-[inherit] text-body-lg text-text outline-none placeholder:text-text3"
-                                    onChange={(e) => setSubtaskDraft(e.target.value)}
-                                    onKeyDown={(e) => {
+                                    onChange={(event) => setSubtaskDraft(event.target.value)}
+                                    onKeyDown={(event) => {
                                         // Enter here means "this subtask", not "the
                                         // capture" — the footer's ⏎ must not fire.
-                                        if (e.key !== 'Enter') {
+                                        if (event.key !== 'Enter') {
                                             return;
                                         }
 
-                                        e.preventDefault();
-                                        e.stopPropagation();
+                                        event.preventDefault();
+                                        event.stopPropagation();
                                         addSubtask(subtaskDraft);
                                     }}
                                     placeholder="+ subtask"
@@ -700,7 +700,7 @@ export function Composer({
                 {tab === 'code' && (
                     <textarea
                         className="min-h-[150px] w-full resize-y rounded-xl border border-border bg-surface2 p-[14px] font-mono text-body leading-[1.7] text-text2"
-                        onChange={(e) => setValue(e.target.value)}
+                        onChange={(event) => setValue(event.target.value)}
                         placeholder="Paste a snippet…"
                         ref={setFieldRef}
                         value={value}
@@ -732,8 +732,8 @@ export function Composer({
                                     </span>
                                     <input
                                         className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-text outline-none"
-                                        onChange={(e) => {
-                                            setImageUrl(e.target.value);
+                                        onChange={(event) => {
+                                            setImageUrl(event.target.value);
                                             setImageUrlBroken(false);
                                         }}
                                         onKeyDown={onFieldKeyDown}
@@ -780,16 +780,16 @@ export function Composer({
                                         fileInputRef.current?.click();
                                     }}
                                     onDragLeave={() => setDragging(false)}
-                                    onDragOver={(e) => {
+                                    onDragOver={(event) => {
                                         // Without this the browser navigates to the file
                                         // instead of letting the drop land here.
-                                        e.preventDefault();
+                                        event.preventDefault();
                                         setDragging(true);
                                     }}
-                                    onDrop={(e) => {
-                                        e.preventDefault();
+                                    onDrop={(event) => {
+                                        event.preventDefault();
                                         setDragging(false);
-                                        pickFile(e.dataTransfer.files[0]);
+                                        pickFile(event.dataTransfer.files[0]);
                                     }}
                                     type="button"
                                 >
@@ -817,7 +817,7 @@ export function Composer({
                                 <input
                                     accept="image/*,.pdf"
                                     className="hidden"
-                                    onChange={(e) => pickFile(e.target.files?.[0])}
+                                    onChange={(event) => pickFile(event.target.files?.[0])}
                                     ref={fileInputRef}
                                     type="file"
                                 />
@@ -825,7 +825,7 @@ export function Composer({
                         )}
                         <input
                             className="mt-3 w-full rounded-lg border border-border px-[10px] py-[6px] font-[inherit] text-body-lg text-text"
-                            onChange={(e) => setValue(e.target.value)}
+                            onChange={(event) => setValue(event.target.value)}
                             onKeyDown={onFieldKeyDown}
                             placeholder="Title (optional)"
                             value={value}
@@ -836,15 +836,15 @@ export function Composer({
                 {/* tags */}
                 <div className="mt-[14px] flex flex-wrap items-center gap-[7px]">
                     <span className={SECTION_LABEL}>Tags</span>
-                    {tags.map((t) => (
+                    {tags.map((tag) => (
                         <button
-                            aria-label={`Remove tag ${t}`}
+                            aria-label={`Remove tag ${tag}`}
                             className="inline-flex items-center gap-[5px] rounded-md border-none bg-accent-tint px-2 py-[3px] font-mono text-caption text-accent"
-                            key={t}
-                            onClick={() => removeTag(t)}
+                            key={tag}
+                            onClick={() => removeTag(tag)}
                             type="button"
                         >
-                            #{t}
+                            #{tag}
                             <span className="opacity-55">×</span>
                         </button>
                     ))}
@@ -853,18 +853,18 @@ export function Composer({
                             autoFocus
                             className="w-[70px] rounded-md border border-accent bg-transparent px-[7px] py-[2px] font-mono text-caption text-accent outline-none"
                             onBlur={() => addTag(tagDraft)}
-                            onChange={(e) => setTagDraft(e.target.value)}
-                            onKeyDown={(e) => {
+                            onChange={(event) => setTagDraft(event.target.value)}
+                            onKeyDown={(event) => {
                                 // Both keys mean "the tag", not "the capture" —
                                 // the window listener must not also close the
                                 // surface out from under it.
-                                if (e.key === 'Enter') {
-                                    e.stopPropagation();
+                                if (event.key === 'Enter') {
+                                    event.stopPropagation();
                                     addTag(tagDraft);
                                 }
 
-                                if (e.key === 'Escape') {
-                                    e.stopPropagation();
+                                if (event.key === 'Escape') {
+                                    event.stopPropagation();
                                     setAddingTag(false);
                                     setTagDraft('');
                                 }
@@ -913,18 +913,18 @@ export function Composer({
                                         No collections yet
                                     </div>
                                 )}
-                                {collections.map((c) => (
+                                {collections.map((collection) => (
                                     <button
-                                        aria-selected={c.id === collectionId}
+                                        aria-selected={collection.id === collectionId}
                                         className={cn(
                                             'flex w-full items-center gap-2 rounded-7 border-none px-[10px] py-[7px] text-left font-[inherit] text-body-lg',
-                                            c.id === collectionId
+                                            collection.id === collectionId
                                                 ? 'bg-accent-tint font-semibold text-accent'
                                                 : 'bg-transparent font-normal text-text2',
                                         )}
-                                        key={c.id}
+                                        key={collection.id}
                                         onClick={() => {
-                                            setCollectionId(c.id);
+                                            setCollectionId(collection.id);
                                             setCollOpen(false);
                                         }}
                                         role="option"
@@ -932,9 +932,9 @@ export function Composer({
                                     >
                                         <span
                                             className="h-[9px] w-[9px] flex-none rounded-xs"
-                                            style={{ background: c.color }}
+                                            style={{ background: collection.color }}
                                         />
-                                        {c.name}
+                                        {collection.name}
                                     </button>
                                 ))}
                             </div>

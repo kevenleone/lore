@@ -11,8 +11,8 @@ import { SettingsIcon } from '../common/settingsGlyphs';
 import { ICON_BUTTON } from '../settings/controls';
 
 export function Notice() {
-    const message = useStore((s) => s.migrationNotice);
-    const dismiss = useStore((s) => s.dismissMigrationNotice);
+    const message = useStore((state) => state.migrationNotice);
+    const dismiss = useStore((state) => state.dismissMigrationNotice);
 
     if (!message) {
         return null;

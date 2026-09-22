@@ -116,21 +116,21 @@ function stripLeadingBlank(body: string): string {
     return body.replace(/^\s*\n/, '');
 }
 
-const str = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() ? v : undefined);
+const str = (value: unknown): string | undefined => (typeof value === 'string' && value.trim() ? value : undefined);
 
-const strArray = (v: unknown): string[] =>
-    Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x.trim()) : [];
+const strArray = (value: unknown): string[] =>
+    Array.isArray(value) ? value.filter((x): x is string => typeof x === 'string' && !!x.trim()) : [];
 
-function iso(v: unknown, fallback: string): string;
-function iso(v: unknown, fallback: undefined): string | undefined;
+function iso(value: unknown, fallback: string): string;
+function iso(value: unknown, fallback: undefined): string | undefined;
 
-function iso(v: unknown, fallback: string | undefined): string | undefined {
-    if (typeof v === 'string' && !Number.isNaN(Date.parse(v))) {
-        return new Date(v).toISOString();
+function iso(value: unknown, fallback: string | undefined): string | undefined {
+    if (typeof value === 'string' && !Number.isNaN(Date.parse(value))) {
+        return new Date(value).toISOString();
     }
 
-    if (v instanceof Date) {
-        return v.toISOString();
+    if (value instanceof Date) {
+        return value.toISOString();
     }
 
     return fallback;
@@ -141,18 +141,18 @@ function iso(v: unknown, fallback: string | undefined): string | undefined {
  * shapes have to be accepted; anything else a person typed by hand degrades to
  * "no deadline" rather than making the file unreadable.
  */
-const day = (v: unknown): string | undefined => {
-    if (v instanceof Date) {
-        return v.toISOString().slice(0, 10);
+const day = (value: unknown): string | undefined => {
+    if (value instanceof Date) {
+        return value.toISOString().slice(0, 10);
     }
 
-    const s = str(v);
+    const s = str(value);
 
     return s && /^\d{4}-\d{2}-\d{2}$/.test(s.slice(0, 10)) ? s.slice(0, 10) : undefined;
 };
 
-const priority = (v: unknown): Priority | undefined => {
-    const s = str(v)?.toLowerCase();
+const priority = (value: unknown): Priority | undefined => {
+    const s = str(value)?.toLowerCase();
 
     return (PRIORITIES as string[]).includes(s ?? '') ? (s as Priority) : undefined;
 };
@@ -161,14 +161,14 @@ const priority = (v: unknown): Priority | undefined => {
  * Comments a person may well have typed into the file by hand, so everything but
  * the text itself is optional and filled in here rather than rejected.
  */
-const commentArray = (v: unknown, fallback: string): ItemComment[] => {
-    if (!Array.isArray(v)) {
+const commentArray = (value: unknown, fallback: string): ItemComment[] => {
+    if (!Array.isArray(value)) {
         return [];
     }
 
     const out: ItemComment[] = [];
 
-    for (const entry of v) {
+    for (const entry of value) {
         if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
             continue;
         }
@@ -202,12 +202,12 @@ const commentArray = (v: unknown, fallback: string): ItemComment[] => {
  * "no credit" rather than making the file unreadable — the photo still shows,
  * it just carries no byline.
  */
-const imageCredit = (v: unknown): ImageCredit | undefined => {
-    if (!v || typeof v !== 'object' || Array.isArray(v)) {
+const imageCredit = (value: unknown): ImageCredit | undefined => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
         return undefined;
     }
 
-    const raw = v as Record<string, unknown>;
+    const raw = value as Record<string, unknown>;
     const name = str(raw.name);
     const profileUrl = str(raw.profileUrl);
 
@@ -223,12 +223,12 @@ const imageCredit = (v: unknown): ImageCredit | undefined => {
  * "not virtual" rather than making the file unreadable, like every other field
  * here — an item that loses its source is merely an ordinary note.
  */
-const source = (v: unknown): ItemSource | undefined => {
-    if (!v || typeof v !== 'object' || Array.isArray(v)) {
+const source = (value: unknown): ItemSource | undefined => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
         return undefined;
     }
 
-    const raw = v as Record<string, unknown>;
+    const raw = value as Record<string, unknown>;
     const url = str(raw.raw);
 
     if (str(raw.kind) !== 'github' || !url) {

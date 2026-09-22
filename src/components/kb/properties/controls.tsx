@@ -61,8 +61,8 @@ export function Picker({
             return;
         }
 
-        const onDown = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
+        const onDown = (event: MouseEvent) => {
+            if (ref.current && !ref.current.contains(event.target as Node)) {
                 setOpen(false);
             }
         };

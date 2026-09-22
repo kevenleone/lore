@@ -114,8 +114,8 @@ export function FocusPanel() {
                     import('@tauri-apps/api/core'),
                     import('@tauri-apps/api/event'),
                 ]);
-                const off = await listen<FocusSnapshot>('focus:state', (e) =>
-                    setSnapshot(e.payload),
+                const off = await listen<FocusSnapshot>('focus:state', (event) =>
+                    setSnapshot(event.payload),
                 );
                 const cached = await invoke<FocusSnapshot | null>('focus_snapshot');
 

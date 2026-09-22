@@ -21,12 +21,12 @@ export class MockAiProvider implements AiProvider {
             .map((item) => {
                 const hay =
                     `${item.title} ${item.tags.join(' ')} ${item.summary ?? ''}`.toLowerCase();
-                const score = words.reduce((n, w) => (hay.includes(w) ? n + 1 : n), 0);
+                const score = words.reduce((n, word) => (hay.includes(word) ? n + 1 : n), 0);
 
                 return { item, score };
             })
             .filter((s) => s.score > 0)
-            .sort((a, b) => b.score - a.score)
+            .sort((left, right) => right.score - left.score)
             .slice(0, 3);
 
         if (scored.length === 0) {

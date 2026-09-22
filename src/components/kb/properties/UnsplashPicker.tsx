@@ -30,14 +30,14 @@ import { Close, Search } from '../../common/glyphs';
  * passed in, so the sheet can be rendered at the window's own level.
  */
 export function UnsplashPicker() {
-    const itemId = useStore((s) => s.photoPickerItemId);
-    const items = useStore((s) => s.items);
-    const detail = useStore((s) => s.detail);
-    const close = useStore((s) => s.closePhotoPicker);
-    const updateItem = useStore((s) => s.updateItem);
-    const key = useStore((s) => s.prefs.unsplashKey);
+    const itemId = useStore((state) => state.photoPickerItemId);
+    const items = useStore((state) => state.items);
+    const detail = useStore((state) => state.detail);
+    const close = useStore((state) => state.closePhotoPicker);
+    const updateItem = useStore((state) => state.updateItem);
+    const key = useStore((state) => state.prefs.unsplashKey);
 
-    const item = detail?.id === itemId ? detail : items.find((i) => i.id === itemId);
+    const item = detail?.id === itemId ? detail : items.find((item) => item.id === itemId);
     const query = item?.title ?? '';
 
     const [draft, setDraft] = useState(query);
@@ -125,13 +125,13 @@ export function UnsplashPicker() {
                         <Search size={14} />
                         <input
                             className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-text outline-none"
-                            onChange={(e) => setDraft(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key !== 'Enter') {
+                            onChange={(event) => setDraft(event.target.value)}
+                            onKeyDown={(event) => {
+                                if (event.key !== 'Enter') {
                                     return;
                                 }
 
-                                e.preventDefault();
+                                event.preventDefault();
                                 setTerm(draft.trim());
                             }}
                             placeholder="Search Unsplash photos…"

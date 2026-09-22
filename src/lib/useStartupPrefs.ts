@@ -10,9 +10,9 @@ import { useStore } from '../store/useStore';
 import { launchAtLoginEnabled, setLaunchAtLogin, setTrayVisible } from './startup';
 
 export function useStartupPrefs(): void {
-    const hydrated = useStore((s) => s.hydrated);
-    const menubar = useStore((s) => s.prefs.switches.menuBarIcon);
-    const launch = useStore((s) => s.prefs.switches.launchAtLogin);
+    const hydrated = useStore((state) => state.hydrated);
+    const menubar = useStore((state) => state.prefs.switches.menuBarIcon);
+    const launch = useStore((state) => state.prefs.switches.launchAtLogin);
 
     useEffect(() => {
         if (!hydrated) {

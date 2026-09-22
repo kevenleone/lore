@@ -37,9 +37,9 @@ export function BoardListView({
     tasks: Item[];
     today: string;
 }) {
-    const collections = useStore((s) => s.collections);
-    const selectTask = useStore((s) => s.selectTask);
-    const selectedId = useStore((s) => s.selectedId);
+    const collections = useStore((state) => state.collections);
+    const selectTask = useStore((state) => state.selectTask);
+    const selectedId = useStore((state) => state.selectedId);
 
     return (
         <div className="flex-1 overflow-auto px-5 py-[18px]">
@@ -90,21 +90,21 @@ export function BoardView({
     tasks: Item[];
     today: string;
 }) {
-    const addBoardColumn = useStore((s) => s.addBoardColumn);
-    const collections = useStore((s) => s.collections);
-    const reduceMotion = useStore((s) => s.prefs.switches.motion);
-    const moveBoardColumn = useStore((s) => s.moveBoardColumn);
-    const openCaptureIn = useStore((s) => s.openCaptureIn);
-    const selectTask = useStore((s) => s.selectTask);
-    const updateItem = useStore((s) => s.updateItem);
+    const addBoardColumn = useStore((state) => state.addBoardColumn);
+    const collections = useStore((state) => state.collections);
+    const reduceMotion = useStore((state) => state.prefs.switches.motion);
+    const moveBoardColumn = useStore((state) => state.moveBoardColumn);
+    const openCaptureIn = useStore((state) => state.openCaptureIn);
+    const selectTask = useStore((state) => state.selectTask);
+    const updateItem = useStore((state) => state.updateItem);
     const [adding, setAdding] = useState(false);
     const [draft, setDraft] = useState('');
 
     const columns = boardColumns(tasks, board);
 
     const move = (columnId: string, id: string) => {
-        const task = tasks.find((i) => i.id === id);
-        const column = board.columns.find((c) => c.id === columnId);
+        const task = tasks.find((task) => task.id === id);
+        const column = board.columns.find((column) => column.id === columnId);
 
         if (!task || !column || boardColumnFor(task, board) === columnId) {
             return;
@@ -114,7 +114,7 @@ export function BoardView({
     };
 
     const drag = usePointerDrag<string>(ZONE, move);
-    const dragged = drag.state && tasks.find((i) => i.id === drag.state?.id);
+    const dragged = drag.state && tasks.find((task) => task.id === drag.state?.id);
 
     /*
      * A second drag over the same zones, started only from a column's handle.
@@ -127,7 +127,7 @@ export function BoardView({
 
     // ← and → move a focused card, so the board is not a pointer-only surface.
     const step = (task: Item, direction: -1 | 1) => {
-        const at = board.columns.findIndex((c) => c.id === boardColumnFor(task, board));
+        const at = board.columns.findIndex((column) => column.id === boardColumnFor(task, board));
         const next = board.columns[at + direction];
 
         if (next) {
@@ -177,7 +177,7 @@ export function BoardView({
                             first={index === 0}
                             last={index === columns.length - 1}
                             onAdd={() => openCaptureIn(boardCollectionId, column.config)}
-                            onGrab={(e) => columnDrag.start(e, column.config.id)}
+                            onGrab={(event) => columnDrag.start(event, column.config.id)}
                             only={columns.length === 1}
                         />
                         <div className="flex flex-col gap-2">
@@ -194,20 +194,20 @@ export function BoardView({
                                             selectTask(task.id);
                                         }
                                     }}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
+                                    onKeyDown={(event) => {
+                                        if (event.key === 'Enter') {
                                             selectTask(task.id);
                                         }
 
-                                        if (e.key === 'ArrowLeft') {
+                                        if (event.key === 'ArrowLeft') {
                                             step(task, -1);
                                         }
 
-                                        if (e.key === 'ArrowRight') {
+                                        if (event.key === 'ArrowRight') {
                                             step(task, 1);
                                         }
                                     }}
-                                    onPointerDown={(e) => drag.start(e, task.id)}
+                                    onPointerDown={(event) => drag.start(event, task.id)}
                                     role="button"
                                     tabIndex={0}
                                 >
@@ -235,13 +235,13 @@ export function BoardView({
                             autoFocus
                             className="w-full rounded-xl border border-accent bg-surface px-3 py-[10px] font-[inherit] text-body-lg text-text outline-none"
                             onBlur={commitColumn}
-                            onChange={(e) => setDraft(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
+                            onChange={(event) => setDraft(event.target.value)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
                                     commitColumn();
                                 }
 
-                                if (e.key === 'Escape') {
+                                if (event.key === 'Escape') {
                                     setDraft('');
                                     setAdding(false);
                                 }
@@ -283,7 +283,7 @@ export function BoardView({
                     // Follows the cursor; only JS knows where that is.
                     style={{ left: columnDrag.state.x + 12, top: columnDrag.state.y + 12 }}
                 >
-                    {board.columns.find((c) => c.id === columnDrag.state?.id)?.name}
+                    {board.columns.find((column) => column.id === columnDrag.state?.id)?.name}
                 </div>
             )}
         </div>
@@ -315,9 +315,9 @@ function BoardListRow({
                     : 'border-border bg-surface hover:border-accent-border',
             )}
             onClick={onSelect}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
+            onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
                     onSelect();
                 }
             }}
@@ -357,7 +357,7 @@ function ColumnHeader({
     onGrab: (event: React.PointerEvent) => void;
     only: boolean;
 }) {
-    const renameBoardColumn = useStore((s) => s.renameBoardColumn);
+    const renameBoardColumn = useStore((state) => state.renameBoardColumn);
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState(column.name);
 
@@ -376,13 +376,13 @@ function ColumnHeader({
                     autoFocus
                     className="min-w-0 flex-1 border-b-[1.5px] border-none border-b-accent bg-transparent font-[inherit] text-body-lg font-[640] text-text outline-none"
                     onBlur={commit}
-                    onChange={(e) => setDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                    onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
                             commit();
                         }
 
-                        if (e.key === 'Escape') {
+                        if (event.key === 'Escape') {
                             setDraft(column.name);
                             setEditing(false);
                         }

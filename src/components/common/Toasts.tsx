@@ -13,7 +13,7 @@ import { TOAST_ACTION_MS, TOAST_MS } from '../../lib/motion';
 import { useStore } from '../../store/useStore';
 
 export function Toasts() {
-    const toasts = useStore((s) => s.toasts);
+    const toasts = useStore((state) => state.toasts);
 
     if (toasts.length === 0) {
         return null;
@@ -32,8 +32,8 @@ export function Toasts() {
 }
 
 function ToastChip({ toast }: { toast: Toast }) {
-    const dismissToast = useStore((s) => s.dismissToast);
-    const reduceMotion = useStore((s) => s.prefs.switches.motion);
+    const dismissToast = useStore((state) => state.dismissToast);
+    const reduceMotion = useStore((state) => state.prefs.switches.motion);
 
     const life = toast.action ? TOAST_ACTION_MS : TOAST_MS;
 

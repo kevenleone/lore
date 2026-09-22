@@ -400,7 +400,7 @@ describe('Board', () => {
         fireEvent.pointerUp(window, { clientX: 400, clientY: 30 });
 
         // Lifted out and put back in, not swapped with the column it landed on.
-        expect(useStore.getState().boards.c1.columns.map((c) => c.id)).toEqual([
+        expect(useStore.getState().boards.c1.columns.map((column) => column.id)).toEqual([
             'doing',
             'done',
             'todo',

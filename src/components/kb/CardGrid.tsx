@@ -15,9 +15,9 @@ import { ItemBanner } from './ItemBanner';
 import { subtitle } from './itemText';
 
 export function CardGrid({ items, onContextMenu }: SurfaceProps) {
-    const collections = useStore((s) => s.collections);
-    const selectedId = useStore((s) => s.selectedId);
-    const selectItem = useStore((s) => s.selectItem);
+    const collections = useStore((state) => state.collections);
+    const selectedId = useStore((state) => state.selectedId);
+    const selectItem = useStore((state) => state.selectItem);
 
     return (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(216px,1fr))] content-start gap-[14px] p-4">
@@ -36,7 +36,7 @@ export function CardGrid({ items, onContextMenu }: SurfaceProps) {
                         )}
                         key={item.id}
                         onClick={() => selectItem(item.id)}
-                        onContextMenu={(e) => onContextMenu(e, item.id)}
+                        onContextMenu={(event) => onContextMenu(event, item.id)}
                     >
                         <div className="relative h-[118px] flex-none overflow-hidden bg-surface3">
                             {hasBanner(item) ? (

@@ -50,13 +50,13 @@ const KEYCAP =
     'rounded-5 border border-border bg-surface px-[6px] py-px font-mono text-caption text-faint';
 
 export function CommandMenu() {
-    const close = useStore((s) => s.closeCommandMenu);
-    const items = useStore((s) => s.items);
-    const collections = useStore((s) => s.collections);
-    const recentItemIds = useStore((s) => s.recentItemIds);
-    const recentSearches = useStore((s) => s.recentSearches);
-    const recordRecentSearch = useStore((s) => s.recordRecentSearch);
-    const openItemPage = useStore((s) => s.openItemPage);
+    const close = useStore((state) => state.closeCommandMenu);
+    const items = useStore((state) => state.items);
+    const collections = useStore((state) => state.collections);
+    const recentItemIds = useStore((state) => state.recentItemIds);
+    const recentSearches = useStore((state) => state.recentSearches);
+    const recordRecentSearch = useStore((state) => state.recordRecentSearch);
+    const openItemPage = useStore((state) => state.openItemPage);
     const commands = useCommands();
 
     const [query, setQuery] = useState('');
@@ -89,7 +89,7 @@ export function CommandMenu() {
         const trimmed = query.trim();
         const byId = new Map(items.map((item) => [item.id, item]));
         const collectionName = (item: Item): string | undefined =>
-            collections.find((c) => c.id === item.collectionId)?.name;
+            collections.find((collection) => collection.id === item.collectionId)?.name;
         const openItem = (item: Item, group: string): CommandEntry => ({
             group,
             hint: collectionName(item) ?? typeMeta(item.type).label,
@@ -126,7 +126,7 @@ export function CommandMenu() {
                 searches.length || opened.length
                     ? []
                     : [...items]
-                          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+                          .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
                           .slice(0, RECENT_FALLBACK)
                           .map((item) => openItem(item, 'Recent'));
 
@@ -179,31 +179,31 @@ export function CommandMenu() {
         entry.run();
     };
 
-    const onKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.preventDefault();
+    const onKeyDown = (event: React.KeyboardEvent) => {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
 
             if (!entries.length) {
                 return;
             }
 
-            const step = e.key === 'ArrowDown' ? 1 : -1;
+            const step = event.key === 'ArrowDown' ? 1 : -1;
 
             setActive((index) => (index + step + entries.length) % entries.length);
 
             return;
         }
 
-        if (e.key === 'Enter') {
-            e.preventDefault();
+        if (event.key === 'Enter') {
+            event.preventDefault();
             run(entries[active]);
 
             return;
         }
 
-        if (e.key === 'Escape') {
+        if (event.key === 'Escape') {
             // App's window listener would otherwise also close the item underneath.
-            e.stopPropagation();
+            event.stopPropagation();
             close();
         }
     };
@@ -231,7 +231,7 @@ export function CommandMenu() {
                         aria-expanded="true"
                         aria-label="Search or run a command"
                         className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title text-text outline-none placeholder:text-text3"
-                        onChange={(e) => setQuery(e.target.value)}
+                        onChange={(event) => setQuery(event.target.value)}
                         onKeyDown={onKeyDown}
                         placeholder="Search documents or run a command…"
                         ref={inputRef}
@@ -264,7 +264,7 @@ export function CommandMenu() {
                                 id={optionId(index)}
                                 onClick={() => run(entry)}
                                 // Keeps the caret in the input, which a recent search refills.
-                                onMouseDown={(e) => e.preventDefault()}
+                                onMouseDown={(event) => event.preventDefault()}
                                 onMouseMove={() => setActive(index)}
                                 role="option"
                             >
@@ -332,10 +332,10 @@ function rankCommands(commands: CommandEntry[], needle: string): CommandEntry[] 
 }
 
 function useCommands(): CommandEntry[] {
-    const appearance = useStore((s) => s.prefs.appearance);
-    const collections = useStore((s) => s.collections);
-    const focusRunning = useStore((s) => s.focus.running);
-    const hasRecents = useStore((s) => s.recentItemIds.length + s.recentSearches.length > 0);
+    const appearance = useStore((state) => state.prefs.appearance);
+    const collections = useStore((state) => state.collections);
+    const focusRunning = useStore((state) => state.focus.running);
+    const hasRecents = useStore((state) => state.recentItemIds.length + state.recentSearches.length > 0);
 
     return useMemo(() => {
         const store = useStore.getState;

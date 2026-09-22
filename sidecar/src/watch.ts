@@ -80,7 +80,7 @@ function isNoise(relPath: string): boolean {
 
     const parts = relPath.split(/[\\/]/);
 
-    if (parts.some((p) => p === LORE_DIR || p === '.git' || p === 'node_modules')) {
+    if (parts.some((part) => part === LORE_DIR || part === '.git' || part === 'node_modules')) {
         return true;
     }
 

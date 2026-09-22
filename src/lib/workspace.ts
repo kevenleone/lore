@@ -51,8 +51,8 @@ export async function onWorkspaceChanged(
     try {
         const { listen } = await import('@tauri-apps/api/event');
 
-        return await listen<{ path: null | string }>(WORKSPACE_CHANGED, (e) =>
-            handler(e.payload?.path ?? null),
+        return await listen<{ path: null | string }>(WORKSPACE_CHANGED, (event) =>
+            handler(event.payload?.path ?? null),
         );
     } catch {
         return () => {};
@@ -89,7 +89,7 @@ export function rememberWorkspace(recents: readonly WorkspaceRef[], path: string
         path,
     };
 
-    return [entry, ...recents.filter((r) => r.path !== path)].slice(0, MAX_RECENTS);
+    return [entry, ...recents.filter((recent) => recent.path !== path)].slice(0, MAX_RECENTS);
 }
 
 /**

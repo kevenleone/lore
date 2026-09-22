@@ -15,7 +15,7 @@ describe('MemoryRepository collections', () => {
 
         const all = await repo.listCollections();
 
-        expect(all.find((c) => c.id === created.id)?.name).toBe('Trips');
+        expect(all.find((collection) => collection.id === created.id)?.name).toBe('Trips');
     });
 
     it('unfiles items when their collection is deleted', async () => {
@@ -28,9 +28,9 @@ describe('MemoryRepository collections', () => {
 
         const collections = await repo.listCollections();
 
-        expect(collections.find((c) => c.id === 'work')).toBeUndefined();
+        expect(collections.find((collection) => collection.id === 'work')).toBeUndefined();
 
-        const stillInWork = (await repo.listItems()).filter((i) => i.collectionId === 'work');
+        const stillInWork = (await repo.listItems()).filter((item) => item.collectionId === 'work');
 
         expect(stillInWork).toHaveLength(0);
     });

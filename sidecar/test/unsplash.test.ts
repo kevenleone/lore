@@ -92,7 +92,7 @@ describe('searchPhotos', () => {
 
         const { photos } = await searchPhotos('KEY', 'lake');
 
-        expect(photos.map((p) => p.id)).toEqual(['good']);
+        expect(photos.map((photo) => photo.id)).toEqual(['good']);
     });
 
     it('names the failure so the picker can explain it', async () => {

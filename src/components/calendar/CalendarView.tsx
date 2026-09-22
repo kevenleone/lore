@@ -44,7 +44,7 @@ const DRAG_TYPE = 'application/x-lore-item';
 export function CalendarView({ onCapture }: { onCapture: () => void }) {
     const [scale, setScale] = useState<CalendarScale>('Week');
     const [anchor, setAnchor] = useState(() => startOfDay(new Date()));
-    const weekStart = useStore((s) => s.prefs.weekStart);
+    const weekStart = useStore((state) => state.prefs.weekStart);
 
     const days =
         scale === 'Day' ? [anchor] : scale === 'Week' ? weekDays(anchor, weekStart) : [anchor];
@@ -111,11 +111,11 @@ export function CalendarView({ onCapture }: { onCapture: () => void }) {
 
 /** Calendars legend + the tasks that have not been given a time yet. */
 function CalendarRail() {
-    const items = useStore((s) => s.items);
-    const schedule = useStore((s) => s.schedule);
-    const switches = useStore((s) => s.prefs.switches);
+    const items = useStore((state) => state.items);
+    const schedule = useStore((state) => state.schedule);
+    const switches = useStore((state) => state.prefs.switches);
 
-    const unscheduled = items.filter((i) => i.type === 'task' && !schedule[i.id]);
+    const unscheduled = items.filter((item) => item.type === 'task' && !schedule[item.id]);
 
     return (
         <div className="flex w-[216px] flex-none flex-col gap-[18px] overflow-auto border-r border-border bg-surface2 px-3 py-[14px]">
@@ -137,9 +137,9 @@ function CalendarRail() {
                             className="flex cursor-grab items-start gap-2 rounded-9 border border-border bg-surface px-[9px] py-2 hover:border-accent-border active:cursor-grabbing"
                             draggable
                             key={item.id}
-                            onDragStart={(e) => {
-                                e.dataTransfer.setData(DRAG_TYPE, item.id);
-                                e.dataTransfer.effectAllowed = 'move';
+                            onDragStart={(event) => {
+                                event.dataTransfer.setData(DRAG_TYPE, item.id);
+                                event.dataTransfer.effectAllowed = 'move';
                             }}
                         >
                             <span className="mt-1 h-2 w-2 flex-none rounded-full bg-type-task-fg" />
@@ -224,13 +224,13 @@ function LegendRow({ color, name }: { color: string; name: string }) {
 
 /** Month view: whole weeks of cells, each listing that day's blocks as chips. */
 function MonthGrid({ anchor }: { anchor: Date }) {
-    const items = useStore((s) => s.items);
-    const schedule = useStore((s) => s.schedule);
-    const scheduleItem = useStore((s) => s.scheduleItem);
-    const selectItem = useStore((s) => s.selectItem);
-    const sessions = useStore((s) => s.focusSessions);
-    const switches = useStore((s) => s.prefs.switches);
-    const weekStart = useStore((s) => s.prefs.weekStart);
+    const items = useStore((state) => state.items);
+    const schedule = useStore((state) => state.schedule);
+    const scheduleItem = useStore((state) => state.scheduleItem);
+    const selectItem = useStore((state) => state.selectItem);
+    const sessions = useStore((state) => state.focusSessions);
+    const switches = useStore((state) => state.prefs.switches);
+    const weekStart = useStore((state) => state.prefs.weekStart);
 
     const cells = monthGrid(anchor, weekStart);
     const today = new Date();
@@ -263,21 +263,21 @@ function MonthGrid({ anchor }: { anchor: Date }) {
                         <div
                             className={cn(MONTH_CELL, outside && 'opacity-45')}
                             key={day.toISOString()}
-                            onDragOver={(e) => {
-                                if (!e.dataTransfer.types.includes(DRAG_TYPE)) {
+                            onDragOver={(event) => {
+                                if (!event.dataTransfer.types.includes(DRAG_TYPE)) {
                                     return;
                                 }
 
-                                e.preventDefault();
+                                event.preventDefault();
                             }}
-                            onDrop={(e) => {
-                                const id = e.dataTransfer.getData(DRAG_TYPE);
+                            onDrop={(event) => {
+                                const id = event.dataTransfer.getData(DRAG_TYPE);
 
                                 if (!id) {
                                     return;
                                 }
 
-                                e.preventDefault();
+                                event.preventDefault();
 
                                 // A month cell has no time in it, so a drop lands at the
                                 // start of the working day.
@@ -332,12 +332,12 @@ function RailLabel({ children }: { children: React.ReactNode }) {
 
 /** The day / week grid: an hour gutter and one absolutely-positioned column per day. */
 function TimeGrid({ days }: { days: Date[] }) {
-    const items = useStore((s) => s.items);
-    const schedule = useStore((s) => s.schedule);
-    const scheduleItem = useStore((s) => s.scheduleItem);
-    const selectItem = useStore((s) => s.selectItem);
-    const sessions = useStore((s) => s.focusSessions);
-    const switches = useStore((s) => s.prefs.switches);
+    const items = useStore((state) => state.items);
+    const schedule = useStore((state) => state.schedule);
+    const scheduleItem = useStore((state) => state.scheduleItem);
+    const selectItem = useStore((state) => state.selectItem);
+    const sessions = useStore((state) => state.focusSessions);
+    const switches = useStore((state) => state.prefs.switches);
     const [over, setOver] = useState<null | number>(null);
 
     // Opening a block means opening the item behind it, which lives in the library.
@@ -414,17 +414,17 @@ function TimeGrid({ days }: { days: Date[] }) {
                                 )}
                                 key={day.toISOString()}
                                 onDragLeave={() => setOver((o) => (o === index ? null : o))}
-                                onDragOver={(e) => {
-                                    if (!e.dataTransfer.types.includes(DRAG_TYPE)) {
+                                onDragOver={(event) => {
+                                    if (!event.dataTransfer.types.includes(DRAG_TYPE)) {
                                         return;
                                     }
 
-                                    e.preventDefault();
-                                    e.dataTransfer.dropEffect = 'move';
+                                    event.preventDefault();
+                                    event.dataTransfer.dropEffect = 'move';
                                     setOver(index);
                                 }}
-                                onDrop={(e) => {
-                                    const id = e.dataTransfer.getData(DRAG_TYPE);
+                                onDrop={(event) => {
+                                    const id = event.dataTransfer.getData(DRAG_TYPE);
 
                                     setOver(null);
 
@@ -432,11 +432,11 @@ function TimeGrid({ days }: { days: Date[] }) {
                                         return;
                                     }
 
-                                    e.preventDefault();
+                                    event.preventDefault();
 
-                                    const box = e.currentTarget.getBoundingClientRect();
+                                    const box = event.currentTarget.getBoundingClientRect();
 
-                                    scheduleItem(id, timeAtOffset(day, e.clientY - box.top));
+                                    scheduleItem(id, timeAtOffset(day, event.clientY - box.top));
                                 }}
                             >
                                 {HOUR_LABELS.map((label) => (

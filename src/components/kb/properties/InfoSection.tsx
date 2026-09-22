@@ -12,8 +12,8 @@ import { External, Info } from '../../common/glyphs';
 import { ReadOnly, Row, Section } from './controls';
 
 export function InfoSection({ item, meta }: { item: Item; meta: ItemMeta | null }) {
-    const renameItemFile = useStore((s) => s.renameItemFile);
-    const revealItemFile = useStore((s) => s.revealItemFile);
+    const renameItemFile = useStore((state) => state.renameItemFile);
+    const revealItemFile = useStore((state) => state.revealItemFile);
     const [editingName, setEditingName] = useState(false);
     const [nameDraft, setNameDraft] = useState('');
 
@@ -55,13 +55,13 @@ export function InfoSection({ item, meta }: { item: Item; meta: ItemMeta | null 
                         autoFocus
                         className="w-full min-w-0 border-b-[1.5px] border-none border-b-accent bg-transparent text-right font-mono text-body text-text outline-none"
                         onBlur={commitName}
-                        onChange={(e) => setNameDraft(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                        onChange={(event) => setNameDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
                                 commitName();
                             }
 
-                            if (e.key === 'Escape') {
+                            if (event.key === 'Escape') {
                                 setEditingName(false);
                             }
                         }}

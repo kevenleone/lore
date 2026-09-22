@@ -45,9 +45,9 @@ export async function attachmentUrl(relPath: string): Promise<string> {
 
 export function endpoint(): Promise<Endpoint> {
     if (!cached) {
-        cached = discover().catch((e) => {
+        cached = discover().catch((error) => {
             cached = null;
-            throw e;
+            throw error;
         });
     }
 

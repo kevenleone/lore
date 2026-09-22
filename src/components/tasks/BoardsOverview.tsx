@@ -9,9 +9,9 @@ import { UNFILED_BOARD } from '../../store/types';
 import { useStore } from '../../store/useStore';
 
 export function BoardsOverview({ today }: { today: string }) {
-    const items = useStore((s) => s.items);
-    const collections = useStore((s) => s.collections);
-    const openBoard = useStore((s) => s.openBoard);
+    const items = useStore((state) => state.items);
+    const collections = useStore((state) => state.collections);
+    const openBoard = useStore((state) => state.openBoard);
 
     const rollups = boardRollups(items, collections);
 

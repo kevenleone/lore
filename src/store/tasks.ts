@@ -111,13 +111,13 @@ export interface UpcomingDay {
  * what happens to a task moved between collections whose boards differ.
  */
 export function boardColumnFor(item: Item, board: BoardConfig): string {
-    const done = board.columns.find((c) => c.done);
+    const done = board.columns.find((column) => column.done);
 
     if (item.flags.done && done) {
         return done.id;
     }
 
-    const named = item.status && board.columns.find((c) => c.id === item.status);
+    const named = item.status && board.columns.find((column) => column.id === item.status);
 
     if (named && !named.done) {
         return named.id;
@@ -132,7 +132,7 @@ export function boardColumns(items: Item[], board: BoardConfig): BoardColumn[] {
 
     return board.columns.map((config) => ({
         config,
-        tasks: byUrgency(tasks.filter((t) => boardColumnFor(t, board) === config.id)),
+        tasks: byUrgency(tasks.filter((task) => boardColumnFor(task, board) === config.id)),
     }));
 }
 
@@ -158,21 +158,21 @@ export function boardFor(boards: Record<string, BoardConfig>, boardId: string): 
 export function boardRollups(items: Item[], collections: Collection[]): BoardRollup[] {
     const tasks = items.filter(isTask);
     const rollups = collections
-        .map((c) =>
+        .map((collection) =>
             rollup(
-                c.id,
-                c.name,
-                c.color,
-                tasks.filter((t) => t.collectionId === c.id),
+                collection.id,
+                collection.name,
+                collection.color,
+                tasks.filter((task) => task.collectionId === collection.id),
             ),
         )
-        .filter((r): r is BoardRollup => r !== null);
+        .filter((collection): collection is BoardRollup => collection !== null);
 
     const unfiled = rollup(
         null,
         'Unfiled',
         UNFILED_COLOR,
-        tasks.filter((t) => !t.collectionId),
+        tasks.filter((task) => !task.collectionId),
     );
 
     return unfiled ? [...rollups, unfiled] : rollups;
@@ -181,8 +181,8 @@ export function boardRollups(items: Item[], collections: Collection[]): BoardRol
 /** The tasks on a board: a collection's, or everything filed nowhere. */
 export function boardTasks(items: Item[], boardId: string): Item[] {
     return items.filter(
-        (i) =>
-            isTask(i) && (boardId === UNFILED_BOARD ? !i.collectionId : i.collectionId === boardId),
+        (item) =>
+            isTask(item) && (boardId === UNFILED_BOARD ? !item.collectionId : item.collectionId === boardId),
     );
 }
 
@@ -239,7 +239,7 @@ export function filterBoardTasks(tasks: Item[], filter: BoardFilter, today: stri
 }
 
 export function openTasks(items: Item[]): Item[] {
-    return items.filter((i) => isTask(i) && !i.flags.done);
+    return items.filter((item) => isTask(item) && !item.flags.done);
 }
 
 /**
@@ -259,9 +259,9 @@ export function taskCounts(items: Item[], collections: Collection[], today: stri
 
     return {
         boards: boardRollups(items, collections).length,
-        overdue: open.filter((t) => dueTone(t, today) === 'overdue').length,
-        today: taskGroups(items, today).reduce((n, g) => n + g.tasks.length, 0),
-        upcoming: open.filter((t) => !!t.dueAt && t.dueAt >= today).length,
+        overdue: open.filter((item) => dueTone(item, today) === 'overdue').length,
+        today: taskGroups(items, today).reduce((n, taskGroup) => n + taskGroup.tasks.length, 0),
+        upcoming: open.filter((item) => !!item.dueAt && item.dueAt >= today).length,
     };
 }
 
@@ -281,15 +281,15 @@ export function taskGroups(items: Item[], today: string): TaskGroup[] {
     return [
         group(
             'overdue',
-            open.filter((t) => dueTone(t, today) === 'overdue'),
+            open.filter((item) => dueTone(item, today) === 'overdue'),
         ),
         group(
             'today',
-            open.filter((t) => dueTone(t, today) === 'today'),
+            open.filter((item) => dueTone(item, today) === 'today'),
         ),
         group(
             'noDate',
-            open.filter((t) => dueTone(t, today) === 'none' && t.flags.today),
+            open.filter((item) => dueTone(item, today) === 'none' && item.flags.today),
         ),
     ];
 }
@@ -305,8 +305,8 @@ export function taskGroups(items: Item[], today: string): TaskGroup[] {
  */
 export function taskTimeline(items: Item[], today: string): TimelineGroup[] {
     const tasks = items.filter(isTask);
-    const open = tasks.filter((t) => !t.flags.done);
-    const done = tasks.filter((t) => t.flags.done);
+    const open = tasks.filter((task) => !task.flags.done);
+    const done = tasks.filter((task) => task.flags.done);
 
     const byDay = new Map<string, Item[]>();
     const undated: Item[] = [];
@@ -330,7 +330,7 @@ export function taskTimeline(items: Item[], today: string): TimelineGroup[] {
             label: formatDueDay(day, today),
             tasks: group
                 .slice()
-                .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? '')),
+                .sort((left, right) => (right.completedAt ?? '').localeCompare(left.completedAt ?? '')),
         }));
 
     return [
@@ -360,7 +360,7 @@ export function upcomingDays(items: Item[], from: Date, count: number): Upcoming
             date,
             isToday: key === today,
             key,
-            tasks: byUrgency(open.filter((t) => t.dueAt === key)),
+            tasks: byUrgency(open.filter((item) => item.dueAt === key)),
         };
     });
 }
@@ -372,7 +372,7 @@ const PRIORITY_RANK: Record<Priority, number> = { high: 2, low: 0, normal: 1, ur
 
 /** Most urgent first, then alphabetical so the order never depends on load. */
 function byUrgency(tasks: Item[]): Item[] {
-    return tasks.slice().sort((a, b) => rankOf(b) - rankOf(a) || a.title.localeCompare(b.title));
+    return tasks.slice().sort((left, right) => rankOf(right) - rankOf(left) || left.title.localeCompare(right.title));
 }
 
 function isTask(item: Item): boolean {
@@ -393,10 +393,10 @@ function rollup(
         return null;
     }
 
-    const done = tasks.filter((t) => t.flags.done).length;
+    const done = tasks.filter((task) => task.flags.done).length;
     const dueDays = tasks
-        .filter((t) => !t.flags.done && t.dueAt)
-        .map((t) => t.dueAt!)
+        .filter((task) => !task.flags.done && task.dueAt)
+        .map((task) => task.dueAt!)
         .sort();
 
     return {

@@ -49,7 +49,7 @@ describe('weekDays', () => {
         const days = weekDays(THU, 'Monday');
 
         expect(days).toHaveLength(7);
-        expect(days.map((d) => d.getDate())).toEqual([31, 1, 2, 3, 4, 5, 6]);
+        expect(days.map((day) => day.getDate())).toEqual([31, 1, 2, 3, 4, 5, 6]);
     });
 });
 
@@ -84,13 +84,13 @@ describe('eventsForDay', () => {
     it('returns scheduled tasks and sessions in start order', () => {
         const events = eventsForDay(base);
 
-        expect(events.map((e) => e.kind)).toEqual(['focus', 'task']);
+        expect(events.map((event) => event.kind)).toEqual(['focus', 'task']);
         expect(events[0].title).toBe('Focus · Draft the digest copy');
         expect(events[1].startMinutes).toBe(600);
     });
 
     it('leaves unscheduled tasks off the grid', () => {
-        expect(eventsForDay(base).some((e) => e.itemId === 't2')).toBe(false);
+        expect(eventsForDay(base).some((event) => event.itemId === 't2')).toBe(false);
     });
 
     it('honours the Calendar pane visibility switches', () => {

@@ -96,11 +96,11 @@ const LANES: Lane[] = [
 ];
 
 export function Onboarding() {
-    const step = useStore((s) => s.onboardingStep);
-    const setStep = useStore((s) => s.setOnboardingStep);
-    const finish = useStore((s) => s.finishOnboarding);
-    const recents = useStore((s) => s.recentWorkspaces);
-    const workspaceError = useStore((s) => s.workspaceError);
+    const step = useStore((state) => state.onboardingStep);
+    const setStep = useStore((state) => state.setOnboardingStep);
+    const finish = useStore((state) => state.finishOnboarding);
+    const recents = useStore((state) => state.recentWorkspaces);
+    const workspaceError = useStore((state) => state.workspaceError);
 
     const [home, setHome] = useState<null | string>(null);
     const [path, setPath] = useState<null | string>(null);
@@ -448,7 +448,7 @@ function PickCard({ onEnter }: { onEnter: (lane: Lane) => void }) {
 function useTrackedVaults(recents: readonly { path: string }[]): Record<string, boolean> {
     const [tracked, setTracked] = useState<Record<string, boolean>>({});
 
-    const paths = recents.map((r) => r.path).join('\n');
+    const paths = recents.map((recent) => recent.path).join('\n');
 
     useEffect(() => {
         let live = true;

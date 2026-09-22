@@ -12,11 +12,11 @@ describe('themes', () => {
     });
 
     it('has unique ids and both modes represented', () => {
-        const ids = THEMES.map((t) => t.id);
+        const ids = THEMES.map((themeDefinition) => themeDefinition.id);
 
         expect(new Set(ids).size).toBe(ids.length);
-        expect(THEMES.some((t) => t.mode === 'light')).toBe(true);
-        expect(THEMES.some((t) => t.mode === 'dark')).toBe(true);
+        expect(THEMES.some((themeDefinition) => themeDefinition.mode === 'light')).toBe(true);
+        expect(THEMES.some((themeDefinition) => themeDefinition.mode === 'dark')).toBe(true);
     });
 
     it('builds every derived token as a colour', () => {

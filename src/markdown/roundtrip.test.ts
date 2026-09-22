@@ -34,7 +34,7 @@ describe('targeted edits', () => {
 
         // Everything except the replaced block's own source is still present,
         // in order, unchanged.
-        const untouched = parsed.blocks.filter((_b, i) => i !== index).map((b) => b.source);
+        const untouched = parsed.blocks.filter((_b, i) => i !== index).map((block) => block.source);
         let cursor = 0;
 
         for (const source of untouched) {
@@ -69,7 +69,7 @@ describe('unknown blocks', () => {
         // and regenerating either as prose would corrupt it.
         const parsed = parse('$$\n\\sum x_i\n$$\n\n:::info\nbody\n:::\n');
 
-        expect(parsed.blocks.map((b) => b.type)).toEqual(['unknown', 'unknown']);
+        expect(parsed.blocks.map((block) => block.type)).toEqual(['unknown', 'unknown']);
     });
 
     it('still models an ordinary paragraph that merely mentions a dollar sign', () => {
@@ -92,8 +92,8 @@ describe('structure', () => {
             const total =
                 parsed.prefix.length +
                 parsed.suffix.length +
-                parsed.blocks.reduce((sum, b) => sum + b.source.length, 0) +
-                parsed.separators.reduce((sum, s) => sum + s.length, 0);
+                parsed.blocks.reduce((sum, block) => sum + block.source.length, 0) +
+                parsed.separators.reduce((sum, separator) => sum + separator.length, 0);
 
             expect(total, name).toBe(text.length);
         }

@@ -34,8 +34,8 @@ export function CaptureApp() {
     // for reasons that are not a new capture, and a file dialog closing raises it
     // more than once.
     useEffect(() => {
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
                 void hideCapture();
             }
         };
@@ -112,8 +112,8 @@ export function CaptureApp() {
     return (
         <div
             className="flex h-full flex-col items-center gap-3 overflow-hidden bg-transparent px-7 py-[26px]"
-            onMouseDown={(e) => {
-                if (e.target === e.currentTarget) {
+            onMouseDown={(event) => {
+                if (event.target === event.currentTarget) {
                     void hideCapture();
                 }
             }}

@@ -529,16 +529,16 @@ export const DEFAULT_LIGHT_THEME: ThemeId = 'lore-light';
  * leave the app uncoloured — fall back to the mode's default.
  */
 export function themeById(id: ThemeId, mode: 'dark' | 'light'): ThemeDefinition {
-    const found = THEMES.find((t) => t.id === id && t.mode === mode);
+    const found = THEMES.find((themeDefinition) => themeDefinition.id === id && themeDefinition.mode === mode);
 
     if (found) {
         return found;
     }
 
-    return THEMES.find((t) => t.mode === mode) as ThemeDefinition;
+    return THEMES.find((themeDefinition) => themeDefinition.mode === mode) as ThemeDefinition;
 }
 
 /** Themes of one mode, defaults first, in the order the gallery shows them. */
 export function themesFor(mode: 'dark' | 'light'): ThemeDefinition[] {
-    return THEMES.filter((t) => t.mode === mode);
+    return THEMES.filter((themeDefinition) => themeDefinition.mode === mode);
 }
