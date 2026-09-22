@@ -8,6 +8,12 @@
             "options": {
                 "parser": "json"
             }
+        },
+        {
+            "files": ["package.json", ".release-please-manifest.json"],
+            "options": {
+                "parser": "json-stringify"
+            }
         }
     ],
     "plugins": ["prettier-plugin-sort-json", "prettier-plugin-tailwindcss"],
