@@ -69,7 +69,9 @@ export async function searchPhotos(key: string, query: string, page = 1): Promis
     const data = (await res.json()) as { results?: unknown[]; total?: number };
 
     return {
-        photos: (data.results ?? []).map(toPhoto).filter((unsplashPhoto): unsplashPhoto is UnsplashPhoto => !!unsplashPhoto),
+        photos: (data.results ?? [])
+            .map(toPhoto)
+            .filter((unsplashPhoto): unsplashPhoto is UnsplashPhoto => !!unsplashPhoto),
         total: typeof data.total === 'number' ? data.total : 0,
     };
 }
@@ -106,7 +108,8 @@ function get(url: URL, key: string): Promise<Response> {
     }).finally(() => clearTimeout(timer));
 }
 
-const str = (value: unknown): string | undefined => (typeof value === 'string' && value ? value : undefined);
+const str = (value: unknown): string | undefined =>
+    typeof value === 'string' && value ? value : undefined;
 const obj = (value: unknown): Json | undefined =>
     value && typeof value === 'object' && !Array.isArray(value) ? (value as Json) : undefined;
 

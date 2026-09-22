@@ -46,7 +46,9 @@ beforeEach(() => {
 afterEach(cleanup);
 
 function activeOption(): HTMLElement | undefined {
-    return screen.getAllByRole('option').find((element) => element.getAttribute('aria-selected') === 'true');
+    return screen
+        .getAllByRole('option')
+        .find((element) => element.getAttribute('aria-selected') === 'true');
 }
 
 function input(): HTMLElement {

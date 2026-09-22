@@ -132,7 +132,9 @@ export class VaultStore {
 
         const collections = await this.vault.listCollections();
 
-        await this.vault.writeCollectionsFile(collections.filter((collection) => collection.id !== id));
+        await this.vault.writeCollectionsFile(
+            collections.filter((collection) => collection.id !== id),
+        );
         await this.reconcile();
     }
 
@@ -451,7 +453,9 @@ export class VaultStore {
 
         const next = { color: patch.color ?? current.color, id: nextId, name: nextId };
 
-        await this.vault.writeCollectionsFile(collections.map((collection) => (collection.id === id ? next : collection)));
+        await this.vault.writeCollectionsFile(
+            collections.map((collection) => (collection.id === id ? next : collection)),
+        );
         await this.reconcile();
 
         return next;

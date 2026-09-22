@@ -80,13 +80,18 @@ interface LegacyDb {
  * this is where that finally comes apart for good. Phase 0 added the columns
  * and backfilled them, but a database from before that still needs the split.
  */
-export function legacyRowToItem(legacyItemRow: LegacyItemRow, collectionName: (id: string) => string): Item {
+export function legacyRowToItem(
+    legacyItemRow: LegacyItemRow,
+    collectionName: (id: string) => string,
+): Item {
     const isLink = legacyItemRow.type === 'link';
 
     return {
         body: legacyItemRow.body ?? (isLink ? undefined : (legacyItemRow.snippet ?? undefined)),
         // The collection becomes a folder, so it is keyed by name from here on.
-        collectionId: legacyItemRow.collection_id ? collectionName(legacyItemRow.collection_id) : undefined,
+        collectionId: legacyItemRow.collection_id
+            ? collectionName(legacyItemRow.collection_id)
+            : undefined,
         createdAt: legacyItemRow.created_at,
         description: legacyItemRow.description ?? undefined,
         domain: legacyItemRow.domain ?? undefined,
@@ -163,7 +168,9 @@ async function migrateOne(file: string): Promise<{ collections: number; items: n
             return null;
         }
 
-        const nameById = new Map(collectionRows.map((collectionRow) => [collectionRow.id, collectionRow.name]));
+        const nameById = new Map(
+            collectionRows.map((collectionRow) => [collectionRow.id, collectionRow.name]),
+        );
         const collections: Collection[] = collectionRows.map((collectionRow) => ({
             color: collectionRow.color,
             id: collectionRow.name,

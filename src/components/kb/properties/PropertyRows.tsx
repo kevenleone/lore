@@ -136,7 +136,9 @@ export function PropertyRows({ item }: { item: Item }) {
                                         close();
 
                                         if (collection.id !== item.collectionId) {
-                                            void updateItem(item.id, { collectionId: collection.id });
+                                            void updateItem(item.id, {
+                                                collectionId: collection.id,
+                                            });
                                         }
                                     }}
                                     selected={collection.id === item.collectionId}

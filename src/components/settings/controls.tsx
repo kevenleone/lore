@@ -116,7 +116,9 @@ export function Chooser<T extends number | string>({
                             type="button"
                         >
                             <span className="min-w-0 flex-1 truncate">{option.label}</span>
-                            {option.value === value && <SettingsIcon name="check" size={13} sw={2.4} />}
+                            {option.value === value && (
+                                <SettingsIcon name="check" size={13} sw={2.4} />
+                            )}
                         </button>
                     ))}
                 </div>

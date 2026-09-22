@@ -612,7 +612,8 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                 <span className={SECTION_LABEL}>Subtasks</span>
                                 {subtasks.length > 0 && (
                                     <span className="font-mono text-caption text-text3">
-                                        {subtasks.filter((subtask) => subtask.done).length}/{subtasks.length}
+                                        {subtasks.filter((subtask) => subtask.done).length}/
+                                        {subtasks.length}
                                     </span>
                                 )}
                             </div>
@@ -647,7 +648,9 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                                 autoFocus
                                                 className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title leading-[1.5] text-text outline-none"
                                                 onBlur={() => commitSubtaskEdit(index)}
-                                                onChange={(event) => setSubtaskEdit(event.target.value)}
+                                                onChange={(event) =>
+                                                    setSubtaskEdit(event.target.value)
+                                                }
                                                 onKeyDown={(event) => {
                                                     if (event.key === 'Enter') {
                                                         event.preventDefault();

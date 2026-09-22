@@ -17,7 +17,9 @@ export function useFocusSnapshot(): FocusSnapshot {
     // Ticked-off rows stay in the queue but are not something to work on.
     const queue = queueItems(items).filter((item) => !item.flags.done);
     const task = queue.find((item) => item.id === focus.taskId) ?? queue[0] ?? null;
-    const collection = task ? collections.find((collection) => collection.id === task.collectionId)?.name : undefined;
+    const collection = task
+        ? collections.find((collection) => collection.id === task.collectionId)?.name
+        : undefined;
 
     return {
         canStop: !isTimerIdle(focus, durations),

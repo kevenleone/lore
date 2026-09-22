@@ -85,7 +85,9 @@ describe('tagCounts', () => {
 
         const design = tags.find((tag) => tag.name === 'design');
 
-        expect(design?.count).toBe(SEED_ITEMS.filter((item) => item.tags.includes('design')).length);
+        expect(design?.count).toBe(
+            SEED_ITEMS.filter((item) => item.tags.includes('design')).length,
+        );
     });
 });
 
@@ -261,7 +263,9 @@ describe('applyFilters', () => {
         const filtered = applyFilters(sorted, { ...EMPTY_FILTERS, categories: ['note', 'link'] });
 
         expect(filtered.map((item) => item.title)).toEqual(
-            sorted.filter((item) => item.type === 'note' || item.type === 'link').map((item) => item.title),
+            sorted
+                .filter((item) => item.type === 'note' || item.type === 'link')
+                .map((item) => item.title),
         );
     });
 });

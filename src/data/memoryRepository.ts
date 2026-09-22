@@ -80,7 +80,9 @@ export class MemoryRepository implements KnowledgeRepository {
         // By name, the same as the vault's own listing — the two stores must
         // not disagree about something this visible, or the browser preview
         // and the app show different sidebars.
-        return this.collections.map((collection) => ({ ...collection })).sort((left, right) => left.name.localeCompare(right.name));
+        return this.collections
+            .map((collection) => ({ ...collection }))
+            .sort((left, right) => left.name.localeCompare(right.name));
     }
 
     async listItems(view?: View): Promise<Item[]> {
