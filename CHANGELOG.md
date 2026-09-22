@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.0](https://github.com/kevenleone/lore/compare/v1.16.1...v1.17.0) (2026-09-22)
+
+
+### Features
+
+* add landing page ([a038586](https://github.com/kevenleone/lore/commit/a0385861793b2f24c062d9a3d61b1f2543786eb9))
+
 ## [1.16.1](https://github.com/kevenleone/lore/compare/v1.16.0...v1.16.1) (2026-09-22)
 
 

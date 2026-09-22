@@ -74,7 +74,7 @@
         "test:sidecar": "pnpm --filter @lore/sidecar test"
     },
     "type": "module",
-    "version": "1.16.1",
+    "version": "1.17.0",
     "workspaces": [
         "sidecar"
     ]
