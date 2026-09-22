@@ -71,7 +71,5 @@
     },
     "type": "module",
     "version": "1.15.0",
-    "workspaces": [
-        "sidecar"
-    ]
+    "workspaces": ["sidecar"]
 }
