@@ -33,10 +33,10 @@ export default defineConfig(async ({ command }) => {
         build: {
             rollupOptions: {
                 input: {
-                    capture: 'capture.html',
-                    focus: 'focus.html',
-                    main: 'index.html',
-                    print: 'print.html',
+                    capture: 'windows/capture.html',
+                    focus: 'windows/focus.html',
+                    main: 'windows/main.html',
+                    print: 'windows/print.html',
                 },
             },
         },

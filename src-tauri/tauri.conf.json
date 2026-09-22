@@ -14,6 +14,7 @@
                 "minHeight": 640,
                 "minWidth": 960,
                 "title": "Lore",
+                "url": "windows/main.html",
                 "width": 1440
             },
             {
@@ -26,7 +27,7 @@
                 "skipTaskbar": true,
                 "title": "Focus",
                 "transparent": true,
-                "url": "focus.html",
+                "url": "windows/focus.html",
                 "visible": false,
                 "width": 372
             },
@@ -41,7 +42,7 @@
                 "skipTaskbar": true,
                 "title": "Quick Capture",
                 "transparent": true,
-                "url": "capture.html",
+                "url": "windows/capture.html",
                 "visible": false,
                 "width": 640
             },
@@ -53,7 +54,7 @@
                 "resizable": false,
                 "skipTaskbar": true,
                 "title": "Print",
-                "url": "print.html",
+                "url": "windows/print.html",
                 "visible": false,
                 "width": 816
             }
