@@ -31,6 +31,7 @@ export const baseConfig = ts.config(
                 },
                 { blankLine: 'always', next: 'block-like', prev: '*' },
                 { blankLine: 'always', next: '*', prev: 'block-like' },
+                { blankLine: 'any', next: 'function', prev: 'function-overload' },
             ],
             // Must come after prettierRecommended, which turns `curly` off.
             curly: ['error', 'all'],
