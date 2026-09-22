@@ -32,8 +32,13 @@ interface TypeHues {
 
 const CHANNELS = (hex: string): [number, number, number] => {
     const m = /^#?([0-9a-f]{6})$/i.exec(hex);
-    if (!m) return [0, 0, 0];
+
+    if (!m) {
+        return [0, 0, 0];
+    }
+
     const n = parseInt(m[1], 16);
+
     return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 };
 
@@ -41,6 +46,7 @@ const HEX = (n: number): string => Math.round(n).toString(16).padStart(2, '0');
 
 function alpha(hex: string, a: number): string {
     const [r, g, b] = CHANNELS(hex);
+
     return `rgba(${r},${g},${b},${a})`;
 }
 
@@ -49,6 +55,7 @@ function mix(a: string, b: string, t: number): string {
     const [ar, ag, ab] = CHANNELS(a);
     const [br, bg, bb] = CHANNELS(b);
     const at = Math.max(0, Math.min(1, t));
+
     return `#${HEX(ar * at + br * (1 - at))}${HEX(ag * at + bg * (1 - at))}${HEX(ab * at + bb * (1 - at))}`;
 }
 

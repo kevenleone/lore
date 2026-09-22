@@ -26,10 +26,15 @@ afterEach(async () => {
 /** Waits for a condition, since watch events are inherently asynchronous. */
 async function eventually(check: () => boolean, ms = 4000): Promise<boolean> {
     const deadline = Date.now() + ms;
+
     while (Date.now() < deadline) {
-        if (check()) return true;
+        if (check()) {
+            return true;
+        }
+
         await Bun.sleep(50);
     }
+
     return false;
 }
 
@@ -45,9 +50,11 @@ describe('watcher', () => {
         const found = await eventually(() =>
             workspace.current.listItems().some((i) => i.title === 'Dropped in'),
         );
+
         expect(found).toBe(true);
 
         const item = workspace.current.listItems().find((i) => i.title === 'Dropped in')!;
+
         expect(item.collectionId).toBe('Reading List');
     });
 
@@ -55,6 +62,7 @@ describe('watcher', () => {
         // This is the ordering the bug got wrong: a subscriber that reads on the
         // signal must already see the change.
         let seenAtNotify: string[] = [];
+
         workspace.subscribe(() => {
             seenAtNotify = workspace.current.listItems().map((i) => i.title);
         });
@@ -62,6 +70,7 @@ describe('watcher', () => {
         await writeFile(join(root, 'later.md'), '---\ntitle: Later\n---\n\nb\n', 'utf8');
 
         const ok = await eventually(() => seenAtNotify.includes('Later'));
+
         expect(ok).toBe(true);
     });
 

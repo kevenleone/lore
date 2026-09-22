@@ -11,8 +11,10 @@ function editorWith(text: string): Editor {
         element: document.createElement('div'),
         extensions: EXTENSIONS,
     });
+
     editor.commands.focus('end');
     type(editor, text);
+
     return editor;
 }
 
@@ -25,7 +27,10 @@ function type(editor: Editor, text: string): void {
         // would have applied had no rule matched.
         const insert = () => view.state.tr.insertText(char, from, to);
         const handled = view.someProp('handleTextInput', (f) => f(view, from, to, char, insert));
-        if (!handled) view.dispatch(insert());
+
+        if (!handled) {
+            view.dispatch(insert());
+        }
     }
 }
 
@@ -33,7 +38,9 @@ const firstNode = (text: string) => {
     const editor = editorWith(text);
     const node = editor.state.doc.firstChild;
     const result = { attrs: node?.attrs, text: node?.textContent, type: node?.type.name };
+
     editor.destroy();
+
     return result;
 };
 
@@ -46,6 +53,7 @@ describe('Markdown input rules', () => {
     it('supports every heading level the schema allows', () => {
         for (const level of [1, 2, 3, 4]) {
             const node = firstNode(`${'#'.repeat(level)} Heading`);
+
             expect(node.type, `level ${level}`).toBe('heading');
             expect(node.attrs?.level, `level ${level}`).toBe(level);
         }
@@ -79,8 +87,11 @@ describe('Markdown input rules', () => {
     it('applies inline marks', () => {
         const editor = editorWith('**bold** and *italic* and `code`');
         const marks = new Set<string>();
+
         editor.state.doc.descendants((node) => {
-            for (const mark of node.marks) marks.add(mark.type.name);
+            for (const mark of node.marks) {
+                marks.add(mark.type.name);
+            }
         });
         editor.destroy();
         expect(marks).toContain('bold');

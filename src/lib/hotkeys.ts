@@ -85,6 +85,7 @@ export function hotkeyFor(id: HotkeyId): string {
 /** One key cap per key, the way this platform names them: `⌘ ⇧ E` or `Ctrl Shift E`. */
 export function hotkeyKeys(hotkey: string, platform: Platform = PLATFORM): string[] {
     const names = platform === 'mac' ? MAC_KEYS : OTHER_KEYS;
+
     return hotkey.split('+').map((key) => names[key] ?? key);
 }
 
@@ -114,7 +115,13 @@ export function matchesHotkey(
 }
 
 function codeFor(key: string): string {
-    if (/^[A-Z]$/.test(key)) return `Key${key}`;
-    if (/^\d$/.test(key)) return `Digit${key}`;
+    if (/^[A-Z]$/.test(key)) {
+        return `Key${key}`;
+    }
+
+    if (/^\d$/.test(key)) {
+        return `Digit${key}`;
+    }
+
     return key;
 }

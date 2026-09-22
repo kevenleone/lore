@@ -4,6 +4,7 @@ import { fetchLinkMetadata } from '../src/linkMetadata';
 import { fetchVimeoMetadata, vimeoVideo } from '../src/vimeo';
 
 const realFetch = globalThis.fetch;
+
 afterEach(() => {
     globalThis.fetch = realFetch;
 });
@@ -43,8 +44,10 @@ describe('vimeoVideo', () => {
 describe('fetchVimeoMetadata', () => {
     it('maps oEmbed onto link metadata', async () => {
         let requested = '';
+
         globalThis.fetch = (async (input: string) => {
             requested = input;
+
             return Response.json({
                 author_name: 'Author',
                 thumbnail_url: THUMBNAIL,
@@ -56,7 +59,9 @@ describe('fetchVimeoMetadata', () => {
             image: THUMBNAIL,
             title: 'A video',
         });
+
         const params = new URL(requested).searchParams;
+
         expect(params.get('url')).toBe('https://vimeo.com/180094337/a1b2c3d4e5');
         expect(params.get('width')).toBe('1280');
     });
@@ -73,7 +78,9 @@ describe('fetchVimeoMetadata', () => {
                 thumbnail_url: THUMBNAIL,
                 title: 'A video',
             })) as unknown as typeof fetch;
+
         const metadata = await fetchLinkMetadata('player.vimeo.com/video/180094337?autoplay=1');
+
         expect(metadata.title).toBe('A video');
         expect(metadata.image).toBe(THUMBNAIL);
     });
@@ -85,7 +92,9 @@ describe('fetchVimeoMetadata', () => {
                 : new Response('<html><head><title>A video on Vimeo</title></head></html>', {
                       headers: { 'Content-Type': 'text/html' },
                   })) as unknown as typeof fetch;
+
         const metadata = await fetchLinkMetadata('https://vimeo.com/180094337');
+
         expect(metadata.title).toBe('A video on Vimeo');
     });
 });

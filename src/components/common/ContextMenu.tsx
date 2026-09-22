@@ -34,10 +34,15 @@ export function ContextMenu({
     // a right or bottom edge rather than being clipped by the window.
     useEffect(() => {
         const el = ref.current;
-        if (!el) return;
+
+        if (!el) {
+            return;
+        }
+
         const { height, width } = el.getBoundingClientRect();
         const maxLeft = window.innerWidth - width - EDGE_MARGIN;
         const maxTop = window.innerHeight - height - EDGE_MARGIN;
+
         setPlacement({
             left: Math.max(EDGE_MARGIN, Math.min(x, maxLeft)),
             top: Math.max(EDGE_MARGIN, Math.min(y, maxTop)),
@@ -46,15 +51,22 @@ export function ContextMenu({
 
     useEffect(() => {
         const onPointer = (e: MouseEvent) => {
-            if (!ref.current?.contains(e.target as Node)) onClose();
+            if (!ref.current?.contains(e.target as Node)) {
+                onClose();
+            }
         };
+
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
+            if (e.key === 'Escape') {
+                onClose();
+            }
         };
+
         window.addEventListener('mousedown', onPointer);
         window.addEventListener('keydown', onKey);
         // Capture, because the scroll happens on a pane rather than the window.
         window.addEventListener('scroll', onClose, true);
+
         return () => {
             window.removeEventListener('mousedown', onPointer);
             window.removeEventListener('keydown', onKey);

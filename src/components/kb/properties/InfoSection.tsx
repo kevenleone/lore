@@ -25,10 +25,14 @@ export function InfoSection({ item, meta }: { item: Item; meta: ItemMeta | null 
 
     const commitName = () => {
         const next = nameDraft.trim();
+
         setEditingName(false);
+
         // Renaming moves the file and rewrites every inbound link, so it only
         // runs when the name actually changed.
-        if (next && next !== stem) void renameItemFile(item.id, next);
+        if (next && next !== stem) {
+            void renameItemFile(item.id, next);
+        }
     };
 
     return (
@@ -53,8 +57,13 @@ export function InfoSection({ item, meta }: { item: Item; meta: ItemMeta | null 
                         onBlur={commitName}
                         onChange={(e) => setNameDraft(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter') commitName();
-                            if (e.key === 'Escape') setEditingName(false);
+                            if (e.key === 'Enter') {
+                                commitName();
+                            }
+
+                            if (e.key === 'Escape') {
+                                setEditingName(false);
+                            }
                         }}
                         value={nameDraft}
                     />
@@ -63,7 +72,10 @@ export function InfoSection({ item, meta }: { item: Item; meta: ItemMeta | null 
                         <span
                             className="min-w-0 cursor-text truncate font-mono select-text"
                             onClick={() => {
-                                if (!path) return;
+                                if (!path) {
+                                    return;
+                                }
+
                                 setNameDraft(stem);
                                 setEditingName(true);
                             }}

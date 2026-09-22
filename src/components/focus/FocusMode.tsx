@@ -40,7 +40,10 @@ export function FocusMode() {
 
     const addToQueue = (id: string) => {
         const item = items.find((i) => i.id === id);
-        if (item) void updateItem(id, { flags: { ...item.flags, today: true } });
+
+        if (item) {
+            void updateItem(id, { flags: { ...item.flags, today: true } });
+        }
     };
 
     useEffect(() => {
@@ -50,7 +53,9 @@ export function FocusMode() {
                 close();
             }
         };
+
         window.addEventListener('keydown', onKey);
+
         return () => window.removeEventListener('keydown', onKey);
     }, [close]);
 
@@ -208,6 +213,7 @@ function QueuePicker({ onPick }: { onPick: (id: string) => void }) {
 
     const matches = useMemo(() => {
         const q = query.trim().toLowerCase();
+
         return items
             .filter((i) => !i.flags.today)
             .filter((i) => !q || i.title.toLowerCase().includes(q))

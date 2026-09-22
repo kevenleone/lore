@@ -27,6 +27,7 @@ for (const [mode, config] of Object.entries(MODES)) {
     }
 
     const out = path.join(ICONS, mode);
+
     fs.mkdirSync(out, { recursive: true });
     fs.mkdirSync(SCRATCH, { recursive: true });
 
@@ -38,6 +39,7 @@ for (const [mode, config] of Object.entries(MODES)) {
         ['tray-focus.svg', 'tray-focus@2x.png'],
     ]) {
         const tinted = path.join(SCRATCH, `${mode}-${master}`);
+
         fs.writeFileSync(tinted, read(master).replaceAll('#000000', config.accent));
         icon(tinted, path.join(SCRATCH, `${mode}-tray`));
         fs.copyFileSync(path.join(SCRATCH, `${mode}-tray`, '64x64.png'), path.join(out, target));
@@ -46,6 +48,7 @@ for (const [mode, config] of Object.entries(MODES)) {
     // The Dock tile keeps the paper-white mark and swaps the indigo field for
     // the mode's accent, shaded across the same gradient the master uses.
     const tile = path.join(SCRATCH, `${mode}-app-icon.svg`);
+
     fs.writeFileSync(
         tile,
         read('app-icon.svg')
@@ -77,6 +80,7 @@ function icon(source, out) {
         [require.resolve('@tauri-apps/cli/tauri.js'), 'icon', source, '-o', out],
         { stdio: ['ignore', 'ignore', 'inherit'] },
     );
+
     if (result.status !== 0) {
         throw new Error(`tauri icon failed for ${source}`);
     }
@@ -91,7 +95,9 @@ function shade(hex, amount) {
     const channels = [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
     const moved = channels.map((channel) => {
         const target = amount > 0 ? 255 : 0;
+
         return Math.round(channel + (target - channel) * Math.abs(amount));
     });
+
     return `#${moved.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
 }

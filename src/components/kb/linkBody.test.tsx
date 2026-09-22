@@ -45,7 +45,9 @@ describe('a link’s text', () => {
         await open({ body: undefined, description: BLURB });
 
         fireEvent.click(screen.getByText(BLURB));
+
         const box = screen.getByPlaceholderText('Add a description…');
+
         expect((box as HTMLTextAreaElement).value).toBe(BLURB);
         fireEvent.change(box, { target: { value: `${BLURB}\n\n## And my own notes` } });
         fireEvent.blur(box);
@@ -61,7 +63,9 @@ describe('a link’s text', () => {
         await open({ body: 'My own notes.', description: undefined });
 
         fireEvent.click(screen.getByText('My own notes.'));
+
         const box = screen.getByPlaceholderText('Add a description…');
+
         fireEvent.change(box, { target: { value: 'Rewritten.' } });
         fireEvent.blur(box);
 

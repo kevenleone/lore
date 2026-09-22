@@ -44,6 +44,7 @@ export function creditFor(photo: UnsplashPhoto): ImageCredit {
  */
 export function messageFor(error: unknown): string {
     const code = error instanceof HttpError ? codeIn(error.message) : undefined;
+
     return MESSAGES[code ?? 'unavailable'];
 }
 
@@ -61,7 +62,10 @@ export async function searchPhotos(key: string, query: string, page = 1): Promis
  * because a tracking ping did not land.
  */
 export function trackDownload(key: string, downloadLocation: string): void {
-    if (!downloadLocation) return;
+    if (!downloadLocation) {
+        return;
+    }
+
     void request('/unsplash/download', {
         body: JSON.stringify({ downloadLocation, key }),
         method: 'POST',
@@ -71,6 +75,7 @@ export function trackDownload(key: string, downloadLocation: string): void {
 function codeIn(body: string): undefined | UnsplashErrorCode {
     try {
         const { error } = JSON.parse(body) as { error?: string };
+
         return error && error in MESSAGES ? (error as UnsplashErrorCode) : undefined;
     } catch {
         return undefined;

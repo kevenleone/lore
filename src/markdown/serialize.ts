@@ -8,10 +8,15 @@ export function serialize(parsed: ParsedBody, write?: BlockWriter): string {
     const { blocks, prefix, separators, suffix } = parsed;
 
     let out = prefix;
+
     blocks.forEach((block, index) => {
-        if (index > 0) out += separators[index - 1] ?? '\n\n';
+        if (index > 0) {
+            out += separators[index - 1] ?? '\n\n';
+        }
+
         out += write?.(block, index) ?? block.source;
     });
+
     return out + suffix;
 }
 

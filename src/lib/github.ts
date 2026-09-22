@@ -42,12 +42,16 @@ export function looksLikeGithub(url: string): boolean {
 
 /** Null for a URL that names no Markdown — an issue, a `.ts` file, another host. */
 export async function resolveGithubDocument(url: string): Promise<GithubDocument | null> {
-    if (!looksLikeGithub(url)) return null;
+    if (!looksLikeGithub(url)) {
+        return null;
+    }
+
     try {
         const doc = await request<Partial<GithubDocument>>('/github/resolve', {
             body: JSON.stringify({ url }),
             method: 'POST',
         });
+
         return doc.markdown && doc.raw ? (doc as GithubDocument) : null;
     } catch {
         // A repo that will not resolve is not an error worth surfacing — the

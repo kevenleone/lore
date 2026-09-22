@@ -52,19 +52,30 @@ export function Chooser<T extends number | string>({
     const current = options.find((o) => o.value === value);
 
     useEffect(() => {
-        if (!open) return;
+        if (!open) {
+            return;
+        }
+
         const onDown = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
         };
+
         // Capture, and stop there: the settings sheet closes on a bubbling Esc,
         // and dismissing a menu must not take the whole sheet with it.
         const onKey = (e: KeyboardEvent) => {
-            if (e.key !== 'Escape') return;
+            if (e.key !== 'Escape') {
+                return;
+            }
+
             e.stopPropagation();
             setOpen(false);
         };
+
         window.addEventListener('mousedown', onDown);
         window.addEventListener('keydown', onKey, true);
+
         return () => {
             window.removeEventListener('mousedown', onDown);
             window.removeEventListener('keydown', onKey, true);

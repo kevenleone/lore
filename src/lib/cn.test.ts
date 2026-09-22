@@ -28,6 +28,7 @@ describe('cn', () => {
 
     it('lets a later conditional override the base', () => {
         const last = true;
+
         expect(cn('border-b border-border-soft', last && 'border-b-0')).toBe(
             'border-border-soft border-b-0',
         );
@@ -35,6 +36,7 @@ describe('cn', () => {
 
     it('drops falsy values', () => {
         const on = false;
+
         expect(cn('bg-surface', on && 'bg-hover', undefined)).toBe('bg-surface');
     });
 });

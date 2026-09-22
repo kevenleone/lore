@@ -10,15 +10,26 @@ import { themeById } from './themes';
 
 /** Resolves `auto` against the OS setting. */
 export function effectiveTheme(appearance: Appearance): 'dark' | 'light' {
-    if (appearance !== 'auto') return appearance;
-    if (typeof window === 'undefined' || !window.matchMedia) return 'light';
+    if (appearance !== 'auto') {
+        return appearance;
+    }
+
+    if (typeof window === 'undefined' || !window.matchMedia) {
+        return 'light';
+    }
+
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 const REL_LUM = (hex: string): number => {
     const m = /^#?([0-9a-f]{6})$/i.exec(hex);
-    if (!m) return 1;
+
+    if (!m) {
+        return 1;
+    }
+
     const n = parseInt(m[1], 16);
+
     return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
 };
 
@@ -31,7 +42,11 @@ export interface PaintOptions {
 /** Writes a theme's token set onto an element's inline style. */
 export function applyTokens(el: HTMLElement, id: ThemeId, mode: 'dark' | 'light'): void {
     const theme = themeById(id, mode);
-    for (const [k, v] of Object.entries(theme.tokens)) el.style.setProperty(k, v);
+
+    for (const [k, v] of Object.entries(theme.tokens)) {
+        el.style.setProperty(k, v);
+    }
+
     el.style.colorScheme = theme.mode;
 }
 
@@ -44,6 +59,7 @@ export function applyTokens(el: HTMLElement, id: ThemeId, mode: 'dark' | 'light'
  */
 export function paintTheme({ accent, mode, themeId }: PaintOptions): void {
     const root = document.documentElement;
+
     applyTokens(root, themeId, mode);
     root.style.setProperty('--ac', resolveAccent(accent, mode));
 }

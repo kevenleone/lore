@@ -41,6 +41,7 @@ async function call(method: string, path: string, body?: unknown) {
         }),
     );
     const text = await res.text();
+
     return { body: text ? JSON.parse(text) : null, status: res.status };
 }
 
@@ -58,19 +59,23 @@ const newItem = (over: Partial<Item> = {}) => ({
 describe('workspace routes', () => {
     it('refuses item routes until a workspace is open', async () => {
         const res = await call('GET', '/items');
+
         expect(res.status).toBe(409);
         expect(res.body).toEqual({ error: 'no_workspace' });
     });
 
     it('opens a vault and reports the item count', async () => {
         const res = await openVault();
+
         expect(res.status).toBe(200);
         expect(res.body).toMatchObject({ itemCount: 0, path: root });
     });
 
     it('reports the open workspace on /health', async () => {
         await openVault();
+
         const res = await call('GET', '/health');
+
         expect(res.body.workspace).toBe(root);
     });
 });
@@ -84,10 +89,13 @@ describe('item routes', () => {
             '/items',
             newItem({ body: 'Body text', title: 'Hello' }),
         );
+
         expect(created.status).toBe(201);
+
         const id = created.body.id;
 
         const listed = await call('GET', '/items');
+
         expect(listed.body).toHaveLength(1);
         // listItems omits the body so a refresh stays cheap...
         expect(listed.body[0].body).toBeUndefined();
@@ -95,6 +103,7 @@ describe('item routes', () => {
 
         // ...and getItem is the only route that returns one.
         const one = await call('GET', `/items/${id}`);
+
         expect(one.body.body).toBe('Body text');
 
         expect((await call('DELETE', `/items/${id}`)).status).toBe(204);
@@ -110,6 +119,7 @@ describe('item routes', () => {
     it('patches partially, leaving other fields alone', async () => {
         const created = await call('POST', '/items', newItem({ body: 'keep me', title: 'Before' }));
         const patched = await call('PATCH', `/items/${created.body.id}`, { title: 'After' });
+
         expect(patched.body.title).toBe('After');
         expect(patched.body.body).toBe('keep me');
     });
@@ -127,6 +137,7 @@ describe('item meta route', () => {
         );
 
         const meta = await call('GET', `/items/${target.body.id}/meta`);
+
         expect(meta.status).toBe(200);
         expect(meta.body.path).toBe('target.md');
         expect(meta.body.words).toBe(2);
@@ -145,6 +156,7 @@ describe('collection routes', () => {
 
     it('creates a collection and files an item into it', async () => {
         const c = await call('POST', '/collections', { color: '#8a92b8', name: 'Work' });
+
         expect(c.status).toBe(201);
 
         const item = await call(
@@ -152,14 +164,17 @@ describe('collection routes', () => {
             '/items',
             newItem({ collectionId: 'Work', title: 'Filed' }),
         );
+
         expect(item.body.collectionId).toBe('Work');
 
         const list = await call('GET', '/collections');
+
         expect(list.body.map((x: { id: string }) => x.id)).toContain('Work');
     });
 
     it('unfiles children when a collection is deleted', async () => {
         await call('POST', '/collections', { color: '#8a92b8', name: 'Work' });
+
         const item = await call(
             'POST',
             '/items',
@@ -169,6 +184,7 @@ describe('collection routes', () => {
         expect((await call('DELETE', '/collections/Work')).status).toBe(204);
 
         const after = await call('GET', `/items/${item.body.id}`);
+
         expect(after.body.collectionId).toBeUndefined();
     });
 
@@ -183,7 +199,9 @@ describe('derived reads', () => {
     it('counts tags', async () => {
         await call('POST', '/items', newItem({ tags: ['design'], title: 'A' }));
         await call('POST', '/items', newItem({ tags: ['design', 'work'], title: 'B' }));
+
         const res = await call('GET', '/tags');
+
         expect(res.body).toEqual([
             { count: 2, name: 'design' },
             { count: 1, name: 'work' },
@@ -193,7 +211,9 @@ describe('derived reads', () => {
     it('searches bodies via the index', async () => {
         await call('POST', '/items', newItem({ body: 'perceptual uniformity', title: 'Opaque' }));
         await call('POST', '/items', newItem({ body: 'unrelated', title: 'Other' }));
+
         const res = await call('GET', '/search?q=perceptual');
+
         expect(res.body.map((i: Item) => i.title)).toEqual(['Opaque']);
     });
 });
@@ -201,11 +221,13 @@ describe('derived reads', () => {
 describe('events', () => {
     it('streams a ready event and then changes', async () => {
         await openVault();
+
         const res = await app.handle(
             new Request(`http://127.0.0.1/events?token=${TOKEN}`, {
                 headers: { origin: 'tauri://localhost' },
             }),
         );
+
         expect(res.headers.get('content-type')).toContain('text/event-stream');
 
         const reader = res.body!.getReader();
@@ -217,6 +239,7 @@ describe('events', () => {
 
         // A write through the API must reach a subscriber.
         const changed = reader.read();
+
         await call('POST', '/items', newItem({ title: 'Triggers an event' }));
         expect(text((await changed).value)).toContain('event: changed');
 
@@ -256,6 +279,7 @@ describe('migration', () => {
                 },
             ],
         });
+
         expect(res.status).toBe(200);
         expect(res.body).toMatchObject({ collections: 1, items: 2 });
 
@@ -274,6 +298,7 @@ describe('migration', () => {
 
         // On disk they are wikilinks, not ids.
         const raw = await Bun.file(join(root, 'Reading List/how-linear-builds-product.md')).text();
+
         expect(raw).toContain('[[second-brain]]');
         expect(raw).not.toContain('i2');
     });
@@ -305,10 +330,14 @@ describe('migration', () => {
                 },
             ],
         });
+
         const items = (await call('GET', '/items')).body as Item[];
         const link = items.find((i) => i.title === 'L')!;
+
         expect((await call('GET', `/items/${link.id}`)).body.url).toBe('https://x.test');
+
         const note = items.find((i) => i.title === 'N')!;
+
         expect((await call('GET', `/items/${note.id}`)).body.body).toBe('note body');
     });
 });
@@ -333,7 +362,9 @@ describe('migration fidelity', () => {
                 },
             ],
         });
+
         const item = ((await call('GET', '/items')).body as Item[])[0];
+
         expect(item.createdAt).toBe('2026-01-05T10:00:00.000Z');
         expect(item.updatedAt).toBe('2026-02-01T11:00:00.000Z');
     });
@@ -363,8 +394,10 @@ describe('migration fidelity', () => {
                 },
             ],
         });
+
         const items = (await call('GET', '/items')).body as Item[];
         const a = items.find((i) => i.title === 'A')!;
+
         expect(a.updatedAt).toBe('2026-01-01T00:00:00.000Z');
         expect(a.related).toHaveLength(1);
     });
@@ -372,6 +405,7 @@ describe('migration fidelity', () => {
     it('still stamps a normal capture with now', async () => {
         const before = Date.now();
         const created = (await call('POST', '/items', newItem({ title: 'Fresh' }))).body as Item;
+
         expect(new Date(created.createdAt).getTime()).toBeGreaterThanOrEqual(before - 1000);
     });
 });
@@ -381,7 +415,9 @@ describe('attachment routes', () => {
 
     async function upload(name: string, bytes: Uint8Array) {
         const form = new FormData();
+
         form.append('file', new File([bytes], name));
+
         const res = await app.handle(
             new Request('http://127.0.0.1/attachments', {
                 body: form,
@@ -389,6 +425,7 @@ describe('attachment routes', () => {
                 method: 'POST',
             }),
         );
+
         return { body: (await res.json()) as { path: string }, status: res.status };
     }
 
@@ -396,6 +433,7 @@ describe('attachment routes', () => {
 
     it('copies a file into attachments/ and serves it back', async () => {
         const created = await upload('Screen Shot.PNG', PNG);
+
         expect(created.status).toBe(201);
         expect(created.body.path).toBe('attachments/screen-shot.png');
 
@@ -404,6 +442,7 @@ describe('attachment routes', () => {
                 headers: { authorization: `Bearer ${TOKEN}`, origin: 'tauri://localhost' },
             }),
         );
+
         expect(res.status).toBe(200);
         expect(res.headers.get('content-type')).toBe('image/png');
         expect(new Uint8Array(await res.arrayBuffer())).toEqual(PNG);
@@ -412,6 +451,7 @@ describe('attachment routes', () => {
     it('never overwrites an attachment that is already there', async () => {
         const first = await upload('shot.png', PNG);
         const second = await upload('shot.png', PNG);
+
         expect(first.body.path).toBe('attachments/shot.png');
         expect(second.body.path).toBe('attachments/shot-2.png');
     });
@@ -419,24 +459,29 @@ describe('attachment routes', () => {
     it('serves a read to a token in the query, since <img> cannot set headers', async () => {
         const { body } = await upload('shot.png', PNG);
         const res = await app.handle(new Request(`http://127.0.0.1/${body.path}?token=${TOKEN}`));
+
         expect(res.status).toBe(200);
     });
 
     it('refuses a read with no token at all', async () => {
         const { body } = await upload('shot.png', PNG);
         const res = await app.handle(new Request(`http://127.0.0.1/${body.path}`));
+
         expect(res.status).toBe(401);
     });
 
     it('refuses an upload authorised only by the query token', async () => {
         const form = new FormData();
+
         form.append('file', new File([PNG], 'shot.png'));
+
         const res = await app.handle(
             new Request(`http://127.0.0.1/attachments?token=${TOKEN}`, {
                 body: form,
                 method: 'POST',
             }),
         );
+
         expect(res.status).toBe(401);
     });
 
@@ -446,6 +491,7 @@ describe('attachment routes', () => {
                 headers: { authorization: `Bearer ${TOKEN}`, origin: 'tauri://localhost' },
             }),
         );
+
         expect(res.status).toBe(404);
     });
 
@@ -457,12 +503,14 @@ describe('attachment routes', () => {
                 method: 'POST',
             }),
         );
+
         expect(res.status).toBe(400);
     });
 });
 
 describe('virtual document routes', () => {
     const realFetch = globalThis.fetch;
+
     afterEach(() => {
         globalThis.fetch = realFetch;
     });
@@ -480,9 +528,11 @@ describe('virtual document routes', () => {
 
     it('resolves a repo URL to its README before a workspace is open', async () => {
         serve('# emitsignal');
+
         const res = await call('POST', '/github/resolve', {
             url: 'https://github.com/emitsignal/emitsignal',
         });
+
         expect(res.status).toBe(200);
         expect(res.body.markdown).toBe('# emitsignal');
         expect(res.body.title).toBe('emitsignal/emitsignal');
@@ -501,10 +551,13 @@ describe('virtual document routes', () => {
 
     it('refreshes a virtual document from its origin', async () => {
         await openVault();
+
         const created = await call('POST', '/items', newItem({ body: 'old', source }));
+
         serve('# new');
 
         const res = await call('POST', `/items/${created.body.id}/refresh?force=1`);
+
         expect(res.status).toBe(200);
         expect(res.body.body).toBe('# new');
     });
@@ -560,6 +613,7 @@ describe('board routes', () => {
                 method: 'OPTIONS',
             }),
         );
+
         expect(res.headers.get('Access-Control-Allow-Methods')).toContain('POST');
     });
 });
@@ -576,6 +630,7 @@ describe('clearing a field', () => {
 
     it('empties a url, a priority, a due date and a status', async () => {
         await openVault();
+
         const { body: made } = await create({
             dueAt: '2026-09-20',
             priority: 'urgent',
@@ -589,12 +644,14 @@ describe('clearing a field', () => {
             status: null,
             url: null,
         });
+
         expect(cleared.dueAt).toBeUndefined();
         expect(cleared.priority).toBeUndefined();
         expect(cleared.status).toBeUndefined();
         expect(cleared.url).toBeUndefined();
 
         const raw = await readFile(join(root, cleared.path), 'utf8');
+
         expect(raw).not.toContain('priority:');
         expect(raw).not.toContain('status:');
         expect(raw).not.toContain('due:');
@@ -603,26 +660,32 @@ describe('clearing a field', () => {
 
     it('unfiles an item whose collection is cleared', async () => {
         await openVault();
+
         const { body: made } = await create({ collectionId: 'Work' });
+
         expect(made.path).toBe('Work/a-task.md');
 
         const { body: moved } = await call('PATCH', `/items/${made.id}`, { collectionId: null });
+
         expect(moved.collectionId).toBeUndefined();
         expect(moved.path).toBe('a-task.md');
     });
 
     it('drops the completion date when a task is reopened', async () => {
         await openVault();
+
         const { body: made } = await create({
             completedAt: '2026-09-13T17:30:00.000Z',
             flags: { done: true },
         });
+
         expect(made.completedAt).toBe('2026-09-13T17:30:00.000Z');
 
         const { body: reopened } = await call('PATCH', `/items/${made.id}`, {
             completedAt: null,
             flags: { done: false },
         });
+
         expect(reopened.completedAt).toBeUndefined();
         expect(await readFile(join(root, reopened.path), 'utf8')).not.toContain('completed:');
     });

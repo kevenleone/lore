@@ -39,6 +39,7 @@ describe('startOfWeek', () => {
 
     it('leaves a day that already starts the week alone', () => {
         const monday = new Date(2026, 7, 31);
+
         expect(startOfWeek(monday, 'Monday').getDate()).toBe(31);
     });
 });
@@ -46,6 +47,7 @@ describe('startOfWeek', () => {
 describe('weekDays', () => {
     it('returns seven consecutive days from the week start', () => {
         const days = weekDays(THU, 'Monday');
+
         expect(days).toHaveLength(7);
         expect(days.map((d) => d.getDate())).toEqual([31, 1, 2, 3, 4, 5, 6]);
     });
@@ -60,6 +62,7 @@ describe('addMonths', () => {
 describe('monthGrid', () => {
     it('pads the month out to six whole weeks', () => {
         const cells = monthGrid(THU, 'Monday');
+
         expect(cells).toHaveLength(42);
         expect(cells[0].getDay()).toBe(1);
     });
@@ -80,6 +83,7 @@ describe('eventsForDay', () => {
 
     it('returns scheduled tasks and sessions in start order', () => {
         const events = eventsForDay(base);
+
         expect(events.map((e) => e.kind)).toEqual(['focus', 'task']);
         expect(events[0].title).toBe('Focus · Draft the digest copy');
         expect(events[1].startMinutes).toBe(600);
@@ -111,6 +115,7 @@ describe('blockGeometry', () => {
             time: '10:00',
             title: 'x',
         });
+
         expect(geometry.top).toBe((600 - DAY_START_HOUR * 60) * (HOUR_HEIGHT / 60));
         expect(geometry.height).toBe(HOUR_HEIGHT - 3);
     });
@@ -125,6 +130,7 @@ describe('blockGeometry', () => {
             time: '10:00',
             title: 'x',
         });
+
         expect(geometry.height).toBe(22);
     });
 });
@@ -132,12 +138,14 @@ describe('blockGeometry', () => {
 describe('timeAtOffset', () => {
     it('snaps a drop to the nearest quarter hour', () => {
         const at = timeAtOffset(THU, HOUR_HEIGHT * 2 + 10);
+
         expect(at.getHours()).toBe(10);
         expect(at.getMinutes()).toBe(15);
     });
 
     it('lands on the first hour when dropped at the top', () => {
         const at = timeAtOffset(THU, 0);
+
         expect(at.getHours()).toBe(DAY_START_HOUR);
         expect(at.getMinutes()).toBe(0);
     });

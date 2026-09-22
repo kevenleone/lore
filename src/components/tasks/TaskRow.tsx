@@ -40,13 +40,20 @@ const PRIORITY_LEVEL: Record<Exclude<Priority, 'normal'>, 1 | 2 | 3> = {
 };
 
 export function DuePill({ item, today }: { item: Item; today: string }) {
-    if (!item.dueAt) return null;
+    if (!item.dueAt) {
+        return null;
+    }
+
     const tone = dueTone(item, today);
+
     return <span className={cn(PILL, DUE_TONE[tone])}>{formatDueDay(item.dueAt, today)}</span>;
 }
 
 export function PriorityChip({ priority }: { priority?: Priority }) {
-    if (!priority || priority === 'normal') return null;
+    if (!priority || priority === 'normal') {
+        return null;
+    }
+
     return (
         <span className={cn(PILL, 'capitalize', PRIORITY_CHIP[priority])}>
             <PriorityBars level={PRIORITY_LEVEL[priority]} />
@@ -57,6 +64,7 @@ export function PriorityChip({ priority }: { priority?: Priority }) {
 
 export function ProjectTag({ collections, item }: { collections: Collection[]; item: Item }) {
     const collection = collections.find((c) => c.id === item.collectionId);
+
     return (
         <span className="inline-flex min-w-0 items-center gap-[6px] text-label text-text3">
             <span
@@ -73,6 +81,7 @@ export function ProjectTag({ collections, item }: { collections: Collection[]; i
 export function TaskCheckbox({ item, size = 20 }: { item: Item; size?: number }) {
     const updateItem = useStore((s) => s.updateItem);
     const done = !!item.flags.done;
+
     return (
         <button
             aria-label={done ? `Mark ${item.title} not done` : `Mark ${item.title} done`}

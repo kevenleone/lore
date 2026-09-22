@@ -102,11 +102,13 @@ export class LocalRepository implements KnowledgeRepository {
     async createCollection(input: NewCollection): Promise<Collection> {
         const collection: Collection = { ...input, id: crypto.randomUUID() };
         const db = await this.db();
+
         await db.execute('INSERT INTO collections (id, name, color) VALUES ($1,$2,$3)', [
             collection.id,
             collection.name,
             collection.color,
         ]);
+
         return collection;
     }
 
@@ -120,12 +122,15 @@ export class LocalRepository implements KnowledgeRepository {
             updatedAt: now,
         };
         const db = await this.db();
+
         await db.execute(UPSERT_SQL, itemParams(item));
+
         return item;
     }
 
     async deleteCollection(id: string): Promise<void> {
         const db = await this.db();
+
         await db.execute('DELETE FROM collections WHERE id = $1', [id]);
         // Unfile items that referenced the removed collection.
         await db.execute(
@@ -136,6 +141,7 @@ export class LocalRepository implements KnowledgeRepository {
 
     async deleteItem(id: string): Promise<void> {
         const db = await this.db();
+
         await db.execute(
             'UPDATE items SET deleted_at = $1, dirty = 1, synced_at = NULL WHERE id = $2',
             [new Date().toISOString(), id],
@@ -145,7 +151,9 @@ export class LocalRepository implements KnowledgeRepository {
     /** Drops the memoised connection so a later open starts clean. */
     async dispose(): Promise<void> {
         const pending = this.dbPromise;
+
         this.dbPromise = null;
+
         try {
             await (await pending)?.close();
         } catch {
@@ -159,33 +167,44 @@ export class LocalRepository implements KnowledgeRepository {
             'SELECT * FROM items WHERE id = $1 AND deleted_at IS NULL',
             [id],
         );
+
         return rows[0] ? rowToItem(rows[0]) : null;
     }
 
     async listCollections(): Promise<Collection[]> {
         const db = await this.db();
+
         return db.select<Collection[]>('SELECT id, name, color FROM collections');
     }
 
     async listItems(view?: View): Promise<Item[]> {
         const all = await this.allLive();
         const filtered = view ? all.filter((i) => matchesView(i, view)) : all;
+
         // Bodies are fetched per item by getItem — see derive.withoutBody.
         return filtered.map(withoutBody);
     }
 
     async listTags(): Promise<TagCount[]> {
         const counts = new Map<string, number>();
+
         for (const item of await this.allLive()) {
-            for (const tag of item.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+            for (const tag of item.tags) {
+                counts.set(tag, (counts.get(tag) ?? 0) + 1);
+            }
         }
+
         return [...counts.entries()].map(([name, count]) => ({ count, name }));
     }
 
     async search(query: string): Promise<Item[]> {
         const q = query.trim().toLowerCase();
         const all = await this.allLive();
-        if (!q) return all;
+
+        if (!q) {
+            return all;
+        }
+
         return all.filter((i) => {
             const hay = [
                 i.title,
@@ -197,6 +216,7 @@ export class LocalRepository implements KnowledgeRepository {
             ]
                 .join(' ')
                 .toLowerCase();
+
             return hay.includes(q);
         });
     }
@@ -208,26 +228,38 @@ export class LocalRepository implements KnowledgeRepository {
             [id],
         );
         const existing = rows[0];
-        if (!existing) throw new Error(`Collection not found: ${id}`);
+
+        if (!existing) {
+            throw new Error(`Collection not found: ${id}`);
+        }
+
         const updated: Collection = { ...existing, ...patch };
+
         await db.execute('UPDATE collections SET name = $1, color = $2 WHERE id = $3', [
             updated.name,
             updated.color,
             id,
         ]);
+
         return updated;
     }
 
     async updateItem(id: string, patch: ItemPatch): Promise<Item> {
         const existing = await this.getItem(id);
-        if (!existing) throw new Error(`Item not found: ${id}`);
+
+        if (!existing) {
+            throw new Error(`Item not found: ${id}`);
+        }
+
         const updated: Item = {
             ...existing,
             ...patch,
             updatedAt: new Date().toISOString(),
         };
         const db = await this.db();
+
         await db.execute(UPSERT_SQL, itemParams(updated));
+
         return updated;
     }
 
@@ -236,6 +268,7 @@ export class LocalRepository implements KnowledgeRepository {
         const rows = await db.select<ItemRow[]>(
             'SELECT * FROM items WHERE deleted_at IS NULL ORDER BY created_at DESC',
         );
+
         return rows.map(rowToItem);
     }
 
@@ -243,15 +276,18 @@ export class LocalRepository implements KnowledgeRepository {
         if (!this.dbPromise) {
             this.dbPromise = this.open();
         }
+
         return this.dbPromise;
     }
 
     private async open(): Promise<Database> {
         const { default: Database } = await import('@tauri-apps/plugin-sql');
         const db = await Database.load(DB_NAME);
+
         for (const stmt of SCHEMA_STATEMENTS) {
             await db.execute(stmt);
         }
+
         for (const stmt of MIGRATION_STATEMENTS) {
             try {
                 await db.execute(stmt);
@@ -259,17 +295,23 @@ export class LocalRepository implements KnowledgeRepository {
                 // Column already exists — migration is a no-op.
             }
         }
+
         // Split the legacy overloaded `snippet` column into url/body. Idempotent.
         for (const stmt of BACKFILL_STATEMENTS) {
             await db.execute(stmt);
         }
+
         await this.seedIfEmpty(db);
+
         return db;
     }
 
     private async seedIfEmpty(db: Database): Promise<void> {
         const rows = await db.select<{ n: number }[]>('SELECT COUNT(*) AS n FROM items');
-        if (rows[0]?.n > 0) return;
+
+        if (rows[0]?.n > 0) {
+            return;
+        }
 
         for (const c of SEED_COLLECTIONS) {
             await db.execute(
@@ -277,6 +319,7 @@ export class LocalRepository implements KnowledgeRepository {
                 [c.id, c.name, c.color],
             );
         }
+
         for (const item of SEED_ITEMS) {
             await db.execute(UPSERT_SQL, itemParams({ ...item, deletedAt: null }));
         }

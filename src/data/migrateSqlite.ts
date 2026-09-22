@@ -57,7 +57,10 @@ interface LegacyItemRow {
 }
 
 const json = <T>(raw: null | string, fallback: T): T => {
-    if (!raw) return fallback;
+    if (!raw) {
+        return fallback;
+    }
+
     try {
         return JSON.parse(raw) as T;
     } catch {
@@ -79,6 +82,7 @@ interface LegacyDb {
  */
 export function legacyRowToItem(r: LegacyItemRow, collectionName: (id: string) => string): Item {
     const isLink = r.type === 'link';
+
     return {
         body: r.body ?? (isLink ? undefined : (r.snippet ?? undefined)),
         // The collection becomes a folder, so it is keyed by name from here on.
@@ -114,7 +118,11 @@ export async function migrateSqlite(): Promise<MigrationResult | null> {
 
     for (const file of LEGACY_DBS) {
         const imported = await migrateOne(file);
-        if (!imported) continue;
+
+        if (!imported) {
+            continue;
+        }
+
         items += imported.items;
         collections += imported.collections;
         sources.push(file);
@@ -129,13 +137,16 @@ export async function migrateSqlite(): Promise<MigrationResult | null> {
  */
 async function backupLegacyDb(file: string): Promise<string> {
     const { invoke } = await import('@tauri-apps/api/core');
+
     return invoke<string>('backup_legacy_db', { file });
 }
 
 async function migrateOne(file: string): Promise<{ collections: number; items: number } | null> {
     let db: LegacyDb;
+
     try {
         const { default: Database } = await import('@tauri-apps/plugin-sql');
+
         db = (await Database.load(`sqlite:${file}`)) as unknown as LegacyDb;
     } catch {
         // Not present — nothing to import from this one.
@@ -147,7 +158,10 @@ async function migrateOne(file: string): Promise<{ collections: number; items: n
             db.select<LegacyItemRow[]>('SELECT * FROM items WHERE deleted_at IS NULL'),
             db.select<LegacyCollectionRow[]>('SELECT id, name, color FROM collections'),
         ]);
-        if (rows.length === 0) return null;
+
+        if (rows.length === 0) {
+            return null;
+        }
 
         const nameById = new Map(collectionRows.map((c) => [c.id, c.name]));
         const collections: Collection[] = collectionRows.map((c) => ({
@@ -164,6 +178,7 @@ async function migrateOne(file: string): Promise<{ collections: number; items: n
         });
 
         await backupLegacyDb(file);
+
         return { collections: collections.length, items: items.length };
     } catch {
         // Leave this store untouched and let the others through; the next launch

@@ -11,6 +11,7 @@ import { typeMeta } from '../../store/typeMeta';
 export function matchesSearch(item: Item, q: string): boolean {
     const hay =
         `${item.title} ${item.domain ?? ''} ${item.snippet ?? ''} ${item.summary ?? ''} ${item.tags.join(' ')}`.toLowerCase();
+
     return hay.includes(q);
 }
 

@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import { fetchLinkMetadata, normalizeUrl } from '../src/linkMetadata';
 
 const realFetch = globalThis.fetch;
+
 afterEach(() => {
     globalThis.fetch = realFetch;
 });
@@ -49,14 +50,18 @@ describe('fetchLinkMetadata', () => {
       <title>  Just a title  </title>
       <meta name="description" content="Plain description">
     </head></html>`);
+
         const m = await fetchLinkMetadata('https://example.test');
+
         expect(m.title).toBe('Just a title');
         expect(m.description).toBe('Plain description');
     });
 
     it('resolves a relative image against the page', async () => {
         serve(`<html><head><meta property="og:image" content="/img/hero.png"></head></html>`);
+
         const m = await fetchLinkMetadata('https://example.test/blog/post');
+
         expect(m.image).toBe('https://example.test/img/hero.png');
     });
 

@@ -392,9 +392,17 @@ function columnId(board: BoardConfig, name: string): string {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-|-$/g, '') || 'column';
     const taken = new Set(board.columns.map((c) => c.id));
-    if (!taken.has(base)) return base;
+
+    if (!taken.has(base)) {
+        return base;
+    }
+
     let n = 2;
-    while (taken.has(`${base}-${n}`)) n++;
+
+    while (taken.has(`${base}-${n}`)) {
+        n++;
+    }
+
     return `${base}-${n}`;
 }
 
@@ -431,8 +439,12 @@ function completeInterval(
     // A finished focus interval leaves the counter alone — it is only after the
     // break that the next session begins — and a long break closes the cycle.
     let sessionIndex = focus.sessionIndex;
-    if (focus.phase === 'short') sessionIndex = focus.sessionIndex + 1;
-    else if (focus.phase === 'long') sessionIndex = 1;
+
+    if (focus.phase === 'short') {
+        sessionIndex = focus.sessionIndex + 1;
+    } else if (focus.phase === 'long') {
+        sessionIndex = 1;
+    }
 
     return {
         focus: {
@@ -454,7 +466,10 @@ function completeInterval(
  * from the row rather than find nothing.
  */
 function currentItem(state: StoreState, id: string): Item | undefined {
-    if (state.detail?.id === id) return state.detail;
+    if (state.detail?.id === id) {
+        return state.detail;
+    }
+
     return state.items.find((i) => i.id === id);
 }
 
@@ -468,6 +483,7 @@ function finishInterval(
 ): void {
     const before = get();
     const { focus, sessions } = completeInterval(before, Date.now());
+
     set({ focus, focusSessions: sessions });
     persist(get());
 
@@ -477,6 +493,7 @@ function finishInterval(
 
     const logged =
         sessions.length > before.focusSessions.length ? sessions[sessions.length - 1] : null;
+
     if (logged && before.prefs.switches.logFocus) {
         void logFocusSession(before, logged)
             .then(() => get().refresh())
@@ -506,9 +523,12 @@ async function hydrateOnce(
             // The import writes straight to the engine, so the vault has to be
             // open first or it is refused and quietly imports nothing.
             await ensureWorkspaceOpen();
+
             const result = await migrateSqlite();
+
             if (result) {
                 const from = result.sources.join(' and ');
+
                 set({
                     migrationNotice: `Moved ${result.items} item${result.items === 1 ? '' : 's'} from ${from} into your vault.`,
                 });
@@ -517,6 +537,7 @@ async function hydrateOnce(
                     repo.listCollections(),
                 ]);
             }
+
             persisted.migratedAt = new Date().toISOString();
             persist({ ...get(), migratedAt: persisted.migratedAt });
         } catch (e) {
@@ -539,8 +560,12 @@ async function hydrateOnce(
     }
 
     const selectedId = items.find((i) => i.id === get().selectedId)?.id ?? items[0]?.id ?? null;
+
     set({ collections, hydrated: true, items, selectedId });
-    if (selectedId) void get().loadDetail(selectedId);
+
+    if (selectedId) {
+        void get().loadDetail(selectedId);
+    }
 
     // Edits made outside Lore — a git pull, Obsidian, vim — arrive here.
     unsubscribeVault?.();
@@ -572,8 +597,10 @@ async function logFocusSession(state: StoreState, session: FocusSession): Promis
 
     const repo = getRepository();
     const existing = state.items.find((i) => i.title === title);
+
     if (existing) {
         const current = (await repo.getItem(existing.id))?.body ?? '';
+
         await repo.updateItem(existing.id, { body: `${current}\n${line}`.trim() });
     } else {
         await repo.createItem({
@@ -627,28 +654,39 @@ function pushRecent(list: string[], value: string, max: number): string[] {
  * derived preview. The index has the full text.
  */
 function runSearch(get: () => StoreState, raw: string): void {
-    if (searchTimer) clearTimeout(searchTimer);
+    if (searchTimer) {
+        clearTimeout(searchTimer);
+    }
+
     const q = raw.trim();
 
     if (q.length < MIN_INDEXED_QUERY) {
         useStore.setState({ searching: false, searchResults: null });
+
         return;
     }
 
     useStore.setState({ searching: true });
     searchTimer = setTimeout(() => {
         searchTimer = null;
+
         const seq = ++searchSeq;
+
         void getRepository()
             .search(q)
             .then((hits) => {
                 // Drop a response that lost the race to a newer keystroke.
-                if (seq !== searchSeq || get().search.trim() !== q) return;
+                if (seq !== searchSeq || get().search.trim() !== q) {
+                    return;
+                }
+
                 useStore.setState({ searching: false, searchResults: hits.map((h) => h.id) });
             })
             .catch(() => {
                 // Fall back to the client-side filter rather than showing nothing.
-                if (seq === searchSeq) useStore.setState({ searching: false, searchResults: null });
+                if (seq === searchSeq) {
+                    useStore.setState({ searching: false, searchResults: null });
+                }
             });
     }, 150);
 }
@@ -659,8 +697,12 @@ function runSearch(get: () => StoreState, raw: string): void {
  */
 function scheduleRefresh(get: () => StoreState): () => void {
     let timer: null | ReturnType<typeof setTimeout> = null;
+
     return () => {
-        if (timer) clearTimeout(timer);
+        if (timer) {
+            clearTimeout(timer);
+        }
+
         timer = setTimeout(() => {
             timer = null;
             void get().refresh();
@@ -676,11 +718,14 @@ function scheduleRefresh(get: () => StoreState): () => void {
  */
 async function seedDefaultVault(): Promise<void> {
     const repo = getRepository();
+
     for (const c of SEED_COLLECTIONS) {
         await repo.createCollection({ color: c.color, name: c.name });
     }
+
     // Seed ids are internal, so related links are resolved by title afterwards.
     const idByTitle = new Map<string, string>();
+
     for (const item of SEED_ITEMS) {
         const { collectionId, createdAt, id, related, updatedAt, ...rest } = item;
         const created = await repo.createItem({
@@ -690,17 +735,22 @@ async function seedDefaultVault(): Promise<void> {
             related: [],
             updatedAt,
         } as unknown as NewItem);
+
         idByTitle.set(item.title, created.id);
         void id;
         void related;
     }
+
     for (const item of SEED_ITEMS) {
         const newId = idByTitle.get(item.title);
         const related = item.related
             .map((old) => SEED_ITEMS.find((i) => i.id === old)?.title)
             .map((title) => (title ? idByTitle.get(title) : undefined))
             .filter((x): x is string => !!x);
-        if (newId && related.length) await repo.updateItem(newId, { related });
+
+        if (newId && related.length) {
+            await repo.updateItem(newId, { related });
+        }
     }
 }
 
@@ -714,7 +764,11 @@ async function seedDefaultVault(): Promise<void> {
  */
 function stampCompletion(current: Item | undefined, patch: ItemPatch): ItemPatch {
     const next = patch.flags?.done;
-    if (next === undefined || next === !!current?.flags.done) return patch;
+
+    if (next === undefined || next === !!current?.flags.done) {
+        return patch;
+    }
+
     return { ...patch, completedAt: next ? new Date().toISOString() : undefined };
 }
 
@@ -729,11 +783,16 @@ async function writeBoard(
     edit: (board: BoardConfig) => BoardConfig,
 ): Promise<void> {
     const { boardId, boards } = get();
+
     // Every column edit comes from a board that is open, so this is unreachable
     // — but the overview has no board to write to, and saying so is cheaper
     // than a non-null assertion on every caller.
-    if (boardId === null) return;
+    if (boardId === null) {
+        return;
+    }
+
     const next = edit(boardFor(boards, boardId));
+
     set({ boards: { ...boards, [boardId]: next } });
     // A store with nowhere to keep a board still gets the edit on screen; it
     // just does not survive a reload. See `KnowledgeRepository.saveBoard`.
@@ -743,7 +802,11 @@ async function writeBoard(
 export const useStore = create<StoreState>((set, get) => ({
     async addBoardColumn(name) {
         const label = name.trim();
-        if (!label) return;
+
+        if (!label) {
+            return;
+        }
+
         await writeBoard(get, set, (board) => ({
             ...board,
             columns: [...board.columns, { id: columnId(board, label), name: label }],
@@ -752,18 +815,27 @@ export const useStore = create<StoreState>((set, get) => ({
     async addComment(id, body) {
         const text = body.trim();
         const item = currentItem(get(), id);
-        if (!text || !item) return;
+
+        if (!text || !item) {
+            return;
+        }
+
         const comment: ItemComment = {
             at: new Date().toISOString(),
             body: text,
             id: `c_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
         };
+
         await get().updateItem(id, { comments: [...(item.comments ?? []), comment] });
     },
     async addTag(id, tag) {
         const clean = tag.trim().replace(/^#/, '').toLowerCase();
         const item = get().items.find((i) => i.id === id);
-        if (!clean || !item || item.tags.includes(clean)) return;
+
+        if (!clean || !item || item.tags.includes(clean)) {
+            return;
+        }
+
         await get().updateItem(id, { tags: [...item.tags, clean] });
     },
     boardFilter: EMPTY_BOARD_FILTER,
@@ -830,37 +902,52 @@ export const useStore = create<StoreState>((set, get) => ({
     },
     async createItem(input) {
         const item = await getRepository().createItem(input);
+
         await get().refresh();
         // `refresh` fills the list, whose rows carry no body. Selecting without
         // also clearing and re-reading `detail` left the pane rendering the
         // bodyless list row, so a captured note or task opened blank.
         set({ detail: null, itemMeta: null, selectedId: item.id });
         void get().loadDetail(item.id);
+
         return item;
     },
     cycleFocusTask() {
         const queue = queueItems(get().items).filter((i) => !i.flags.done);
-        if (queue.length === 0) return;
+
+        if (queue.length === 0) {
+            return;
+        }
+
         const current = queue.findIndex((i) => i.id === get().focus.taskId);
+
         get().setFocusTask(queue[(current + 1) % queue.length].id);
     },
 
     async deleteCollection(id) {
         await getRepository().deleteCollection(id);
+
         // If we were viewing the removed collection, fall back to All Items.
         const v = get().view;
+
         if (v.kind === 'collection' && v.val === id) {
             set({ view: { kind: 'all', val: null } });
         }
+
         await get().refresh();
     },
     async deleteItem(id) {
         await getRepository().deleteItem(id);
         await get().refresh();
+
         if (get().selectedId === id) {
             const next = get().items[0]?.id ?? null;
+
             set({ detail: null, selectedId: next });
-            if (next) void get().loadDetail(next);
+
+            if (next) {
+                void get().loadDetail(next);
+            }
         }
     },
 
@@ -881,8 +968,10 @@ export const useStore = create<StoreState>((set, get) => ({
 
     async exportItemPdf(id) {
         const target = id ?? get().selectedId;
+
         if (!target) {
             get().pushToast('Open an item to export it.');
+
             return;
         }
 
@@ -890,13 +979,18 @@ export const useStore = create<StoreState>((set, get) => ({
         // as a title with nothing under it.
         const item =
             get().detail?.id === target ? get().detail : await getRepository().getItem(target);
+
         if (!item) {
             get().pushToast('That item could not be read.');
+
             return;
         }
 
         const destination = await pickPdfPath(item);
-        if (!destination) return;
+
+        if (!destination) {
+            return;
+        }
 
         try {
             await exportPdf(
@@ -913,20 +1007,30 @@ export const useStore = create<StoreState>((set, get) => ({
         } catch (e) {
             // A rejected `invoke` arrives as a plain string, not an Error, so the
             // reason Rust gave would be dropped by an `instanceof` check alone.
-            if (typeof e === 'string') get().pushToast(e);
-            else get().pushToast(e instanceof Error ? e.message : 'The export failed.');
+            if (typeof e === 'string') {
+                get().pushToast(e);
+            } else {
+                get().pushToast(e instanceof Error ? e.message : 'The export failed.');
+            }
         }
     },
 
     async exportVault() {
         const repo = getRepository();
-        if (!repo.exportTo) return;
+
+        if (!repo.exportTo) {
+            return;
+        }
 
         const destination = await pickExportFolder();
-        if (!destination) return;
+
+        if (!destination) {
+            return;
+        }
 
         try {
             const { files, path } = await repo.exportTo(destination);
+
             get().pushToast(
                 `Exported ${files} ${files === 1 ? 'file' : 'files'} to ${workspaceName(path)}.`,
             );
@@ -941,10 +1045,13 @@ export const useStore = create<StoreState>((set, get) => ({
 
         if (path !== null && path !== get().workspacePath) {
             await get().switchWorkspace(path);
+
             // The switch rolls the path back and records why, so a folder Lore
             // cannot read leaves the sheet up rather than dropping the user into
             // an empty window.
-            if (get().workspaceError) return false;
+            if (get().workspaceError) {
+                return false;
+            }
         }
 
         // Only ever into a vault that came up empty — writing the sample library
@@ -972,6 +1079,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
         set({ onboarded: true });
         persist(get());
+
         return true;
     },
     focus: {
@@ -988,7 +1096,10 @@ export const useStore = create<StoreState>((set, get) => ({
     focusPopoverOpen: false,
     focusSessions: persisted.focusSessions,
     async hydrate() {
-        if (hydrating) return hydrating;
+        if (hydrating) {
+            return hydrating;
+        }
+
         hydrating = (async () => {
             try {
                 await hydrateOnce(get, set);
@@ -996,6 +1107,7 @@ export const useStore = create<StoreState>((set, get) => ({
                 hydrating = null;
             }
         })();
+
         return hydrating;
     },
     hydrated: false,
@@ -1006,15 +1118,18 @@ export const useStore = create<StoreState>((set, get) => ({
 
     async loadDetail(id) {
         const item = await getRepository().getItem(id);
+
         // Ignore a response that lost the race to a newer selection.
         if (get().selectedId !== id) {
             void get().loadItemMeta(id);
+
             return;
         }
 
         const state = get();
         // Everything else still refreshes; only the body being typed into wins.
         const keepBody = state.editorDirtyId === id && state.detail?.id === id;
+
         set({ detail: item && keepBody ? { ...item, body: state.detail?.body } : item });
         void get().loadItemMeta(id);
     },
@@ -1022,7 +1137,10 @@ export const useStore = create<StoreState>((set, get) => ({
     async loadItemMeta(id) {
         const repo = getRepository();
         const meta = repo.itemMeta ? await repo.itemMeta(id).catch(() => null) : null;
-        if (get().selectedId === id) set({ itemMeta: meta });
+
+        if (get().selectedId === id) {
+            set({ itemMeta: meta });
+        }
     },
     mainView: 'library',
     migrationNotice: null,
@@ -1035,13 +1153,19 @@ export const useStore = create<StoreState>((set, get) => ({
         await writeBoard(get, set, (board) => {
             const from = board.columns.findIndex((c) => c.id === columnId);
             const to = board.columns.findIndex((c) => c.id === targetId);
-            if (from < 0 || to < 0 || from === to) return board;
+
+            if (from < 0 || to < 0 || from === to) {
+                return board;
+            }
+
             const columns = board.columns.slice();
             // Lifted out and put back in, not swapped: dragging a column three
             // places along should carry it past the others, not trade with the
             // one it landed on.
             const [moved] = columns.splice(from, 1);
+
             columns.splice(to, 0, moved);
+
             return { ...board, columns };
         });
     },
@@ -1086,8 +1210,12 @@ export const useStore = create<StoreState>((set, get) => ({
 
     openLinkedItem(id) {
         const { openAs, openId } = get();
-        if (openAs === 'page' && openId !== null) get().openItemPage(id);
-        else get().selectItem(id);
+
+        if (openAs === 'page' && openId !== null) {
+            get().openItemPage(id);
+        } else {
+            get().selectItem(id);
+        }
     },
 
     openPhotoPicker(itemId) {
@@ -1100,13 +1228,17 @@ export const useStore = create<StoreState>((set, get) => ({
 
     async openWorkspacePicker() {
         const path = await pickWorkspaceFolder();
-        if (path) await get().switchWorkspace(path);
+
+        if (path) {
+            await get().switchWorkspace(path);
+        }
     },
 
     photoPickerItemId: null,
     prefs: persisted.prefs,
     pushToast(message, action) {
         const toast = { action, id: crypto.randomUUID(), message };
+
         // A burst of actions should not stack into a column that covers the
         // list it is reporting on.
         set({ toasts: [...get().toasts, toast].slice(-3) });
@@ -1120,8 +1252,13 @@ export const useStore = create<StoreState>((set, get) => ({
     },
     recordRecentSearch(query) {
         const text = query.trim();
-        if (text.length < MIN_RECENT_SEARCH) return;
+
+        if (text.length < MIN_RECENT_SEARCH) {
+            return;
+        }
+
         const kept = get().recentSearches.filter((q) => q.toLowerCase() !== text.toLowerCase());
+
         set({ recentSearches: [text, ...kept].slice(0, MAX_RECENT_SEARCHES) });
         persist(get());
     },
@@ -1133,34 +1270,57 @@ export const useStore = create<StoreState>((set, get) => ({
             repo.listCollections(),
             repo.listBoards?.() ?? {},
         ]);
+
         set({ boards, collections, items });
+
         // Re-read the body: a mutation may have changed it.
         const id = get().selectedId;
-        if (id) void get().loadDetail(id);
+
+        if (id) {
+            void get().loadDetail(id);
+        }
     },
 
     async refreshSource(id) {
         const repo = getRepository();
-        if (!repo.refreshItem) return;
+
+        if (!repo.refreshItem) {
+            return;
+        }
+
         // Offline is the common case here, not an error: the cached copy is
         // already on screen and stays there.
         const item = await repo.refreshItem(id).catch(() => null);
-        if (!item || get().selectedId !== id) return;
-        if (item.updatedAt === get().detail?.updatedAt) return;
+
+        if (!item || get().selectedId !== id) {
+            return;
+        }
+
+        if (item.updatedAt === get().detail?.updatedAt) {
+            return;
+        }
+
         await get().refresh();
         await get().loadDetail(id);
     },
 
     async removeBoardColumn(columnId) {
         await writeBoard(get, set, (board) => {
-            if (board.columns.length <= 1) return board;
+            if (board.columns.length <= 1) {
+                return board;
+            }
+
             return { ...board, columns: board.columns.filter((c) => c.id !== columnId) };
         });
     },
 
     async removeComment(id, commentId) {
         const item = currentItem(get(), id);
-        if (!item?.comments) return;
+
+        if (!item?.comments) {
+            return;
+        }
+
         await get().updateItem(id, {
             comments: item.comments.filter((c) => c.id !== commentId),
         });
@@ -1168,13 +1328,21 @@ export const useStore = create<StoreState>((set, get) => ({
 
     async removeTag(id, tag) {
         const item = get().items.find((i) => i.id === id);
-        if (!item) return;
+
+        if (!item) {
+            return;
+        }
+
         await get().updateItem(id, { tags: item.tags.filter((t) => t !== tag) });
     },
 
     async renameBoardColumn(columnId, name) {
         const label = name.trim();
-        if (!label) return;
+
+        if (!label) {
+            return;
+        }
+
         await writeBoard(get, set, (board) => ({
             ...board,
             columns: board.columns.map((c) => (c.id === columnId ? { ...c, name: label } : c)),
@@ -1183,7 +1351,11 @@ export const useStore = create<StoreState>((set, get) => ({
 
     async renameItemFile(id, stem) {
         const repo = getRepository();
-        if (!repo.renameItem) return;
+
+        if (!repo.renameItem) {
+            return;
+        }
+
         await repo.renameItem(id, stem);
         await get().refresh();
     },
@@ -1192,9 +1364,15 @@ export const useStore = create<StoreState>((set, get) => ({
         await writeBoard(get, set, (board) => {
             const from = board.columns.findIndex((c) => c.id === columnId);
             const to = from + direction;
-            if (from < 0 || to < 0 || to >= board.columns.length) return board;
+
+            if (from < 0 || to < 0 || to >= board.columns.length) {
+                return board;
+            }
+
             const columns = board.columns.slice();
+
             [columns[from], columns[to]] = [columns[to], columns[from]];
+
             return { ...board, columns };
         });
     },
@@ -1219,9 +1397,16 @@ export const useStore = create<StoreState>((set, get) => ({
 
     async revealItemFile(id) {
         const path = currentItem(get(), id)?.path;
-        if (!path) return;
+
+        if (!path) {
+            return;
+        }
+
         const shown = await revealVaultFile(get().workspacePath, path);
-        if (!shown) get().pushToast('Could not show the file.');
+
+        if (!shown) {
+            get().pushToast('Could not show the file.');
+        }
     },
 
     schedule: persisted.schedule,
@@ -1229,8 +1414,13 @@ export const useStore = create<StoreState>((set, get) => ({
     scheduleItem(id, at) {
         set((s) => {
             const schedule = { ...s.schedule };
-            if (at) schedule[id] = at.toISOString();
-            else delete schedule[id];
+
+            if (at) {
+                schedule[id] = at.toISOString();
+            } else {
+                delete schedule[id];
+            }
+
             return { schedule };
         });
         persist(get());
@@ -1248,6 +1438,7 @@ export const useStore = create<StoreState>((set, get) => ({
         // Cards and Table have no standing detail column, so choosing an item is
         // also what opens it, as a drawer or a page. List already shows it.
         const opens = get().prefs.viewMode !== 'list';
+
         set({
             chatOpen: false,
             detail: null,
@@ -1284,9 +1475,15 @@ export const useStore = create<StoreState>((set, get) => ({
     },
     async sendChat(question) {
         const text = question.trim();
-        if (!text) return;
+
+        if (!text) {
+            return;
+        }
+
         const userMsg: ChatMessage = { id: `u_${Date.now()}`, role: 'user', text };
+
         set((s) => ({ chat: [...s.chat, userMsg] }));
+
         const result = await ai.chat(text, get().items);
         const aiMsg: ChatMessage = {
             id: `a_${Date.now()}`,
@@ -1294,6 +1491,7 @@ export const useStore = create<StoreState>((set, get) => ({
             sources: result.sources,
             text: result.text,
         };
+
         set((s) => ({ chat: [...s.chat, aiMsg] }));
     },
 
@@ -1313,6 +1511,7 @@ export const useStore = create<StoreState>((set, get) => ({
             ...board,
             columns: board.columns.map((c) => {
                 const done = c.id === columnId && !c.done;
+
                 return done ? { ...c, done: true } : { ...c, done: undefined };
             }),
         }));
@@ -1379,6 +1578,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     setTheme(id) {
         const mode = effectiveTheme(get().prefs.appearance);
+
         get().setPref(mode === 'dark' ? 'darkTheme' : 'lightTheme', id);
     },
 
@@ -1423,7 +1623,10 @@ export const useStore = create<StoreState>((set, get) => ({
 
     async switchWorkspace(path) {
         const previous = get().workspacePath;
-        if (path === previous) return;
+
+        if (path === previous) {
+            return;
+        }
 
         set({
             chatOpen: false,
@@ -1452,10 +1655,14 @@ export const useStore = create<StoreState>((set, get) => ({
                 workspacePath: previous,
             });
             await get().hydrate();
+
             return;
         }
 
-        if (path) set({ recentWorkspaces: rememberWorkspace(get().recentWorkspaces, path) });
+        if (path) {
+            set({ recentWorkspaces: rememberWorkspace(get().recentWorkspaces, path) });
+        }
+
         persist(get());
         await broadcastWorkspaceChange(path);
     },
@@ -1465,16 +1672,23 @@ export const useStore = create<StoreState>((set, get) => ({
 
     tickFocus() {
         const state = get();
-        if (!state.focus.running) return;
+
+        if (!state.focus.running) {
+            return;
+        }
+
         const remaining = remainingSeconds(state.focus);
+
         if (remaining > 0) {
             // Most ticks land inside the same second; writing an identical value
             // would re-render every subscriber for nothing.
             if (remaining !== state.focus.remainingSec) {
                 set({ focus: { ...state.focus, remainingSec: remaining } });
             }
+
             return;
         }
+
         finishInterval(get, set, 'elapsed');
     },
 
@@ -1501,6 +1715,7 @@ export const useStore = create<StoreState>((set, get) => ({
             const next = current.includes(value)
                 ? current.filter((v) => v !== value)
                 : [...current, value];
+
             return { filters: { ...s.filters, [facet]: next } };
         });
     },
@@ -1514,12 +1729,14 @@ export const useStore = create<StoreState>((set, get) => ({
             primeChime();
             void ensureNotificationPermission();
         }
+
         set((s) => {
             const running = !s.focus.running;
             const remaining =
                 s.focus.remainingSec > 0
                     ? s.focus.remainingSec
                     : phaseSeconds(s.focus.phase, s.prefs.durations);
+
             return {
                 focus: {
                     ...s.focus,
@@ -1547,6 +1764,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     toggleProperties() {
         const open = !get().prefs.propertiesOpen;
+
         get().setPref('propertiesOpen', open);
     },
     toggleSidebar() {
@@ -1555,7 +1773,11 @@ export const useStore = create<StoreState>((set, get) => ({
 
     async toggleStar(id) {
         const item = get().items.find((i) => i.id === id);
-        if (!item) return;
+
+        if (!item) {
+            return;
+        }
+
         await get().updateItem(id, { flags: { ...item.flags, starred: !item.flags.starred } });
     },
 
@@ -1568,8 +1790,10 @@ export const useStore = create<StoreState>((set, get) => ({
 
     async trashVault() {
         const path = get().workspacePath ?? (await defaultVaultPath().catch(() => null));
+
         if (!path) {
             get().pushToast('There is no vault folder to delete.');
+
             return;
         }
 
@@ -1579,11 +1803,13 @@ export const useStore = create<StoreState>((set, get) => ({
 
         try {
             const { invoke } = await import('@tauri-apps/api/core');
+
             await invoke('trash_path', { path });
         } catch (e) {
             // The vault is still there, so put the app back on it.
             await setWorkspace(get().workspacePath);
             get().pushToast(typeof e === 'string' ? e : 'Could not move the vault to the Trash.');
+
             return;
         }
 

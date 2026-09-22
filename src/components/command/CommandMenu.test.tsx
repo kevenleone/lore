@@ -82,6 +82,7 @@ describe('CommandMenu', () => {
 
     it('moves the highlight with the arrow keys, wrapping at the ends', () => {
         render(<CommandMenu />);
+
         const options = screen.getAllByRole('option');
 
         press('ArrowUp');
@@ -124,6 +125,7 @@ describe('CommandMenu', () => {
         fireEvent.click(screen.getByRole('option', { name: /Tauri docs/ }));
 
         const state = useStore.getState();
+
         expect(state.selectedId).toBe('b');
         expect(state.openId).toBe('b');
         expect(state.openAs).toBe('page');
@@ -149,6 +151,7 @@ describe('CommandMenu', () => {
         fireEvent.click(screen.getByRole('option', { name: /Filter library by/ }));
 
         const state = useStore.getState();
+
         expect(state.search).toBe('meet');
         expect(state.mainView).toBe('library');
     });
@@ -204,6 +207,7 @@ describe('following a link', () => {
         useStore.getState().openLinkedItem('b');
 
         const state = useStore.getState();
+
         expect(state.openId).toBe('b');
         expect(state.openAs).toBe('page');
     });
@@ -218,6 +222,7 @@ describe('following a link', () => {
         useStore.getState().openLinkedItem('b');
 
         const state = useStore.getState();
+
         expect(state.openId).toBe('b');
         expect(state.openAs).toBeNull();
     });

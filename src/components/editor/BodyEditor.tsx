@@ -41,6 +41,7 @@ export function BodyEditor({
     // Read from the unmount effect, which must not re-run when they change.
     const commitRef = useRef(onCommit);
     const dirtyRef = useRef(setEditorDirty);
+
     commitRef.current = onCommit;
     dirtyRef.current = setEditorDirty;
 
@@ -49,9 +50,15 @@ export function BodyEditor({
             clearTimeout(timerRef.current);
             timerRef.current = null;
         }
+
         const next = draftRef.current;
+
         dirtyRef.current(null);
-        if (next === committedRef.current) return;
+
+        if (next === committedRef.current) {
+            return;
+        }
+
         committedRef.current = next;
         commitRef.current(next);
     }, []);
@@ -61,10 +68,17 @@ export function BodyEditor({
             pristineRef.current = false;
             draftRef.current = markdown;
             setDraft(markdown);
-            if (markdown === committedRef.current) return;
+
+            if (markdown === committedRef.current) {
+                return;
+            }
 
             setEditorDirty(itemId);
-            if (timerRef.current) clearTimeout(timerRef.current);
+
+            if (timerRef.current) {
+                clearTimeout(timerRef.current);
+            }
+
             timerRef.current = setTimeout(flush, AUTOSAVE_MS);
         },
         [flush, itemId, setEditorDirty],
@@ -78,6 +92,7 @@ export function BodyEditor({
         pristineRef.current = true;
         setDraft(value);
         setSeed((current) => current + 1);
+
         return flush;
     }, [itemId]);
 
@@ -85,7 +100,10 @@ export function BodyEditor({
     // later it would discard what is being typed, or remount on a save's own
     // echo and drop the caret.
     useEffect(() => {
-        if (!pristineRef.current || value === seededRef.current) return;
+        if (!pristineRef.current || value === seededRef.current) {
+            return;
+        }
+
         draftRef.current = value;
         committedRef.current = value;
         seededRef.current = value;

@@ -167,6 +167,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                 <div className={cn(SECTION_LABEL, 'pt-[6px]')}>Library</div>
                 {LIB_VIEWS.map((v) => {
                     const active = mainView === 'library' && isViewActive(view, v.kind);
+
                     return (
                         <button
                             aria-current={active ? 'page' : undefined}
@@ -228,6 +229,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                         mainView === 'tasks' &&
                         taskView === v.view &&
                         !(v.view === 'board' && boardId !== null);
+
                     return (
                         <button
                             aria-current={active ? 'page' : undefined}
@@ -266,6 +268,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                         const id = p.collectionId ?? UNFILED_BOARD;
                         const active =
                             mainView === 'tasks' && taskView === 'board' && boardId === id;
+
                         return (
                             <button
                                 aria-current={active ? 'page' : undefined}
@@ -300,6 +303,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
             <div className={SECTION_LABEL}>Tags</div>
             {tags.map((t) => {
                 const active = isViewActive(view, 'tag', t.name);
+
                 return (
                     <button
                         aria-current={active ? 'page' : undefined}

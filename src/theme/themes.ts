@@ -530,7 +530,11 @@ export const DEFAULT_LIGHT_THEME: ThemeId = 'lore-light';
  */
 export function themeById(id: ThemeId, mode: 'dark' | 'light'): ThemeDefinition {
     const found = THEMES.find((t) => t.id === id && t.mode === mode);
-    if (found) return found;
+
+    if (found) {
+        return found;
+    }
+
     return THEMES.find((t) => t.mode === mode) as ThemeDefinition;
 }
 

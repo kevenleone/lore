@@ -12,7 +12,10 @@ type Subscriber = (paths: string[]) => void;
 
 export class Workspace {
     get current(): VaultStore {
-        if (!this.store) throw new WorkspaceNotOpen();
+        if (!this.store) {
+            throw new WorkspaceNotOpen();
+        }
+
         return this.store;
     }
     get isOpen(): boolean {
@@ -56,23 +59,31 @@ export class Workspace {
         // costs a needless reconcile and a refresh round-trip back to the UI.
         this.store.onWrite = (rel, text) => this.markSelfWrite(rel, text);
         this.watcher = watchVault(root, (paths) => void this.onFilesChanged(paths));
+
         return { itemCount: this.store.listItems().length, path: root };
     }
 
     /** Re-reads from disk and tells subscribers. */
     async reconcile(): Promise<{ indexed: number; removed: number }> {
         const result = await this.current.reconcile();
-        if (result.indexed || result.removed) this.emit([]);
+
+        if (result.indexed || result.removed) {
+            this.emit([]);
+        }
+
         return result;
     }
 
     subscribe(fn: Subscriber): () => void {
         this.subscribers.add(fn);
+
         return () => this.subscribers.delete(fn);
     }
 
     private emit(paths: string[]): void {
-        for (const fn of this.subscribers) fn(paths);
+        for (const fn of this.subscribers) {
+            fn(paths);
+        }
     }
 
     /** Records what we wrote, so the events it produces can be recognised. */
@@ -80,20 +91,31 @@ export class Workspace {
         if (text === null) {
             // A move: there is no content to compare, so fall back to a short window.
             this.selfWrites.set(relPath, { at: Date.now(), hash: '' });
+
             return;
         }
+
         this.selfWrites.set(relPath, { at: Date.now(), hash: hashContent(text) });
     }
 
     private async onFilesChanged(paths: string[]): Promise<void> {
-        if (!this.store) return;
-        const external: string[] = [];
-        for (const path of paths) {
-            if (!(await this.wasSelfWrite(path))) external.push(path);
+        if (!this.store) {
+            return;
         }
+
+        const external: string[] = [];
+
+        for (const path of paths) {
+            if (!(await this.wasSelfWrite(path))) {
+                external.push(path);
+            }
+        }
+
         // Everything in this batch was our own doing, and indexOne already recorded
         // it — reindexing and refreshing the UI would be pure waste.
-        if (external.length === 0) return;
+        if (external.length === 0) {
+            return;
+        }
 
         try {
             await this.current.reconcile();
@@ -101,6 +123,7 @@ export class Workspace {
             // The workspace may have closed mid-event; the next open reconciles.
             return;
         }
+
         this.emit(external);
     }
 
@@ -114,13 +137,22 @@ export class Workspace {
      */
     private async wasSelfWrite(relPath: string): Promise<boolean> {
         const mark = this.selfWrites.get(relPath);
-        if (!mark) return false;
-        if (Date.now() - mark.at > 5000) {
-            this.selfWrites.delete(relPath);
+
+        if (!mark) {
             return false;
         }
+
+        if (Date.now() - mark.at > 5000) {
+            this.selfWrites.delete(relPath);
+
+            return false;
+        }
+
         // A move leaves nothing to compare against.
-        if (!mark.hash) return true;
+        if (!mark.hash) {
+            return true;
+        }
+
         try {
             return hashContent(await this.current.vault.readText(relPath)) === mark.hash;
         } catch {

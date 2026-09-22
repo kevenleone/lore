@@ -44,17 +44,24 @@ export function CaptureDrawer() {
     useEffect(() => {
         if (!captureOpen) {
             setSettled(false);
+
             return;
         }
+
         if (reduceMotion) {
             setSettled(true);
+
             return;
         }
+
         const timer = setTimeout(() => setSettled(true), DRAWER_MS);
+
         return () => clearTimeout(timer);
     }, [captureOpen, reduceMotion]);
 
-    if (!mounted) return null;
+    if (!mounted) {
+        return null;
+    }
 
     /** Capture from inside a collection files into it; else Settings decides. */
     const collectionFromView = () => (view.kind === 'collection' ? view.val : defaultCollection);

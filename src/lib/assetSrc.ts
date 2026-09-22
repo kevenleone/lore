@@ -28,23 +28,34 @@ export function useAssetSrc(raw: string | undefined): string | undefined {
     useEffect(() => {
         if (!raw || !attachment) {
             setResolved(undefined);
+
             return;
         }
+
         let cancelled = false;
+
         void attachmentUrl(raw).then(
             (url) => {
-                if (!cancelled) setResolved(url);
+                if (!cancelled) {
+                    setResolved(url);
+                }
             },
             () => {
                 // No engine to serve it (the Vite preview, or a restart in flight).
-                if (!cancelled) setResolved(undefined);
+                if (!cancelled) {
+                    setResolved(undefined);
+                }
             },
         );
+
         return () => {
             cancelled = true;
         };
     }, [raw, attachment]);
 
-    if (!raw) return undefined;
+    if (!raw) {
+        return undefined;
+    }
+
     return attachment ? resolved : raw;
 }

@@ -32,6 +32,7 @@ describe('documentTitle', () => {
             readme: false,
             title: 'e/e · CHANGELOG.md',
         };
+
         expect(documentTitle(file, meta)).toBe('e/e · CHANGELOG.md');
     });
 });

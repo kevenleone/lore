@@ -37,7 +37,9 @@ export function ItemContextMenu({
     const updateItem = useStore((s) => s.updateItem);
     const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-    if (!item) return null;
+    if (!item) {
+        return null;
+    }
 
     const run = (action: () => void) => {
         action();

@@ -5,6 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const invoke = vi.fn();
+
 vi.mock('@tauri-apps/api/core', () => ({ invoke: (...args: unknown[]) => invoke(...args) }));
 
 const { forgetEndpoint } = await import('./sidecarClient');
@@ -33,6 +34,7 @@ beforeEach(() => {
 /** The body of the PATCH, past whatever `ready()` sent to open the vault. */
 const patchBody = () => {
     const call = fetchMock.mock.calls.find(([, init]) => (init as RequestInit).method === 'PATCH');
+
     return JSON.parse((call![1] as RequestInit).body as string);
 };
 

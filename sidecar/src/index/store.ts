@@ -43,19 +43,28 @@ export class VaultStore {
 
     static async open(root: string): Promise<VaultStore> {
         const vault = new Vault(root);
+
         await vault.ensureScaffold();
+
         const dbPath = vault.path(INDEX_FILE);
         let db: Database;
+
         try {
             db = openIndex(dbPath);
         } catch (e) {
-            if (!(e instanceof IndexVersionMismatch)) throw e;
+            if (!(e instanceof IndexVersionMismatch)) {
+                throw e;
+            }
+
             // Stale schema: throw the index away rather than migrating it.
             await rm(dbPath, { force: true });
             db = openIndex(dbPath);
         }
+
         const store = new VaultStore(vault, db);
+
         await store.reconcile();
+
         return store;
     }
 
@@ -65,8 +74,11 @@ export class VaultStore {
 
     async createCollection(name: string, color: string): Promise<Collection> {
         await mkdir(this.vault.path(name), { recursive: true });
+
         const existing = await this.vault.listCollections();
+
         await this.vault.writeCollectionsFile([...existing, { color, id: name, name }]);
+
         return { color, id: name, name };
     }
 
@@ -92,7 +104,9 @@ export class VaultStore {
         };
         const stem = uniqueStem(item.title, id, this.takenStems(item.collectionId));
         const path = joinPath(item.collectionId, stem);
+
         await this.writeItem(path, item, []);
+
         return this.getItem(id)!;
     }
 
@@ -103,16 +117,21 @@ export class VaultStore {
         const rows = this.db
             .query<FileRow, [string]>('SELECT * FROM files WHERE path LIKE ?')
             .all(`${id}/%`);
+
         for (const row of rows) {
             const stems = this.takenStems(undefined);
             const stem = stems.has(row.stem) ? uniqueStem(row.stem, row.id, stems) : row.stem;
+
             await this.moveFile(row.path, `${stem}.md`);
             this.db.run('DELETE FROM files WHERE path = ?', [row.path]);
         }
+
         // rmdir refuses a non-empty directory, which is the behaviour we want:
         // anything unexpected still in there is left alone rather than deleted.
         await rmdir(this.vault.path(id)).catch(() => {});
+
         const collections = await this.vault.listCollections();
+
         await this.vault.writeCollectionsFile(collections.filter((c) => c.id !== id));
         await this.reconcile();
     }
@@ -122,22 +141,33 @@ export class VaultStore {
     /** Deletes by moving to `.lore/trash/` — git is the undo, but not for free. */
     async deleteItem(id: string): Promise<boolean> {
         const row = this.db.query<FileRow, [string]>('SELECT * FROM files WHERE id = ?').get(id);
-        if (!row) return false;
+
+        if (!row) {
+            return false;
+        }
+
         await this.moveFile(row.path, `${TRASH_DIR}/${Date.now()}-${row.stem}.md`);
         this.forget(row.path);
+
         return true;
     }
 
     getItem(id: string): Item | null {
         const row = this.db.query<FileRow, [string]>('SELECT * FROM files WHERE id = ?').get(id);
+
         return row ? rowToItem(row, true) : null;
     }
 
     /** The per-file facts the Properties panel shows. Null when the id is unknown. */
     itemMeta(id: string): ItemMeta | null {
         const row = this.db.query<FileRow, [string]>('SELECT * FROM files WHERE id = ?').get(id);
-        if (!row) return null;
+
+        if (!row) {
+            return null;
+        }
+
         const body = row.body.trim();
+
         return {
             backlinks: this.inboundIds(id)
                 .map((src) => this.getItem(src))
@@ -157,14 +187,6 @@ export class VaultStore {
         return this.vault.listCollections();
     }
 
-    /** Replaces one board. Passing null drops it back to the default columns. */
-    async saveBoard(id: string, board: BoardConfig | null): Promise<void> {
-        const boards = await this.vault.readBoardsFile();
-        if (board) boards[id] = board;
-        else delete boards[id];
-        await this.vault.writeBoardsFile(boards);
-    }
-
     listItems(): Item[] {
         return this.db
             .query<FileRow, []>('SELECT * FROM files')
@@ -175,15 +197,17 @@ export class VaultStore {
 
     listTags(): TagCount[] {
         const counts = new Map<string, number>();
+
         for (const item of this.listItems()) {
-            for (const tag of item.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+            for (const tag of item.tags) {
+                counts.set(tag, (counts.get(tag) ?? 0) + 1);
+            }
         }
+
         return [...counts.entries()]
             .map(([name, count]) => ({ count, name }))
             .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
     }
-
-    /* ---------------- reads ---------------- */
 
     /**
      * Brings the index in line with the files.
@@ -197,19 +221,25 @@ export class VaultStore {
         const seen = new Set(paths);
 
         const existing = new Map<string, FileRow>();
+
         for (const row of this.db.query<FileRow, []>('SELECT * FROM files').all()) {
             existing.set(row.path, row);
         }
 
         let indexed = 0;
+
         for (const path of paths) {
             const st = await stat(this.vault.path(path));
             const prev = existing.get(path);
             const mtime = Math.floor(st.mtimeMs);
-            if (prev && prev.mtime_ms === mtime && prev.size === st.size) continue;
+
+            if (prev && prev.mtime_ms === mtime && prev.size === st.size) {
+                continue;
+            }
 
             const raw = await this.vault.readText(path);
             const hash = hashContent(raw);
+
             if (prev && prev.hash === hash) {
                 this.db.run('UPDATE files SET mtime_ms = ?, size = ? WHERE path = ?', [
                     mtime,
@@ -218,11 +248,13 @@ export class VaultStore {
                 ]);
                 continue;
             }
+
             this.indexOne(path, raw, mtime, st.size, hash, prev?.id);
             indexed += 1;
         }
 
         let removed = 0;
+
         for (const path of existing.keys()) {
             if (!seen.has(path)) {
                 this.forget(path);
@@ -231,9 +263,14 @@ export class VaultStore {
         }
 
         // A second pass resolves links whose targets were indexed after them.
-        if (indexed > 0) this.reresolveAll();
+        if (indexed > 0) {
+            this.reresolveAll();
+        }
+
         return { indexed, removed };
     }
+
+    /* ---------------- reads ---------------- */
 
     /**
      * Re-reads a virtual document from its origin. The file is only rewritten
@@ -245,17 +282,34 @@ export class VaultStore {
      */
     async refreshItem(id: string, force = false): Promise<Item | null> {
         const current = this.getItem(id);
-        if (!current?.source) return current;
+
+        if (!current?.source) {
+            return current;
+        }
 
         const last = this.checked.get(id) ?? 0;
-        if (!force && Date.now() - last < REFRESH_TTL_MS) return current;
+
+        if (!force && Date.now() - last < REFRESH_TTL_MS) {
+            return current;
+        }
+
         this.checked.set(id, Date.now());
 
         const target = parseGithubTarget(current.source.raw);
-        if (!target) return current;
+
+        if (!target) {
+            return current;
+        }
+
         const document = await resolveDocument(target);
-        if (!document) return current;
-        if (document.markdown.trim() === (current.body ?? '').trim()) return current;
+
+        if (!document) {
+            return current;
+        }
+
+        if (document.markdown.trim() === (current.body ?? '').trim()) {
+            return current;
+        }
 
         return this.updateItem(id, {
             body: document.markdown,
@@ -279,13 +333,21 @@ export class VaultStore {
      */
     async renameItem(id: string, requestedStem: string): Promise<Item | null> {
         const row = this.db.query<FileRow, [string]>('SELECT * FROM files WHERE id = ?').get(id);
-        if (!row) return null;
+
+        if (!row) {
+            return null;
+        }
 
         const collection = collectionOf(row.path);
         const taken = this.takenStems(collection || undefined);
+
         taken.delete(row.stem);
+
         const stem = uniqueStem(requestedStem, id, taken);
-        if (stem === row.stem) return this.getItem(id);
+
+        if (stem === row.stem) {
+            return this.getItem(id);
+        }
 
         const inbound = this.inboundIds(id);
 
@@ -293,16 +355,24 @@ export class VaultStore {
             const src = this.db
                 .query<FileRow, [string]>('SELECT * FROM files WHERE id = ?')
                 .get(srcId);
-            if (!src) continue;
+
+            if (!src) {
+                continue;
+            }
+
             const raw = await this.vault.readText(src.path);
             const parsed = parseFile(raw);
             const related = Array.isArray(parsed.data.related)
                 ? (parsed.data.related as string[])
                 : [];
             const rewritten = rewriteRelated(related, row.stem, stem);
-            if (rewritten.join('\u0000') === related.join('\u0000')) continue;
+
+            if (rewritten.join('\u0000') === related.join('\u0000')) {
+                continue;
+            }
 
             const item = rowToItem(src, true);
+
             await this.writeFile(
                 src.path,
                 serializeFile(item, rewritten, JSON.parse(src.extra) as Record<string, unknown>),
@@ -310,20 +380,40 @@ export class VaultStore {
         }
 
         const nextPath = joinPath(collection || undefined, stem);
+
         await this.moveFile(row.path, nextPath);
         this.db.run('DELETE FROM files WHERE path = ?', [row.path]);
         await this.reconcile();
+
         return this.getItem(id);
+    }
+
+    /** Replaces one board. Passing null drops it back to the default columns. */
+    async saveBoard(id: string, board: BoardConfig | null): Promise<void> {
+        const boards = await this.vault.readBoardsFile();
+
+        if (board) {
+            boards[id] = board;
+        } else {
+            delete boards[id];
+        }
+
+        await this.vault.writeBoardsFile(boards);
     }
 
     search(query: string): Item[] {
         const q = query.trim();
-        if (!q) return this.listItems();
+
+        if (!q) {
+            return this.listItems();
+        }
+
         // Prefix-match every term so search feels live as you type.
         const match = q
             .split(/\s+/)
             .map((t) => `${t.replace(/["*]/g, '')}*`)
             .join(' ');
+
         try {
             const ids = this.db
                 .query<{ id: string }, [string]>(
@@ -332,6 +422,7 @@ export class VaultStore {
                 .all(match)
                 .map((r) => r.id);
             const byId = new Map(this.listItems().map((i) => [i.id, i]));
+
             return ids.map((id) => byId.get(id)).filter((i): i is Item => !!i);
         } catch {
             // A malformed FTS expression should degrade to no results, not a 500.
@@ -345,17 +436,24 @@ export class VaultStore {
     ): Promise<Collection | null> {
         const collections = await this.vault.listCollections();
         const current = collections.find((c) => c.id === id);
-        if (!current) return null;
+
+        if (!current) {
+            return null;
+        }
 
         const nextId = patch.name ?? current.id;
+
         if (nextId !== id) {
             await this.moveFile(id, nextId);
             // Every child's path changed; the reconcile pass picks them up.
             this.db.run('DELETE FROM files WHERE path LIKE ?', [`${id}/%`]);
         }
+
         const next = { color: patch.color ?? current.color, id: nextId, name: nextId };
+
         await this.vault.writeCollectionsFile(collections.map((c) => (c.id === id ? next : c)));
         await this.reconcile();
+
         return next;
     }
 
@@ -365,7 +463,10 @@ export class VaultStore {
         opts: { touch?: boolean } = {},
     ): Promise<Item | null> {
         const row = this.db.query<FileRow, [string]>('SELECT * FROM files WHERE id = ?').get(id);
-        if (!row) return null;
+
+        if (!row) {
+            return null;
+        }
 
         const current = rowToItem(row, true);
         // An import re-links related items after writing them; that is bookkeeping,
@@ -384,6 +485,7 @@ export class VaultStore {
         const targetCollection =
             patch.collectionId !== undefined ? patch.collectionId : current.collectionId;
         let path = row.path;
+
         if ((targetCollection || '') !== (current.collectionId || '')) {
             path = joinPath(targetCollection || undefined, row.stem);
             await this.moveFile(row.path, path);
@@ -396,6 +498,7 @@ export class VaultStore {
             unresolved,
             extra,
         );
+
         return this.getItem(id);
     }
 
@@ -403,7 +506,9 @@ export class VaultStore {
         const row = this.db
             .query<{ id: string }, [string]>('SELECT id FROM files WHERE path = ?')
             .get(path);
+
         this.db.run('DELETE FROM files WHERE path = ?', [path]);
+
         if (row) {
             this.db.run('DELETE FROM links WHERE src_id = ?', [row.id]);
             this.db.run('DELETE FROM items_fts WHERE id = ?', [row.id]);
@@ -481,6 +586,7 @@ export class VaultStore {
         );
         this.writeLinks(id, parsed.data.related, ids);
         this.writeFts(id, item, row.body);
+
         return row;
     }
 
@@ -496,9 +602,14 @@ export class VaultStore {
     private reresolveAll(): void {
         const resolver = this.resolver();
         const rows = this.db.query<FileRow, []>('SELECT * FROM files').all();
+
         for (const row of rows) {
             const unresolved = JSON.parse(row.unresolved) as string[];
-            if (unresolved.length === 0) continue;
+
+            if (unresolved.length === 0) {
+                continue;
+            }
+
             const item = JSON.parse(row.json) as Item;
             const combined = [
                 ...item.related.map((id) => resolver.stemForId(id) ?? id),
@@ -508,7 +619,11 @@ export class VaultStore {
                 combined.map((s) => (s.startsWith('[[') ? s : `[[${s}]]`)),
                 resolver,
             );
-            if (next.unresolved.length === unresolved.length) continue;
+
+            if (next.unresolved.length === unresolved.length) {
+                continue;
+            }
+
             item.related = next.ids;
             this.db.run('UPDATE files SET json = ?, unresolved = ? WHERE path = ?', [
                 JSON.stringify(item),
@@ -526,6 +641,7 @@ export class VaultStore {
         const byId = this.db.query<{ stem: string }, [string]>(
             'SELECT stem FROM files WHERE id = ?',
         );
+
         return {
             hasId: (id) => !!byId.get(id),
             idForStem: (stem) => byStem.get(stem)?.id,
@@ -536,9 +652,13 @@ export class VaultStore {
     private takenStems(collectionId: string | undefined): Set<string> {
         const prefix = collectionId ?? '';
         const stems = new Set<string>();
+
         for (const row of this.db.query<FileRow, []>('SELECT * FROM files').all()) {
-            if (collectionOf(row.path) === prefix) stems.add(row.stem);
+            if (collectionOf(row.path) === prefix) {
+                stems.add(row.stem);
+            }
         }
+
         return stems;
     }
 
@@ -574,26 +694,38 @@ export class VaultStore {
     ): Promise<void> {
         const related = serializeRelated(item.related, unresolved, this.resolver());
         const text = serializeFile(item, related, extra);
+
         await this.writeFile(path, text);
+
         const st = await stat(this.vault.path(path));
+
         this.indexOne(path, text, Math.floor(st.mtimeMs), st.size, hashContent(text), item.id);
     }
 
     private writeLinks(srcId: string, rawRelated: unknown, ids: string[]): void {
         this.db.run('DELETE FROM links WHERE src_id = ?', [srcId]);
-        if (!Array.isArray(rawRelated)) return;
+
+        if (!Array.isArray(rawRelated)) {
+            return;
+        }
+
         const insert = this.db.query(
             'INSERT OR REPLACE INTO links (src_id, target_raw, target_id) VALUES (?,?,?)',
         );
         const resolver = this.resolver();
+
         for (const raw of rawRelated) {
-            if (typeof raw !== 'string') continue;
+            if (typeof raw !== 'string') {
+                continue;
+            }
+
             const target = raw
                 .replace(/^\[\[|\]\]$/g, '')
                 .split('|')[0]
                 .split('#')[0]
                 .trim();
             const resolved = resolver.idForStem(target) ?? (ids.includes(target) ? target : null);
+
             insert.run(srcId, raw, resolved);
         }
     }
@@ -603,10 +735,15 @@ export class VaultStore {
 function rowToItem(row: FileRow, withBody: boolean): Item {
     const base = JSON.parse(row.json) as Item;
     const item: Item = { ...base, collectionId: collectionOf(row.path) || undefined };
+
     // The file is the item, so its path is worth surfacing: the UI shows it and
     // renames it, and it is the only stable way to point a person at the note.
     item.path = row.path;
-    if (withBody) item.body = row.body || undefined;
+
+    if (withBody) {
+        item.body = row.body || undefined;
+    }
+
     return {
         ...item,
         domain: item.domain ?? deriveDomain(item.url),

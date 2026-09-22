@@ -61,6 +61,10 @@ export function PrintDocument({ collectionName, item }: PrintPayload): React.JSX
  */
 function absoluteDate(iso: string): string {
     const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) return '';
+
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
     return date.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
 }

@@ -21,7 +21,11 @@ let context: AudioContext | null = null;
 /** Plays the bell. Silent, rather than throwing, when audio is unavailable. */
 export function playChime(): void {
     const ctx = audioContext();
-    if (!ctx) return;
+
+    if (!ctx) {
+        return;
+    }
+
     // Starting from the tray menu is not a webview gesture, so the context can
     // still be suspended here even though `primeChime` ran.
     void ctx
@@ -44,10 +48,18 @@ export function primeChime(): void {
 }
 
 function audioContext(): AudioContext | null {
-    if (context) return context;
+    if (context) {
+        return context;
+    }
+
     const Ctor = window.AudioContext ?? window.webkitAudioContext;
-    if (!Ctor) return null;
+
+    if (!Ctor) {
+        return null;
+    }
+
     context = new Ctor();
+
     return context;
 }
 
@@ -56,6 +68,7 @@ function noop(): void {}
 function ring(ctx: AudioContext, frequency: number, startAt: number): void {
     const oscillator = ctx.createOscillator();
     const gain = ctx.createGain();
+
     oscillator.frequency.value = frequency;
     oscillator.type = 'sine';
     // Ramps rather than steps: an instant gain change clicks.

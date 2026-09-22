@@ -38,10 +38,12 @@ function Block({ node }: { node: RootContent }): null | React.JSX.Element {
                     {node.value}
                 </pre>
             );
+
         case 'heading': {
             // A comment is not a document: `##` is emphasis, not structure.
             return <p className="font-semibold text-text">{inline(node.children)}</p>;
         }
+
         case 'list':
             return node.ordered ? (
                 <ol className="list-decimal pl-5">{items(node.children)}</ol>

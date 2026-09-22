@@ -126,15 +126,20 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     }, [sel?.id, rawDefault]);
 
     useEffect(() => {
-        if (addingTag) tagInputRef.current?.focus();
+        if (addingTag) {
+            tagInputRef.current?.focus();
+        }
     }, [addingTag]);
 
     // A virtual document checks its origin when it is opened. The engine holds
     // the interval, so this asks every time and is usually answered from the
     // copy already on disk.
     const sourceRaw = sel?.source?.raw;
+
     useEffect(() => {
-        if (sel?.id && sourceRaw) void refreshSource(sel.id);
+        if (sel?.id && sourceRaw) {
+            void refreshSource(sel.id);
+        }
     }, [sel?.id, sourceRaw, refreshSource]);
 
     if (!sel) {
@@ -190,25 +195,40 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     const writeSubtasks = (next: readonly Subtask[]) => {
         void updateItem(sel.id, { body: joinBody(prose, next) || undefined });
     };
+
     const commitSubtask = () => {
         const text = subtaskDraft.trim();
+
         setSubtaskDraft('');
-        if (text) writeSubtasks([...subtasks, { done: false, text }]);
+
+        if (text) {
+            writeSubtasks([...subtasks, { done: false, text }]);
+        }
     };
+
     const startSubtaskEdit = (index: number) => {
         setSubtaskEdit(subtasks[index].text);
         setEditingSubtask(index);
     };
+
     const commitSubtaskEdit = (index: number) => {
         setEditingSubtask(null);
-        if (subtaskEdit.trim() === subtasks[index].text) return;
+
+        if (subtaskEdit.trim() === subtasks[index].text) {
+            return;
+        }
+
         writeSubtasks(editSubtask(subtasks, index, subtaskEdit));
     };
 
     const commitTitle = () => {
         const next = titleDraft.trim();
+
         setEditingTitle(false);
-        if (next && next !== sel.title) void updateItem(sel.id, { title: next });
+
+        if (next && next !== sel.title) {
+            void updateItem(sel.id, { title: next });
+        }
     };
 
     // Code is not prose; everything else writes Markdown, a bookmark's notes
@@ -222,6 +242,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     /** A task's editor holds only the prose; the Subtasks panel owns the rest. */
     const commitBodyMarkdown = (markdown: string) => {
         const body = isTask ? joinBody(markdown, subtasks) : markdown;
+
         writeBody(body || undefined);
     };
 
@@ -229,17 +250,26 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
         setBodyDraft(bodyValue ?? '');
         setEditingBody(true);
     };
+
     const commitBody = () => {
         setEditingBody(false);
-        if (bodyDraft === (bodyValue ?? '')) return;
+
+        if (bodyDraft === (bodyValue ?? '')) {
+            return;
+        }
+
         writeBody((isTask ? joinBody(bodyDraft, subtasks) : bodyDraft) || undefined);
     };
 
     const commitTag = () => {
         const next = tagDraft.trim();
+
         setAddingTag(false);
         setTagDraft('');
-        if (next) void addTag(sel.id, next);
+
+        if (next) {
+            void addTag(sel.id, next);
+        }
     };
 
     const bodyTextareaClass = (mono: boolean): string =>
@@ -418,8 +448,13 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                             onBlur={commitTitle}
                             onChange={(e) => setTitleDraft(e.target.value)}
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter') commitTitle();
-                                if (e.key === 'Escape') setEditingTitle(false);
+                                if (e.key === 'Enter') {
+                                    commitTitle();
+                                }
+
+                                if (e.key === 'Escape') {
+                                    setEditingTitle(false);
+                                }
                             }}
                             value={titleDraft}
                         />
@@ -538,8 +573,13 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                             onBlur={commitBody}
                             onChange={(e) => setBodyDraft(e.target.value)}
                             onKeyDown={(e) => {
-                                if (e.key === 'Escape') setEditingBody(false);
-                                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) commitBody();
+                                if (e.key === 'Escape') {
+                                    setEditingBody(false);
+                                }
+
+                                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                                    commitBody();
+                                }
                             }}
                             placeholder={bodyPlaceholder}
                             value={bodyDraft}
@@ -613,7 +653,10 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                                         e.preventDefault();
                                                         commitSubtaskEdit(index);
                                                     }
-                                                    if (e.key === 'Escape') setEditingSubtask(null);
+
+                                                    if (e.key === 'Escape') {
+                                                        setEditingSubtask(null);
+                                                    }
                                                 }}
                                                 value={subtaskEdit}
                                             />
@@ -660,7 +703,10 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                                 e.preventDefault();
                                                 commitSubtask();
                                             }
-                                            if (e.key === 'Escape') setSubtaskDraft('');
+
+                                            if (e.key === 'Escape') {
+                                                setSubtaskDraft('');
+                                            }
                                         }}
                                         placeholder="Add a subtask…"
                                         value={subtaskDraft}
@@ -704,7 +750,10 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                     onBlur={commitTag}
                                     onChange={(e) => setTagDraft(e.target.value)}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter') commitTag();
+                                        if (e.key === 'Enter') {
+                                            commitTag();
+                                        }
+
                                         if (e.key === 'Escape') {
                                             setAddingTag(false);
                                             setTagDraft('');
@@ -794,6 +843,10 @@ function sourceLabel(raw: string): string {
     const match = /^https?:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/[^/]+\/(.+)$/.exec(
         raw,
     );
-    if (!match) return raw;
+
+    if (!match) {
+        return raw;
+    }
+
     return `${match[1]}/${match[2]} · ${decodeURIComponent(match[3])}`;
 }

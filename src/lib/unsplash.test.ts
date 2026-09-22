@@ -33,11 +33,13 @@ describe('messageFor', () => {
     // JSON body rather than a bare string.
     it('reads the code out of the engine’s error body', () => {
         const error = new HttpError(502, JSON.stringify({ error: 'bad_key' }));
+
         expect(messageFor(error)).toContain('Access Key');
     });
 
     it('distinguishes a rate limit from a bad key', () => {
         const error = new HttpError(502, JSON.stringify({ error: 'rate_limited' }));
+
         expect(messageFor(error)).toContain('rate-limiting');
     });
 

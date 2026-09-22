@@ -29,7 +29,9 @@ export class MemoryRepository implements KnowledgeRepository {
 
     async createCollection(input: NewCollection): Promise<Collection> {
         const collection: Collection = { ...input, id: `c_${Date.now()}_${this.seq++}` };
+
         this.collections.push(collection);
+
         return { ...collection };
     }
 
@@ -42,20 +44,28 @@ export class MemoryRepository implements KnowledgeRepository {
             id: `i_${Date.now()}_${this.seq++}`,
             updatedAt: now,
         };
+
         this.items.unshift(item);
+
         return withDerived(item);
     }
 
     async deleteCollection(id: string): Promise<void> {
         this.collections = this.collections.filter((c) => c.id !== id);
+
         for (const item of this.items) {
-            if (item.collectionId === id) item.collectionId = undefined;
+            if (item.collectionId === id) {
+                item.collectionId = undefined;
+            }
         }
     }
 
     async deleteItem(id: string): Promise<void> {
         const item = this.items.find((i) => i.id === id);
-        if (item) item.deletedAt = new Date().toISOString();
+
+        if (item) {
+            item.deletedAt = new Date().toISOString();
+        }
     }
 
     async getItem(id: string): Promise<Item | null> {
@@ -76,6 +86,7 @@ export class MemoryRepository implements KnowledgeRepository {
     async listItems(view?: View): Promise<Item[]> {
         const all = this.live();
         const filtered = view ? all.filter((i) => matchesView(i, view)) : all;
+
         // Newest first (createdAt desc) to match the prototype's ordering.
         // Bodies are fetched per item by getItem — see derive.withoutBody.
         return filtered
@@ -86,20 +97,31 @@ export class MemoryRepository implements KnowledgeRepository {
 
     async listTags(): Promise<TagCount[]> {
         const counts = new Map<string, number>();
+
         for (const item of this.live()) {
-            for (const tag of item.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+            for (const tag of item.tags) {
+                counts.set(tag, (counts.get(tag) ?? 0) + 1);
+            }
         }
+
         return [...counts.entries()].map(([name, count]) => ({ count, name }));
     }
 
     async saveBoard(id: string, board: BoardConfig | null): Promise<void> {
-        if (board) this.boards[id] = structuredClone(board);
-        else delete this.boards[id];
+        if (board) {
+            this.boards[id] = structuredClone(board);
+        } else {
+            delete this.boards[id];
+        }
     }
 
     async search(query: string): Promise<Item[]> {
         const q = query.trim().toLowerCase();
-        if (!q) return this.listItems();
+
+        if (!q) {
+            return this.listItems();
+        }
+
         return this.live().filter((i) => {
             const haystack = [
                 i.title,
@@ -111,21 +133,32 @@ export class MemoryRepository implements KnowledgeRepository {
             ]
                 .join(' ')
                 .toLowerCase();
+
             return haystack.includes(q);
         });
     }
 
     async updateCollection(id: string, patch: CollectionPatch): Promise<Collection> {
         const collection = this.collections.find((c) => c.id === id);
-        if (!collection) throw new Error(`Collection not found: ${id}`);
+
+        if (!collection) {
+            throw new Error(`Collection not found: ${id}`);
+        }
+
         Object.assign(collection, patch);
+
         return { ...collection };
     }
 
     async updateItem(id: string, patch: ItemPatch): Promise<Item> {
         const item = this.items.find((i) => i.id === id);
-        if (!item) throw new Error(`Item not found: ${id}`);
+
+        if (!item) {
+            throw new Error(`Item not found: ${id}`);
+        }
+
         Object.assign(item, patch, { updatedAt: new Date().toISOString() });
+
         return withDerived(item);
     }
 

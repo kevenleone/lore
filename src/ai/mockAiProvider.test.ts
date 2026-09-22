@@ -26,14 +26,18 @@ describe('MockAiProvider.detectType', () => {
 describe('MockAiProvider.chat', () => {
     it('cites matching items as sources', async () => {
         const res = await ai.chat('What about color and design?', SEED_ITEMS);
+
         expect(res.sources.length).toBeGreaterThan(0);
+
         const ids = res.sources.map((s) => s.itemId);
+
         // OKLCH color picker (i6) and Design of Everyday Things (i8) should surface.
         expect(ids).toContain('i6');
     });
 
     it('returns no sources when nothing matches', async () => {
         const res = await ai.chat('quantum chromodynamics', SEED_ITEMS);
+
         expect(res.sources).toHaveLength(0);
     });
 });
@@ -41,6 +45,7 @@ describe('MockAiProvider.chat', () => {
 describe('MockAiProvider.suggestTags', () => {
     it("suggests no tags (stub provider can't infer them)", async () => {
         const tags = await ai.suggestTags(SEED_ITEMS[0]);
+
         expect(tags).toEqual([]);
     });
 });

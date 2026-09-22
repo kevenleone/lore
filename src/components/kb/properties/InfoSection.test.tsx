@@ -24,27 +24,35 @@ const item: Item = {
 
 function mount(overrides: Partial<Item> = {}) {
     const rename = vi.fn();
+
     useStore.setState({ renameItemFile: rename });
+
     const view = render(<InfoSection item={{ ...item, ...overrides }} meta={null} />);
     const file = () => view.container.querySelector('[title]') as HTMLElement;
+
     return { ...view, file, rename };
 }
 
 describe('InfoSection file row', () => {
     it('shows the filename, not the whole path', () => {
         const { file } = mount();
+
         expect(file().textContent).toBe('homework.md');
     });
 
     it('keeps the full path available without spending width on it', () => {
         const { file } = mount();
+
         expect(file().getAttribute('title')).toContain('Reading List/homework.md');
     });
 
     it('renames on Enter', () => {
         const { container, file, rename } = mount();
+
         fireEvent.click(file());
+
         const input = container.querySelector('input') as HTMLInputElement;
+
         expect(input.value).toBe('homework');
 
         fireEvent.change(input, { target: { value: 'maths' } });
@@ -56,8 +64,11 @@ describe('InfoSection file row', () => {
         // Renaming moves the file and rewrites inbound links.
         for (const value of ['homework', '  ', '']) {
             const { container, file, rename } = mount();
+
             fireEvent.click(file());
+
             const input = container.querySelector('input') as HTMLInputElement;
+
             fireEvent.change(input, { target: { value } });
             fireEvent.keyDown(input, { key: 'Enter' });
             expect(rename, value).not.toHaveBeenCalled();
@@ -67,8 +78,11 @@ describe('InfoSection file row', () => {
 
     it('abandons the edit on Escape', () => {
         const { container, file, rename } = mount();
+
         fireEvent.click(file());
+
         const input = container.querySelector('input') as HTMLInputElement;
+
         fireEvent.change(input, { target: { value: 'maths' } });
         fireEvent.keyDown(input, { key: 'Escape' });
         expect(rename).not.toHaveBeenCalled();
@@ -78,8 +92,11 @@ describe('InfoSection file row', () => {
     it('is not editable when the item has no file', () => {
         const { container, rename } = mount({ path: undefined });
         const dash = container.textContent;
+
         expect(dash).toContain('—');
+
         const cell = container.querySelectorAll('span');
+
         cell.forEach((el) => fireEvent.click(el));
         expect(container.querySelector('input')).toBeNull();
         expect(rename).not.toHaveBeenCalled();
@@ -89,6 +106,7 @@ describe('InfoSection file row', () => {
 describe('showing the file', () => {
     it('reveals it in the OS file manager', () => {
         const revealItemFile = vi.fn();
+
         useStore.setState({ revealItemFile });
         render(<InfoSection item={item} meta={null} />);
 

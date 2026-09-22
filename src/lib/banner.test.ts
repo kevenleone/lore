@@ -40,6 +40,7 @@ describe('bannerPalette', () => {
         // The five stops are offset by at most ±14° from the base hue, and the
         // wrap at 0/360 is what makes a naive spread check unreliable.
         const spread = Math.max(...hues) - Math.min(...hues);
+
         expect(Math.min(spread, 360 - spread)).toBeLessThanOrEqual(24);
     });
 });
@@ -55,6 +56,7 @@ describe('bannerSeed', () => {
 describe('bannerStyle', () => {
     it('over-scales and blurs only the placeholder state', () => {
         const colors = bannerPalette('seed');
+
         expect(bannerStyle(colors, true).filter).toContain('blur');
         expect(bannerStyle(colors, false).filter).toBeUndefined();
     });

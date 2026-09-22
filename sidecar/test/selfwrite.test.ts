@@ -28,6 +28,7 @@ const settle = (ms = 700) => Bun.sleep(ms);
 describe('self-write suppression', () => {
     it('does not notify for a write Lore made itself', async () => {
         let notifications = 0;
+
         workspace.subscribe(() => {
             notifications += 1;
         });
@@ -47,6 +48,7 @@ describe('self-write suppression', () => {
 
     it('still notifies for a write someone else made', async () => {
         let notifications = 0;
+
         workspace.subscribe(() => {
             notifications += 1;
         });
@@ -67,14 +69,17 @@ describe('self-write suppression', () => {
             title: 'Both',
             type: 'note',
         });
+
         await settle();
 
         let notifications = 0;
+
         workspace.subscribe(() => {
             notifications += 1;
         });
 
         const path = join(root, 'both.md');
+
         await writeFile(path, '---\ntitle: Both edited outside\n---\n\nb\n', 'utf8');
         await settle();
 

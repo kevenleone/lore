@@ -58,12 +58,14 @@ export function usePointerDrag<TZone extends string>(
     // Held in a ref so the move/up listeners are installed once per drag rather
     // than re-bound on every frame of it.
     const drop = useRef(onDrop);
+
     drop.current = onDrop;
 
     const zoneAt = useCallback(
         (x: number, y: number): null | TZone => {
             const element = document.elementFromPoint(x, y);
             const zone = element?.closest(`[${zoneAttribute}]`);
+
             return (zone?.getAttribute(zoneAttribute) as TZone) ?? null;
         },
         [zoneAttribute],
@@ -71,7 +73,10 @@ export function usePointerDrag<TZone extends string>(
 
     const start = useCallback((event: React.PointerEvent, id: string) => {
         // Secondary buttons open menus; only a primary press can move a card.
-        if (event.button !== 0) return;
+        if (event.button !== 0) {
+            return;
+        }
+
         origin.current = { id, x: event.clientX, y: event.clientY };
         dragged.current = false;
     }, []);
@@ -87,14 +92,23 @@ export function usePointerDrag<TZone extends string>(
 
         const onMove = (event: PointerEvent) => {
             const from = origin.current;
-            if (!from) return;
+
+            if (!from) {
+                return;
+            }
+
             if (!dragging.current) {
                 const travelled = Math.hypot(event.clientX - from.x, event.clientY - from.y);
-                if (travelled < THRESHOLD) return;
+
+                if (travelled < THRESHOLD) {
+                    return;
+                }
+
                 dragging.current = true;
                 dragged.current = true;
                 document.documentElement.setAttribute(DRAGGING_ATTRIBUTE, '');
             }
+
             // Text selection is off document-wide, but a held pointer still
             // scrolls a touch surface out from under the card.
             event.preventDefault();
@@ -104,21 +118,29 @@ export function usePointerDrag<TZone extends string>(
 
         const onUp = (event: PointerEvent) => {
             const from = origin.current;
+
             if (from && dragging.current) {
                 const zone = zoneAt(event.clientX, event.clientY);
-                if (zone) drop.current(zone, from.id);
+
+                if (zone) {
+                    drop.current(zone, from.id);
+                }
             }
+
             finish();
         };
 
         const onKey = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') finish();
+            if (event.key === 'Escape') {
+                finish();
+            }
         };
 
         window.addEventListener('pointermove', onMove, { passive: false });
         window.addEventListener('pointerup', onUp);
         window.addEventListener('pointercancel', finish);
         window.addEventListener('keydown', onKey);
+
         return () => {
             window.removeEventListener('pointermove', onMove);
             window.removeEventListener('pointerup', onUp);

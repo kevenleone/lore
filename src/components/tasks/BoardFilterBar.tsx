@@ -23,11 +23,18 @@ export function BoardFilterBar({ tasks }: { tasks: Item[] }) {
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!open) return;
+        if (!open) {
+            return;
+        }
+
         const onDown = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
         };
+
         window.addEventListener('mousedown', onDown);
+
         return () => window.removeEventListener('mousedown', onDown);
     }, [open]);
 

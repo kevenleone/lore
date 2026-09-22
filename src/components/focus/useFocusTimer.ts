@@ -26,12 +26,20 @@ export function useFocusTimer(): void {
     const tick = useStore((s) => s.tickFocus);
 
     useEffect(() => {
-        if (!running) return;
+        if (!running) {
+            return;
+        }
+
         const id = setInterval(tick, TICK_MS);
+
         const onVisible = () => {
-            if (!document.hidden) tick();
+            if (!document.hidden) {
+                tick();
+            }
         };
+
         document.addEventListener('visibilitychange', onVisible);
+
         return () => {
             clearInterval(id);
             document.removeEventListener('visibilitychange', onVisible);
@@ -55,6 +63,7 @@ function useTrayCommands(): void {
     useEffect(() => {
         let unlisten: (() => void)[] = [];
         let cancelled = false;
+
         void (async () => {
             try {
                 const { listen } = await import('@tauri-apps/api/event');
@@ -69,17 +78,24 @@ function useTrayCommands(): void {
                     // window is hidden.
                     await listen('focus:elapsed', () => tick()),
                     await listen('focus:mode', () => {
-                        if (!useStore.getState().focusModeOpen) openFocusMode();
+                        if (!useStore.getState().focusModeOpen) {
+                            openFocusMode();
+                        }
                     }),
                 ];
+
                 // The effect can be torn down before the imports resolve — in
                 // development it always is, since StrictMode mounts twice.
-                if (cancelled) offs.forEach((off) => off());
-                else unlisten = offs;
+                if (cancelled) {
+                    offs.forEach((off) => off());
+                } else {
+                    unlisten = offs;
+                }
             } catch {
                 // Outside Tauri — no event bus.
             }
         })();
+
         return () => {
             cancelled = true;
             unlisten.forEach((off) => off());
@@ -116,6 +132,7 @@ function useTrayMirror(): void {
         void (async () => {
             try {
                 const { invoke } = await import('@tauri-apps/api/core');
+
                 await invoke('sync_focus', {
                     canStop,
                     endsAtMs: running ? endsAt : null,

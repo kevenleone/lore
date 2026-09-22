@@ -32,11 +32,18 @@ export function FilterBar() {
     const barRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!menu) return;
+        if (!menu) {
+            return;
+        }
+
         const onDown = (e: MouseEvent) => {
-            if (barRef.current && !barRef.current.contains(e.target as Node)) setMenu(null);
+            if (barRef.current && !barRef.current.contains(e.target as Node)) {
+                setMenu(null);
+            }
         };
+
         window.addEventListener('mousedown', onDown);
+
         return () => window.removeEventListener('mousedown', onDown);
     }, [menu]);
 
@@ -177,9 +184,18 @@ function DateField({
 }
 
 function dateLabel(from: null | string, to: null | string): string {
-    if (from && to) return `${short(from)} – ${short(to)}`;
-    if (from) return `After ${short(from)}`;
-    if (to) return `Before ${short(to)}`;
+    if (from && to) {
+        return `${short(from)} – ${short(to)}`;
+    }
+
+    if (from) {
+        return `After ${short(from)}`;
+    }
+
+    if (to) {
+        return `Before ${short(to)}`;
+    }
+
     return 'Date';
 }
 
@@ -277,6 +293,7 @@ function Option({
 /** `2026-09-05` → `5 Sep`. Parsed as local so the label matches what was picked. */
 function short(day: string): string {
     const [year, month, date] = day.split('-').map(Number);
+
     return new Date(year, month - 1, date).toLocaleDateString(undefined, {
         day: 'numeric',
         month: 'short',

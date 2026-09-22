@@ -17,8 +17,15 @@ const SETTINGS_DIR = join(SOURCE_ROOT, 'components', 'settings');
 function sourceFiles(dir: string): string[] {
     return readdirSync(dir).flatMap((entry) => {
         const path = join(dir, entry);
-        if (statSync(path).isDirectory()) return sourceFiles(path);
-        if (!/\.tsx?$/.test(path) || /\.test\.tsx?$/.test(path)) return [];
+
+        if (statSync(path).isDirectory()) {
+            return sourceFiles(path);
+        }
+
+        if (!/\.tsx?$/.test(path) || /\.test\.tsx?$/.test(path)) {
+            return [];
+        }
+
         return [path];
     });
 }
@@ -32,6 +39,7 @@ describe('every switch is read somewhere', () => {
         const read = READERS.some(
             (source) => source.includes(`switches.${key}`) || source.includes(`switches[${key}`),
         );
+
         expect(read).toBe(true);
     });
 });

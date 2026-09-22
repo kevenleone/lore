@@ -23,7 +23,10 @@ describe('round trip', () => {
 describe('targeted edits', () => {
     it.each(fixtures)('%s: rewriting one block leaves the rest alone', (_name, text) => {
         const parsed = parse(text);
-        if (parsed.blocks.length < 2) return;
+
+        if (parsed.blocks.length < 2) {
+            return;
+        }
 
         const index = 1;
         const marker = 'REPLACED';
@@ -33,11 +36,14 @@ describe('targeted edits', () => {
         // in order, unchanged.
         const untouched = parsed.blocks.filter((_b, i) => i !== index).map((b) => b.source);
         let cursor = 0;
+
         for (const source of untouched) {
             const at = edited.indexOf(source, cursor);
+
             expect(at).toBeGreaterThanOrEqual(0);
             cursor = at + source.length;
         }
+
         expect(edited).toContain(marker);
     });
 });
@@ -50,7 +56,11 @@ describe('unknown blocks', () => {
 
         expect(unknown.length).toBeGreaterThan(0);
         expect(unknown.every((block) => block.node === null)).toBe(true);
-        for (const block of unknown) expect(text).toContain(block.source);
+
+        for (const block of unknown) {
+            expect(text).toContain(block.source);
+        }
+
         expect(serialize(parsed)).toBe(text);
     });
 
@@ -58,6 +68,7 @@ describe('unknown blocks', () => {
         // Both parse as ordinary paragraphs; only the source tells them apart,
         // and regenerating either as prose would corrupt it.
         const parsed = parse('$$\n\\sum x_i\n$$\n\n:::info\nbody\n:::\n');
+
         expect(parsed.blocks.map((b) => b.type)).toEqual(['unknown', 'unknown']);
     });
 
@@ -68,6 +79,7 @@ describe('unknown blocks', () => {
     it('treats raw HTML as unknown rather than remodelling it', () => {
         const text = readFileSync(join(FIXTURE_DIR, 'html-block.md'), 'utf8');
         const parsed = parse(text);
+
         expect(parsed.blocks[0].type).toBe('unknown');
         expect(parsed.blocks[0].node).toBeNull();
     });
@@ -82,6 +94,7 @@ describe('structure', () => {
                 parsed.suffix.length +
                 parsed.blocks.reduce((sum, b) => sum + b.source.length, 0) +
                 parsed.separators.reduce((sum, s) => sum + s.length, 0);
+
             expect(total, name).toBe(text.length);
         }
     });

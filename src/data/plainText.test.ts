@@ -42,11 +42,13 @@ describe('markdownToPlainText', () => {
 
     it('leaves ordinary prose alone', () => {
         const prose = 'Costs $5, uses a * for footnotes, and 2 < 3.';
+
         expect(plain(prose)).toBe(prose);
     });
 
     it('never returns Markdown syntax for the shapes it handles', () => {
         const messy = '## A **heading** with [link](x) and `code`';
+
         expect(plain(messy)).not.toMatch(/[#*`[\]]/);
     });
 });

@@ -32,18 +32,21 @@ describe('mdast to document', () => {
 
     it('gives an empty body one editable paragraph', () => {
         const doc = docFor('');
+
         expect(doc.childCount).toBe(1);
         expect(doc.firstChild?.type.name).toBe('paragraph');
     });
 
     it('keeps unmodellable blocks as source-carrying atoms', () => {
         const doc = docFor('<div>raw</div>\n\ntext\n');
+
         expect(doc.firstChild?.type.name).toBe('unknownBlock');
         expect(doc.firstChild?.attrs.source).toBe('<div>raw</div>');
     });
 
     it('maps a GFM checkbox list to a task list, not a bullet list', () => {
         const doc = docFor('- [ ] open\n- [x] done\n');
+
         expect(doc.firstChild?.type.name).toBe('taskList');
         expect(doc.firstChild?.firstChild?.attrs.checked).toBe(false);
         expect(doc.firstChild?.lastChild?.attrs.checked).toBe(true);
@@ -73,6 +76,7 @@ describe('document to markdown', () => {
 
     it('returns an unknown block byte for byte', () => {
         const source = '$$\n\\sum_{i=1}^{n} x_i\n$$';
+
         expect(firstBlockOf(source)).toBe(source);
     });
 });
@@ -80,6 +84,7 @@ describe('document to markdown', () => {
 describe('fragility gate', () => {
     it('rejects blocks the schema cannot regenerate faithfully', () => {
         const [math] = parse('$$\n\\sum x\n$$\n').blocks;
+
         expect(isRoundTrippable(math)).toBe(false);
     });
 
@@ -87,24 +92,29 @@ describe('fragility gate', () => {
         // Regression: images were deleted outright by the converter and an
         // idempotence-based gate happily approved it.
         const [withImage] = parse('Text with ![alt](img.png) inline.').blocks;
+
         expect(isRoundTrippable(withImage)).toBe(false);
 
         const [withHtml] = parse('A <span>html</span> inline.').blocks;
+
         expect(isRoundTrippable(withHtml)).toBe(false);
 
         const [withFootnote] = parse('Ref[^a] here.\n\n[^a]: note\n').blocks;
+
         expect(isRoundTrippable(withFootnote)).toBe(false);
     });
 
     it('allows pure reformatting through', () => {
         // `*emphasis*` becomes `_emphasis_`: different bytes, same meaning.
         const [emphasis] = parse('Some *emphasis* here.').blocks;
+
         expect(isRoundTrippable(emphasis)).toBe(true);
     });
 
     it('accepts ordinary prose and headings', () => {
         for (const source of ['Just prose.', '# A heading', '- a\n- b']) {
             const [block] = parse(source).blocks;
+
             expect(isRoundTrippable(block), source).toBe(true);
         }
     });
@@ -112,6 +122,7 @@ describe('fragility gate', () => {
     it('downgrades rather than drops', () => {
         const parsed = parse('$$\nx\n$$\n\nprose\n');
         const guarded = guard(parsed.blocks);
+
         expect(guarded.map((b) => b.type)).toEqual(['unknown', 'paragraph']);
         expect(guarded[0].source).toBe('$$\nx\n$$');
     });
@@ -120,6 +131,7 @@ describe('fragility gate', () => {
         for (const [name, text] of fixtures) {
             const parsed = parse(text);
             const guarded = guard(parsed.blocks);
+
             expect(guarded.length, name).toBe(parsed.blocks.length);
             expect(
                 guarded.map((b) => b.source),

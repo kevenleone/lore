@@ -36,13 +36,18 @@ export function useMountTransition(
     useEffect(() => {
         if (open) {
             setMounted(true);
+
             return;
         }
+
         if (immediate) {
             setMounted(false);
+
             return;
         }
+
         const timer = setTimeout(() => setMounted(false), durationMs);
+
         return () => clearTimeout(timer);
     }, [durationMs, immediate, open]);
 

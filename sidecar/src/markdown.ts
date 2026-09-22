@@ -60,6 +60,7 @@ export interface ParsedFile {
 export function parseFile(raw: string): ParsedFile {
     const { body, yaml } = splitFrontmatter(raw);
     let parsed: unknown = null;
+
     if (yaml !== null) {
         try {
             parsed = parseYaml(yaml);
@@ -69,6 +70,7 @@ export function parseFile(raw: string): ParsedFile {
             parsed = null;
         }
     }
+
     const obj =
         parsed && typeof parsed === 'object' && !Array.isArray(parsed)
             ? (parsed as Record<string, unknown>)
@@ -76,9 +78,11 @@ export function parseFile(raw: string): ParsedFile {
 
     const data: Record<string, unknown> = {};
     const extra: Record<string, unknown> = {};
+
     for (const [k, v] of Object.entries(obj)) {
         (KNOWN_KEYS.has(k) ? data : extra)[k] = v;
     }
+
     return { body: stripLeadingBlank(body), data, extra };
 }
 
@@ -89,15 +93,22 @@ export function parseFile(raw: string): ParsedFile {
  */
 export function splitFrontmatter(raw: string): { body: string; yaml: null | string } {
     const text = raw.startsWith('﻿') ? raw.slice(1) : raw;
+
     if (!text.startsWith(`${FENCE}\n`) && !text.startsWith(`${FENCE}\r\n`)) {
         return { body: text, yaml: null };
     }
+
     const rest = text.slice(text.indexOf('\n') + 1);
     const close = rest.search(/^---[ \t]*(\r?\n|$)/m);
-    if (close === -1) return { body: text, yaml: null };
+
+    if (close === -1) {
+        return { body: text, yaml: null };
+    }
+
     const yaml = rest.slice(0, close);
     const after = rest.slice(close);
     const body = after.slice(after.indexOf('\n') + 1);
+
     return { body, yaml };
 }
 
@@ -112,9 +123,16 @@ const strArray = (v: unknown): string[] =>
 
 function iso(v: unknown, fallback: string): string;
 function iso(v: unknown, fallback: undefined): string | undefined;
+
 function iso(v: unknown, fallback: string | undefined): string | undefined {
-    if (typeof v === 'string' && !Number.isNaN(Date.parse(v))) return new Date(v).toISOString();
-    if (v instanceof Date) return v.toISOString();
+    if (typeof v === 'string' && !Number.isNaN(Date.parse(v))) {
+        return new Date(v).toISOString();
+    }
+
+    if (v instanceof Date) {
+        return v.toISOString();
+    }
+
     return fallback;
 }
 
@@ -124,13 +142,18 @@ function iso(v: unknown, fallback: string | undefined): string | undefined {
  * "no deadline" rather than making the file unreadable.
  */
 const day = (v: unknown): string | undefined => {
-    if (v instanceof Date) return v.toISOString().slice(0, 10);
+    if (v instanceof Date) {
+        return v.toISOString().slice(0, 10);
+    }
+
     const s = str(v);
+
     return s && /^\d{4}-\d{2}-\d{2}$/.test(s.slice(0, 10)) ? s.slice(0, 10) : undefined;
 };
 
 const priority = (v: unknown): Priority | undefined => {
     const s = str(v)?.toLowerCase();
+
     return (PRIORITIES as string[]).includes(s ?? '') ? (s as Priority) : undefined;
 };
 
@@ -139,22 +162,38 @@ const priority = (v: unknown): Priority | undefined => {
  * the text itself is optional and filled in here rather than rejected.
  */
 const commentArray = (v: unknown, fallback: string): ItemComment[] => {
-    if (!Array.isArray(v)) return [];
+    if (!Array.isArray(v)) {
+        return [];
+    }
+
     const out: ItemComment[] = [];
+
     for (const entry of v) {
-        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+            continue;
+        }
+
         const raw = entry as Record<string, unknown>;
         const body = str(raw.body);
-        if (!body) continue;
+
+        if (!body) {
+            continue;
+        }
+
         const comment: ItemComment = {
             at: iso(raw.at, fallback),
             body,
             id: str(raw.id) ?? newId(),
         };
         const author = str(raw.author);
-        if (author) comment.author = author;
+
+        if (author) {
+            comment.author = author;
+        }
+
         out.push(comment);
     }
+
     return out;
 };
 
@@ -164,11 +203,18 @@ const commentArray = (v: unknown, fallback: string): ItemComment[] => {
  * it just carries no byline.
  */
 const imageCredit = (v: unknown): ImageCredit | undefined => {
-    if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+    if (!v || typeof v !== 'object' || Array.isArray(v)) {
+        return undefined;
+    }
+
     const raw = v as Record<string, unknown>;
     const name = str(raw.name);
     const profileUrl = str(raw.profileUrl);
-    if (str(raw.provider) !== 'unsplash' || !name || !profileUrl) return undefined;
+
+    if (str(raw.provider) !== 'unsplash' || !name || !profileUrl) {
+        return undefined;
+    }
+
     return { name, profileUrl, provider: 'unsplash' };
 };
 
@@ -178,10 +224,17 @@ const imageCredit = (v: unknown): ImageCredit | undefined => {
  * here — an item that loses its source is merely an ordinary note.
  */
 const source = (v: unknown): ItemSource | undefined => {
-    if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+    if (!v || typeof v !== 'object' || Array.isArray(v)) {
+        return undefined;
+    }
+
     const raw = v as Record<string, unknown>;
     const url = str(raw.raw);
-    if (str(raw.kind) !== 'github' || !url) return undefined;
+
+    if (str(raw.kind) !== 'github' || !url) {
+        return undefined;
+    }
+
     return {
         fetched: iso(raw.fetched, new Date(0).toISOString()),
         kind: 'github',
@@ -218,34 +271,89 @@ export function serializeFile(
         title: item.title,
         type: item.type,
     };
-    if (item.url) fm.url = item.url;
+
+    if (item.url) {
+        fm.url = item.url;
+    }
+
     fm.created = item.createdAt;
     fm.updated = item.updatedAt;
-    if (item.tags.length) fm.tags = item.tags;
+
+    if (item.tags.length) {
+        fm.tags = item.tags;
+    }
+
     // Flags are written flat and omitted when false — nested maps read badly in
     // Obsidian's property editor and grep worse.
-    if (item.flags.inbox) fm.inbox = true;
-    if (item.flags.today) fm.today = true;
-    if (item.flags.starred) fm.starred = true;
-    if (item.flags.done) fm.done = true;
+    if (item.flags.inbox) {
+        fm.inbox = true;
+    }
+
+    if (item.flags.today) {
+        fm.today = true;
+    }
+
+    if (item.flags.starred) {
+        fm.starred = true;
+    }
+
+    if (item.flags.done) {
+        fm.done = true;
+    }
+
     // Only meaningful on a finished task, and cleared with the flag.
-    if (item.completedAt && item.flags.done) fm.completed = item.completedAt;
-    if (item.dueAt) fm.due = item.dueAt;
+    if (item.completedAt && item.flags.done) {
+        fm.completed = item.completedAt;
+    }
+
+    if (item.dueAt) {
+        fm.due = item.dueAt;
+    }
+
     // `normal` is the absence of a priority, so writing it would put a key on
     // every ordinary file for no information.
-    if (item.priority && item.priority !== 'normal') fm.priority = item.priority;
+    if (item.priority && item.priority !== 'normal') {
+        fm.priority = item.priority;
+    }
+
     // The board column the task sits in. Absent means "wherever the board's
     // first column is", so an untouched task needs no key.
-    if (item.status) fm.status = item.status;
-    if (item.image) fm.image = item.image;
+    if (item.status) {
+        fm.status = item.status;
+    }
+
+    if (item.image) {
+        fm.image = item.image;
+    }
+
     // Only alongside the image it credits: a credit without a photo is a lie.
-    if (item.image && item.imageCredit) fm.imageCredit = item.imageCredit;
-    if (item.description) fm.description = item.description;
-    if (item.source) fm.source = item.source;
-    if (item.summary) fm.summary = item.summary;
-    if (item.points?.length) fm.points = item.points;
-    if (relatedLinks.length) fm.related = relatedLinks;
-    if (item.comments?.length) fm.comments = item.comments;
+    if (item.image && item.imageCredit) {
+        fm.imageCredit = item.imageCredit;
+    }
+
+    if (item.description) {
+        fm.description = item.description;
+    }
+
+    if (item.source) {
+        fm.source = item.source;
+    }
+
+    if (item.summary) {
+        fm.summary = item.summary;
+    }
+
+    if (item.points?.length) {
+        fm.points = item.points;
+    }
+
+    if (relatedLinks.length) {
+        fm.related = relatedLinks;
+    }
+
+    if (item.comments?.length) {
+        fm.comments = item.comments;
+    }
 
     // `collectionId` is deliberately absent: the parent folder is the collection,
     // so writing it too would give us two sources of truth that could disagree.
@@ -253,6 +361,7 @@ export function serializeFile(
 
     const yaml = stringifyYaml(fm, { lineWidth: 0 }).trimEnd();
     const body = item.body?.trim() ?? '';
+
     return `${FENCE}\n${yaml}\n${FENCE}\n\n${body}${body ? '\n' : ''}`;
 }
 
@@ -263,10 +372,22 @@ export function toItem(parsed: ParsedFile, ctx: ToItemContext): Item {
     const type = (ITEM_TYPES as string[]).includes(rawType ?? '') ? (rawType as ItemType) : 'note';
 
     const flags: ItemFlags = {};
-    if (data.inbox === true) flags.inbox = true;
-    if (data.today === true) flags.today = true;
-    if (data.starred === true) flags.starred = true;
-    if (data.done === true) flags.done = true;
+
+    if (data.inbox === true) {
+        flags.inbox = true;
+    }
+
+    if (data.today === true) {
+        flags.today = true;
+    }
+
+    if (data.starred === true) {
+        flags.starred = true;
+    }
+
+    if (data.done === true) {
+        flags.done = true;
+    }
 
     const created = iso(data.created, ctx.mtime);
     const comments = commentArray(data.comments, created);

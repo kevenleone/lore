@@ -42,11 +42,18 @@ export function parse(body: string): ParsedBody {
     for (const node of root.children) {
         const start = node.position?.start.offset;
         const end = node.position?.end.offset;
-        if (start === undefined || end === undefined) continue;
+
+        if (start === undefined || end === undefined) {
+            continue;
+        }
 
         const gap = body.slice(cursor, start);
-        if (blocks.length === 0) prefix = gap;
-        else separators.push(gap);
+
+        if (blocks.length === 0) {
+            prefix = gap;
+        } else {
+            separators.push(gap);
+        }
 
         blocks.push(toBlock(node, body.slice(start, end)));
         cursor = end;
@@ -63,6 +70,7 @@ function toBlock(node: RootContent, source: string): Block {
     const modelled =
         MODELLED.has(node.type) &&
         !(node.type === 'paragraph' && FENCED_PARAGRAPH.test(source.trimStart()));
+
     return {
         node: modelled ? node : null,
         source,

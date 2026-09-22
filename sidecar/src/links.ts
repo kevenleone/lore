@@ -28,6 +28,7 @@ export interface Resolver {
 /** Strips `[[ ]]`, an `|alias`, and a `#heading` down to the bare target. */
 export function parseWikilink(raw: string): string {
     const inner = WIKILINK.exec(raw.trim())?.[1] ?? raw.trim();
+
     return inner.split('|')[0].split('#')[0].trim();
 }
 
@@ -36,19 +37,29 @@ export function parseWikilink(raw: string): string {
  * `[[01J8Z…]]` works), then give up and preserve.
  */
 export function resolveRelated(raw: unknown, resolver: Resolver): ResolvedRelated {
-    if (!Array.isArray(raw)) return { ids: [], unresolved: [] };
+    if (!Array.isArray(raw)) {
+        return { ids: [], unresolved: [] };
+    }
 
     const ids: string[] = [];
     const unresolved: string[] = [];
 
     for (const entry of raw) {
-        if (typeof entry !== 'string' || !entry.trim()) continue;
+        if (typeof entry !== 'string' || !entry.trim()) {
+            continue;
+        }
+
         const target = parseWikilink(entry);
         const byStem = resolver.idForStem(target);
+
         if (byStem) {
-            if (!ids.includes(byStem)) ids.push(byStem);
+            if (!ids.includes(byStem)) {
+                ids.push(byStem);
+            }
         } else if (resolver.hasId(target)) {
-            if (!ids.includes(target)) ids.push(target);
+            if (!ids.includes(target)) {
+                ids.push(target);
+            }
         } else {
             unresolved.push(entry);
         }
@@ -65,13 +76,22 @@ export function resolveRelated(raw: unknown, resolver: Resolver): ResolvedRelate
 export function rewriteRelated(raw: readonly string[], from: string, to: string): string[] {
     return raw.map((entry) => {
         const m = WIKILINK.exec(entry.trim());
-        if (!m) return entry;
+
+        if (!m) {
+            return entry;
+        }
+
         const inner = m[1];
         const [targetAndHeading, ...aliasParts] = inner.split('|');
         const [target, ...headingParts] = targetAndHeading.split('#');
-        if (target.trim().toLowerCase() !== from.toLowerCase()) return entry;
+
+        if (target.trim().toLowerCase() !== from.toLowerCase()) {
+            return entry;
+        }
+
         const heading = headingParts.length ? `#${headingParts.join('#')}` : '';
         const alias = aliasParts.length ? `|${aliasParts.join('|')}` : '';
+
         return `[[${to}${heading}${alias}]]`;
     });
 }
@@ -90,6 +110,7 @@ export function serializeRelated(
         .map((id) => resolver.stemForId(id))
         .filter((stem): stem is string => !!stem)
         .map(toWikilink);
+
     return [...links, ...unresolved];
 }
 

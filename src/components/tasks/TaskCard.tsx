@@ -35,7 +35,10 @@ export function TaskCard({
 }
 
 function CommentCount({ count }: { count: number }) {
-    if (count === 0) return null;
+    if (count === 0) {
+        return null;
+    }
+
     return (
         <span
             aria-label={`${count} ${count === 1 ? 'comment' : 'comments'}`}
@@ -61,7 +64,10 @@ function CommentCount({ count }: { count: number }) {
 
 /** The task's own prose, one line. Derived from the body — see `deriveProse`. */
 function Description({ text }: { text?: string }) {
-    if (!text) return null;
+    if (!text) {
+        return null;
+    }
+
     return (
         <span className="mt-[5px] flex items-start gap-[6px] text-body text-text3">
             <svg
@@ -84,9 +90,13 @@ function Description({ text }: { text?: string }) {
 
 /** The checklist tally. `subtasks` is derived from the body — see `derive.ts`. */
 function Progress({ subtasks }: { subtasks?: Item['subtasks'] }) {
-    if (!subtasks) return null;
+    if (!subtasks) {
+        return null;
+    }
+
     const percent = Math.round((subtasks.done / subtasks.total) * 100);
     const complete = subtasks.done === subtasks.total;
+
     return (
         <span className="mt-[10px] block">
             <span className="flex items-center justify-between text-label text-text3">

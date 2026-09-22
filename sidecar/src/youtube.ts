@@ -21,12 +21,18 @@ export async function fetchYoutubeMetadata(videoId: string): Promise<LinkMetadat
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
     try {
         const response = await fetch(endpoint, { signal: controller.signal });
-        if (!response.ok) return { image };
+
+        if (!response.ok) {
+            return { image };
+        }
+
         const oembed = (await response.json()) as OembedResponse;
         const title = oembed.title?.trim() || undefined;
         const author = oembed.author_name?.trim();
+
         return {
             description: author ? `Video by ${author}` : undefined,
             image,
@@ -45,15 +51,18 @@ export function youtubeThumbnail(videoId: string): string {
 
 export function youtubeVideoId(rawUrl: string): null | string {
     let parsed: URL;
+
     try {
         parsed = new URL(rawUrl.trim());
     } catch {
         return null;
     }
+
     const host = parsed.hostname.toLowerCase().replace(/^(www|m|music)\./, '');
     const segments = parsed.pathname.split('/').filter(Boolean);
 
     let candidate: null | string | undefined = null;
+
     if (host === 'youtu.be') {
         candidate = segments[0];
     } else if (host === 'youtube.com' || host === 'youtube-nocookie.com') {
@@ -61,5 +70,6 @@ export function youtubeVideoId(rawUrl: string): null | string {
             ? segments[1]
             : parsed.searchParams.get('v');
     }
+
     return candidate && VIDEO_ID.test(candidate) ? candidate : null;
 }

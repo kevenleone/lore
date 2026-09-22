@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import { searchPhotos, triggerDownload, UnsplashError } from '../src/unsplash';
 
 const realFetch = globalThis.fetch;
+
 afterEach(() => {
     globalThis.fetch = realFetch;
 });
@@ -14,13 +15,16 @@ afterEach(() => {
 /** Records every request, so the auth header and query can be asserted on. */
 function serve(body: unknown, init: ResponseInit = {}) {
     const calls: Request[] = [];
+
     globalThis.fetch = (async (input: Request | string | URL, options?: RequestInit) => {
         calls.push(new Request(input instanceof Request ? input : String(input), options));
+
         return new Response(JSON.stringify(body), {
             headers: { 'content-type': 'application/json' },
             ...init,
         });
     }) as unknown as typeof fetch;
+
     return calls;
 }
 
@@ -37,6 +41,7 @@ const photo = (over: Record<string, unknown> = {}) => ({
 describe('searchPhotos', () => {
     it('maps a hit onto what the picker needs', async () => {
         serve({ results: [photo()], total: 1 });
+
         const { photos, total } = await searchPhotos('KEY', 'lake');
 
         expect(total).toBe(1);
@@ -54,6 +59,7 @@ describe('searchPhotos', () => {
     // Unsplash's scheme is `Client-ID`, not `Bearer`; a Bearer token 401s.
     it('authenticates the way Unsplash asks', async () => {
         const calls = serve({ results: [], total: 0 });
+
         await searchPhotos('KEY', 'lake');
 
         expect(calls[0].headers.get('Authorization')).toBe('Client-ID KEY');
@@ -62,9 +68,11 @@ describe('searchPhotos', () => {
 
     it('asks for filtered results, since this fills a thumbnail', async () => {
         const calls = serve({ results: [], total: 0 });
+
         await searchPhotos('KEY', 'lake', 3);
 
         const url = new URL(calls[0].url);
+
         expect(url.searchParams.get('query')).toBe('lake');
         expect(url.searchParams.get('page')).toBe('3');
         expect(url.searchParams.get('content_filter')).toBe('high');
@@ -81,6 +89,7 @@ describe('searchPhotos', () => {
             ],
             total: 3,
         });
+
         const { photos } = await searchPhotos('KEY', 'lake');
 
         expect(photos.map((p) => p.id)).toEqual(['good']);
@@ -101,6 +110,7 @@ describe('searchPhotos', () => {
 describe('triggerDownload', () => {
     it('pings the photo’s endpoint, which the API terms require', async () => {
         const calls = serve({ url: 'https://images.unsplash.com/p1' });
+
         await triggerDownload('KEY', 'https://api.unsplash.com/photos/p1/download');
 
         expect(calls).toHaveLength(1);
@@ -111,6 +121,7 @@ describe('triggerDownload', () => {
     // send the key anywhere it likes.
     it('refuses a download location that is not Unsplash’s', async () => {
         const calls = serve({});
+
         await triggerDownload('KEY', 'https://evil.example/collect');
 
         expect(calls).toHaveLength(0);

@@ -36,7 +36,9 @@ export function CaptureBody({
         />
     );
 
-    if (!enabled) return textarea;
+    if (!enabled) {
+        return textarea;
+    }
 
     return (
         <div className={`lore-capture-body ${className}`}>

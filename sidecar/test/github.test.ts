@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import { absolutize, type GithubTarget, parseGithubTarget, resolveDocument } from '../src/github';
 
 const realFetch = globalThis.fetch;
+
 afterEach(() => {
     globalThis.fetch = realFetch;
 });
@@ -13,14 +14,19 @@ afterEach(() => {
 /** Serves `files` by path suffix; anything else 404s, as raw does. */
 function serve(files: Record<string, string>) {
     const seen: string[] = [];
+
     globalThis.fetch = (async (url: RequestInfo | URL) => {
         const href = String(url);
+
         seen.push(href);
+
         const hit = Object.entries(files).find(([path]) => href.endsWith(path));
+
         return hit
             ? new Response(hit[1], { headers: { 'content-type': 'text/plain' } })
             : new Response('404', { status: 404 });
     }) as unknown as typeof fetch;
+
     return seen;
 }
 
@@ -113,6 +119,7 @@ describe('absolutize', () => {
 
     it('resolves against the document own directory', () => {
         const nested: GithubTarget = { ...repo, dir: 'docs', path: 'docs/README.md' };
+
         expect(absolutize('![x](../logo.png) [y](guide.md)', nested)).toBe(
             `![x](${RAW}/logo.png) [y](${WEB}/docs/guide.md)`,
         );
@@ -146,6 +153,7 @@ describe('absolutize', () => {
 
     it('leaves fenced code untouched', () => {
         const source = ['before [x](a.md)', '```md', '[x](a.md)', '```', 'after'].join('\n');
+
         expect(absolutize(source, repo)).toBe(
             [`before [x](${WEB}/a.md)`, '```md', '[x](a.md)', '```', 'after'].join('\n'),
         );
@@ -159,7 +167,9 @@ describe('absolutize', () => {
 describe('resolveDocument', () => {
     it('finds the README of a bare repo and titles it after the repo', async () => {
         serve({ '/HEAD/README.md': '# emitsignal\n\n![x](logo.png)' });
+
         const doc = await resolveDocument(parseGithubTarget('https://github.com/e/e')!);
+
         expect(doc?.path).toBe('README.md');
         expect(doc?.title).toBe('e/e');
         expect(doc?.readme).toBe(true);
@@ -169,15 +179,18 @@ describe('resolveDocument', () => {
     it('falls past a missing README.md to the next candidate', async () => {
         const seen = serve({ '/HEAD/readme.md': '# lower' });
         const doc = await resolveDocument(parseGithubTarget('https://github.com/e/e')!);
+
         expect(doc?.path).toBe('readme.md');
         expect(seen[0]).toEndWith('/HEAD/README.md');
     });
 
     it('names a file other than a README in its title', async () => {
         serve({ '/main/CHANGELOG.md': '# changes' });
+
         const doc = await resolveDocument(
             parseGithubTarget('https://github.com/e/e/blob/main/CHANGELOG.md')!,
         );
+
         expect(doc?.title).toBe('e/e · CHANGELOG.md');
         expect(doc?.readme).toBe(false);
     });

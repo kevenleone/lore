@@ -13,7 +13,9 @@ export function ThemePreview({ theme }: { theme: ThemeDefinition }) {
         <span
             className="bg-app block aspect-[4/3] overflow-hidden rounded-lg border border-swatch-border"
             ref={(el) => {
-                if (el) applyTokens(el, theme.id, theme.mode);
+                if (el) {
+                    applyTokens(el, theme.id, theme.mode);
+                }
             }}
         >
             <span className="flex h-full flex-col">

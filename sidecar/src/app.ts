@@ -40,11 +40,13 @@ export function createApp(config: Config, workspace = new Workspace()) {
             .onRequest(({ request, set }) => {
                 const url = new URL(request.url);
                 const origin = request.headers.get('origin');
+
                 Object.assign(set.headers, corsHeaders(origin));
 
                 // Preflight never carries credentials; answer it before the guard.
                 if (request.method === 'OPTIONS') {
                     set.status = 204;
+
                     return '';
                 }
 
@@ -52,13 +54,17 @@ export function createApp(config: Config, workspace = new Workspace()) {
                 // rather than relying on the browser to enforce the CORS response.
                 if (origin && !ALLOWED_ORIGINS.has(origin)) {
                     set.status = 403;
+
                     return { error: 'origin_not_allowed' };
                 }
 
-                if (url.pathname === '/health') return;
+                if (url.pathname === '/health') {
+                    return;
+                }
 
                 if (!isAuthorized(request, url, config.token)) {
                     set.status = 401;
+
                     return { error: 'unauthorized' };
                 }
             })
@@ -81,6 +87,7 @@ export function createApp(config: Config, workspace = new Workspace()) {
 
 function corsHeaders(origin: null | string): Record<string, string> {
     const allowed = origin && ALLOWED_ORIGINS.has(origin);
+
     return {
         'Access-Control-Allow-Headers': 'Authorization,Content-Type',
         'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
@@ -101,9 +108,19 @@ function corsHeaders(origin: null | string): Record<string, string> {
  */
 function isAuthorized(request: Request, url: URL, token: string): boolean {
     const header = request.headers.get('authorization');
-    if (header === `Bearer ${token}`) return true;
-    if (url.searchParams.get('token') !== token) return false;
-    if (url.pathname === '/events') return true;
+
+    if (header === `Bearer ${token}`) {
+        return true;
+    }
+
+    if (url.searchParams.get('token') !== token) {
+        return false;
+    }
+
+    if (url.pathname === '/events') {
+        return true;
+    }
+
     // Reading only — an upload still has to carry the header.
     return request.method === 'GET' && url.pathname.startsWith('/attachments/');
 }

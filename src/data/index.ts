@@ -23,13 +23,17 @@ let workspacePath: null | string = null;
  */
 export async function ensureWorkspaceOpen(): Promise<void> {
     const repo = getRepository();
-    if (repo instanceof VaultRepository) await repo.ensureOpen();
+
+    if (repo instanceof VaultRepository) {
+        await repo.ensureOpen();
+    }
 }
 
 export function getRepository(): KnowledgeRepository {
     if (!instance) {
         instance = isTauri() ? new VaultRepository(workspacePath) : new MemoryRepository();
     }
+
     return instance;
 }
 
@@ -42,6 +46,7 @@ export function getRepository(): KnowledgeRepository {
  */
 export async function resetRepository(): Promise<void> {
     const current = instance;
+
     instance = null;
     await current?.dispose?.();
 }

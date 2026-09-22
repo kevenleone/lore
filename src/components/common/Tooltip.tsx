@@ -28,7 +28,10 @@ export function Tooltip({ align = 'center', children, keys, label, side = 'below
     const timer = useRef<null | ReturnType<typeof setTimeout>>(null);
 
     const cancel = () => {
-        if (timer.current) clearTimeout(timer.current);
+        if (timer.current) {
+            clearTimeout(timer.current);
+        }
+
         timer.current = null;
     };
 

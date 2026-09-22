@@ -52,7 +52,9 @@ function settled(image: HTMLImageElement): Promise<void> {
             clearTimeout(timer);
             resolve();
         };
+
         const timer = setTimeout(done, IMAGE_MS);
+
         image.addEventListener('load', done);
         image.addEventListener('error', done);
     });
@@ -62,8 +64,10 @@ function twoFrames(): Promise<void> {
     return new Promise((resolve) => {
         if (typeof requestAnimationFrame !== 'function') {
             resolve();
+
             return;
         }
+
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
 }
@@ -72,17 +76,23 @@ async function waitForFonts(root: Document): Promise<void> {
     // `document.fonts` is absent in jsdom, and web fonts are a progressive
     // enhancement here anyway — the fallback stack is what prints if it never
     // resolves.
-    if (!root.fonts) return;
+    if (!root.fonts) {
+        return;
+    }
+
     await Promise.race([root.fonts.ready, delay(IMAGE_MS)]);
 }
 
 async function waitForImages(root: Document): Promise<void> {
     const pending = [...root.images].filter((image) => !loaded(image));
+
     await Promise.all(pending.map((image) => settled(image)));
 
     // Whatever never arrived is marked rather than left alone: the print rules
     // hide it, so a dead URL prints as nothing instead of an empty bordered box.
     for (const image of root.images) {
-        if (!loaded(image)) image.setAttribute('data-print-unloaded', '');
+        if (!loaded(image)) {
+            image.setAttribute('data-print-unloaded', '');
+        }
     }
 }

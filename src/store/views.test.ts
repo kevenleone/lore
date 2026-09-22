@@ -30,6 +30,7 @@ const COLLECTIONS: Collection[] = [
 describe('viewCounts', () => {
     it('counts all/inbox/today/starred from flags', () => {
         const c = viewCounts(SEED_ITEMS);
+
         expect(c.all).toBe(SEED_ITEMS.length);
         expect(c.inbox).toBe(SEED_ITEMS.filter((i) => i.flags.inbox).length);
         expect(c.today).toBe(SEED_ITEMS.filter((i) => i.flags.today).length);
@@ -40,7 +41,9 @@ describe('viewCounts', () => {
 describe('filterByView', () => {
     it('filters by collection and sorts newest first', () => {
         const reading = filterByView(SEED_ITEMS, { kind: 'collection', val: 'reading' });
+
         expect(reading.every((i) => i.collectionId === 'reading')).toBe(true);
+
         for (let k = 1; k < reading.length; k++) {
             expect(reading[k - 1].createdAt >= reading[k].createdAt).toBe(true);
         }
@@ -48,6 +51,7 @@ describe('filterByView', () => {
 
     it('filters by tag', () => {
         const design = filterByView(SEED_ITEMS, { kind: 'tag', val: 'design' });
+
         expect(design.every((i) => i.tags.includes('design'))).toBe(true);
         expect(design.length).toBeGreaterThan(0);
     });
@@ -63,9 +67,11 @@ describe('sortItems', () => {
     it('sorts newest/oldest by createdAt and title alphabetically', () => {
         const newest = sortItems(SEED_ITEMS, 'newest');
         const oldest = sortItems(SEED_ITEMS, 'oldest');
+
         expect(newest[0].id).toBe(oldest[oldest.length - 1].id);
 
         const byTitle = sortItems(SEED_ITEMS, 'title').map((i) => i.title);
+
         expect(byTitle).toEqual([...byTitle].sort((a, b) => a.localeCompare(b)));
     });
 });
@@ -74,9 +80,11 @@ describe('tagCounts', () => {
     it('lists tags alphabetically and counts occurrences', () => {
         const tags = tagCounts(SEED_ITEMS);
         const names = tags.map((t) => t.name);
+
         expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
 
         const design = tags.find((t) => t.name === 'design');
+
         expect(design?.count).toBe(SEED_ITEMS.filter((i) => i.tags.includes('design')).length);
     });
 });
@@ -92,8 +100,10 @@ describe('collectionCount', () => {
 describe('the type views', () => {
     it('sort every item into exactly one Library row', () => {
         const rows = ['notes', 'links', 'files'] as const;
+
         for (const item of SEED_ITEMS) {
             const matched = rows.filter((kind) => matchesView(item, { kind, val: null }));
+
             // A task has no Library row of its own — it has the Tasks surface.
             expect(matched.length, `${item.title} (${item.type})`).toBe(
                 item.type === 'task' ? 0 : 1,
@@ -103,6 +113,7 @@ describe('the type views', () => {
 
     it('counts each type view off the same rule it filters by', () => {
         const c = viewCounts(SEED_ITEMS);
+
         for (const kind of ['notes', 'links', 'files'] as const) {
             expect(c[kind], kind).toBe(
                 SEED_ITEMS.filter((i) => matchesView(i, { kind, val: null })).length,
@@ -135,6 +146,7 @@ describe('detailFlags', () => {
 
     it('hides AI sections when aiAssist is off', () => {
         const f = detailFlags(link, false, 2);
+
         expect(f.showSummary).toBe(false);
         expect(f.showRelated).toBe(false);
         expect(detailFlags(link, false, 0, 1).showBacklinks).toBe(false);
@@ -151,6 +163,7 @@ describe('relatedItems', () => {
     it('resolves related ids to items, dropping unknowns', () => {
         const item: Item = { ...SEED_ITEMS[0], related: ['i2', 'does-not-exist'] };
         const related = relatedItems(item, SEED_ITEMS);
+
         expect(related.map((r) => r.id)).toEqual(['i2']);
     });
 });
@@ -170,6 +183,7 @@ describe('queueItems', () => {
 
     it('takes everything flagged for Today, not only tasks', () => {
         const note: Item = { ...item('n', { today: true }, 1), type: 'note' };
+
         expect(queueItems([note, item('t', { today: true }, 2)]).map((i) => i.id)).toEqual([
             't',
             'n',
@@ -185,6 +199,7 @@ describe('queueItems', () => {
             item('done', { done: true, today: true }, 5),
             item('open', { today: true }, 1),
         ]);
+
         expect(queue.map((i) => i.id)).toEqual(['open', 'done']);
     });
 });
@@ -216,13 +231,16 @@ describe('matchesFilters', () => {
 
     it('treats separate facets as AND', () => {
         const filters = { ...EMPTY_FILTERS, categories: ['note' as const], tags: ['rust'] };
+
         expect(matchesFilters(item, filters)).toBe(false);
     });
 
     it('matches collections, and excludes unfiled items', () => {
         expect(matchesFilters(item, { ...EMPTY_FILTERS, collectionIds: ['work'] })).toBe(true);
         expect(matchesFilters(item, { ...EMPTY_FILTERS, collectionIds: ['reading'] })).toBe(false);
+
         const unfiled = { ...item, collectionId: undefined };
+
         expect(matchesFilters(unfiled, { ...EMPTY_FILTERS, collectionIds: ['work'] })).toBe(false);
     });
 
@@ -241,6 +259,7 @@ describe('applyFilters', () => {
     it('preserves the incoming order', () => {
         const sorted = sortItems(SEED_ITEMS, 'title');
         const filtered = applyFilters(sorted, { ...EMPTY_FILTERS, categories: ['note', 'link'] });
+
         expect(filtered.map((i) => i.title)).toEqual(
             sorted.filter((i) => i.type === 'note' || i.type === 'link').map((i) => i.title),
         );
@@ -290,6 +309,7 @@ describe('detailBodyField', () => {
             raw: 'https://raw.githubusercontent.com/e/e/HEAD/README.md',
             ref: 'HEAD',
         };
+
         expect(detailBodyField(item({ body: '# doc', source }))).toBeNull();
     });
 

@@ -177,7 +177,9 @@ export function VaultPane() {
                 <PillButton
                     onClick={() => {
                         void revealPath(workspacePath).then((ok) => {
-                            if (!ok) pushToast('Could not open the vault in Finder.');
+                            if (!ok) {
+                                pushToast('Could not open the vault in Finder.');
+                            }
                         });
                     }}
                 >
@@ -256,8 +258,13 @@ function ConfirmDelete({
                         className="mt-[6px] w-full rounded-lg border border-border bg-surface2 px-[10px] py-[7px] font-[inherit] text-text outline-none focus-visible:border-accent"
                         onChange={(e) => setTyped(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Escape') onCancel();
-                            if (e.key === 'Enter' && matches) onConfirm();
+                            if (e.key === 'Escape') {
+                                onCancel();
+                            }
+
+                            if (e.key === 'Enter' && matches) {
+                                onConfirm();
+                            }
                         }}
                         value={typed}
                     />
@@ -290,6 +297,7 @@ function SwitchRow({
     title: string;
 }) {
     const sw = useSwitch(name);
+
     return (
         <Row desc={desc} last={last} title={title}>
             <Toggle label={title} on={sw.on} onChange={sw.onChange} />
@@ -301,6 +309,7 @@ function SwitchRow({
 function useSwitch(key: keyof Switches) {
     const on = useStore((s) => s.prefs.switches[key]);
     const toggle = useStore((s) => s.toggleSwitch);
+
     return { on, onChange: () => toggle(key) };
 }
 
@@ -315,15 +324,24 @@ function useVaultSize(): null | VaultSize {
     useEffect(() => {
         let cancelled = false;
         const repo = getRepository();
-        if (!repo.size) return;
+
+        if (!repo.size) {
+            return;
+        }
+
         void repo
             .size()
             .then((result) => {
-                if (!cancelled) setSize(result);
+                if (!cancelled) {
+                    setSize(result);
+                }
             })
             .catch(() => {
-                if (!cancelled) setSize(null);
+                if (!cancelled) {
+                    setSize(null);
+                }
             });
+
         return () => {
             cancelled = true;
         };
@@ -376,6 +394,7 @@ export function LookPane() {
             <div className="mb-1 flex gap-[10px]">
                 {APPEARANCES.map((a) => {
                     const active = appearance === a.id;
+
                     return (
                         <button
                             aria-pressed={active}
@@ -416,6 +435,7 @@ export function LookPane() {
                 <div className="grid grid-cols-4 gap-[10px]">
                     {themesFor(mode).map((t) => {
                         const active = themeId === t.id;
+
                         return (
                             <button
                                 aria-pressed={active}
@@ -448,6 +468,7 @@ export function LookPane() {
             <div className="mb-1 flex items-center gap-[10px]">
                 {ACCENTS.map((hex) => {
                     const active = accent === hex;
+
                     return (
                         <button
                             aria-label={ACCENT_NAMES[hex]}
@@ -616,7 +637,11 @@ export function KeysPane() {
 
     const groups = useMemo(() => {
         const query = filter.trim().toLowerCase();
-        if (!query) return SHORTCUT_GROUPS;
+
+        if (!query) {
+            return SHORTCUT_GROUPS;
+        }
+
         return SHORTCUT_GROUPS.map((g) => ({
             ...g,
             rows: g.rows.filter(
@@ -710,6 +735,7 @@ export function NotifPane() {
 
 function shortcutRows(group: HotkeyCommand['group']): { keys: string[]; label: string }[] {
     const commands: readonly HotkeyCommand[] = HOTKEYS;
+
     return commands
         .filter((command) => command.group === group)
         .map((command) => ({
@@ -733,7 +759,10 @@ function UnsplashKeyRow() {
 
     const commit = () => {
         const next = draft.trim();
-        if (next !== (saved ?? '')) setPref('unsplashKey', next || null);
+
+        if (next !== (saved ?? '')) {
+            setPref('unsplashKey', next || null);
+        }
     };
 
     return (
@@ -748,7 +777,9 @@ function UnsplashKeyRow() {
                     onBlur={commit}
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter') commit();
+                        if (e.key === 'Enter') {
+                            commit();
+                        }
                     }}
                     placeholder="Access Key"
                     spellCheck={false}

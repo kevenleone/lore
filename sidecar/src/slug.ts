@@ -23,6 +23,7 @@ const RESERVED = new Set([
 export function newId(): string {
     const time = Date.now().toString(36).padStart(9, '0');
     const rand = Math.random().toString(36).slice(2, 12).padEnd(10, '0');
+
     return `${time}${rand}`.toUpperCase();
 }
 
@@ -40,7 +41,10 @@ export function slugify(title: string): string {
         // A trailing dash can appear after the slice.
         .replace(/-+$/, '');
 
-    if (!base || RESERVED.has(base)) return base ? `${base}-note` : '';
+    if (!base || RESERVED.has(base)) {
+        return base ? `${base}-note` : '';
+    }
+
     return base;
 }
 
@@ -50,11 +54,19 @@ export function slugify(title: string): string {
  */
 export function uniqueStem(title: string, id: string, taken: ReadonlySet<string>): string {
     const base = slugify(title) || `untitled-${id.slice(-6).toLowerCase()}`;
-    if (!taken.has(base)) return base;
+
+    if (!taken.has(base)) {
+        return base;
+    }
+
     for (let n = 2; n < 1000; n += 1) {
         const candidate = `${base}-${n}`;
-        if (!taken.has(candidate)) return candidate;
+
+        if (!taken.has(candidate)) {
+            return candidate;
+        }
     }
+
     // Pathological: fall back to something guaranteed unique.
     return `${base}-${id.slice(-6).toLowerCase()}`;
 }

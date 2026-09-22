@@ -23,6 +23,7 @@ describe('Toasts', () => {
 
     it('runs the action and takes the toast away with it', () => {
         const run = vi.fn();
+
         useStore.getState().pushToast('Exported note.pdf.', { label: 'Show in Finder', run });
         render(<Toasts />);
 
@@ -36,9 +37,11 @@ describe('Toasts', () => {
         // The stack is pointer-events-none so it never blocks the list beneath;
         // a chip with a button has to opt back in or the button is unclickable.
         useStore.getState().pushToast('Exported note.pdf.', { label: 'Show in Finder', run() {} });
+
         const { container } = render(<Toasts />);
 
         const chip = container.querySelector('[role="status"]');
+
         expect(chip?.className).toContain('pointer-events-auto');
     });
 });

@@ -15,7 +15,10 @@ export function useStartupPrefs(): void {
     const launch = useStore((s) => s.prefs.switches.launchAtLogin);
 
     useEffect(() => {
-        if (!hydrated) return;
+        if (!hydrated) {
+            return;
+        }
+
         void setTrayVisible(menubar);
     }, [hydrated, menubar]);
 
@@ -24,22 +27,34 @@ export function useStartupPrefs(): void {
     // the switch drives it. `null` means there is no login item to ask — the
     // browser dev server — and the switch is then left alone.
     const startup = useRef<'available' | 'pending' | 'unavailable'>('pending');
-    useEffect(() => {
-        if (!hydrated) return;
 
-        if (startup.current === 'unavailable') return;
+    useEffect(() => {
+        if (!hydrated) {
+            return;
+        }
+
+        if (startup.current === 'unavailable') {
+            return;
+        }
+
         if (startup.current === 'available') {
             void setLaunchAtLogin(launch).then((ok) => {
-                if (ok) return;
+                if (ok) {
+                    return;
+                }
+
                 useStore.getState().pushToast('Could not change the login item.');
             });
+
             return;
         }
 
         void launchAtLoginEnabled().then((enabled) => {
             startup.current = enabled === null ? 'unavailable' : 'available';
-            if (enabled !== null && enabled !== launch)
+
+            if (enabled !== null && enabled !== launch) {
                 useStore.getState().toggleSwitch('launchAtLogin');
+            }
         });
     }, [hydrated, launch]);
 }

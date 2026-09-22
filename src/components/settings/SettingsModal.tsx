@@ -124,14 +124,20 @@ export function SettingsModal() {
                 close();
             }
         };
+
         window.addEventListener('keydown', onKey);
         sheetRef.current?.focus();
+
         return () => window.removeEventListener('keydown', onKey);
     }, [close]);
 
     const visible = useMemo(() => {
         const query = filter.trim().toLowerCase();
-        if (!query) return PANES;
+
+        if (!query) {
+            return PANES;
+        }
+
         return PANES.filter(
             (p) => p.label.toLowerCase().includes(query) || p.terms.includes(query),
         );
@@ -171,6 +177,7 @@ export function SettingsModal() {
                     <div className="flex flex-col gap-px overflow-auto">
                         {visible.map((p) => {
                             const on = p.id === pane;
+
                             return (
                                 <button
                                     aria-current={on ? 'page' : undefined}

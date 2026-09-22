@@ -45,6 +45,7 @@ export class UnsplashError extends Error {
 
 export async function searchPhotos(key: string, query: string, page = 1): Promise<UnsplashResult> {
     const url = new URL(`${API}/search/photos`);
+
     url.searchParams.set('query', query);
     url.searchParams.set('page', String(page));
     url.searchParams.set('per_page', '24');
@@ -52,11 +53,21 @@ export async function searchPhotos(key: string, query: string, page = 1): Promis
     url.searchParams.set('content_filter', 'high');
 
     const res = await get(url, key);
-    if (res.status === 401) throw new UnsplashError('bad_key');
-    if (res.status === 403) throw new UnsplashError('rate_limited');
-    if (!res.ok) throw new UnsplashError('unavailable');
+
+    if (res.status === 401) {
+        throw new UnsplashError('bad_key');
+    }
+
+    if (res.status === 403) {
+        throw new UnsplashError('rate_limited');
+    }
+
+    if (!res.ok) {
+        throw new UnsplashError('unavailable');
+    }
 
     const data = (await res.json()) as { results?: unknown[]; total?: number };
+
     return {
         photos: (data.results ?? []).map(toPhoto).filter((p): p is UnsplashPhoto => !!p),
         total: typeof data.total === 'number' ? data.total : 0,
@@ -70,7 +81,10 @@ export async function searchPhotos(key: string, query: string, page = 1): Promis
  * is swallowed rather than failing the pick the user already made.
  */
 export async function triggerDownload(key: string, downloadLocation: string): Promise<void> {
-    if (!downloadLocation.startsWith(`${API}/`)) return;
+    if (!downloadLocation.startsWith(`${API}/`)) {
+        return;
+    }
+
     try {
         await get(new URL(downloadLocation), key);
     } catch {
@@ -81,6 +95,7 @@ export async function triggerDownload(key: string, downloadLocation: string): Pr
 function get(url: URL, key: string): Promise<Response> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
     return fetch(url, {
         headers: {
             'Accept-Version': 'v1',
@@ -98,14 +113,20 @@ const obj = (v: unknown): Json | undefined =>
 /** One search hit, or nothing if it is missing anything the picker needs. */
 function toPhoto(raw: unknown): undefined | UnsplashPhoto {
     const photo = obj(raw);
-    if (!photo) return undefined;
+
+    if (!photo) {
+        return undefined;
+    }
 
     const id = str(photo.id);
     const url = str(obj(photo.urls)?.regular);
     const user = obj(photo.user);
     const name = str(user?.name);
     const profile = str(obj(user?.links)?.html);
-    if (!id || !url || !name || !profile) return undefined;
+
+    if (!id || !url || !name || !profile) {
+        return undefined;
+    }
 
     return {
         alt: str(photo.alt_description) ?? '',

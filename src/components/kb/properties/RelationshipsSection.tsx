@@ -28,12 +28,14 @@ export function RelationshipsSection({ item }: { item: Item }) {
 
     const related = useMemo(() => {
         const byId = new Map(items.map((i) => [i.id, i]));
+
         return (item.related ?? []).map((id) => byId.get(id)).filter((x): x is Item => !!x);
     }, [item.related, items]);
 
     const suggestions = useMemo(() => {
         const q = query.trim().toLowerCase();
         const taken = new Set([item.id, ...(item.related ?? [])]);
+
         return items
             .filter((i) => !taken.has(i.id))
             .filter((i) => !q || i.title.toLowerCase().includes(q))
@@ -74,7 +76,10 @@ export function RelationshipsSection({ item }: { item: Item }) {
                                         setAdding(false);
                                         setQuery('');
                                     }
-                                    if (e.key === 'Enter' && suggestions[0]) add(suggestions[0].id);
+
+                                    if (e.key === 'Enter' && suggestions[0]) {
+                                        add(suggestions[0].id);
+                                    }
                                 }}
                                 placeholder="Link to…"
                                 value={query}

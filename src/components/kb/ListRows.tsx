@@ -34,6 +34,7 @@ export function ListRows({ items, onContextMenu }: SurfaceProps) {
             {items.map((item) => {
                 const meta = typeMeta(item.type);
                 const selected = item.id === selectedId;
+
                 return (
                     <div
                         className={cn(

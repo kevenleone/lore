@@ -55,19 +55,28 @@ export function ListPane() {
     const contextMenu = useContextMenu();
 
     useEffect(() => {
-        if (!sortOpen) return;
+        if (!sortOpen) {
+            return;
+        }
+
         const onDown = (e: MouseEvent) => {
-            if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
+            if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+                setSortOpen(false);
+            }
         };
+
         window.addEventListener('mousedown', onDown);
+
         return () => window.removeEventListener('mousedown', onDown);
     }, [sortOpen]);
 
     let filtered = applyFilters(filterByView(items, view, sort), filters);
+
     if (search) {
         // The index searches full bodies; the client-side filter is the fallback
         // for queries too short to be worth a round-trip.
         const hits = searchResults && new Set(searchResults);
+
         filtered = hits
             ? filtered.filter((i) => hits.has(i.id))
             : filtered.filter((i) => matchesSearch(i, search));
@@ -79,15 +88,25 @@ export function ListPane() {
         // Only in List: there, selecting merely moves the highlight, so the menu
         // and the detail column agree. In Cards and Table selecting is what opens
         // the item, and a right-click must not do that.
-        if (isList) selectItem(id);
+        if (isList) {
+            selectItem(id);
+        }
+
         contextMenu.openAt(event, id);
     };
+
     const filterCount = activeFilterCount(filters);
     // A filter that is on must stay visible, or it silently shortens the list.
     const showFilters = filtersOpen || filterCount > 0;
     let filterColor = 'text-faint';
-    if (showFilters) filterColor = 'text-text';
-    if (filterCount > 0) filterColor = 'text-accent';
+
+    if (showFilters) {
+        filterColor = 'text-text';
+    }
+
+    if (filterCount > 0) {
+        filterColor = 'text-accent';
+    }
 
     return (
         <div
@@ -243,6 +262,7 @@ function LibraryEmpty({
             />
         );
     }
+
     if (filterCount > 0) {
         return (
             <EmptyState
@@ -253,6 +273,7 @@ function LibraryEmpty({
             />
         );
     }
+
     return (
         <EmptyState
             action={{ label: 'Quick Capture', onClick: onCapture }}

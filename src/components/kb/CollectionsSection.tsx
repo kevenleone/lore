@@ -55,7 +55,9 @@ export function CollectionsSection() {
     const nameRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        if (editingId) nameRef.current?.focus();
+        if (editingId) {
+            nameRef.current?.focus();
+        }
     }, [editingId]);
 
     const startAdd = () => {
@@ -64,19 +66,29 @@ export function CollectionsSection() {
         setDraftColor(COLLECTION_COLORS[0]);
         setEditingId(NEW);
     };
+
     const startEdit = (id: string, name: string, color: string) => {
         setConfirmId(null);
         setDraftName(name);
         setDraftColor(color);
         setEditingId(id);
     };
+
     const cancel = () => setEditingId(null);
 
     const save = async () => {
         const name = draftName.trim();
-        if (!name) return cancel();
-        if (editingId === NEW) await createCollection({ color: draftColor, name });
-        else if (editingId) await updateCollection(editingId, { color: draftColor, name });
+
+        if (!name) {
+            return cancel();
+        }
+
+        if (editingId === NEW) {
+            await createCollection({ color: draftColor, name });
+        } else if (editingId) {
+            await updateCollection(editingId, { color: draftColor, name });
+        }
+
         setEditingId(null);
     };
 
@@ -94,8 +106,13 @@ export function CollectionsSection() {
                 className="rounded-7 border border-border bg-surface px-[9px] py-[6px] font-[inherit] text-subhead"
                 onChange={(e) => setDraftName(e.target.value)}
                 onKeyDown={(e) => {
-                    if (e.key === 'Enter') void save();
-                    if (e.key === 'Escape') cancel();
+                    if (e.key === 'Enter') {
+                        void save();
+                    }
+
+                    if (e.key === 'Escape') {
+                        cancel();
+                    }
                 }}
                 placeholder="Collection name"
                 ref={nameRef}
@@ -155,7 +172,9 @@ export function CollectionsSection() {
             </div>
 
             {collections.map((c) => {
-                if (editingId === c.id) return renderEditor(c.id);
+                if (editingId === c.id) {
+                    return renderEditor(c.id);
+                }
 
                 if (confirmId === c.id) {
                     return (
@@ -185,6 +204,7 @@ export function CollectionsSection() {
                 }
 
                 const active = isViewActive(view, 'collection', c.id);
+
                 return (
                     // The row is a group rather than a button: it holds the
                     // collection's own button plus two more, and a button
