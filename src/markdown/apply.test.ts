@@ -18,6 +18,7 @@ const NOTHING_DIRTY: ReadonlySet<number> = new Set();
 function open(body: string) {
     const parsed = parse(body);
     const guarded = { ...parsed, blocks: guard(parsed.blocks) };
+
     return { doc: toDocument(guarded), parsed: guarded };
 }
 
@@ -25,12 +26,14 @@ describe('applyDocument', () => {
     // Dirtiness comes from the document, not from diffing generated Markdown.
     it.each(fixtures)('%s: an untouched document writes back unchanged', (_name, text) => {
         const { doc, parsed } = open(text);
+
         expect(applyDocument(parsed, doc, NOTHING_DIRTY)).toBe(text);
     });
 
     it('keeps original bytes of untouched blocks even when they would normalise', () => {
         const body = '* one\n* two\n\n    indented code\n\nprose\n';
         const { doc, parsed } = open(body);
+
         expect(applyDocument(parsed, doc, NOTHING_DIRTY)).toBe(body);
     });
 
@@ -49,12 +52,14 @@ describe('applyDocument', () => {
         const shorter = schema.node('doc', null, [
             schema.node('paragraph', null, [schema.text('only')]),
         ]);
+
         expect(applyDocument(parsed, shorter, NOTHING_DIRTY)).toBe('only');
     });
 
     it('writes an unknown block back as its source, dirty or not', () => {
         const body = '<div>raw</div>\n\ntext\n';
         const { doc, parsed } = open(body);
+
         expect(applyDocument(parsed, doc, new Set([0, 1]))).toBe(body);
     });
 });
@@ -62,6 +67,7 @@ describe('applyDocument', () => {
 describe('diffBlocks', () => {
     it('reports nothing for an unchanged document', () => {
         const { doc } = open('one\n\ntwo\n');
+
         expect(diffBlocks(doc, doc)).toEqual([]);
     });
 
@@ -71,12 +77,14 @@ describe('diffBlocks', () => {
             doc.child(0),
             schema.node('paragraph', null, [schema.text('changed')]),
         ]);
+
         expect(diffBlocks(doc, edited)).toEqual([1]);
     });
 
     it('signals lost correspondence when the block count changes', () => {
         const { doc } = open('one\n\ntwo\n');
         const shorter = schema.node('doc', null, [doc.child(0)]);
+
         expect(diffBlocks(doc, shorter)).toBeNull();
     });
 });

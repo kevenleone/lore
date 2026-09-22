@@ -10,7 +10,10 @@ import type { NewItem } from '../../data/repository';
 import type { CapturePreset } from '../../store/types';
 
 export function applyCapturePreset(input: NewItem, preset: CapturePreset | null): NewItem {
-    if (!preset?.status || input.type !== 'task') return input;
+    if (!preset?.status || input.type !== 'task') {
+        return input;
+    }
+
     return {
         ...input,
         flags: { ...input.flags, done: preset.done ? true : input.flags.done },

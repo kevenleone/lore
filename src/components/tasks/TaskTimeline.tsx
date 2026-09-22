@@ -20,7 +20,10 @@ export function TaskTimeline({ today }: { today: string }) {
     const selectedId = useStore((s) => s.selectedId);
 
     const groups = taskTimeline(items, today);
-    if (groups.length === 0) return null;
+
+    if (groups.length === 0) {
+        return null;
+    }
 
     return (
         <section aria-label="Timeline" className="mt-[30px] border-t border-border-soft pt-[18px]">

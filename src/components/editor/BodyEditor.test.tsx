@@ -27,11 +27,13 @@ async function mount(markdown: string, onCommit = vi.fn()) {
             <BodyEditor itemId="item-1" onCommit={onCommit} raw={false} value={markdown} />
         </StrictMode>,
     );
+
     await waitFor(
         () => expect(view.container.querySelector('.ProseMirror')).not.toBeNull(),
         MOUNT_TIMEOUT,
     );
     spy.mockRestore();
+
     return { ...view, errors: errors.join('\n'), onCommit };
 }
 
@@ -46,17 +48,20 @@ describe('BodyEditor', () => {
         ['a block it only carries', '<div>raw</div>\n\ntext\n'],
     ])('mounts with %s and reports no error', async (_name, markdown) => {
         const { errors } = await mount(markdown);
+
         expect(errors).not.toMatch(/commandManager|Cannot read properties/);
     });
 
     it('renders the body', async () => {
         const { container } = await mount('# Title\n\nSome prose.\n');
+
         expect(container.textContent).toContain('Title');
         expect(container.textContent).toContain('Some prose.');
     });
 
     it('shows a carried block rather than dropping it', async () => {
         const { container } = await mount('<div>raw</div>\n\ntext\n');
+
         expect(container.querySelector('[data-unknown-block]')).not.toBeNull();
     });
 
@@ -64,11 +69,13 @@ describe('BodyEditor', () => {
         // The design rests on this: opening must not look like an edit, or a
         // vault would fill with diffs from notes nobody touched.
         const { onCommit } = await mount('* one\n* two\n\nprose\n');
+
         expect(onCommit).not.toHaveBeenCalled();
     });
 
     it('styles blocks, so they do not all render as body text', async () => {
         const { container } = await mount('para\n\n- a\n- b\n\n1. one\n\n> quote\n');
+
         expect(container.querySelector('ul')?.className).toMatch(/list-disc/);
         expect(container.querySelector('ol')?.className).toMatch(/list-decimal/);
         expect(container.querySelector('blockquote')?.className).toMatch(/border-l-2/);
@@ -79,6 +86,7 @@ describe('BodyEditor', () => {
         // `li[data-checked]` is the selector theme/tailwind.css lays out.
         const { container } = await mount('- [ ] open\n- [x] done\n');
         const items = container.querySelectorAll('li[data-checked]');
+
         expect(items).toHaveLength(2);
         expect(items[0].getAttribute('data-checked')).toBe('false');
         expect(items[1].getAttribute('data-checked')).toBe('true');
@@ -90,12 +98,14 @@ describe('BodyEditor', () => {
         const source = '- a\n- b\n\n- [ ] task\n';
         const { container } = await mount(source);
         const carried = container.querySelector('[data-unknown-block]');
+
         expect(carried).not.toBeNull();
         expect(carried?.getAttribute('source')).toBe('- a\n- b\n\n- [ ] task');
     });
 
     it('renders an unmixed list normally', async () => {
         const { container } = await mount('- a\n- b\n');
+
         expect(container.querySelector('[data-unknown-block]')).toBeNull();
         expect(container.querySelector('ul')?.className).toMatch(/list-disc/);
     });
@@ -105,6 +115,7 @@ describe('BodyEditor', () => {
             <BodyEditor itemId="item-1" onCommit={vi.fn()} raw value={'# Title\n'} />,
         );
         const textarea = container.querySelector('textarea');
+
         expect(textarea?.value).toBe('# Title\n');
         expect(container.querySelector('.ProseMirror')).toBeNull();
     });
@@ -113,6 +124,7 @@ describe('BodyEditor', () => {
 describe('BodyEditor in a task body', () => {
     it('mounts with a task prose body', async () => {
         const { container, errors } = await mount('Some prose about the task.\n');
+
         expect(errors).not.toMatch(/commandManager|Cannot read properties/);
         expect(container.textContent).toContain('Some prose about the task.');
     });

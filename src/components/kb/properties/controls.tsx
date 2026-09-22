@@ -57,11 +57,18 @@ export function Picker({
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!open) return;
+        if (!open) {
+            return;
+        }
+
         const onDown = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
         };
+
         window.addEventListener('mousedown', onDown);
+
         return () => window.removeEventListener('mousedown', onDown);
     }, [open]);
 
@@ -92,6 +99,7 @@ export function Picker({
 export function ReadOnly({ children }: { children?: false | null | number | string }) {
     const empty =
         children === null || children === undefined || children === '' || children === false;
+
     return (
         <span className={cn('block truncate text-body', empty ? 'text-faint' : 'text-text2')}>
             {empty ? '—' : children}

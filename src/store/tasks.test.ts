@@ -54,6 +54,7 @@ describe('openTasks', () => {
             task('b', { flags: { done: true } }),
             task('c', { type: 'note' }),
         ];
+
         expect(openTasks(items).map((t) => t.id)).toEqual(['a']);
     });
 
@@ -76,6 +77,7 @@ describe('dayKey', () => {
     // must not be pushed into tomorrow by a UTC conversion.
     it('names the local day, not the UTC one', () => {
         const late = new Date(2026, 8, 11, 23, 30);
+
         expect(dayKey(late)).toBe('2026-09-11');
     });
 });
@@ -90,6 +92,7 @@ describe('taskGroups', () => {
             task('later', { dueAt: '2026-09-20' }),
             task('finished', { dueAt: '2026-09-09', flags: { done: true } }),
         ];
+
         expect(taskGroups(items, TODAY).map((g) => [g.kind, g.tasks.map((t) => t.id)])).toEqual([
             ['overdue', ['late']],
             ['today', ['now']],
@@ -105,6 +108,7 @@ describe('taskGroups', () => {
             task('a-normal', { dueAt: TODAY }),
         ];
         const [, due] = taskGroups(items, TODAY);
+
         expect(due.tasks.map((t) => t.id)).toEqual(['z-urgent', 'a-normal', 'b-normal', 'a-low']);
     });
 });
@@ -131,11 +135,13 @@ describe('boardColumnFor', () => {
 
     it('puts a done task in the completing column, whatever its status says', () => {
         const finished = task('a', { flags: { done: true }, status: 'doing' });
+
         expect(boardColumnFor(finished, BOARD)).toBe('done');
     });
 
     it('leaves a done task in the first column when no column completes', () => {
         const plain: BoardConfig = { columns: [{ id: 'todo', name: 'To do' }], view: 'cards' };
+
         expect(boardColumnFor(task('a', { flags: { done: true } }), plain)).toBe('todo');
     });
 
@@ -149,6 +155,7 @@ describe('boardColumnFor', () => {
 describe('patchForColumn', () => {
     it('writes the status, and `done` to match the column', () => {
         const open = task('a', { flags: { starred: true } });
+
         expect(patchForColumn(open, BOARD.columns[1])).toEqual({
             flags: { done: false, starred: true },
             status: 'doing',
@@ -161,10 +168,12 @@ describe('patchForColumn', () => {
 
     it('is the inverse of boardColumnFor, from any starting state', () => {
         const starts = [{}, { done: true }, { inbox: true, today: true }];
+
         for (const flags of starts) {
             for (const column of BOARD.columns) {
                 const patch = patchForColumn(task('a', { flags }), column);
                 const moved = task('a', { flags: patch.flags, status: patch.status });
+
                 expect(boardColumnFor(moved, BOARD)).toBe(column.id);
             }
         }
@@ -177,6 +186,7 @@ describe('filterBoardTasks', () => {
         task('b', { priority: 'low', title: 'Triage the reading list' }),
         task('c', { title: 'Reply to Okafor' }),
     ];
+
     tasks[2] = { ...tasks[2], prose: 'Send the transcript back', tags: ['research'] };
 
     it('is off when every facet is empty', () => {
@@ -187,12 +197,14 @@ describe('filterBoardTasks', () => {
     it('matches the title and the description, not just the title', () => {
         const byTitle = { ...EMPTY_BOARD_FILTER, query: 'okafor' };
         const byProse = { ...EMPTY_BOARD_FILTER, query: 'transcript' };
+
         expect(filterBoardTasks(tasks, byTitle, TODAY).map((t) => t.id)).toEqual(['c']);
         expect(filterBoardTasks(tasks, byProse, TODAY).map((t) => t.id)).toEqual(['c']);
     });
 
     it('narrows by priority, counting an absent one as normal', () => {
         const filter = { ...EMPTY_BOARD_FILTER, priorities: ['normal' as const] };
+
         expect(filterBoardTasks(tasks, filter, TODAY).map((t) => t.id)).toEqual(['c']);
     });
 
@@ -216,6 +228,7 @@ describe('filterBoardTasks', () => {
             overdue: true,
             priorities: ['low' as const],
         };
+
         expect(filterBoardTasks(tasks, filter, TODAY)).toEqual([]);
         expect(boardFilterCount(filter)).toBe(2);
     });
@@ -236,6 +249,7 @@ describe('boardTasks', () => {
             task('c'),
             task('note', { collectionId: 'c1', type: 'note' }),
         ];
+
         expect(boardTasks(items, 'c1').map((t) => t.id)).toEqual(['a']);
         expect(boardTasks(items, UNFILED_BOARD).map((t) => t.id)).toEqual(['c']);
     });
@@ -249,6 +263,7 @@ describe('boardColumns', () => {
             task('x', { flags: { done: true } }),
             task('note', { type: 'note' }),
         ];
+
         expect(
             boardColumns(items, BOARD).map((c) => [c.config.id, c.tasks.map((t) => t.id)]),
         ).toEqual([
@@ -285,6 +300,7 @@ describe('taskTimeline', () => {
      */
     it('keeps undated completions apart rather than guessing a day', () => {
         const items = [{ ...task('old'), flags: { done: true } }];
+
         expect(taskTimeline(items, TODAY).map((g) => g.key)).toEqual(['undated']);
     });
 
@@ -302,6 +318,7 @@ describe('upcomingDays', () => {
             task('far', { dueAt: '2026-10-01' }),
         ];
         const days = upcomingDays(items, new Date(2026, 8, 14), 5);
+
         expect(days.map((d) => d.key)).toEqual([
             '2026-09-14',
             '2026-09-15',
@@ -328,6 +345,7 @@ describe('boardRollups', () => {
             task('d', { collectionId: 'c2', flags: { done: true } }),
             task('e'),
         ];
+
         expect(boardRollups(items, collections)).toEqual([
             {
                 collectionId: 'c1',
@@ -373,6 +391,7 @@ describe('taskCounts', () => {
             task('done', { flags: { done: true } }),
             task('note', { type: 'note' }),
         ];
+
         expect(taskCounts(items, [], TODAY)).toEqual({
             boards: 1,
             overdue: 1,

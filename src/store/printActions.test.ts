@@ -9,6 +9,7 @@ vi.mock('../lib/reveal', () => ({ revealPath: vi.fn().mockResolvedValue(true) })
 
 vi.mock('../lib/exportPdf', async () => {
     const actual = await vi.importActual<typeof import('../lib/exportPdf')>('../lib/exportPdf');
+
     return { ...actual, exportPdf: vi.fn(), pickPdfPath: vi.fn() };
 });
 
@@ -78,12 +79,14 @@ describe('exportItemPdf', () => {
 
     it('offers to show the file, because only the export knows where it went', async () => {
         const { revealPath } = await import('../lib/reveal');
+
         picked.mockResolvedValue('/tmp/out/how-linear-builds-product.pdf');
         exported.mockResolvedValue();
 
         await useStore.getState().exportItemPdf();
 
         const action = useStore.getState().toasts[0].action;
+
         expect(action?.label).toBe('Show in Finder');
 
         action?.run();

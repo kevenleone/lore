@@ -27,6 +27,7 @@ let permission: null | Promise<boolean> = null;
  */
 export function ensureNotificationPermission(): Promise<boolean> {
     permission ??= requestPermission();
+
     return permission;
 }
 
@@ -37,16 +38,20 @@ export function intervalEndCopy(
     prefs: Prefs,
 ): IntervalEndCopy {
     const minutes = Math.round(phaseSeconds(nextPhase, prefs.durations) / 60);
+
     if (endedPhase === 'focus') {
         const kind = nextPhase === 'long' ? 'long break' : 'break';
+
         return { body: `Time for a ${minutes}-minute ${kind}.`, title: 'Focus complete' };
     }
+
     return { body: `Back to focus — ${minutes} minutes.`, title: 'Break over' };
 }
 
 /** The window in which only sync problems are allowed through. */
 export function isQuietHours(now: Date): boolean {
     const minutes = now.getHours() * 60 + now.getMinutes();
+
     // The range wraps midnight, so it is a union rather than an interval.
     return minutes >= QUIET_FROM || minutes < QUIET_UNTIL;
 }
@@ -57,15 +62,27 @@ export async function notifyIntervalEnd(
     endedPhase: FocusPhase,
     nextPhase: FocusPhase,
 ): Promise<void> {
-    if (!prefs.switches.focusEnd) return;
-    if (prefs.switches.quiet && isQuietHours(new Date())) return;
+    if (!prefs.switches.focusEnd) {
+        return;
+    }
 
-    if (prefs.switches.sounds) playChime();
+    if (prefs.switches.quiet && isQuietHours(new Date())) {
+        return;
+    }
+
+    if (prefs.switches.sounds) {
+        playChime();
+    }
 
     const copy = intervalEndCopy(endedPhase, nextPhase, prefs);
+
     try {
         const { sendNotification } = await import('@tauri-apps/plugin-notification');
-        if (await ensureNotificationPermission()) sendNotification(copy);
+
+        if (await ensureNotificationPermission()) {
+            sendNotification(copy);
+        }
+
         await bounceDock(prefs);
     } catch {
         // Outside Tauri — there is no notification centre and no Dock.
@@ -81,7 +98,11 @@ export async function notifyIntervalEnd(
 async function bounceDock(prefs: Prefs): Promise<void> {
     const { getCurrentWindow, UserAttentionType } = await import('@tauri-apps/api/window');
     const window = getCurrentWindow();
-    if (await window.isFocused()) return;
+
+    if (await window.isFocused()) {
+        return;
+    }
+
     await window.requestUserAttention(
         prefs.notifStyle === 'Alert' ? UserAttentionType.Critical : UserAttentionType.Informational,
     );
@@ -91,7 +112,11 @@ async function requestPermission(): Promise<boolean> {
     try {
         const { isPermissionGranted, requestPermission: ask } =
             await import('@tauri-apps/plugin-notification');
-        if (await isPermissionGranted()) return true;
+
+        if (await isPermissionGranted()) {
+            return true;
+        }
+
         return (await ask()) === 'granted';
     } catch {
         return false;

@@ -25,18 +25,34 @@ export function watchVault(root: string, onChange: (paths: string[]) => void): W
 
     const flush = () => {
         timer = null;
+
         const paths = [...pending];
+
         pending = new Set();
-        if (paths.length) onChange(paths);
+
+        if (paths.length) {
+            onChange(paths);
+        }
     };
 
     try {
         watcher = watch(root, { recursive: true }, (_event, filename) => {
-            if (!filename) return;
+            if (!filename) {
+                return;
+            }
+
             const rel = filename.toString().replace(/\\/g, '/');
-            if (isNoise(rel)) return;
+
+            if (isNoise(rel)) {
+                return;
+            }
+
             pending.add(rel);
-            if (timer) clearTimeout(timer);
+
+            if (timer) {
+                clearTimeout(timer);
+            }
+
             timer = setTimeout(flush, DEBOUNCE_MS);
         });
     } catch {
@@ -47,7 +63,10 @@ export function watchVault(root: string, onChange: (paths: string[]) => void): W
 
     return {
         close() {
-            if (timer) clearTimeout(timer);
+            if (timer) {
+                clearTimeout(timer);
+            }
+
             watcher?.close();
         },
     };
@@ -55,9 +74,17 @@ export function watchVault(root: string, onChange: (paths: string[]) => void): W
 
 /** Paths that change constantly and never represent an item. */
 function isNoise(relPath: string): boolean {
-    if (!relPath) return true;
+    if (!relPath) {
+        return true;
+    }
+
     const parts = relPath.split(/[\\/]/);
-    if (parts.some((p) => p === LORE_DIR || p === '.git' || p === 'node_modules')) return true;
+
+    if (parts.some((p) => p === LORE_DIR || p === '.git' || p === 'node_modules')) {
+        return true;
+    }
+
     const name = parts[parts.length - 1];
+
     return isIgnoredFile(name) || name === '.DS_Store' || !name.endsWith('.md');
 }

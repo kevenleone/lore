@@ -4,6 +4,7 @@ import { fetchLinkMetadata } from '../src/linkMetadata';
 import { fetchYoutubeMetadata, youtubeVideoId } from '../src/youtube';
 
 const realFetch = globalThis.fetch;
+
 afterEach(() => {
     globalThis.fetch = realFetch;
 });
@@ -55,11 +56,15 @@ describe('fetchYoutubeMetadata', () => {
 
     it('is what fetchLinkMetadata answers for a video URL', async () => {
         let requested = '';
+
         globalThis.fetch = (async (input: string) => {
             requested = input;
+
             return Response.json({ title: 'A video' });
         }) as unknown as typeof fetch;
+
         const metadata = await fetchLinkMetadata('youtu.be/yGc02Fz8S4c');
+
         expect(requested).toStartWith('https://www.youtube.com/oembed');
         expect(metadata.title).toBe('A video');
         expect(metadata.image).toBe(THUMBNAIL);

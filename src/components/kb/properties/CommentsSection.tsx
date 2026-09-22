@@ -9,11 +9,13 @@ import { cn } from '../../../lib/cn';
 import { formatSavedDate } from '../../../lib/format';
 import { useStore } from '../../../store/useStore';
 import { Message } from '../../common/glyphs';
+
 // The Markdown parser is ~34 kB gzipped and comments live behind a panel
 // toggle, so it loads with the panel rather than with the window.
 const MarkdownView = lazy(async () => ({
     default: (await import('../../common/MarkdownView')).MarkdownView,
 }));
+
 import { Empty, Section } from './controls';
 
 export function CommentsSection({ item }: { item: Item }) {
@@ -24,7 +26,10 @@ export function CommentsSection({ item }: { item: Item }) {
     const comments = item.comments ?? [];
 
     const submit = () => {
-        if (!draft.trim()) return;
+        if (!draft.trim()) {
+            return;
+        }
+
         void addComment(item.id, draft);
         setDraft('');
     };
@@ -74,7 +79,9 @@ export function CommentsSection({ item }: { item: Item }) {
                 className="min-h-[58px] w-full resize-y rounded-9 border border-border bg-surface px-[10px] py-2 font-[inherit] text-body leading-[1.5] text-text"
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => {
-                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit();
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                        submit();
+                    }
                 }}
                 placeholder="Add a comment…"
                 value={draft}

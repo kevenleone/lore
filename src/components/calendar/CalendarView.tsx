@@ -29,6 +29,7 @@ import { startOfDay } from '../../lib/focusTimer';
 import { useStore } from '../../store/useStore';
 import { ChevronRight, Plus } from '../common/glyphs';
 import { Segmented } from '../settings/controls';
+
 /** Square icon button in the toolbar. */
 const TOOLBAR_BUTTON =
     'inline-flex h-[26px] w-[26px] items-center justify-center rounded-7 border-none bg-surface3 p-0 font-[inherit] text-text2 hover:brightness-[.96]';
@@ -49,8 +50,11 @@ export function CalendarView({ onCapture }: { onCapture: () => void }) {
         scale === 'Day' ? [anchor] : scale === 'Week' ? weekDays(anchor, weekStart) : [anchor];
 
     const step = (direction: -1 | 1) => {
-        if (scale === 'Month') setAnchor(addMonths(anchor, direction));
-        else setAnchor(addDays(anchor, direction * (scale === 'Week' ? 7 : 1)));
+        if (scale === 'Month') {
+            setAnchor(addMonths(anchor, direction));
+        } else {
+            setAnchor(addDays(anchor, direction * (scale === 'Week' ? 7 : 1)));
+        }
     };
 
     return (
@@ -254,21 +258,31 @@ function MonthGrid({ anchor }: { anchor: Date }) {
                         showTasks: switches.showTasks,
                     });
                     const outside = day.getMonth() !== anchor.getMonth();
+
                     return (
                         <div
                             className={cn(MONTH_CELL, outside && 'opacity-45')}
                             key={day.toISOString()}
                             onDragOver={(e) => {
-                                if (!e.dataTransfer.types.includes(DRAG_TYPE)) return;
+                                if (!e.dataTransfer.types.includes(DRAG_TYPE)) {
+                                    return;
+                                }
+
                                 e.preventDefault();
                             }}
                             onDrop={(e) => {
                                 const id = e.dataTransfer.getData(DRAG_TYPE);
-                                if (!id) return;
+
+                                if (!id) {
+                                    return;
+                                }
+
                                 e.preventDefault();
+
                                 // A month cell has no time in it, so a drop lands at the
                                 // start of the working day.
                                 const at = startOfDay(day);
+
                                 at.setHours(DAY_START_HOUR);
                                 scheduleItem(id, at);
                             }}
@@ -339,6 +353,7 @@ function TimeGrid({ days }: { days: Date[] }) {
                 <span className="w-[56px] flex-none" />
                 {days.map((day) => {
                     const isToday = isSameDay(day, today);
+
                     return (
                         <div
                             className="flex min-w-0 flex-1 items-baseline gap-[7px] border-l border-border px-[10px] pt-[10px] pb-[9px]"
@@ -389,6 +404,7 @@ function TimeGrid({ days }: { days: Date[] }) {
                             showFocus: switches.showFocus,
                             showTasks: switches.showTasks,
                         });
+
                         return (
                             <div
                                 className={cn(
@@ -399,17 +415,27 @@ function TimeGrid({ days }: { days: Date[] }) {
                                 key={day.toISOString()}
                                 onDragLeave={() => setOver((o) => (o === index ? null : o))}
                                 onDragOver={(e) => {
-                                    if (!e.dataTransfer.types.includes(DRAG_TYPE)) return;
+                                    if (!e.dataTransfer.types.includes(DRAG_TYPE)) {
+                                        return;
+                                    }
+
                                     e.preventDefault();
                                     e.dataTransfer.dropEffect = 'move';
                                     setOver(index);
                                 }}
                                 onDrop={(e) => {
                                     const id = e.dataTransfer.getData(DRAG_TYPE);
+
                                     setOver(null);
-                                    if (!id) return;
+
+                                    if (!id) {
+                                        return;
+                                    }
+
                                     e.preventDefault();
+
                                     const box = e.currentTarget.getBoundingClientRect();
+
                                     scheduleItem(id, timeAtOffset(day, e.clientY - box.top));
                                 }}
                             >

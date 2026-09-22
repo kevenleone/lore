@@ -51,11 +51,16 @@ export function LinkBubble({ editor, frame }: LinkBubbleProps): null | React.JSX
     const textRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        if (editing) textRef.current?.select();
+        if (editing) {
+            textRef.current?.select();
+        }
     }, [editing]);
 
     const target = editing ?? live;
-    if (!editor || !target) return null;
+
+    if (!editor || !target) {
+        return null;
+    }
 
     const startEditing = (): void => {
         setText(target.text);
@@ -86,6 +91,7 @@ export function LinkBubble({ editor, frame }: LinkBubbleProps): null | React.JSX
                 .marks()
                 .filter((mark) => mark.type.name !== 'link')
                 .map((mark) => ({ attrs: mark.attrs, type: mark.type.name }));
+
             chain
                 .insertContent({
                     marks: [...marks, { attrs: { href: nextHref }, type: 'link' }],
@@ -94,6 +100,7 @@ export function LinkBubble({ editor, frame }: LinkBubbleProps): null | React.JSX
                 })
                 .run();
         }
+
         setEditing(null);
     };
 
@@ -122,11 +129,17 @@ export function LinkBubble({ editor, frame }: LinkBubbleProps): null | React.JSX
                 <form
                     className="flex w-[320px] max-w-full flex-col gap-[6px] p-[3px]"
                     onBlur={(event) => {
-                        if (event.currentTarget.contains(event.relatedTarget)) return;
+                        if (event.currentTarget.contains(event.relatedTarget)) {
+                            return;
+                        }
+
                         setEditing(null);
                     }}
                     onKeyDown={(event) => {
-                        if (event.key !== 'Escape') return;
+                        if (event.key !== 'Escape') {
+                            return;
+                        }
+
                         event.preventDefault();
                         stopEditing();
                     }}
@@ -216,13 +229,22 @@ export function LinkBubble({ editor, frame }: LinkBubbleProps): null | React.JSX
 }
 
 function linkAtSelection(editor: Editor, frame: HTMLDivElement | null): LinkTarget | null {
-    if (!frame || !editor.isInitialized || editor.isDestroyed) return null;
+    if (!frame || !editor.isInitialized || editor.isDestroyed) {
+        return null;
+    }
+
     const { selection } = editor.state;
     const type = editor.schema.marks.link;
-    if (!type || !editor.isFocused || !editor.isActive('link')) return null;
+
+    if (!type || !editor.isFocused || !editor.isActive('link')) {
+        return null;
+    }
 
     const range = getMarkRange(selection.$from, type) ?? getMarkRange(selection.$to, type);
-    if (!range || selection.from < range.from || selection.to > range.to) return null;
+
+    if (!range || selection.from < range.from || selection.to > range.to) {
+        return null;
+    }
 
     const mark = editor.state.doc
         .resolve(range.from + 1)

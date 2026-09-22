@@ -8,6 +8,7 @@ import type { Durations, FocusPhase, FocusSession, FocusState } from '../store/t
 export function formatClock(seconds: number): string {
     const total = Math.max(0, Math.round(seconds));
     const minutes = Math.floor(total / 60);
+
     return `${String(minutes).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
@@ -24,7 +25,10 @@ export const PHASE_LABELS: Record<FocusPhase, string> = {
 
 /** Fraction of the current interval already elapsed, 0–1. */
 export function elapsedFraction(remaining: number, total: number): number {
-    if (total <= 0) return 0;
+    if (total <= 0) {
+        return 0;
+    }
+
     return Math.min(1, Math.max(0, 1 - remaining / total));
 }
 
@@ -32,9 +36,14 @@ export function elapsedFraction(remaining: number, total: number): number {
 export function focusedSecondsOn(sessions: FocusSession[], day: Date): number {
     const start = startOfDay(day).getTime();
     const end = start + 86_400_000;
+
     return sessions.reduce((total, s) => {
         const startedAt = new Date(s.startedAt).getTime();
-        if (startedAt < start || startedAt >= end) return total;
+
+        if (startedAt < start || startedAt >= end) {
+            return total;
+        }
+
         return total + Math.max(0, (new Date(s.endedAt).getTime() - startedAt) / 1000);
     }, 0);
 }
@@ -43,7 +52,11 @@ export function focusedSecondsOn(sessions: FocusSession[], day: Date): number {
 export function formatDuration(seconds: number): string {
     const minutes = Math.round(seconds / 60);
     const hours = Math.floor(minutes / 60);
-    if (hours === 0) return `${minutes}m`;
+
+    if (hours === 0) {
+        return `${minutes}m`;
+    }
+
     return `${hours}h ${String(minutes % 60).padStart(2, '0')}m`;
 }
 
@@ -77,7 +90,10 @@ export function nextPhase(
     sessionIndex: number,
     longBreakAfter: number,
 ): FocusPhase {
-    if (phase !== 'focus') return 'focus';
+    if (phase !== 'focus') {
+        return 'focus';
+    }
+
     return sessionIndex >= longBreakAfter ? 'long' : 'short';
 }
 
@@ -91,12 +107,17 @@ export function nextPhase(
  * times a second apart for half of every second.
  */
 export function remainingSeconds(focus: FocusState, now: number = Date.now()): number {
-    if (!focus.running || focus.endsAt === null) return focus.remainingSec;
+    if (!focus.running || focus.endsAt === null) {
+        return focus.remainingSec;
+    }
+
     return Math.max(0, Math.ceil((focus.endsAt - now) / 1000));
 }
 
 export function startOfDay(date: Date): Date {
     const copy = new Date(date);
+
     copy.setHours(0, 0, 0, 0);
+
     return copy;
 }

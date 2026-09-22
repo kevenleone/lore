@@ -13,6 +13,7 @@ describe('themes', () => {
 
     it('has unique ids and both modes represented', () => {
         const ids = THEMES.map((t) => t.id);
+
         expect(new Set(ids).size).toBe(ids.length);
         expect(THEMES.some((t) => t.mode === 'light')).toBe(true);
         expect(THEMES.some((t) => t.mode === 'dark')).toBe(true);
@@ -21,7 +22,10 @@ describe('themes', () => {
     it('builds every derived token as a colour', () => {
         for (const theme of THEMES) {
             for (const [key, value] of Object.entries(theme.tokens)) {
-                if (key.endsWith('-shadow')) continue;
+                if (key.endsWith('-shadow')) {
+                    continue;
+                }
+
                 expect(value, `${theme.id} ${key}`).toMatch(
                     /^(#[0-9a-f]{6}|rgba?\(|transparent$)/i,
                 );

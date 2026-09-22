@@ -22,6 +22,7 @@ export class MockAiProvider implements AiProvider {
                 const hay =
                     `${item.title} ${item.tags.join(' ')} ${item.summary ?? ''}`.toLowerCase();
                 const score = words.reduce((n, w) => (hay.includes(w) ? n + 1 : n), 0);
+
                 return { item, score };
             })
             .filter((s) => s.score > 0)
@@ -49,10 +50,23 @@ export class MockAiProvider implements AiProvider {
 
     async detectType(input: string): Promise<ItemType> {
         const text = input.trim();
-        if (IMAGE_RE.test(text)) return 'image';
-        if (URL_RE.test(text)) return 'link';
-        if (TASK_RE.test(text)) return 'task';
-        if (FENCE_RE.test(text)) return 'code';
+
+        if (IMAGE_RE.test(text)) {
+            return 'image';
+        }
+
+        if (URL_RE.test(text)) {
+            return 'link';
+        }
+
+        if (TASK_RE.test(text)) {
+            return 'task';
+        }
+
+        if (FENCE_RE.test(text)) {
+            return 'code';
+        }
+
         return 'note';
     }
 
@@ -66,7 +80,9 @@ export class MockAiProvider implements AiProvider {
         if (item.summary) {
             return { points: item.points ?? [], summary: item.summary };
         }
+
         const subject = item.title || item.domain || 'this item';
+
         return {
             points: [],
             summary: `A saved ${item.type} about ${subject}.`,

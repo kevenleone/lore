@@ -50,7 +50,9 @@ const child = spawn(process.execPath, [require.resolve('@tauri-apps/cli/tauri.js
 child.on('exit', (code, signal) => {
     if (signal) {
         process.kill(process.pid, signal);
+
         return;
     }
+
     process.exit(code ?? 1);
 });

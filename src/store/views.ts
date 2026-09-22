@@ -20,8 +20,15 @@ export interface ViewCounts {
 /** How many filter facets are set — the badge on the Filter button. */
 export function activeFilterCount(filters: Filters): number {
     let count = filters.categories.length + filters.collectionIds.length + filters.tags.length;
-    if (filters.from) count++;
-    if (filters.to) count++;
+
+    if (filters.from) {
+        count++;
+    }
+
+    if (filters.to) {
+        count++;
+    }
+
     return count;
 }
 
@@ -30,7 +37,10 @@ export function activeFilterCount(filters: Filters): number {
  * Runs after `filterByView` and alongside the search query; see `Filters`.
  */
 export function applyFilters(items: Item[], filters: Filters): Item[] {
-    if (!hasActiveFilters(filters)) return items;
+    if (!hasActiveFilters(filters)) {
+        return items;
+    }
+
     return items.filter((item) => matchesFilters(item, filters));
 }
 
@@ -41,6 +51,7 @@ export function collectionCount(items: Item[], collectionId: string): number {
 /** Filter to a view and apply the given sort order (default: newest first). */
 export function filterByView(items: Item[], view: View, sort: SortOrder = 'newest'): Item[] {
     const filtered = items.filter((i) => matchesView(i, view));
+
     return sortItems(filtered, sort);
 }
 
@@ -58,21 +69,35 @@ export function localDateKey(iso: string): string {
     const d = new Date(iso);
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
+
     return `${d.getFullYear()}-${month}-${day}`;
 }
 
 export function matchesFilters(item: Item, filters: Filters): boolean {
-    if (filters.categories.length > 0 && !filters.categories.includes(item.type)) return false;
-    if (filters.collectionIds.length > 0) {
-        if (!item.collectionId || !filters.collectionIds.includes(item.collectionId)) return false;
+    if (filters.categories.length > 0 && !filters.categories.includes(item.type)) {
+        return false;
     }
+
+    if (filters.collectionIds.length > 0) {
+        if (!item.collectionId || !filters.collectionIds.includes(item.collectionId)) {
+            return false;
+        }
+    }
+
     if (filters.tags.length > 0 && !filters.tags.some((tag) => item.tags.includes(tag))) {
         return false;
     }
 
     const day = filters.from || filters.to ? localDateKey(item.createdAt) : '';
-    if (filters.from && day < filters.from) return false;
-    if (filters.to && day > filters.to) return false;
+
+    if (filters.from && day < filters.from) {
+        return false;
+    }
+
+    if (filters.to && day > filters.to) {
+        return false;
+    }
+
     return true;
 }
 
@@ -116,11 +141,13 @@ export function matchesView(item: Item, view: View): boolean {
 export function queueItems(items: Item[]): Item[] {
     const open = items.filter((i) => i.flags.today && !i.flags.done);
     const done = items.filter((i) => i.flags.today && i.flags.done);
+
     return [...sortItems(open, 'oldest'), ...sortItems(done, 'oldest')];
 }
 
 export function sortItems(items: Item[], sort: SortOrder): Item[] {
     const copy = items.slice();
+
     switch (sort) {
         case 'oldest':
             return copy.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
@@ -139,9 +166,13 @@ export function sortItems(items: Item[], sort: SortOrder): Item[] {
  */
 export function tagCounts(items: Item[]): TagCount[] {
     const counts = new Map<string, number>();
+
     for (const item of items) {
-        for (const tag of item.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+        for (const tag of item.tags) {
+            counts.set(tag, (counts.get(tag) ?? 0) + 1);
+        }
     }
+
     return [...counts.entries()]
         .map(([name, count]) => ({ count, name }))
         .sort((a, b) => a.name.localeCompare(b.name));
@@ -187,12 +218,16 @@ export function collectionFor(item: Item, collections: Collection[]): Collection
  * else's file.
  */
 export function detailBodyField(item: Item): 'body' | null {
-    if (item.source) return null;
+    if (item.source) {
+        return null;
+    }
+
     const writes =
         item.type === 'code' ||
         item.type === 'link' ||
         item.type === 'note' ||
         item.type === 'task';
+
     return writes ? 'body' : null;
 }
 
@@ -229,6 +264,7 @@ export function previewLabel(item: Item): string {
 
 export function relatedItems(item: Item, all: Item[]): Item[] {
     const byId = new Map(all.map((i) => [i.id, i]));
+
     return (item.related ?? []).map((id) => byId.get(id)).filter((x): x is Item => !!x);
 }
 

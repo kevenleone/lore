@@ -18,11 +18,15 @@ vi.mock('@tauri-apps/api/event', () => ({ emit: vi.fn() }));
 vi.mock('@tauri-apps/api/window', () => ({
     getCurrentWindow: () => ({
         listen: (event: string, handler: () => void) => {
-            if (event === 'capture:shown') emitShown = handler;
+            if (event === 'capture:shown') {
+                emitShown = handler;
+            }
+
             return Promise.resolve(() => {});
         },
         onFocusChanged: (handler: (event: { payload: boolean }) => void) => {
             emitFocus = (focused) => handler({ payload: focused });
+
             return Promise.resolve(() => {});
         },
     }),
@@ -35,6 +39,7 @@ function imageTabIsOpen(): boolean {
     const tab = within(document.body)
         .getAllByRole('button', { name: 'Image' })
         .find((button) => button.getAttribute('aria-pressed'));
+
     return tab?.getAttribute('aria-pressed') === 'true';
 }
 
@@ -42,6 +47,7 @@ async function mountPanel() {
     render(<CaptureApp />);
     await waitFor(() => expect(emitFocus).toBeTypeOf('function'));
     await waitFor(() => expect(emitShown).toBeTypeOf('function'));
+
     return emitFocus!;
 }
 
@@ -75,6 +81,7 @@ describe('the Quick Capture panel', () => {
     // focus meant the second one wiped the image the first one had just accepted.
     it('keeps the open capture when the dialog hands focus back, twice', async () => {
         const focus = await mountPanel();
+
         within(document.body).getByText('Composer').click();
         await waitFor(() => expect(imageTabIsOpen()).toBe(false));
         within(document.body).getAllByRole('button', { name: 'Image' })[0].click();

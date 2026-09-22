@@ -58,9 +58,11 @@ describe('exportVault', () => {
 
     it('never writes into an export that is already there', async () => {
         await write('note.md', 'first');
+
         const first = await exportVault(root, destination);
 
         await write('note.md', 'second');
+
         const second = await exportVault(root, destination);
 
         expect(second.path).not.toBe(first.path);

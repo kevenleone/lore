@@ -14,6 +14,7 @@ const MARK_BY_TYPE: Readonly<Record<string, string>> = {
 
 export function toDocument(parsed: ParsedBody): ProseMirrorNode {
     const content = parsed.blocks.map(toNode).filter((node): node is ProseMirrorNode => !!node);
+
     return schema.node('doc', null, content.length ? content : [schema.node('paragraph')]);
 }
 
@@ -42,10 +43,15 @@ function blockNode(node: RootContent): null | ProseMirrorNode {
 
 function childBlocks(children: readonly RootContent[]): ProseMirrorNode[] {
     const out: ProseMirrorNode[] = [];
+
     for (const child of children) {
         const node = blockNode(child);
-        if (node) out.push(node);
+
+        if (node) {
+            out.push(node);
+        }
     }
+
     return out.length ? out : [schema.node('paragraph')];
 }
 
@@ -58,28 +64,41 @@ function collectInline(
         const markName = MARK_BY_TYPE[child.type];
 
         if (child.type === 'text') {
-            if (child.value) out.push(schema.text(child.value, resolveMarks(marks)));
+            if (child.value) {
+                out.push(schema.text(child.value, resolveMarks(marks)));
+            }
+
             continue;
         }
+
         if (child.type === 'inlineCode') {
             out.push(schema.text(child.value, resolveMarks([...marks, 'code'])));
             continue;
         }
+
         if (child.type === 'break') {
             out.push(schema.node('hardBreak'));
             continue;
         }
+
         if (child.type === 'link') {
             const withLink = schema.marks.link.create({ href: child.url, title: child.title });
             const nested: ProseMirrorNode[] = [];
+
             collectInline(child.children, marks, nested);
-            for (const node of nested) out.push(node.mark(withLink.addToSet(node.marks)));
+
+            for (const node of nested) {
+                out.push(node.mark(withLink.addToSet(node.marks)));
+            }
+
             continue;
         }
+
         if (markName && 'children' in child) {
             collectInline(child.children, [...marks, markName], out);
             continue;
         }
+
         if ('value' in child && typeof child.value === 'string') {
             out.push(schema.text(child.value, resolveMarks(marks)));
         }
@@ -88,7 +107,9 @@ function collectInline(
 
 function inline(children: readonly PhrasingContent[]): ProseMirrorNode[] {
     const out: ProseMirrorNode[] = [];
+
     collectInline(children, [], out);
+
     return out;
 }
 
@@ -111,6 +132,7 @@ function listNode(node: Extract<RootContent, { type: 'list' }>): ProseMirrorNode
     );
 
     const attrs = node.ordered && !isTask ? { start: node.start ?? 1 } : null;
+
     return schema.node(listName, attrs, items);
 }
 
@@ -122,5 +144,6 @@ function toNode(block: Block): null | ProseMirrorNode {
     if (block.type === 'unknown' || !block.node) {
         return schema.node('unknownBlock', { source: block.source });
     }
+
     return blockNode(block.node) ?? schema.node('unknownBlock', { source: block.source });
 }

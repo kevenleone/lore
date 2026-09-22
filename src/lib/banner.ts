@@ -15,10 +15,12 @@ import type { Item } from '../store/types';
 /** FNV-1a, 32-bit. Small, deterministic, and spreads adjacent URLs apart. */
 function hash(seed: string): number {
     let h = 0x811c9dc5;
+
     for (let i = 0; i < seed.length; i += 1) {
         h ^= seed.charCodeAt(i);
         h = Math.imul(h, 0x01000193);
     }
+
     return h >>> 0;
 }
 
@@ -35,6 +37,7 @@ export function bannerPalette(seed: string): string[] {
     // 20–34%: saturated enough to read as a real image, muted enough that five
     // cards side by side do not fight each other.
     const sat = 20 + (h % 15);
+
     return [
         hsl(hue, sat, 45),
         hsl(hue + 14, sat + 8, 66),
@@ -56,6 +59,7 @@ export function bannerSeed(item: Pick<Item, 'id' | 'image' | 'url'>): string {
  */
 export function bannerStyle(colors: string[], blurred: boolean): CSSProperties {
     const [c0, c1, c2, c3, c4] = colors;
+
     return {
         background: [
             `radial-gradient(58% 66% at 16% 20%, ${c0} 0%, transparent 64%)`,

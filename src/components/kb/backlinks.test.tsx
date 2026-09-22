@@ -23,6 +23,7 @@ const meta = (backlinks: Item[]): ItemMeta => ({
 
 const open = async (backlinks: Item[]): Promise<void> => {
     const detail = await getRepository().getItem(TARGET_ID);
+
     useStore.setState({ detail, itemMeta: meta(backlinks), selectedId: TARGET_ID });
     render(<DetailPane />);
 };
@@ -37,9 +38,11 @@ afterEach(cleanup);
 describe('backlinks in the document body', () => {
     it('lists the items that link here and opens one on click', async () => {
         const source = (await getRepository().getItem(SOURCE_ID))!;
+
         await open([source]);
 
         const section = screen.getByText('Backlinks').parentElement!.parentElement!;
+
         expect(within(section).getByText('linked from elsewhere')).toBeTruthy();
 
         fireEvent.click(within(section).getByRole('button', { name: new RegExp(source.title) }));

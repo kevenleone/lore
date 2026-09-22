@@ -11,7 +11,10 @@ const SNIPPET_MAX = 200;
 
 /** Best-effort hostname, mirroring `hostOf` in lib/captureActions. */
 export function deriveDomain(url: string | undefined): string | undefined {
-    if (!url) return undefined;
+    if (!url) {
+        return undefined;
+    }
+
     try {
         return new URL(url).hostname.replace(/^www\./, '') || undefined;
     } catch {
@@ -27,6 +30,7 @@ export function deriveDomain(url: string | undefined): string | undefined {
  */
 export function deriveProse(body: string | undefined): string | undefined {
     const prose = stripSubtasks(body);
+
     return prose ? firstPlainLine(prose) || undefined : undefined;
 }
 
@@ -38,26 +42,39 @@ export function deriveSnippet(
     item: Pick<Item, 'body' | 'description' | 'type' | 'url'>,
 ): string | undefined {
     const body = item.body?.trim();
+
     if (body) {
         // A task's body may open with its checklist. Previewing that verbatim put
         // raw `- [ ]` markers in the list, so the prose wins and the checklist
         // falls back to a count.
         const prose = stripSubtasks(body);
+
         if (prose) {
             const line = firstPlainLine(prose);
-            if (line) return line.slice(0, SNIPPET_MAX);
+
+            if (line) {
+                return line.slice(0, SNIPPET_MAX);
+            }
         }
+
         const subtasks = parseSubtasks(body);
+
         if (subtasks.length) {
             const done = subtasks.filter((t) => t.done).length;
+
             return `${done}/${subtasks.length} subtasks · ${subtasks[0].text}`.slice(
                 0,
                 SNIPPET_MAX,
             );
         }
+
         return firstPlainLine(body).slice(0, SNIPPET_MAX) || undefined;
     }
-    if (item.type === 'link') return item.description?.trim() || item.url || undefined;
+
+    if (item.type === 'link') {
+        return item.description?.trim() || item.url || undefined;
+    }
+
     return undefined;
 }
 
@@ -69,7 +86,11 @@ export function deriveSnippet(
  */
 export function deriveSubtaskCounts(body: string | undefined): SubtaskCount | undefined {
     const subtasks = parseSubtasks(body);
-    if (subtasks.length === 0) return undefined;
+
+    if (subtasks.length === 0) {
+        return undefined;
+    }
+
     return { done: subtasks.filter((s) => s.done).length, total: subtasks.length };
 }
 
@@ -98,5 +119,6 @@ export function withDerived(item: Item): Item {
  */
 export function withoutBody(item: Item): Item {
     const { body: _body, ...rest } = item;
+
     return rest;
 }

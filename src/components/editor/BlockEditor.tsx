@@ -28,6 +28,7 @@ export function BlockEditor({
     // exists, and again while StrictMode recreates it.
     const [initial] = useState(() => {
         const parsed = parse(value);
+
         return { ...parsed, blocks: guard(parsed.blocks) };
     });
     const [content] = useState(() => toDocument(initial).toJSON());
@@ -44,24 +45,39 @@ export function BlockEditor({
             content,
             editorProps: {
                 handleClick: (_view, _position, event) => {
-                    if (!event.metaKey && !event.ctrlKey) return false;
+                    if (!event.metaKey && !event.ctrlKey) {
+                        return false;
+                    }
+
                     const anchor = (event.target as HTMLElement | null)?.closest('a');
                     const href = anchor?.getAttribute('href');
-                    if (!href) return false;
+
+                    if (!href) {
+                        return false;
+                    }
+
                     void openExternal(href);
+
                     return true;
                 },
             },
             extensions: [...EXTENSIONS, Placeholder.configure({ placeholder: placeholder ?? '' })],
             onUpdate: ({ editor: instance, transaction }) => {
                 const changed = diffBlocks(transaction.before, transaction.doc);
-                if (changed === null) rewriteAllRef.current = true;
-                else for (const index of changed) dirtyRef.current.add(index);
+
+                if (changed === null) {
+                    rewriteAllRef.current = true;
+                } else {
+                    for (const index of changed) {
+                        dirtyRef.current.add(index);
+                    }
+                }
 
                 const doc = instance.state.doc;
                 const dirty = rewriteAllRef.current
                     ? new Set(Array.from({ length: doc.childCount }, (_, i) => i))
                     : dirtyRef.current;
+
                 onChange(applyDocument(parsedRef.current, doc, dirty));
             },
         },

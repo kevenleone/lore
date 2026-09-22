@@ -301,6 +301,7 @@ export function Plus({ className, size = 14, style, sw = 2.2 }: GlyphProps) {
  */
 export function PriorityBars({ className, level, size = 11 }: { level: 1 | 2 | 3 } & GlyphProps) {
     const heights = [4, 7, 10];
+
     return (
         <svg
             aria-hidden

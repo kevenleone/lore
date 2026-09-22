@@ -25,6 +25,7 @@ export function CardGrid({ items, onContextMenu }: SurfaceProps) {
                 const meta = typeMeta(item.type);
                 const coll = collectionFor(item, collections);
                 const selected = item.id === selectedId;
+
                 return (
                     <div
                         className={cn(

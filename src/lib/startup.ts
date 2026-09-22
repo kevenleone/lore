@@ -10,6 +10,7 @@
 export async function launchAtLoginEnabled(): Promise<boolean | null> {
     try {
         const { isEnabled } = await import('@tauri-apps/plugin-autostart');
+
         return await isEnabled();
     } catch {
         return null;
@@ -20,7 +21,9 @@ export async function launchAtLoginEnabled(): Promise<boolean | null> {
 export async function setLaunchAtLogin(on: boolean): Promise<boolean> {
     try {
         const { disable, enable } = await import('@tauri-apps/plugin-autostart');
+
         await (on ? enable() : disable());
+
         return true;
     } catch {
         return false;
@@ -34,6 +37,7 @@ export async function setTrayVisible(visible: boolean): Promise<void> {
 async function invoke(command: string, args: Record<string, unknown>): Promise<void> {
     try {
         const { invoke: call } = await import('@tauri-apps/api/core');
+
         await call(command, args);
     } catch {
         // Outside Tauri, or the command is not granted — nothing to change.

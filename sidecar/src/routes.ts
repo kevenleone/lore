@@ -33,18 +33,24 @@ export function routes(workspace: Workspace) {
             .onError(({ error, set }) => {
                 if (error instanceof WorkspaceNotOpen) {
                     set.status = 409;
+
                     return { error: 'no_workspace' };
                 }
+
                 set.status = 500;
+
                 return { error: error instanceof Error ? error.message : 'internal_error' };
             })
 
             /* ---------------- workspace ---------------- */
 
             .get('/workspace', async () => {
-                if (!workspace.isOpen)
+                if (!workspace.isOpen) {
                     return { itemCount: 0, open: false, path: null, tagOrder: [] };
+                }
+
                 const { tagOrder } = await workspace.current.vault.readWorkspaceFile();
+
                 return {
                     itemCount: workspace.current.listItems().length,
                     open: true,
@@ -55,7 +61,11 @@ export function routes(workspace: Workspace) {
 
             .post('/workspace/open', ({ body }) => {
                 const { path } = body as { path?: string };
-                if (!path) return { error: 'path_required' };
+
+                if (!path) {
+                    return { error: 'path_required' };
+                }
+
                 return workspace.open(path);
             })
 
@@ -70,10 +80,13 @@ export function routes(workspace: Workspace) {
              */
             .post('/workspace/export', async ({ body, set }) => {
                 const { path } = body as { path?: string };
+
                 if (!path) {
                     set.status = 400;
+
                     return { error: 'path_required' };
                 }
+
                 return exportVault(workspace.current.vault.root, path);
             })
 
@@ -87,19 +100,25 @@ export function routes(workspace: Workspace) {
 
             .post('/git/status', ({ body, set }) => {
                 const { path } = body as { path?: string };
+
                 if (!path) {
                     set.status = 400;
+
                     return { error: 'path_required' };
                 }
+
                 return gitStatus(path);
             })
 
             .post('/git/init', ({ body, set }) => {
                 const { path } = body as { path?: string };
+
                 if (!path) {
                     set.status = 400;
+
                     return { error: 'path_required' };
                 }
+
                 return initGit(path);
             })
 
@@ -121,23 +140,36 @@ export function routes(workspace: Workspace) {
 
                 // Pass 1: write every item, remembering the id it was given.
                 const idMap = new Map<string, string>();
+
                 for (const item of items) {
                     const created = await store.createItem({ ...item, related: [] });
+
                     idMap.set(item.id, created.id);
                 }
 
                 // Pass 2: now that every file exists, related ids resolve to filenames.
                 for (const item of items) {
-                    if (!item.related?.length) continue;
+                    if (!item.related?.length) {
+                        continue;
+                    }
+
                     const id = idMap.get(item.id);
-                    if (!id) continue;
+
+                    if (!id) {
+                        continue;
+                    }
+
                     const related = item.related
                         .map((old) => idMap.get(old))
                         .filter((x): x is string => !!x);
-                    if (related.length) await store.updateItem(id, { related }, { touch: false });
+
+                    if (related.length) {
+                        await store.updateItem(id, { related }, { touch: false });
+                    }
                 }
 
                 workspace.notify();
+
                 return { collections: collections.length, items: idMap.size };
             })
 
@@ -149,38 +181,51 @@ export function routes(workspace: Workspace) {
 
             .get('/items/:id', ({ params, set }) => {
                 const item = workspace.current.getItem(params.id);
+
                 if (!item) {
                     set.status = 404;
+
                     return { error: 'not_found' };
                 }
+
                 return item;
             })
 
             .post('/items', async ({ body, set }) => {
                 const item = await workspace.current.createItem(body as NewItemBody);
+
                 workspace.notify();
                 set.status = 201;
+
                 return item;
             })
 
             .patch('/items/:id', async ({ body, params, set }) => {
                 const item = await workspace.current.updateItem(params.id, body as Partial<Item>);
+
                 if (!item) {
                     set.status = 404;
+
                     return { error: 'not_found' };
                 }
+
                 workspace.notify();
+
                 return item;
             })
 
             .delete('/items/:id', async ({ params, set }) => {
                 const ok = await workspace.current.deleteItem(params.id);
+
                 if (!ok) {
                     set.status = 404;
+
                     return { error: 'not_found' };
                 }
+
                 workspace.notify();
                 set.status = 204;
+
                 return '';
             })
 
@@ -191,10 +236,13 @@ export function routes(workspace: Workspace) {
              */
             .get('/items/:id/meta', ({ params, set }) => {
                 const meta = workspace.current.itemMeta(params.id);
+
                 if (!meta) {
                     set.status = 404;
+
                     return { error: 'not_found' };
                 }
+
                 return meta;
             })
 
@@ -204,16 +252,23 @@ export function routes(workspace: Workspace) {
              */
             .post('/items/:id/rename', async ({ body, params, set }) => {
                 const { stem } = body as { stem?: string };
+
                 if (!stem?.trim()) {
                     set.status = 400;
+
                     return { error: 'stem_required' };
                 }
+
                 const item = await workspace.current.renameItem(params.id, stem);
+
                 if (!item) {
                     set.status = 404;
+
                     return { error: 'not_found' };
                 }
+
                 workspace.notify();
+
                 return item;
             })
 
@@ -224,11 +279,15 @@ export function routes(workspace: Workspace) {
              */
             .post('/items/:id/refresh', async ({ params, query, set }) => {
                 const item = await workspace.current.refreshItem(params.id, query.force === '1');
+
                 if (!item) {
                     set.status = 404;
+
                     return { error: 'not_found' };
                 }
+
                 workspace.notify();
+
                 return item;
             })
 
@@ -242,13 +301,18 @@ export function routes(workspace: Workspace) {
             .post('/attachments', async ({ request, set }) => {
                 const form = await request.formData();
                 const file = form.get('file');
+
                 if (!(file instanceof File)) {
                     set.status = 400;
+
                     return { error: 'file_required' };
                 }
+
                 const bytes = new Uint8Array(await file.arrayBuffer());
                 const path = await workspace.current.vault.writeAttachment(file.name, bytes);
+
                 set.status = 201;
+
                 return { path };
             })
 
@@ -259,15 +323,19 @@ export function routes(workspace: Workspace) {
              */
             .get('/attachments/*', async ({ params, set }) => {
                 const rel = `${ATTACHMENTS_DIR}/${params['*']}`;
+
                 try {
                     const bytes = await workspace.current.vault.readAttachment(rel);
+
                     set.headers['content-type'] = contentType(rel);
                     // Content-addressed by name: a new upload gets a new filename,
                     // so a stored one can be cached hard.
                     set.headers['cache-control'] = 'private, max-age=31536000, immutable';
+
                     return new Response(bytes);
                 } catch {
                     set.status = 404;
+
                     return { error: 'not_found' };
                 }
             })
@@ -284,12 +352,16 @@ export function routes(workspace: Workspace) {
              */
             .post('/boards', async ({ body, set }) => {
                 const { board, id } = body as { board?: BoardConfig | null; id?: string };
+
                 if (typeof id !== 'string') {
                     set.status = 400;
+
                     return { error: 'id_required' };
                 }
+
                 await workspace.current.saveBoard(id, board ?? null);
                 workspace.notify();
+
                 return { ok: true };
             })
 
@@ -299,27 +371,36 @@ export function routes(workspace: Workspace) {
 
             .post('/collections', async ({ body, set }) => {
                 const { color, name } = body as { color?: string; name?: string };
+
                 if (!name) {
                     set.status = 400;
+
                     return { error: 'name_required' };
                 }
+
                 const created = await workspace.current.createCollection(
                     name,
                     color ?? hashColor(name),
                 );
+
                 workspace.notify();
                 set.status = 201;
+
                 return created;
             })
 
             .patch('/collections/:id', async ({ body, params, set }) => {
                 const patch = body as { color?: string; name?: string };
                 const updated = await workspace.current.updateCollection(params.id, patch);
+
                 if (!updated) {
                     set.status = 404;
+
                     return { error: 'not_found' };
                 }
+
                 workspace.notify();
+
                 return updated;
             })
 
@@ -327,6 +408,7 @@ export function routes(workspace: Workspace) {
                 await workspace.current.deleteCollection(params.id);
                 workspace.notify();
                 set.status = 204;
+
                 return '';
             })
 
@@ -339,10 +421,13 @@ export function routes(workspace: Workspace) {
              */
             .post('/link-metadata', async ({ body, set }) => {
                 const { url } = body as { url?: string };
+
                 if (!url) {
                     set.status = 400;
+
                     return { error: 'url_required' };
                 }
+
                 return fetchLinkMetadata(url);
             })
 
@@ -356,12 +441,19 @@ export function routes(workspace: Workspace) {
              */
             .post('/github/resolve', async ({ body, set }) => {
                 const { url } = body as { url?: string };
+
                 if (!url) {
                     set.status = 400;
+
                     return { error: 'url_required' };
                 }
+
                 const target = parseGithubTarget(url);
-                if (!target) return {};
+
+                if (!target) {
+                    return {};
+                }
+
                 return ((await resolveDocument(target)) ?? {}) as unknown as Record<
                     string,
                     unknown
@@ -381,16 +473,22 @@ export function routes(workspace: Workspace) {
                     page?: number;
                     query?: string;
                 };
+
                 if (!key) {
                     set.status = 400;
+
                     return { error: 'key_required' };
                 }
-                if (!query?.trim()) return { photos: [], total: 0 };
+
+                if (!query?.trim()) {
+                    return { photos: [], total: 0 };
+                }
 
                 try {
                     return await searchPhotos(key, query.trim(), page ?? 1);
                 } catch (error) {
                     set.status = error instanceof UnsplashError ? 502 : 500;
+
                     return {
                         error: error instanceof UnsplashError ? error.code : 'unavailable',
                     };
@@ -403,7 +501,11 @@ export function routes(workspace: Workspace) {
                     downloadLocation?: string;
                     key?: string;
                 };
-                if (key && downloadLocation) await triggerDownload(key, downloadLocation);
+
+                if (key && downloadLocation) {
+                    await triggerDownload(key, downloadLocation);
+                }
+
                 return { ok: true };
             })
 
@@ -414,7 +516,9 @@ export function routes(workspace: Workspace) {
             /** Persists the sidebar's tag order into the vault itself. */
             .post('/tags/order', async ({ body }) => {
                 const { tagOrder } = body as { tagOrder?: string[] };
+
                 await workspace.current.vault.writeWorkspaceFile(tagOrder ?? []);
+
                 return { ok: true };
             })
 
@@ -434,7 +538,10 @@ export function routes(workspace: Workspace) {
                 const stream = new ReadableStream({
                     cancel() {
                         unsubscribe?.();
-                        if (keepalive) clearInterval(keepalive);
+
+                        if (keepalive) {
+                            clearInterval(keepalive);
+                        }
                     },
                     start(controller) {
                         const send = (event: string, data: unknown) => {
@@ -446,6 +553,7 @@ export function routes(workspace: Workspace) {
                                 // Client went away mid-write; cleanup happens in cancel().
                             }
                         };
+
                         send('ready', { ok: true });
                         unsubscribe = workspace.subscribe((paths) => send('changed', { paths }));
                         // Proxies and idle timeouts drop a silent stream; a comment keeps it warm.
@@ -472,5 +580,6 @@ export function routes(workspace: Workspace) {
 
 function contentType(relPath: string): string {
     const dot = relPath.lastIndexOf('.');
+
     return (dot > 0 && MIME[relPath.slice(dot).toLowerCase()]) || 'application/octet-stream';
 }

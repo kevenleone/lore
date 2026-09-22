@@ -46,14 +46,23 @@ export function PropertyRows({ item }: { item: Item }) {
 
     const commitUrl = () => {
         const next = urlDraft.trim();
+
         setEditingUrl(false);
-        if (next !== (item.url ?? '')) void updateItem(item.id, { url: next || undefined });
+
+        if (next !== (item.url ?? '')) {
+            void updateItem(item.id, { url: next || undefined });
+        }
     };
 
     const commitImage = () => {
         const next = imageDraft.trim();
+
         setEditingImage(false);
-        if (next === (item.image ?? '')) return;
+
+        if (next === (item.image ?? '')) {
+            return;
+        }
+
         // A hand-typed URL is nobody's credited photo, so the byline goes with
         // the image it belonged to.
         void updateItem(item.id, { image: next || undefined, imageCredit: undefined });
@@ -62,7 +71,10 @@ export function PropertyRows({ item }: { item: Item }) {
     /** A picked file is copied into the vault; the item stores the path it lands at. */
     const uploadThumbnail = async (file: File) => {
         const stored = await getRepository().uploadAttachment?.(file);
-        if (stored) await updateItem(item.id, { image: stored, imageCredit: undefined });
+
+        if (stored) {
+            await updateItem(item.id, { image: stored, imageCredit: undefined });
+        }
     };
 
     return (
@@ -75,7 +87,10 @@ export function PropertyRows({ item }: { item: Item }) {
                                 key={type}
                                 onClick={() => {
                                     close();
-                                    if (type !== item.type) void updateItem(item.id, { type });
+
+                                    if (type !== item.type) {
+                                        void updateItem(item.id, { type });
+                                    }
                                 }}
                                 selected={type === item.type}
                             >
@@ -105,8 +120,10 @@ export function PropertyRows({ item }: { item: Item }) {
                             <MenuItem
                                 onClick={() => {
                                     close();
-                                    if (item.collectionId)
+
+                                    if (item.collectionId) {
                                         void updateItem(item.id, { collectionId: undefined });
+                                    }
                                 }}
                                 selected={!item.collectionId}
                             >
@@ -117,8 +134,10 @@ export function PropertyRows({ item }: { item: Item }) {
                                     key={c.id}
                                     onClick={() => {
                                         close();
-                                        if (c.id !== item.collectionId)
+
+                                        if (c.id !== item.collectionId) {
                                             void updateItem(item.id, { collectionId: c.id });
+                                        }
                                     }}
                                     selected={c.id === item.collectionId}
                                 >
@@ -165,10 +184,12 @@ export function PropertyRows({ item }: { item: Item }) {
                                         key={priority}
                                         onClick={() => {
                                             close();
-                                            if (priority !== (item.priority ?? 'normal'))
+
+                                            if (priority !== (item.priority ?? 'normal')) {
                                                 void updateItem(item.id, {
                                                     priority: normalize(priority),
                                                 });
+                                            }
                                         }}
                                         selected={priority === (item.priority ?? 'normal')}
                                     >
@@ -210,8 +231,13 @@ export function PropertyRows({ item }: { item: Item }) {
                         onBlur={commitImage}
                         onChange={(e) => setImageDraft(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter') commitImage();
-                            if (e.key === 'Escape') setEditingImage(false);
+                            if (e.key === 'Enter') {
+                                commitImage();
+                            }
+
+                            if (e.key === 'Escape') {
+                                setEditingImage(false);
+                            }
                         }}
                         placeholder="https://…/image.png"
                         value={imageDraft}
@@ -286,9 +312,13 @@ export function PropertyRows({ item }: { item: Item }) {
                 className="hidden"
                 onChange={(e) => {
                     const file = e.target.files?.[0];
+
                     // Cleared so picking the same file twice fires again.
                     e.target.value = '';
-                    if (file) void uploadThumbnail(file);
+
+                    if (file) {
+                        void uploadThumbnail(file);
+                    }
                 }}
                 ref={fileInput}
                 type="file"
@@ -301,8 +331,13 @@ export function PropertyRows({ item }: { item: Item }) {
                         onBlur={commitUrl}
                         onChange={(e) => setUrlDraft(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter') commitUrl();
-                            if (e.key === 'Escape') setEditingUrl(false);
+                            if (e.key === 'Enter') {
+                                commitUrl();
+                            }
+
+                            if (e.key === 'Escape') {
+                                setEditingUrl(false);
+                            }
                         }}
                         placeholder="https://…"
                         value={urlDraft}
@@ -361,6 +396,7 @@ function Thumbnail({
     if (!src || broken) {
         return <span className="text-body text-faint">{broken ? 'Broken' : 'None'}</span>;
     }
+
     return (
         <span className="block h-[22px] w-[34px] overflow-hidden rounded-[5px] border border-border">
             <img
@@ -376,6 +412,7 @@ function Thumbnail({
 
 function TypeBadge({ type }: { type: ItemType }) {
     const meta = typeMeta(type);
+
     return (
         <span
             className={cn(

@@ -122,12 +122,18 @@ function useVaultTracked(): boolean | null {
     useEffect(() => {
         if (!workspacePath) {
             setTracked(null);
+
             return;
         }
+
         let live = true;
+
         void isVaultTracked(workspacePath).then((result) => {
-            if (live) setTracked(result);
+            if (live) {
+                setTracked(result);
+            }
         });
+
         return () => {
             live = false;
         };

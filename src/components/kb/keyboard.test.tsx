@@ -29,6 +29,7 @@ describe('the sidebar', () => {
         for (const name of ['Calendar', 'Settings']) {
             expect(screen.getByRole('button', { name: new RegExp(name) }), name).toBeTruthy();
         }
+
         for (const name of ['Everything', 'Inbox', 'Notes', 'Links', 'Files']) {
             expect(
                 within(library()).getByRole('button', { name: new RegExp(name) }),
@@ -45,6 +46,7 @@ describe('the sidebar', () => {
         const labels = within(library())
             .getAllByRole('button')
             .map((b) => b.textContent?.replace(/[\d,]+|⌘\d|Ctrl\+\d/g, '').trim());
+
         expect(labels).toEqual(['Everything', 'Inbox', 'Notes', 'Links', 'Files']);
     });
 
@@ -64,6 +66,7 @@ describe('the sidebar', () => {
         render(<Sidebar onCapture={vi.fn()} />);
 
         const inbox = within(library()).getByRole('button', { name: /Inbox/ });
+
         expect(inbox.getAttribute('aria-current')).toBe('page');
         expect(
             within(library())
@@ -74,6 +77,7 @@ describe('the sidebar', () => {
 
     it('fires from the keyboard, not only the pointer', () => {
         const onCapture = vi.fn();
+
         render(<Sidebar onCapture={onCapture} />);
 
         // A button answers Return and Space through the platform's click; a

@@ -42,15 +42,22 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
     useEffect(() => {
         if (!collectionId) {
             setCollectionName(null);
+
             return;
         }
+
         let cancelled = false;
+
         void getRepository()
             .listCollections()
             .then((collections) => {
-                if (cancelled) return;
+                if (cancelled) {
+                    return;
+                }
+
                 setCollectionName(collections.find((c) => c.id === collectionId)?.name ?? null);
             });
+
         return () => {
             cancelled = true;
         };
@@ -59,18 +66,26 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
     // Detect type, suggest tags, and (for links) fetch metadata as input settles.
     useEffect(() => {
         const value = text.trim();
+
         if (!value) {
             setType(pinned ?? 'note');
             setTags([]);
             setMeta(null);
             setSourceDocument(null);
+
             return;
         }
+
         let cancelled = false;
         const id = setTimeout(async () => {
             const detected = pinned ?? (await captureAi.detectType(value));
-            if (cancelled) return;
+
+            if (cancelled) {
+                return;
+            }
+
             setType(detected);
+
             const suggested = await captureAi.suggestTags({
                 createdAt: '',
                 flags: {},
@@ -81,10 +96,14 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
                 type: detected,
                 updatedAt: '',
             });
-            if (!cancelled) setTags(suggested.slice(0, 2));
+
+            if (!cancelled) {
+                setTags(suggested.slice(0, 2));
+            }
 
             if (detected === 'link') {
                 setFetching(true);
+
                 try {
                     // The thumbnail and the document are independent: a repo whose
                     // README will not resolve still gets its preview.
@@ -92,6 +111,7 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
                         fetchLinkMetadata(value),
                         resolveGithubDocument(value),
                     ]);
+
                     if (!cancelled) {
                         setMeta(metadata);
                         setSourceDocument(resolved);
@@ -102,13 +122,16 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
                         setSourceDocument(null);
                     }
                 } finally {
-                    if (!cancelled) setFetching(false);
+                    if (!cancelled) {
+                        setFetching(false);
+                    }
                 }
             } else {
                 setMeta(null);
                 setSourceDocument(null);
             }
         }, 350);
+
         return () => {
             cancelled = true;
             clearTimeout(id);
@@ -119,7 +142,10 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
     const filedTo = collectionName ?? 'Inbox';
 
     const save = async () => {
-        if (!text.trim()) return;
+        if (!text.trim()) {
+            return;
+        }
+
         try {
             setError(null);
             await saveCapture(
@@ -156,8 +182,13 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
                     className="min-w-0 flex-1 border-none bg-transparent text-[15.5px] text-text outline-none"
                     onChange={(e) => setText(e.target.value)}
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter') void save();
-                        if (e.key === 'Escape') void hideCapture();
+                        if (e.key === 'Enter') {
+                            void save();
+                        }
+
+                        if (e.key === 'Escape') {
+                            void hideCapture();
+                        }
                     }}
                     placeholder="Capture a link, note, task, or code…"
                     value={text}
@@ -283,6 +314,7 @@ function buildItem(
         title: trimmed,
         type,
     };
+
     if (type === 'link') {
         const host = hostOf(trimmed);
         const link: NewItem = {
@@ -293,7 +325,11 @@ function buildItem(
             title: meta?.title || host || trimmed,
             url: trimmed,
         };
-        if (!sourceDocument) return link;
+
+        if (!sourceDocument) {
+            return link;
+        }
+
         return {
             ...link,
             body: sourceDocument.markdown,
@@ -306,8 +342,10 @@ function buildItem(
             title: documentTitle(sourceDocument, meta),
         };
     }
+
     if (type === 'code' || type === 'note' || type === 'task') {
         return { ...base, body: trimmed, title: deriveTitle(trimmed) };
     }
+
     return base;
 }

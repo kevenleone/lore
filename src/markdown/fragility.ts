@@ -21,17 +21,26 @@ export function guard(blocks: readonly Block[]): Block[] {
 }
 
 export function isRoundTrippable(block: Block): boolean {
-    if (block.type === 'unknown' || !block.node) return false;
+    if (block.type === 'unknown' || !block.node) {
+        return false;
+    }
 
     try {
         const document = toDocument({ blocks: [block], prefix: '', separators: [], suffix: '' });
         const first = document.firstChild;
-        if (!first) return false;
+
+        if (!first) {
+            return false;
+        }
 
         const regenerated = parse(generateBlock(first));
-        if (regenerated.blocks.length !== 1) return false;
+
+        if (regenerated.blocks.length !== 1) {
+            return false;
+        }
 
         const after = regenerated.blocks[0].node;
+
         return !!after && sameTree(block.node, after);
     } catch {
         return false;
@@ -44,13 +53,23 @@ function sameTree(a: MdastNode, b: MdastNode): boolean {
 
 /** `position` always differs after regeneration, and `spread` is layout. */
 function strip(node: unknown): unknown {
-    if (Array.isArray(node)) return node.map(strip);
-    if (!node || typeof node !== 'object') return node;
+    if (Array.isArray(node)) {
+        return node.map(strip);
+    }
+
+    if (!node || typeof node !== 'object') {
+        return node;
+    }
 
     const out: Record<string, unknown> = {};
+
     for (const [key, value] of Object.entries(node)) {
-        if (key === 'position' || key === 'spread') continue;
+        if (key === 'position' || key === 'spread') {
+            continue;
+        }
+
         out[key] = strip(value);
     }
+
     return out;
 }

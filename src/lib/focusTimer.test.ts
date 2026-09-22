@@ -83,6 +83,7 @@ describe('isTimerIdle', () => {
             remainingSec: 1500,
             startedAt: new Date().toISOString(),
         };
+
         expect(isTimerIdle(justPaused, DURATIONS)).toBe(false);
     });
 
@@ -106,17 +107,20 @@ describe('remainingSeconds', () => {
 
     it('derives from the clock while running, so ticks cannot drift', () => {
         const running: FocusState = { ...paused, endsAt: 60_000, running: true };
+
         expect(remainingSeconds(running, 30_000)).toBe(30);
     });
 
     it('rounds up, so it agrees with the tray rather than trailing it by a second', () => {
         const running: FocusState = { ...paused, endsAt: 60_000, running: true };
+
         expect(remainingSeconds(running, 30_400)).toBe(30);
         expect(remainingSeconds(running, 29_600)).toBe(31);
     });
 
     it('floors at zero once the interval is over', () => {
         const running: FocusState = { ...paused, endsAt: 60_000, running: true };
+
         expect(remainingSeconds(running, 90_000)).toBe(0);
     });
 });
@@ -143,6 +147,7 @@ describe('focusedSecondsOn', () => {
 
     it('adds up only the sessions that started that day', () => {
         const sessions = [session(9, 25), session(11, 25), session(10, 25, 4)];
+
         expect(focusedSecondsOn(sessions, new Date(2026, 8, 3))).toBe(3000);
     });
 

@@ -32,6 +32,7 @@ function mount() {
         collections: COLLECTIONS,
         items: [item('a', 'c1'), item('b', 'c1'), item('c', 'c2')],
     });
+
     return render(<CollectionsSection />);
 }
 
@@ -56,6 +57,7 @@ describe('CollectionsSection', () => {
         const { container } = mount();
 
         const actions = container.querySelector('[aria-label="Rename emitsignal"]')?.parentElement;
+
         expect(actions?.className).toContain('absolute');
     });
 

@@ -68,12 +68,20 @@ export function CommandMenu() {
 
     useEffect(() => {
         const previous = document.activeElement;
+
         inputRef.current?.focus();
+
         return () => {
             // Hand focus back only if nothing a command did has claimed it.
             const current = document.activeElement;
-            if (current && current !== document.body) return;
-            if (previous instanceof HTMLElement) previous.focus();
+
+            if (current && current !== document.body) {
+                return;
+            }
+
+            if (previous instanceof HTMLElement) {
+                previous.focus();
+            }
         };
     }, []);
 
@@ -93,7 +101,10 @@ export function CommandMenu() {
             id: `item:${group}:${item.id}`,
             label: item.title || 'Untitled',
             run: () => {
-                if (trimmed) recordRecentSearch(trimmed);
+                if (trimmed) {
+                    recordRecentSearch(trimmed);
+                }
+
                 openItemPage(item.id);
             },
         });
@@ -118,6 +129,7 @@ export function CommandMenu() {
                           .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
                           .slice(0, RECENT_FALLBACK)
                           .map((item) => openItem(item, 'Recent'));
+
             return [...searches, ...opened, ...fallback, ...commands];
         }
 
@@ -156,24 +168,39 @@ export function CommandMenu() {
     }, [active]);
 
     const run = (entry: CommandEntry | undefined) => {
-        if (!entry) return;
-        if (!entry.keepOpen) close();
+        if (!entry) {
+            return;
+        }
+
+        if (!entry.keepOpen) {
+            close();
+        }
+
         entry.run();
     };
 
     const onKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
-            if (!entries.length) return;
+
+            if (!entries.length) {
+                return;
+            }
+
             const step = e.key === 'ArrowDown' ? 1 : -1;
+
             setActive((index) => (index + step + entries.length) % entries.length);
+
             return;
         }
+
         if (e.key === 'Enter') {
             e.preventDefault();
             run(entries[active]);
+
             return;
         }
+
         if (e.key === 'Escape') {
             // App's window listener would otherwise also close the item underneath.
             e.stopPropagation();
@@ -286,14 +313,21 @@ export function CommandMenu() {
  */
 function rankCommands(commands: CommandEntry[], needle: string): CommandEntry[] {
     const sections = new Map<string, { contains: CommandEntry[]; prefix: CommandEntry[] }>();
+
     for (const command of commands) {
         const label = command.label.toLowerCase();
         const matchesPrefix = label.startsWith(needle);
-        if (!matchesPrefix && !`${label} ${command.terms ?? ''}`.includes(needle)) continue;
+
+        if (!matchesPrefix && !`${label} ${command.terms ?? ''}`.includes(needle)) {
+            continue;
+        }
+
         const section = sections.get(command.group) ?? { contains: [], prefix: [] };
+
         (matchesPrefix ? section.prefix : section.contains).push(command);
         sections.set(command.group, section);
     }
+
     return [...sections.values()].flatMap((section) => [...section.prefix, ...section.contains]);
 }
 
@@ -322,7 +356,10 @@ function useCommands(): CommandEntry[] {
                 label: 'Ask Lore',
                 run: () => {
                     store().setMainView('library');
-                    if (!store().chatOpen) store().toggleChat();
+
+                    if (!store().chatOpen) {
+                        store().toggleChat();
+                    }
                 },
                 terms: 'ai chat question',
             },
@@ -474,17 +511,25 @@ function useIndexSearch(query: string): null | string[] {
 
     useEffect(() => {
         const trimmed = query.trim();
+
         setHits(null);
-        if (trimmed.length < MIN_INDEXED_QUERY) return;
+
+        if (trimmed.length < MIN_INDEXED_QUERY) {
+            return;
+        }
+
         let cancelled = false;
         const timer = setTimeout(() => {
             void getRepository()
                 .search(trimmed)
                 .then((found) => {
-                    if (!cancelled) setHits(found.map((item) => item.id));
+                    if (!cancelled) {
+                        setHits(found.map((item) => item.id));
+                    }
                 })
                 .catch(() => undefined);
         }, 150);
+
         return () => {
             cancelled = true;
             clearTimeout(timer);

@@ -16,8 +16,11 @@ const COLLECTIONS = [{ color: '#6b8cc4', id: 'c1', name: 'Onboarding' }];
 /** A `YYYY-MM-DD` day relative to today, in local time. */
 function day(offset: number): string {
     const d = new Date();
+
     d.setDate(d.getDate() + offset);
+
     const month = String(d.getMonth() + 1).padStart(2, '0');
+
     return `${d.getFullYear()}-${month}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
@@ -78,6 +81,7 @@ function mount(
         taskView,
         updateItem,
     });
+
     return render(<TasksView />);
 }
 
@@ -105,6 +109,7 @@ afterEach(() => {
  */
 function pointerOver(label: string) {
     const column = screen.getByText(label).closest('[data-board-column]')!;
+
     // Assigned rather than spied: jsdom has no layout, so it does not define
     // `elementFromPoint` in the first place.
     document.elementFromPoint = () => column;
@@ -117,10 +122,13 @@ const timeline = () => screen.getByRole('region', { name: 'Timeline' });
 describe('Summary', () => {
     it('puts a late task under Overdue and today’s under Due today', () => {
         mount('summary');
+
         const overdue = within(attention()).getByText('Overdue').closest('div')!.parentElement!;
+
         expect(within(overdue).getByText('Cut the release branch')).toBeTruthy();
 
         const due = within(attention()).getByText('Due today').closest('div')!.parentElement!;
+
         expect(within(due).getByText('Rewrite the picker copy')).toBeTruthy();
 
         // Dated later than today belongs to Upcoming, not to this slice.
@@ -129,6 +137,7 @@ describe('Summary', () => {
 
     it('ticking a task writes `done` to the file', () => {
         const updateItem = vi.fn();
+
         mount('summary', updateItem);
         fireEvent.click(within(attention()).getByLabelText('Mark Cut the release branch done'));
         expect(updateItem).toHaveBeenCalledWith('t1', { flags: { done: true } });
@@ -138,7 +147,9 @@ describe('Summary', () => {
     // timeline is everything — so each is named rather than run together.
     it('lists every task in the timeline, finished ones included', () => {
         mount('summary');
+
         const shown = within(timeline());
+
         expect(shown.getByText('Still open')).toBeTruthy();
         expect(shown.getByText('Transcribe the interview')).toBeTruthy();
         expect(shown.getByText('Shipped it')).toBeTruthy();
@@ -148,6 +159,7 @@ describe('Summary', () => {
     // one can be reopened too.
     it('reopens a finished task from the timeline', () => {
         const updateItem = vi.fn();
+
         mount('summary', updateItem);
 
         fireEvent.click(within(timeline()).getByLabelText('Mark Shipped it not done'));
@@ -156,7 +168,9 @@ describe('Summary', () => {
 
     it('groups finished tasks by the day they were completed', () => {
         mount('summary');
+
         const group = within(timeline()).getByText('Yesterday').closest('div')!.parentElement!;
+
         expect(within(group).getByText('Shipped it')).toBeTruthy();
     });
 
@@ -209,17 +223,21 @@ describe('Upcoming', () => {
 describe('Board', () => {
     it('lays each task out under the column its status names', () => {
         mount('board');
+
         const todo = screen.getByText('To do').closest('[data-board-column]')!;
+
         // Nothing seeded carries a status, so every card starts in column one.
         expect(within(todo as HTMLElement).getByText('Triage the reading list')).toBeTruthy();
     });
 
     it('moves a card to the column the pointer is released over', () => {
         const updateItem = vi.fn();
+
         mount('board', updateItem);
         pointerOver('In progress');
 
         const card = screen.getByLabelText('Triage the reading list — in To do');
+
         fireEvent.pointerDown(card, { button: 0, clientX: 10, clientY: 10 });
         fireEvent.pointerMove(window, { clientX: 300, clientY: 120 });
         fireEvent.pointerUp(window, { clientX: 300, clientY: 120 });
@@ -235,6 +253,7 @@ describe('Board', () => {
         pointerOver('In progress');
 
         const card = screen.getByLabelText('Triage the reading list — in To do');
+
         fireEvent.pointerDown(card, { button: 0, clientX: 10, clientY: 10 });
         expect(document.documentElement.hasAttribute('data-dragging')).toBe(false);
 
@@ -250,6 +269,7 @@ describe('Board', () => {
         pointerOver('In progress');
 
         const card = screen.getByLabelText('Triage the reading list — in To do');
+
         fireEvent.pointerDown(card, { button: 0, clientX: 10, clientY: 10 });
         fireEvent.pointerMove(window, { clientX: 300, clientY: 120 });
         fireEvent.keyDown(window, { key: 'Escape' });
@@ -264,6 +284,7 @@ describe('Board', () => {
         pointerOver('In progress');
 
         const card = screen.getByLabelText('Triage the reading list — in To do');
+
         fireEvent.pointerDown(card, { button: 0, clientX: 10, clientY: 10 });
         fireEvent.pointerMove(window, { clientX: 300, clientY: 120 });
         fireEvent.pointerUp(window, { clientX: 300, clientY: 120 });
@@ -274,10 +295,12 @@ describe('Board', () => {
 
     it('a press that never travels is a click, not a drag', () => {
         const updateItem = vi.fn();
+
         mount('board', updateItem);
         pointerOver('In progress');
 
         const card = screen.getByLabelText('Triage the reading list — in To do');
+
         fireEvent.pointerDown(card, { button: 0, clientX: 10, clientY: 10 });
         fireEvent.pointerMove(window, { clientX: 12, clientY: 11 });
         fireEvent.pointerUp(window, { clientX: 12, clientY: 11 });
@@ -291,6 +314,7 @@ describe('Board', () => {
     // is a board half the keyboard cannot reach.
     it('moves a focused card one column with the arrow keys', () => {
         const updateItem = vi.fn();
+
         mount('board', updateItem);
 
         fireEvent.keyDown(screen.getByLabelText('Triage the reading list — in To do'), {
@@ -304,6 +328,7 @@ describe('Board', () => {
 
     it('does not walk a card off either end', () => {
         const updateItem = vi.fn();
+
         mount('board', updateItem);
 
         fireEvent.keyDown(screen.getByLabelText('Triage the reading list — in To do'), {
@@ -369,6 +394,7 @@ describe('Board', () => {
         pointerOver('Done');
 
         const handle = screen.getByTitle('Drag To do to reorder');
+
         fireEvent.pointerDown(handle, { button: 0, clientX: 10, clientY: 10 });
         fireEvent.pointerMove(window, { clientX: 400, clientY: 30 });
         fireEvent.pointerUp(window, { clientX: 400, clientY: 30 });
@@ -422,11 +448,14 @@ describe('board columns', () => {
 
         const columns = () => useStore.getState().boards.c1.columns;
         const added = columns()[columns().length - 1];
+
         expect(added).toEqual({ id: 'in-review', name: 'In review' });
 
         // A rename must not move any card: `status` holds the id, not the name.
         fireEvent.click(screen.getByText('In review'));
+
         const field = screen.getByDisplayValue('In review');
+
         fireEvent.change(field, { target: { value: 'QA' } });
         fireEvent.keyDown(field, { key: 'Enter' });
         await waitFor(() => expect(screen.getByText('QA')).toBeTruthy());
@@ -455,14 +484,18 @@ describe('the task rail', () => {
     // hides the thing it is about. List, rail and panel are three columns.
     it('docks the Properties panel beside the rail, not over it', () => {
         const { container } = mount('summary');
+
         useStore.setState({ prefs: { ...useStore.getState().prefs, propertiesOpen: true } });
         fireEvent.click(within(attention()).getByText('Rewrite the picker copy'));
 
         const columns = [...container.firstElementChild!.children];
+
         expect(columns.length).toBe(3);
+
         for (const column of columns) {
             expect(getComputedStyle(column).position).not.toBe('absolute');
         }
+
         // Both are on screen at once: the rail's own close button, and a row
         // that only the panel draws.
         expect(screen.getByLabelText('Close')).toBeTruthy();
@@ -473,9 +506,11 @@ describe('the task rail', () => {
     // collapses it by width, and so does this.
     it('collapses the panel by width rather than dropping it', () => {
         const { container } = mount('summary');
+
         fireEvent.click(within(attention()).getByText('Rewrite the picker copy'));
 
         const panel = () => [...container.firstElementChild!.children][2] as HTMLElement;
+
         expect(panel().style.width).toBe('0px');
         expect(panel().hasAttribute('inert')).toBe(true);
         expect(panel().className).toContain('transition-[width]');
@@ -488,10 +523,12 @@ describe('the task rail', () => {
     it('drops the transition when Reduce Motion is on', () => {
         const prefs = useStore.getState().prefs;
         const { container } = mount('summary');
+
         useStore.setState({ prefs: { ...prefs, switches: { ...prefs.switches, motion: true } } });
         fireEvent.click(within(attention()).getByText('Rewrite the picker copy'));
 
         const panel = [...container.firstElementChild!.children][2] as HTMLElement;
+
         expect(panel.className).not.toContain('transition-[width]');
     });
 

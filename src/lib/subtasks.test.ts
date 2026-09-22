@@ -12,6 +12,7 @@ import {
 describe('parseSubtasks', () => {
     it('reads the checkbox lines and leaves the prose alone', () => {
         const body = 'Ship the thing.\n\n- [ ] draft it\n- [x] review it';
+
         expect(parseSubtasks(body)).toEqual([
             { done: false, text: 'draft it' },
             { done: true, text: 'review it' },
@@ -35,6 +36,7 @@ describe('serializeSubtasks', () => {
             { done: false, text: 'draft it' },
             { done: true, text: 'review it' },
         ];
+
         expect(parseSubtasks(serializeSubtasks(subtasks))).toEqual(subtasks);
     });
 
@@ -56,6 +58,7 @@ describe('joinBody', () => {
 
     it('splits back into its two halves', () => {
         const body = joinBody('Ship it.', [{ done: true, text: 'a' }]);
+
         expect(stripSubtasks(body)).toBe('Ship it.');
         expect(parseSubtasks(body)).toEqual([{ done: true, text: 'a' }]);
     });
@@ -73,6 +76,7 @@ describe('toggleSubtask', () => {
             { done: false, text: 'b' },
         ];
         const next = toggleSubtask(subtasks, 1);
+
         expect(next[1].done).toBe(true);
         expect(subtasks[1].done).toBe(false);
     });

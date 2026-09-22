@@ -11,9 +11,11 @@ import { nextPaint, waitForPaint } from './printReady';
  */
 function addImage({ complete, width }: { complete: boolean; width: number }): HTMLImageElement {
     const image = document.createElement('img');
+
     Object.defineProperty(image, 'complete', { value: complete });
     Object.defineProperty(image, 'naturalWidth', { value: width });
     document.body.append(image);
+
     return image;
 }
 
@@ -74,6 +76,7 @@ describe('nextPaint', () => {
     it('resolves on frames when the window is producing them', async () => {
         vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
             cb(0);
+
             return 0;
         });
 
@@ -89,6 +92,7 @@ describe('nextPaint', () => {
         vi.stubGlobal('requestAnimationFrame', () => 0);
 
         const done = nextPaint();
+
         await vi.advanceTimersByTimeAsync(400);
 
         await expect(done).resolves.toBeUndefined();

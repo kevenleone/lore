@@ -65,7 +65,11 @@ export function absolutize(markdown: string, target: GithubTarget): string {
                 const wrapped = dest.startsWith('<') && dest.endsWith('>');
                 const bare = wrapped ? dest.slice(1, -1) : dest;
                 const next = resolve(bare, !!bang, target);
-                if (next === null) return whole;
+
+                if (next === null) {
+                    return whole;
+                }
+
                 return `${bang}[${text}](${wrapped ? `<${next}>` : next}${tail})`;
             },
         );
@@ -79,7 +83,11 @@ export function absolutize(markdown: string, target: GithubTarget): string {
                 const wrapped = dest.startsWith('<') && dest.endsWith('>');
                 const bare = wrapped ? dest.slice(1, -1) : dest;
                 const next = resolve(bare, false, target);
-                if (next === null) return whole;
+
+                if (next === null) {
+                    return whole;
+                }
+
                 return `${head}${wrapped ? `<${next}>` : next}`;
             },
         );
@@ -92,7 +100,11 @@ export function absolutize(markdown: string, target: GithubTarget): string {
                 const quote = quoted[0];
                 const bare = quoted.slice(1, -1);
                 const next = resolve(bare, attr.toLowerCase() === 'src', target);
-                if (next === null) return whole;
+
+                if (next === null) {
+                    return whole;
+                }
+
                 return `${head}${quote}${next}${quote}`;
             },
         );
@@ -106,31 +118,46 @@ export function absolutize(markdown: string, target: GithubTarget): string {
  */
 export function parseGithubTarget(rawUrl: string): GithubTarget | null {
     let url: URL;
+
     try {
         url = new URL(rawUrl.trim());
     } catch {
         return null;
     }
-    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+        return null;
+    }
 
     const host = url.hostname.replace(/^www\./, '');
     const segments = url.pathname
         .split('/')
         .filter(Boolean)
         .map((segment) => decodeURIComponent(segment));
-    if (segments.length < 2) return null;
+
+    if (segments.length < 2) {
+        return null;
+    }
 
     const owner = segments[0];
     const repo = segments[1].replace(/\.git$/, '');
 
     if (host === RAW_HOST) {
         // /{owner}/{repo}/{ref}/{path…}
-        if (segments.length < 4) return null;
+        if (segments.length < 4) {
+            return null;
+        }
+
         return document(owner, repo, segments[2], segments.slice(3).join('/'));
     }
-    if (host !== WEB_HOST) return null;
 
-    if (segments.length === 2) return { dir: '', owner, path: null, ref: 'HEAD', repo };
+    if (host !== WEB_HOST) {
+        return null;
+    }
+
+    if (segments.length === 2) {
+        return { dir: '', owner, path: null, ref: 'HEAD', repo };
+    }
 
     const kind = segments[2];
     // A ref containing a slash is indistinguishable from a ref plus a path, so
@@ -138,10 +165,19 @@ export function parseGithubTarget(rawUrl: string): GithubTarget | null {
     // cannot serve, and it degrades to a plain link rather than to a wrong file.
     const ref = segments[3];
     const rest = segments.slice(4).join('/');
-    if (!ref) return null;
 
-    if (kind === 'tree') return { dir: trimSlashes(rest), owner, path: null, ref, repo };
-    if (kind === 'blob' || kind === 'raw') return document(owner, repo, ref, rest);
+    if (!ref) {
+        return null;
+    }
+
+    if (kind === 'tree') {
+        return { dir: trimSlashes(rest), owner, path: null, ref, repo };
+    }
+
+    if (kind === 'blob' || kind === 'raw') {
+        return document(owner, repo, ref, rest);
+    }
+
     return null;
 }
 
@@ -154,8 +190,13 @@ export async function resolveDocument(target: GithubTarget): Promise<GithubDocum
     for (const path of candidates) {
         const raw = rawUrl(target.owner, target.repo, target.ref, path);
         const markdown = await fetchText(raw);
-        if (markdown === null) continue;
+
+        if (markdown === null) {
+            continue;
+        }
+
         const scoped: GithubTarget = { ...target, dir: dirOf(path), path };
+
         return {
             markdown: absolutize(markdown, scoped),
             path,
@@ -165,17 +206,23 @@ export async function resolveDocument(target: GithubTarget): Promise<GithubDocum
             title: titleFor(target, path),
         };
     }
+
     return null;
 }
 
 function dirOf(path: string): string {
     const cut = path.lastIndexOf('/');
+
     return cut === -1 ? '' : path.slice(0, cut);
 }
 
 function document(owner: string, repo: string, ref: string, path: string): GithubTarget | null {
     const clean = trimSlashes(path);
-    if (!clean || !MARKDOWN.test(clean)) return null;
+
+    if (!clean || !MARKDOWN.test(clean)) {
+        return null;
+    }
+
     return { dir: dirOf(clean), owner, path: clean, ref, repo };
 }
 
@@ -187,16 +234,26 @@ function encodePath(path: string): string {
 async function fetchText(url: string): Promise<null | string> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
     try {
         const res = await fetch(url, {
             headers: { Accept: 'text/plain, text/markdown, */*', 'User-Agent': UA },
             redirect: 'follow',
             signal: controller.signal,
         });
-        if (!res.ok) return null;
+
+        if (!res.ok) {
+            return null;
+        }
+
         const size = Number(res.headers.get('content-length') ?? '0');
-        if (size > MAX_BYTES) return null;
+
+        if (size > MAX_BYTES) {
+            return null;
+        }
+
         const text = await res.text();
+
         return text.length > MAX_BYTES ? null : text;
     } catch {
         return null;
@@ -208,11 +265,19 @@ async function fetchText(url: string): Promise<null | string> {
 /** Joins and normalises `.`/`..`, keeping the result inside the repo. */
 function joinPath(dir: string, rel: string): string {
     const out: string[] = [];
+
     for (const segment of `${dir}/${rel}`.split('/')) {
-        if (!segment || segment === '.') continue;
-        if (segment === '..') out.pop();
-        else out.push(segment);
+        if (!segment || segment === '.') {
+            continue;
+        }
+
+        if (segment === '..') {
+            out.pop();
+        } else {
+            out.push(segment);
+        }
     }
+
     return out.join('/');
 }
 
@@ -227,26 +292,38 @@ function outsideFences(markdown: string, transform: (chunk: string) => string): 
     let fence: null | string = null;
 
     const flush = () => {
-        if (buffer.length) out.push(transform(buffer.join('\n')));
+        if (buffer.length) {
+            out.push(transform(buffer.join('\n')));
+        }
+
         buffer = [];
     };
 
     for (const line of lines) {
         const opener = /^[ \t]{0,3}(`{3,}|~{3,})/.exec(line);
+
         if (fence === null && opener) {
             flush();
             fence = opener[1][0];
             out.push(line);
             continue;
         }
+
         if (fence !== null) {
             out.push(line);
-            if (new RegExp(`^[ \\t]{0,3}${fence}{3,}[ \\t]*$`).test(line)) fence = null;
+
+            if (new RegExp(`^[ \\t]{0,3}${fence}{3,}[ \\t]*$`).test(line)) {
+                fence = null;
+            }
+
             continue;
         }
+
         buffer.push(line);
     }
+
     flush();
+
     return out.join('\n');
 }
 
@@ -257,32 +334,52 @@ function rawUrl(owner: string, repo: string, ref: string, path: string): string 
 /** The absolute form of one reference, or null to leave it exactly as it is. */
 function resolve(dest: string, isImage: boolean, target: GithubTarget): null | string {
     const value = dest.trim();
-    if (!value) return null;
+
+    if (!value) {
+        return null;
+    }
+
     // Already absolute, protocol-relative, an anchor, or a template placeholder
     // some generator left behind.
-    if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return null;
-    if (value.startsWith('//') || value.startsWith('#') || value.startsWith('{')) return null;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(value)) {
+        return null;
+    }
+
+    if (value.startsWith('//') || value.startsWith('#') || value.startsWith('{')) {
+        return null;
+    }
 
     const cut = value.search(/[?#]/);
     const pathPart = cut === -1 ? value : value.slice(0, cut);
     const suffix = cut === -1 ? '' : value.slice(cut);
-    if (!pathPart) return null;
+
+    if (!pathPart) {
+        return null;
+    }
 
     // Root-relative in a README means github.com, not the repo.
-    if (pathPart.startsWith('/')) return `https://${WEB_HOST}${pathPart}${suffix}`;
+    if (pathPart.startsWith('/')) {
+        return `https://${WEB_HOST}${pathPart}${suffix}`;
+    }
 
     const path = joinPath(target.dir, pathPart);
-    if (!path) return null;
+
+    if (!path) {
+        return null;
+    }
+
     const { owner, ref, repo } = target;
     const base = isImage
         ? rawUrl(owner, repo, ref, path)
         : `https://${WEB_HOST}/${owner}/${repo}/blob/${encodeURIComponent(ref)}/${encodePath(path)}`;
+
     return `${base}${suffix}`;
 }
 
 /** The fallback name: the capture prefers the page's own title for a README. */
 function titleFor(target: GithubTarget, path: string): string {
     const repo = `${target.owner}/${target.repo}`;
+
     return /^README\.(markdown|md)$/i.test(path) ? repo : `${repo} · ${path}`;
 }
 

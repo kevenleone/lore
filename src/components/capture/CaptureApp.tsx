@@ -35,24 +35,33 @@ export function CaptureApp() {
     // more than once.
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') void hideCapture();
+            if (e.key === 'Escape') {
+                void hideCapture();
+            }
         };
+
         window.addEventListener('keydown', onKey);
 
         const unlisteners: (() => void)[] = [];
+
         (async () => {
             try {
                 const { getCurrentWindow } = await import('@tauri-apps/api/window');
                 const current = getCurrentWindow();
+
                 unlisteners.push(
                     await current.onFocusChanged(({ payload: focused }) => {
                         if (focused) {
                             releaseCaptureDismiss();
+
                             return;
                         }
+
                         // A native file dialog blurs the panel too; dismissing there
                         // would throw away the capture the user is still building.
-                        if (!isCaptureDismissHeld()) void hideCapture();
+                        if (!isCaptureDismissHeld()) {
+                            void hideCapture();
+                        }
                     }),
                     await current.listen('capture:shown', () => setSessionKey((k) => k + 1)),
                 );
@@ -63,7 +72,10 @@ export function CaptureApp() {
 
         return () => {
             window.removeEventListener('keydown', onKey);
-            for (const unlisten of unlisteners) unlisten();
+
+            for (const unlisten of unlisteners) {
+                unlisten();
+            }
         };
     }, []);
 
@@ -78,14 +90,17 @@ export function CaptureApp() {
     // vault the user just navigated away from.
     useEffect(() => {
         let unlisten: (() => void) | undefined;
+
         void setWorkspace(loadPersisted().workspacePath);
         void onWorkspaceChanged((path) => void setWorkspace(path)).then((fn) => {
             unlisten = fn;
         });
+
         return () => unlisten?.();
     }, []);
 
     const theme = effectiveTheme(prefs.appearance);
+
     useEffect(() => {
         paintTheme({
             accent: prefs.accent,
@@ -98,7 +113,9 @@ export function CaptureApp() {
         <div
             className="flex h-full flex-col items-center gap-3 overflow-hidden bg-transparent px-7 py-[26px]"
             onMouseDown={(e) => {
-                if (e.target === e.currentTarget) void hideCapture();
+                if (e.target === e.currentTarget) {
+                    void hideCapture();
+                }
             }}
         >
             {/* direction toggle — a floating segmented control */}

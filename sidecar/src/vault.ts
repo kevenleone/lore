@@ -33,7 +33,9 @@ export class Vault {
     async ensureScaffold(): Promise<void> {
         await mkdir(this.path(LORE_DIR), { recursive: true });
         await mkdir(this.path(TRASH_DIR), { recursive: true });
+
         const ignorePath = this.path(`${LORE_DIR}/.gitignore`);
+
         if (!(await Bun.file(ignorePath).exists())) {
             await writeFile(ignorePath, GITIGNORE, 'utf8');
         }
@@ -45,6 +47,7 @@ export class Vault {
      */
     async listCollectionFolders(): Promise<string[]> {
         const entries = await readdir(this.root, { withFileTypes: true });
+
         return entries
             .filter((e) => e.isDirectory() && !isIgnoredDir(e.name))
             .map((e) => e.name)
@@ -65,6 +68,7 @@ export class Vault {
             this.listCollectionFolders(),
             this.readCollectionsFile(),
         ]);
+
         return folders
             .map((folder) => ({
                 color: meta[folder]?.color ?? hashColor(folder),
@@ -77,23 +81,31 @@ export class Vault {
     /** Every `.md` file in the vault, as vault-relative paths. */
     async listMarkdown(): Promise<string[]> {
         const out: string[] = [];
+
         const walk = async (dirRel: string): Promise<void> => {
             const entries = await readdir(this.path(dirRel) || this.root, { withFileTypes: true });
+
             for (const e of entries) {
                 const rel = dirRel ? `${dirRel}/${e.name}` : e.name;
+
                 if (e.isDirectory()) {
-                    if (!isIgnoredDir(e.name)) await walk(rel);
+                    if (!isIgnoredDir(e.name)) {
+                        await walk(rel);
+                    }
                 } else if (e.name.endsWith('.md') && !isIgnoredFile(e.name)) {
                     out.push(rel);
                 }
             }
         };
+
         await walk('');
+
         return out;
     }
 
     async move(fromRel: string, toRel: string): Promise<void> {
         const to = this.path(toRel);
+
         await mkdir(dirname(to), { recursive: true });
         await rename(this.path(fromRel), to);
     }
@@ -107,6 +119,7 @@ export class Vault {
         if (!relPath.startsWith(`${ATTACHMENTS_DIR}/`)) {
             throw new Error(`not an attachment: ${relPath}`);
         }
+
         return readFile(this.path(relPath));
     }
 
@@ -119,12 +132,21 @@ export class Vault {
     async readBoardsFile(): Promise<Record<string, BoardConfig>> {
         try {
             const parsed = JSON.parse(await this.readText(BOARDS_FILE)) as { boards?: unknown };
-            if (!parsed.boards || typeof parsed.boards !== 'object') return {};
+
+            if (!parsed.boards || typeof parsed.boards !== 'object') {
+                return {};
+            }
+
             const out: Record<string, BoardConfig> = {};
+
             for (const [id, value] of Object.entries(parsed.boards as Record<string, unknown>)) {
                 const board = boardConfig(value);
-                if (board) out[id] = board;
+
+                if (board) {
+                    out[id] = board;
+                }
             }
+
             return out;
         } catch {
             // No file yet, or one we cannot read: every board falls back to the
@@ -137,8 +159,13 @@ export class Vault {
         try {
             const raw = await this.readText(COLLECTIONS_FILE);
             const parsed = JSON.parse(raw) as { collections?: unknown };
-            if (!Array.isArray(parsed.collections)) return {};
+
+            if (!Array.isArray(parsed.collections)) {
+                return {};
+            }
+
             const out: Record<string, { color?: string }> = {};
+
             for (const c of parsed.collections) {
                 if (
                     c &&
@@ -146,9 +173,11 @@ export class Vault {
                     typeof (c as { folder?: unknown }).folder === 'string'
                 ) {
                     const { color, folder } = c as { color?: string; folder: string };
+
                     out[folder] = { color };
                 }
             }
+
             return out;
         } catch {
             // Missing or malformed: colours fall back to the name hash, which is the
@@ -173,6 +202,7 @@ export class Vault {
             const tagOrder = Array.isArray(parsed.tagOrder)
                 ? parsed.tagOrder.filter((t): t is string => typeof t === 'string')
                 : [];
+
             return { tagOrder };
         } catch {
             return { tagOrder: [] };
@@ -186,10 +216,14 @@ export class Vault {
      */
     async writeAttachment(filename: string, bytes: Uint8Array): Promise<string> {
         const dir = this.path(ATTACHMENTS_DIR);
+
         await mkdir(dir, { recursive: true });
+
         const taken = new Set(await readdir(dir));
         const rel = `${ATTACHMENTS_DIR}/${uniqueAttachmentName(filename, taken)}`;
+
         await writeFile(this.path(rel), bytes);
+
         return rel;
     }
 
@@ -202,11 +236,13 @@ export class Vault {
             collections: collections.map((c) => ({ color: c.color, folder: c.id })),
             version: 1,
         };
+
         await this.writeText(COLLECTIONS_FILE, `${JSON.stringify(payload, null, 2)}\n`);
     }
 
     async writeText(relPath: string, text: string): Promise<void> {
         const full = this.path(relPath);
+
         await mkdir(dirname(full), { recursive: true });
         await writeFile(full, text, 'utf8');
     }
@@ -222,6 +258,7 @@ export class Vault {
 /** The directory part of a vault-relative file path — "" at the root. */
 export function collectionOf(relPath: string): string {
     const i = relPath.lastIndexOf('/');
+
     return i === -1 ? '' : relPath.slice(0, i);
 }
 
@@ -229,32 +266,12 @@ export function collectionOf(relPath: string): string {
 export function hashColor(name: string): string {
     const palette = ['#8a92b8', '#a88f6e', '#82a896', '#b0807c', '#9e8fb0', '#7f9bb3', '#a89a6e'];
     let h = 0;
-    for (let i = 0; i < name.length; i += 1) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-    return palette[h % palette.length];
-}
 
-/** Parses one board entry, dropping anything malformed rather than throwing. */
-function boardConfig(value: unknown): BoardConfig | null {
-    if (!value || typeof value !== 'object') return null;
-    const { columns, view } = value as { columns?: unknown; view?: unknown };
-    if (!Array.isArray(columns)) return null;
-    const parsed = columns.flatMap((c) => {
-        if (!c || typeof c !== 'object') return [];
-        const { color, done, id, name } = c as Record<string, unknown>;
-        if (typeof id !== 'string' || !id) return [];
-        return [
-            {
-                ...(typeof color === 'string' ? { color } : {}),
-                ...(done === true ? { done: true } : {}),
-                id,
-                name: typeof name === 'string' && name ? name : id,
-            },
-        ];
-    });
-    if (parsed.length === 0) return null;
-    // Anything but `list` is the card layout, which also folds the `board`
-    // this field used to be written as into its new name.
-    return { columns: parsed, view: view === 'list' ? 'list' : 'cards' };
+    for (let i = 0; i < name.length; i += 1) {
+        h = (h * 31 + name.charCodeAt(i)) >>> 0;
+    }
+
+    return palette[h % palette.length];
 }
 
 /** Directories that are never collections and are never scanned for items. */
@@ -281,14 +298,17 @@ export function joinPath(collectionId: string | undefined, stem: string): string
 export function safeJoin(root: string, relPath: string): string {
     const full = resolve(root, relPath);
     const rel = relative(root, full);
+
     if (rel.startsWith('..') || rel.startsWith(`..${sep}`) || resolve(rel) === rel) {
         throw new Error(`path escapes the vault: ${relPath}`);
     }
+
     return full;
 }
 
 export function stemOf(relPath: string): string {
     const base = relPath.slice(relPath.lastIndexOf('/') + 1);
+
     return base.endsWith('.md') ? base.slice(0, -3) : base;
 }
 
@@ -307,11 +327,60 @@ export function uniqueAttachmentName(filename: string, taken: ReadonlySet<string
                   .replace(/[^.a-z0-9]/g, '')
             : '';
     const stem = slugify(dot > 0 ? base.slice(0, dot) : base) || 'attachment';
-    if (!taken.has(`${stem}${ext}`)) return `${stem}${ext}`;
-    for (let n = 2; n < 1000; n += 1) {
-        if (!taken.has(`${stem}-${n}${ext}`)) return `${stem}-${n}${ext}`;
+
+    if (!taken.has(`${stem}${ext}`)) {
+        return `${stem}${ext}`;
     }
+
+    for (let n = 2; n < 1000; n += 1) {
+        if (!taken.has(`${stem}-${n}${ext}`)) {
+            return `${stem}-${n}${ext}`;
+        }
+    }
+
     return `${stem}-${Date.now().toString(36)}${ext}`;
+}
+
+/** Parses one board entry, dropping anything malformed rather than throwing. */
+function boardConfig(value: unknown): BoardConfig | null {
+    if (!value || typeof value !== 'object') {
+        return null;
+    }
+
+    const { columns, view } = value as { columns?: unknown; view?: unknown };
+
+    if (!Array.isArray(columns)) {
+        return null;
+    }
+
+    const parsed = columns.flatMap((c) => {
+        if (!c || typeof c !== 'object') {
+            return [];
+        }
+
+        const { color, done, id, name } = c as Record<string, unknown>;
+
+        if (typeof id !== 'string' || !id) {
+            return [];
+        }
+
+        return [
+            {
+                ...(typeof color === 'string' ? { color } : {}),
+                ...(done === true ? { done: true } : {}),
+                id,
+                name: typeof name === 'string' && name ? name : id,
+            },
+        ];
+    });
+
+    if (parsed.length === 0) {
+        return null;
+    }
+
+    // Anything but `list` is the card layout, which also folds the `board`
+    // this field used to be written as into its new name.
+    return { columns: parsed, view: view === 'list' ? 'list' : 'cards' };
 }
 
 export { join, resolve };

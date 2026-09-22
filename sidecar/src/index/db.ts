@@ -62,18 +62,22 @@ export class IndexVersionMismatch extends Error {
 
 export function hashContent(text: string): string {
     const h = new Bun.CryptoHasher('sha256');
+
     h.update(text);
+
     return h.digest('hex');
 }
 
 export function openIndex(path: string): Database {
     const db = new Database(path, { create: true });
+
     db.exec('PRAGMA journal_mode = WAL');
     db.exec('PRAGMA synchronous = NORMAL');
     db.exec('PRAGMA foreign_keys = ON');
     db.run(SCHEMA);
 
     const row = db.query<{ v: string }, []>("SELECT v FROM meta WHERE k = 'schema_version'").get();
+
     if (!row) {
         db.run("INSERT INTO meta (k, v) VALUES ('schema_version', ?)", [String(SCHEMA_VERSION)]);
     } else if (Number(row.v) !== SCHEMA_VERSION) {
@@ -82,5 +86,6 @@ export function openIndex(path: string): Database {
         db.close();
         throw new IndexVersionMismatch();
     }
+
     return db;
 }

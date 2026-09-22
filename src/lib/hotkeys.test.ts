@@ -42,6 +42,7 @@ describe('matchesHotkey', () => {
 
     it('requires the modifiers exactly', () => {
         const withShift = keydown('KeyE', { ctrlKey: true, shiftKey: true });
+
         expect(matchesHotkey(withShift, 'Mod+Shift+E', 'other')).toBe(true);
         expect(matchesHotkey(withShift, 'Mod+E', 'other')).toBe(false);
     });
@@ -62,9 +63,11 @@ describe('the macOS menu bar', () => {
 
     it('carries the same chord as the registry for every accelerator', () => {
         expect(accelerators.length).toBeGreaterThan(0);
+
         for (const [, accelerator, id] of accelerators) {
             const command = HOTKEYS.find((entry) => entry.id === id);
             const hotkey = accelerator.replace('CmdOrCtrl', 'Mod').replace(',', 'Comma');
+
             expect(command?.hotkey, id).toBe(hotkey);
         }
     });

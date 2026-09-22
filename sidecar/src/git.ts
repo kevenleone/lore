@@ -30,6 +30,7 @@ export interface GitStatus {
 export async function gitStatus(root: string): Promise<GitStatus> {
     try {
         await access(join(root, '.git'));
+
         return { tracked: true };
     } catch {
         return { tracked: false };
@@ -43,21 +44,30 @@ export async function gitStatus(root: string): Promise<GitStatus> {
  * the caller asked for the vault to be under Git, and it is.
  */
 export async function initGit(root: string): Promise<GitStatus> {
-    if (await gitStatus(root).then((s) => s.tracked)) return { tracked: true };
+    if (await gitStatus(root).then((s) => s.tracked)) {
+        return { tracked: true };
+    }
 
     await mkdir(root, { recursive: true });
+
     const init = Bun.spawn(['git', 'init'], { cwd: root, stderr: 'pipe', stdout: 'pipe' });
+
     if ((await init.exited) !== 0) {
         throw new Error((await new Response(init.stderr).text()).trim() || 'git init failed');
     }
 
     await writeGitignore(root);
+
     return { tracked: true };
 }
 
 /** Leaves an existing `.gitignore` alone — it is the user's file, not Lore's. */
 async function writeGitignore(root: string): Promise<void> {
     const path = join(root, '.gitignore');
-    if (await Bun.file(path).exists()) return;
+
+    if (await Bun.file(path).exists()) {
+        return;
+    }
+
     await Bun.write(path, GITIGNORE);
 }

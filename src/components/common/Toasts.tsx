@@ -15,7 +15,9 @@ import { useStore } from '../../store/useStore';
 export function Toasts() {
     const toasts = useStore((s) => s.toasts);
 
-    if (toasts.length === 0) return null;
+    if (toasts.length === 0) {
+        return null;
+    }
 
     return (
         <div
@@ -38,6 +40,7 @@ function ToastChip({ toast }: { toast: Toast }) {
     // The animation fades the chip out as it ends; this is what takes it off.
     useEffect(() => {
         const timer = setTimeout(() => dismissToast(toast.id), life);
+
         return () => clearTimeout(timer);
     }, [dismissToast, life, toast.id]);
 

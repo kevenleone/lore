@@ -59,8 +59,13 @@ const MAX_SESSIONS = 500;
 export function loadPersisted(): Persisted {
     try {
         const raw = localStorage.getItem(KEY);
-        if (!raw) return DEFAULT_PERSISTED;
+
+        if (!raw) {
+            return DEFAULT_PERSISTED;
+        }
+
         const saved = JSON.parse(raw) as Partial<Persisted>;
+
         // Merge field-by-field so a preference added in a later version still gets
         // its default instead of coming back undefined.
         return {
@@ -92,6 +97,7 @@ export function savePersisted(state: Persisted): void {
             ...state,
             focusSessions: state.focusSessions.slice(-MAX_SESSIONS),
         };
+
         localStorage.setItem(KEY, JSON.stringify(trimmed));
     } catch {
         // Private browsing / quota — preferences just will not survive the launch.

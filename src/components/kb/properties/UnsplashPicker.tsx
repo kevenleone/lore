@@ -57,23 +57,34 @@ export function UnsplashPicker() {
     }, []);
 
     useEffect(() => {
-        if (!key || !term) return;
+        if (!key || !term) {
+            return;
+        }
+
         let cancelled = false;
+
         setSearching(true);
         setError(null);
         searchPhotos(key, term).then(
             (result) => {
-                if (cancelled) return;
+                if (cancelled) {
+                    return;
+                }
+
                 setPhotos(result.photos);
                 setSearching(false);
             },
             (failure: unknown) => {
-                if (cancelled) return;
+                if (cancelled) {
+                    return;
+                }
+
                 setPhotos([]);
                 setError(messageFor(failure));
                 setSearching(false);
             },
         );
+
         return () => {
             cancelled = true;
         };
@@ -81,12 +92,21 @@ export function UnsplashPicker() {
 
     const pick = (photo: UnsplashPhoto) => {
         close();
-        if (!item) return;
-        if (key) trackDownload(key, photo.downloadLocation);
+
+        if (!item) {
+            return;
+        }
+
+        if (key) {
+            trackDownload(key, photo.downloadLocation);
+        }
+
         void updateItem(item.id, { image: photo.url, imageCredit: creditFor(photo) });
     };
 
-    if (!item) return null;
+    if (!item) {
+        return null;
+    }
 
     return (
         <>
@@ -107,7 +127,10 @@ export function UnsplashPicker() {
                             className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-text outline-none"
                             onChange={(e) => setDraft(e.target.value)}
                             onKeyDown={(e) => {
-                                if (e.key !== 'Enter') return;
+                                if (e.key !== 'Enter') {
+                                    return;
+                                }
+
                                 e.preventDefault();
                                 setTerm(draft.trim());
                             }}
@@ -164,9 +187,11 @@ function Body({
     if (error) {
         return <p className="py-10 text-center text-body-lg text-danger">{error}</p>;
     }
+
     if (searching && photos.length === 0) {
         return <p className="py-10 text-center text-body-lg text-text3">Searching…</p>;
     }
+
     if (searched && photos.length === 0) {
         return (
             <p className="py-10 text-center text-body-lg text-text3">
@@ -174,6 +199,7 @@ function Body({
             </p>
         );
     }
+
     if (!searched) {
         return (
             <p className="py-10 text-center text-body-lg text-text3">
@@ -181,6 +207,7 @@ function Body({
             </p>
         );
     }
+
     return (
         <div className={cn('grid grid-cols-3 gap-3', searching && 'opacity-60')}>
             {photos.map((photo) => (

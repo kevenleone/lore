@@ -88,7 +88,10 @@ export class VaultRepository implements KnowledgeRepository {
         try {
             return await this.call(() => request<Item>(`/items/${encodeURIComponent(id)}`));
         } catch (e) {
-            if (e instanceof HttpError && e.status === 404) return null;
+            if (e instanceof HttpError && e.status === 404) {
+                return null;
+            }
+
             throw e;
         }
     }
@@ -99,7 +102,10 @@ export class VaultRepository implements KnowledgeRepository {
                 request<ItemMeta>(`/items/${encodeURIComponent(id)}/meta`),
             );
         } catch (e) {
-            if (e instanceof HttpError && e.status === 404) return null;
+            if (e instanceof HttpError && e.status === 404) {
+                return null;
+            }
+
             throw e;
         }
     }
@@ -116,6 +122,7 @@ export class VaultRepository implements KnowledgeRepository {
         // Filtering stays client-side so there is one `matchesView` shared by every
         // repository, and the selector tests keep covering it.
         const items = await this.call(() => request<Item[]>('/items'));
+
         return view ? items.filter((i) => matchesView(i, view)) : items;
     }
 
@@ -164,11 +171,16 @@ export class VaultRepository implements KnowledgeRepository {
      */
     subscribe(cb: () => void): () => void {
         let closed = false;
+
         void eventsUrl().then((url) => {
-            if (closed) return;
+            if (closed) {
+                return;
+            }
+
             this.events = new EventSource(url);
             this.events.addEventListener('changed', () => cb());
         });
+
         return () => {
             closed = true;
             this.events?.close();
@@ -199,10 +211,13 @@ export class VaultRepository implements KnowledgeRepository {
     /** Copies the file into `attachments/`; the item stores the path it answers. */
     async uploadAttachment(file: File): Promise<string> {
         const body = new FormData();
+
         body.append('file', file);
+
         const { path } = await this.call(() =>
             request<{ path: string }>('/attachments', { body, method: 'POST' }),
         );
+
         return path;
     }
 
@@ -216,12 +231,17 @@ export class VaultRepository implements KnowledgeRepository {
      */
     private async call<T>(fn: () => Promise<T>): Promise<T> {
         await this.ready();
+
         try {
             return await fn();
         } catch (e) {
-            if (!(e instanceof HttpError) || e.status !== 409) throw e;
+            if (!(e instanceof HttpError) || e.status !== 409) {
+                throw e;
+            }
+
             this.opening = null;
             await this.ready();
+
             return fn();
         }
     }
@@ -231,7 +251,11 @@ export class VaultRepository implements KnowledgeRepository {
     private async openWorkspace(): Promise<void> {
         const info = await request<WorkspaceInfo>('/workspace');
         const wanted = this.workspacePath ?? (await defaultVaultPath());
-        if (info.open && info.path === wanted) return;
+
+        if (info.open && info.path === wanted) {
+            return;
+        }
+
         await request<{ itemCount: number; path: string }>('/workspace/open', {
             body: JSON.stringify({ path: wanted }),
             method: 'POST',
@@ -250,6 +274,7 @@ export class VaultRepository implements KnowledgeRepository {
                 throw e;
             });
         }
+
         return this.opening;
     }
 }
@@ -257,6 +282,7 @@ export class VaultRepository implements KnowledgeRepository {
 /** The vault the host keeps alongside the app's own data. */
 export async function defaultVaultPath(): Promise<string> {
     const { invoke } = await import('@tauri-apps/api/core');
+
     return invoke<string>('default_vault_path');
 }
 

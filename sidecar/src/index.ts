@@ -25,6 +25,7 @@ async function main(): Promise<void> {
     app.listen({ hostname: '127.0.0.1', port: config.port });
 
     const port = app.server?.port;
+
     if (!port) {
         console.error('lore-sidecar: failed to bind a port');
         process.exit(1);

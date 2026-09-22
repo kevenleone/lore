@@ -31,7 +31,10 @@ let running = false;
 type Listen = typeof import('@tauri-apps/api/event').listen;
 
 export async function exportPdf(payload: PrintPayload, destination: string): Promise<void> {
-    if (running) throw new Error('An export is already running.');
+    if (running) {
+        throw new Error('An export is already running.');
+    }
+
     running = true;
 
     const { emit, listen } = await import('@tauri-apps/api/event');
@@ -40,6 +43,7 @@ export async function exportPdf(payload: PrintPayload, destination: string): Pro
     const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
 
     const printWindow = await WebviewWindow.getByLabel('print');
+
     if (!printWindow) {
         running = false;
         throw new Error('The print window is not available.');
@@ -67,6 +71,7 @@ export async function exportPdf(payload: PrintPayload, destination: string): Pro
  */
 export function pdfFileName(item: { path?: string; title: string }): string {
     const stem = item.path ? fileStem(item.path) : slugify(item.title);
+
     return `${stem || 'untitled'}.pdf`;
 }
 
@@ -80,6 +85,7 @@ export async function pickPdfPath(item: { path?: string; title: string }): Promi
         filters: [{ extensions: ['pdf'], name: 'PDF' }],
         title: 'Export as PDF',
     });
+
     return typeof picked === 'string' ? picked : null;
 }
 
@@ -94,6 +100,7 @@ function fileStem(path: string): string {
  */
 async function ready(listen: Listen, send: () => void): Promise<void> {
     let arrived = (): void => {};
+
     const laidOut = new Promise<void>((resolve) => {
         arrived = resolve;
     });
@@ -104,6 +111,7 @@ async function ready(listen: Listen, send: () => void): Promise<void> {
     // and the first payload would then land on nothing. One retry costs a
     // re-render of a page that has not been printed, which is free.
     send();
+
     const retry = setTimeout(send, RETRY_MS);
 
     let expire: ReturnType<typeof setTimeout> | undefined;

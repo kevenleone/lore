@@ -5,6 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const invoke = vi.fn();
+
 vi.mock('@tauri-apps/api/core', () => ({ invoke: (...args: unknown[]) => invoke(...args) }));
 
 const { eventsUrl, forgetEndpoint, HttpError, request, SidecarUnavailable } =
@@ -22,11 +23,13 @@ beforeEach(() => {
 describe('request', () => {
     it('sends the bearer token from the discovered endpoint', async () => {
         const fetchMock = vi.fn().mockResolvedValue(ok({ hi: true }));
+
         vi.stubGlobal('fetch', fetchMock);
 
         await expect(request('/items')).resolves.toEqual({ hi: true });
 
         const [url, init] = fetchMock.mock.calls[0];
+
         expect(url).toBe('http://127.0.0.1:5000/items');
         expect((init.headers as Record<string, string>).Authorization).toBe('Bearer tok');
     });
@@ -46,10 +49,12 @@ describe('request', () => {
         invoke
             .mockResolvedValueOnce({ token: 'old', url: 'http://127.0.0.1:5000' })
             .mockResolvedValueOnce({ token: 'new', url: 'http://127.0.0.1:6000' });
+
         const fetchMock = vi
             .fn()
             .mockRejectedValueOnce(new TypeError('Failed to fetch'))
             .mockResolvedValueOnce(ok({ recovered: true }));
+
         vi.stubGlobal('fetch', fetchMock);
 
         await expect(request('/items')).resolves.toEqual({ recovered: true });
@@ -66,6 +71,7 @@ describe('request', () => {
 
     it('does not retry an HTTP error — the engine answered, it just said no', async () => {
         const fetchMock = vi.fn().mockResolvedValue(ok({ error: 'not_found' }, 404));
+
         vi.stubGlobal('fetch', fetchMock);
 
         await expect(request('/items/nope')).rejects.toBeInstanceOf(HttpError);
@@ -84,6 +90,7 @@ describe('request', () => {
 
     it('sets a JSON content type only when there is a body', async () => {
         const fetchMock = vi.fn().mockImplementation(() => ok({}));
+
         vi.stubGlobal('fetch', fetchMock);
 
         await request('/items', { body: JSON.stringify({ a: 1 }), method: 'POST' });

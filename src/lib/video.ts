@@ -9,9 +9,17 @@ export type LinkVideo =
 
 export function linkVideo(rawUrl: string | undefined): LinkVideo | null {
     const youtube = youtubeVideo(rawUrl);
-    if (youtube) return { provider: 'youtube', ...youtube };
+
+    if (youtube) {
+        return { provider: 'youtube', ...youtube };
+    }
+
     const vimeo = vimeoVideo(rawUrl);
-    if (vimeo) return { provider: 'vimeo', ...vimeo };
+
+    if (vimeo) {
+        return { provider: 'vimeo', ...vimeo };
+    }
+
     return null;
 }
 

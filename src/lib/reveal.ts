@@ -12,7 +12,9 @@ import { defaultVaultPath } from '../data/vaultRepository';
 export async function revealPath(path: null | string): Promise<boolean> {
     try {
         const { revealItemInDir } = await import('@tauri-apps/plugin-opener');
+
         await revealItemInDir(path ?? (await defaultVaultPath()));
+
         return true;
     } catch {
         return false;
@@ -30,7 +32,9 @@ export async function revealVaultFile(vaultPath: null | string, relPath: string)
     try {
         const { revealItemInDir } = await import('@tauri-apps/plugin-opener');
         const root = vaultPath ?? (await defaultVaultPath());
+
         await revealItemInDir(`${root.replace(/\/$/, '')}/${relPath}`);
+
         return true;
     } catch {
         return false;

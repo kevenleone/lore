@@ -94,6 +94,7 @@ export default function App() {
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             const command = hotkeyCommandFor(e);
+
             if (command === 'focus') {
                 e.preventDefault();
                 toggleFocus();
@@ -105,14 +106,22 @@ export default function App() {
                 // Under it the capture drawer lies over everything else; then both
                 // ways of opening an item from Cards or Table are dismissible too,
                 // and so is the rail the Tasks surface opens beside its list.
-                if (commandMenuOpen) closeCommandMenu();
-                else if (photoPickerOpen) closePhotoPicker();
-                else if (captureOpen) closeCapture();
-                else if (mainView === 'tasks') closeTask();
-                else closeOpenItem();
+                if (commandMenuOpen) {
+                    closeCommandMenu();
+                } else if (photoPickerOpen) {
+                    closePhotoPicker();
+                } else if (captureOpen) {
+                    closeCapture();
+                } else if (mainView === 'tasks') {
+                    closeTask();
+                } else {
+                    closeOpenItem();
+                }
             }
         };
+
         window.addEventListener('keydown', onKey);
+
         return () => window.removeEventListener('keydown', onKey);
     }, [
         captureOpen,
@@ -166,15 +175,24 @@ export default function App() {
     // Without the Mac menu bar the renderer fires its chords. Capture phase, so a
     // chord reaches the command before the editor, as a menu accelerator would.
     useEffect(() => {
-        if (IS_MAC) return;
+        if (IS_MAC) {
+            return;
+        }
+
         const onKey = (e: KeyboardEvent) => {
             const run = menuCommands[hotkeyCommandFor(e) ?? ''];
-            if (!run) return;
+
+            if (!run) {
+                return;
+            }
+
             e.preventDefault();
             e.stopPropagation();
             run();
         };
+
         window.addEventListener('keydown', onKey, true);
+
         return () => window.removeEventListener('keydown', onKey, true);
     }, [menuCommands]);
 
@@ -183,12 +201,20 @@ export default function App() {
     useEffect(() => {
         const paint = () => {
             const mode = effectiveTheme(appearance);
+
             paintTheme({ accent, mode, themeId: mode === 'dark' ? darkTheme : lightTheme });
         };
+
         paint();
-        if (appearance !== 'auto' || !window.matchMedia) return;
+
+        if (appearance !== 'auto' || !window.matchMedia) {
+            return;
+        }
+
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
+
         mq.addEventListener('change', paint);
+
         return () => mq.removeEventListener('change', paint);
     }, [accent, appearance, darkTheme, lightTheme]);
 
@@ -211,8 +237,12 @@ export default function App() {
                     listen('capture:toggle', () => toggleCapture()),
                     listen<string>('menu', (e) => menuCommands[e.payload]?.()),
                 ]);
-                if (live) unlisteners = registered;
-                else registered.forEach((off) => off());
+
+                if (live) {
+                    unlisteners = registered;
+                } else {
+                    registered.forEach((off) => off());
+                }
             } catch {
                 // Outside Tauri — no event bus.
             }
@@ -408,13 +438,20 @@ export default function App() {
  */
 function selectAllInFocusedField(): void {
     const target = document.activeElement;
-    if (!isTypingTarget(target)) return;
-    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
-        target.select();
+
+    if (!isTypingTarget(target)) {
         return;
     }
+
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+        target.select();
+
+        return;
+    }
+
     const selection = document.getSelection();
     const range = document.createRange();
+
     range.selectNodeContents(target as HTMLElement);
     selection?.removeAllRanges();
     selection?.addRange(range);

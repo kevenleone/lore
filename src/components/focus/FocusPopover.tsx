@@ -23,10 +23,14 @@ export function FocusPopover() {
     // A click anywhere else dismisses it, the way a menu-bar popover does.
     useEffect(() => {
         const onDown = (e: MouseEvent) => {
-            if (!ref.current?.contains(e.target as Node)) close();
+            if (!ref.current?.contains(e.target as Node)) {
+                close();
+            }
         };
+
         // Deferred: the click that opened the popover is still being dispatched.
         const id = setTimeout(() => document.addEventListener('mousedown', onDown));
+
         return () => {
             clearTimeout(id);
             document.removeEventListener('mousedown', onDown);

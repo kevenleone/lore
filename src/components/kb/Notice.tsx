@@ -14,7 +14,9 @@ export function Notice() {
     const message = useStore((s) => s.migrationNotice);
     const dismiss = useStore((s) => s.dismissMigrationNotice);
 
-    if (!message) return null;
+    if (!message) {
+        return null;
+    }
 
     return (
         <div

@@ -18,6 +18,7 @@ export interface ImageFallback {
  */
 export function useImageFallback(src: string | undefined): ImageFallback {
     const [failedSrc, setFailedSrc] = useState<null | string>(null);
+
     return {
         broken: !!src && failedSrc === src,
         onError: () => setFailedSrc(src ?? null),

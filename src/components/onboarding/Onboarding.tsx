@@ -112,15 +112,21 @@ export function Onboarding() {
     // in the browser preview, where the card is a mock with no vault behind it.
     useEffect(() => {
         let live = true;
+
         void (async () => {
             const [resolvedHome, suggested] = await Promise.all([
                 homeDirectory(),
                 suggestedVaultPath(),
             ]);
-            if (!live) return;
+
+            if (!live) {
+                return;
+            }
+
             setHome(resolvedHome);
             setPath((current) => current ?? suggested);
         })();
+
         return () => {
             live = false;
         };
@@ -133,6 +139,7 @@ export function Onboarding() {
 
     const commit = async (setup: { git: boolean; path: null | string; starter: boolean }) => {
         setBusy(true);
+
         try {
             await finish(setup);
         } finally {
@@ -175,7 +182,10 @@ export function Onboarding() {
                             onBack={() => setStep('pick')}
                             onChoose={async () => {
                                 const picked = await pickWorkspaceFolder();
-                                if (picked) setPath(picked);
+
+                                if (picked) {
+                                    setPath(picked);
+                                }
                             }}
                             onCreate={() => void commit({ git, path, starter })}
                             onToggleGit={() => setGit((on) => !on)}
@@ -190,8 +200,10 @@ export function Onboarding() {
                             onBack={() => setStep('pick')}
                             onBrowse={async () => {
                                 const picked = await pickWorkspaceFolder();
-                                if (picked)
+
+                                if (picked) {
                                     await commit({ git: false, path: picked, starter: false });
+                                }
                             }}
                             onOpen={(recentPath) =>
                                 void commit({ git: false, path: recentPath, starter: false })
@@ -440,6 +452,7 @@ function useTrackedVaults(recents: readonly { path: string }[]): Record<string, 
 
     useEffect(() => {
         let live = true;
+
         void (async () => {
             const entries = await Promise.all(
                 paths
@@ -447,8 +460,12 @@ function useTrackedVaults(recents: readonly { path: string }[]): Record<string, 
                     .filter(Boolean)
                     .map(async (path) => [path, await isVaultTracked(path)] as const),
             );
-            if (live) setTracked(Object.fromEntries(entries));
+
+            if (live) {
+                setTracked(Object.fromEntries(entries));
+            }
         })();
+
         return () => {
             live = false;
         };

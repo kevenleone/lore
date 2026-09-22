@@ -112,15 +112,24 @@ export interface UpcomingDay {
  */
 export function boardColumnFor(item: Item, board: BoardConfig): string {
     const done = board.columns.find((c) => c.done);
-    if (item.flags.done && done) return done.id;
+
+    if (item.flags.done && done) {
+        return done.id;
+    }
+
     const named = item.status && board.columns.find((c) => c.id === item.status);
-    if (named && !named.done) return named.id;
+
+    if (named && !named.done) {
+        return named.id;
+    }
+
     return board.columns[0]?.id ?? '';
 }
 
 /** Every task on this board, done included — the Done column is the point. */
 export function boardColumns(items: Item[], board: BoardConfig): BoardColumn[] {
     const tasks = items.filter(isTask);
+
     return board.columns.map((config) => ({
         config,
         tasks: byUrgency(tasks.filter((t) => boardColumnFor(t, board) === config.id)),
@@ -165,6 +174,7 @@ export function boardRollups(items: Item[], collections: Collection[]): BoardRol
         UNFILED_COLOR,
         tasks.filter((t) => !t.collectionId),
     );
+
     return unfiled ? [...rollups, unfiled] : rollups;
 }
 
@@ -182,9 +192,18 @@ export function dayKey(date: Date): string {
 }
 
 export function dueTone(item: Item, today: string): DueTone {
-    if (!item.dueAt) return 'none';
-    if (item.dueAt < today) return 'overdue';
-    if (item.dueAt === today) return 'today';
+    if (!item.dueAt) {
+        return 'none';
+    }
+
+    if (item.dueAt < today) {
+        return 'overdue';
+    }
+
+    if (item.dueAt === today) {
+        return 'today';
+    }
+
     return 'later';
 }
 
@@ -195,15 +214,26 @@ export function dueTone(item: Item, today: string): DueTone {
  */
 export function filterBoardTasks(tasks: Item[], filter: BoardFilter, today: string): Item[] {
     const query = filter.query.trim().toLowerCase();
+
     return tasks.filter((task) => {
-        if (filter.overdue && dueTone(task, today) !== 'overdue') return false;
-        if (filter.priorities.length > 0) {
-            if (!filter.priorities.includes(task.priority ?? 'normal')) return false;
+        if (filter.overdue && dueTone(task, today) !== 'overdue') {
+            return false;
         }
+
+        if (filter.priorities.length > 0) {
+            if (!filter.priorities.includes(task.priority ?? 'normal')) {
+                return false;
+            }
+        }
+
         if (filter.tags.length > 0 && !filter.tags.some((tag) => task.tags.includes(tag))) {
             return false;
         }
-        if (!query) return true;
+
+        if (!query) {
+            return true;
+        }
+
         return `${task.title} ${task.prose ?? ''}`.toLowerCase().includes(query);
     });
 }
@@ -226,6 +256,7 @@ export function patchForColumn(
 
 export function taskCounts(items: Item[], collections: Collection[], today: string): TaskCounts {
     const open = openTasks(items);
+
     return {
         boards: boardRollups(items, collections).length,
         overdue: open.filter((t) => dueTone(t, today) === 'overdue').length,
@@ -279,12 +310,15 @@ export function taskTimeline(items: Item[], today: string): TimelineGroup[] {
 
     const byDay = new Map<string, Item[]>();
     const undated: Item[] = [];
+
     for (const task of done) {
         if (!task.completedAt) {
             undated.push(task);
             continue;
         }
+
         const day = localDateKey(task.completedAt);
+
         byDay.set(day, [...(byDay.get(day) ?? []), task]);
     }
 
@@ -314,10 +348,14 @@ export function taskTimeline(items: Item[], today: string): TimelineGroup[] {
 export function upcomingDays(items: Item[], from: Date, count: number): UpcomingDay[] {
     const open = openTasks(items);
     const today = dayKey(new Date());
+
     return Array.from({ length: count }, (_, offset) => {
         const date = new Date(from);
+
         date.setDate(date.getDate() + offset);
+
         const key = dayKey(date);
+
         return {
             date,
             isToday: key === today,
@@ -351,12 +389,16 @@ function rollup(
     color: string,
     tasks: Item[],
 ): BoardRollup | null {
-    if (tasks.length === 0) return null;
+    if (tasks.length === 0) {
+        return null;
+    }
+
     const done = tasks.filter((t) => t.flags.done).length;
     const dueDays = tasks
         .filter((t) => !t.flags.done && t.dueAt)
         .map((t) => t.dueAt!)
         .sort();
+
     return {
         collectionId,
         color,

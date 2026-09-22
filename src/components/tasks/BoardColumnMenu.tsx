@@ -35,15 +35,25 @@ export function BoardColumnMenu({
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!open) return;
+        if (!open) {
+            return;
+        }
+
         const onDown = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
         };
+
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setOpen(false);
+            if (e.key === 'Escape') {
+                setOpen(false);
+            }
         };
+
         window.addEventListener('mousedown', onDown);
         window.addEventListener('keydown', onKey);
+
         return () => {
             window.removeEventListener('mousedown', onDown);
             window.removeEventListener('keydown', onKey);

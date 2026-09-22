@@ -89,6 +89,7 @@ function Alert({
     kind: AlertKind;
 }): React.JSX.Element {
     const { border, Icon, label, text } = ALERTS[kind];
+
     return (
         <div className={cn(SPACING, 'border-l-[3px] pl-[14px]', border)}>
             <p className={cn('flex items-center gap-[7px] font-[620]', text)}>
@@ -105,18 +106,33 @@ function Alert({
 /** The alert a blockquote opens with, and what is left once the marker is cut. */
 function alertOf(node: Blockquote): { children: RootContent[]; kind: AlertKind } | null {
     const [first, ...rest] = node.children;
-    if (first?.type !== 'paragraph') return null;
+
+    if (first?.type !== 'paragraph') {
+        return null;
+    }
+
     const [lead, ...siblings] = first.children;
-    if (lead?.type !== 'text') return null;
+
+    if (lead?.type !== 'text') {
+        return null;
+    }
 
     const match = MARKER.exec(lead.value);
-    if (!match) return null;
+
+    if (!match) {
+        return null;
+    }
+
     const kind = match[1].toLowerCase() as AlertKind;
 
     // `> [!NOTE]` alone on its line makes the marker its own paragraph; on the
     // same line as the text it only prefixes the first text node.
     const remainder = lead.value.slice(match[0].length);
-    if (!remainder && !siblings.length) return { children: rest, kind };
+
+    if (!remainder && !siblings.length) {
+        return { children: rest, kind };
+    }
+
     return {
         children: [
             {
@@ -133,7 +149,11 @@ function Block({ node }: { node: RootContent }): null | React.JSX.Element {
     switch (node.type) {
         case 'blockquote': {
             const alert = alertOf(node);
-            if (alert) return <Alert kind={alert.kind}>{alert.children}</Alert>;
+
+            if (alert) {
+                return <Alert kind={alert.kind}>{alert.children}</Alert>;
+            }
+
             return (
                 <blockquote
                     className={cn(SPACING, 'border-l-2 border-border pl-[14px] text-text3')}
@@ -144,6 +164,7 @@ function Block({ node }: { node: RootContent }): null | React.JSX.Element {
                 </blockquote>
             );
         }
+
         case 'code':
             return (
                 <pre
@@ -155,11 +176,14 @@ function Block({ node }: { node: RootContent }): null | React.JSX.Element {
                     <code>{node.value}</code>
                 </pre>
             );
+
         case 'heading': {
             // Sized in theme/tailwind.css beside the editor's, so the two agree.
             const Tag = `h${node.depth}` as 'h1';
+
             return <Tag>{inline(node.children)}</Tag>;
         }
+
         case 'html':
             return <Html value={node.value} />;
         case 'list':
@@ -184,6 +208,7 @@ function cellOf(cell: TableCell, index: number, header: boolean): React.JSX.Elem
         'border-b border-border px-3 py-2 text-left align-top',
         header ? 'bg-surface3 font-[620] text-text' : 'text-text2',
     );
+
     return header ? (
         <th className={className} key={index}>
             {inline(cell.children)}
@@ -202,7 +227,11 @@ function cellOf(cell: TableCell, index: number, header: boolean): React.JSX.Elem
  */
 function Html({ value }: { value: string }): null | React.JSX.Element {
     const sources = [...value.matchAll(/<img\b[^>]*?\bsrc\s*=\s*"([^"]*)"/gi)].map((m) => m[1]);
-    if (!sources.length) return null;
+
+    if (!sources.length) {
+        return null;
+    }
+
     return (
         <p className={cn(SPACING, 'flex flex-wrap items-center gap-[6px]')}>
             {sources.map((src, index) => (
@@ -268,6 +297,7 @@ function inline(children: readonly PhrasingContent[]): React.ReactNode[] {
 function items(children: readonly RootContent[]): React.JSX.Element[] {
     return children.map((item, index) => {
         const checked = item.type === 'listItem' ? item.checked : null;
+
         return (
             <li
                 className={cn(
@@ -302,11 +332,13 @@ function listStyle(children: readonly RootContent[]): string {
     const checklist = children.some(
         (child) => child.type === 'listItem' && typeof child.checked === 'boolean',
     );
+
     return checklist ? 'list-none pl-0' : 'list-disc pl-[22px]';
 }
 
 function Table({ rows }: { rows: readonly TableRow[] }): React.JSX.Element {
     const [head, ...body] = rows;
+
     return (
         <div className={cn(SPACING, 'overflow-x-auto rounded-11 border border-border')}>
             <table className="w-full border-collapse text-body-lg">

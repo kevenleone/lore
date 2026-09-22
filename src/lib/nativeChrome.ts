@@ -20,6 +20,7 @@ export function installNativeChrome(): void {
         if (isTextSurface(event.target) || !document.getSelection()?.isCollapsed) {
             return;
         }
+
         event.preventDefault();
     });
 
@@ -29,7 +30,13 @@ export function installNativeChrome(): void {
 }
 
 function isTextSurface(target: EventTarget | null): boolean {
-    if (isTypingTarget(target)) return true;
-    if (!(target instanceof Element)) return false;
+    if (isTypingTarget(target)) {
+        return true;
+    }
+
+    if (!(target instanceof Element)) {
+        return false;
+    }
+
     return target.closest(TEXT_SURFACE) !== null;
 }

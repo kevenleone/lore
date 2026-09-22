@@ -28,6 +28,7 @@ afterEach(async () => {
 
 const open = async () => {
     store = await VaultStore.open(root);
+
     return store;
 };
 
@@ -70,6 +71,7 @@ describe('slugify', () => {
 
     it('suffixes on collision instead of overwriting', () => {
         const taken = new Set(['notes', 'notes-2']);
+
         expect(uniqueStem('Notes', 'X', taken)).toBe('notes-3');
     });
 });
@@ -137,10 +139,12 @@ describe('markdown format', () => {
             updatedAt: '2026-01-01T00:00:00.000Z',
         } as Item;
         const text = serializeFile(item, []);
+
         expect(text).toContain('due: 2026-03-04');
         expect(text).toContain('priority: urgent');
 
         const back = toItem(parseFile(text), { id: 'T1', mtime: '', relatedIds: [], stem: 't' });
+
         expect(back.dueAt).toBe('2026-03-04');
         expect(back.priority).toBe('urgent');
     });
@@ -152,6 +156,7 @@ describe('markdown format', () => {
             id: 'N1',
             updatedAt: '2026-01-01T00:00:00.000Z',
         } as Item;
+
         expect(serializeFile(item, [])).not.toContain('priority:');
     });
 
@@ -162,6 +167,7 @@ describe('markdown format', () => {
             relatedIds: [],
             stem: 'h',
         });
+
         expect(back.dueAt).toBeUndefined();
         expect(back.priority).toBeUndefined();
     });
@@ -173,6 +179,7 @@ describe('markdown format', () => {
             relatedIds: [],
             stem: 'd',
         });
+
         expect(back.dueAt).toBe('2026-03-04');
     });
 
@@ -184,6 +191,7 @@ describe('markdown format', () => {
             id: 'c1',
         };
         const text = serializeFile({ ...baseItem(), comments: [comment] } as Item, []);
+
         expect(text).toContain('comments:');
 
         const back = toItem(parseFile(text), {
@@ -192,6 +200,7 @@ describe('markdown format', () => {
             relatedIds: [],
             stem: 'a-note',
         });
+
         expect(back.comments).toEqual([comment]);
     });
 
@@ -234,6 +243,7 @@ describe('markdown format', () => {
             } as Item,
             [],
         );
+
         expect(text).toContain('starred: true');
         expect(text).not.toContain('inbox:');
         expect(text).not.toContain('flags:');
@@ -249,6 +259,7 @@ describe('markdown format', () => {
             } as Item,
             [],
         );
+
         expect(text).not.toContain('collectionId');
     });
 
@@ -260,6 +271,7 @@ describe('markdown format', () => {
             relatedIds: [],
             stem: 'hello',
         });
+
         expect(item.type).toBe('note');
         // Falls back to the first heading for a title.
         expect(item.title).toBe('Hello');
@@ -273,22 +285,27 @@ describe('markdown format', () => {
             relatedIds: [],
             stem: 'my-file',
         });
+
         expect(item.title).toBe('my-file');
     });
 
     it('survives malformed YAML instead of dropping the file', () => {
         const parsed = parseFile('---\n: : bad\n---\n\nbody');
+
         expect(parsed.body).toBe('body');
     });
 
     it('preserves unknown frontmatter keys another tool added', () => {
         const parsed = parseFile('---\ntitle: T\nobsidianField: keep-me\n---\n\nb');
+
         expect(parsed.extra).toEqual({ obsidianField: 'keep-me' });
+
         const text = serializeFile(
             { ...baseItem({ title: 'T' }), createdAt: '', id: 'I', updatedAt: '' } as Item,
             [],
             parsed.extra,
         );
+
         expect(text).toContain('obsidianField: keep-me');
     });
 
@@ -316,7 +333,9 @@ describe('wikilinks', () => {
 describe('store: items', () => {
     it('creates a file named after the title, in the collection folder', async () => {
         const s = await open();
+
         await s.createCollection('Reading List', '#8a92b8');
+
         const item = await s.createItem(
             baseItem({ collectionId: 'Reading List', title: 'How Linear builds product' }),
         );
@@ -325,6 +344,7 @@ describe('store: items', () => {
             join(root, 'Reading List/how-linear-builds-product.md'),
             'utf8',
         );
+
         expect(text).toStartWith('---\n');
         expect(text).toContain('title: How Linear builds product');
         expect(item.collectionId).toBe('Reading List');
@@ -332,6 +352,7 @@ describe('store: items', () => {
 
     it('puts an uncollected item at the vault root', async () => {
         const s = await open();
+
         await s.createItem(baseItem({ title: 'Loose note' }));
         expect(await Bun.file(join(root, 'loose-note.md')).exists()).toBe(true);
     });
@@ -343,6 +364,7 @@ describe('store: items', () => {
         );
 
         const listed = s.listItems().find((i) => i.id === created.id)!;
+
         expect(listed.body).toBeUndefined();
         // The preview still works, because snippet is derived.
         expect(listed.snippet).toBe('Line one');
@@ -361,18 +383,23 @@ describe('store: items', () => {
             }),
         );
         const item = s.getItem(created.id)!;
+
         expect(item.snippet).toBe('Desc');
         expect(item.domain).toBe('example.com');
 
         const text = await readFile(join(root, 'l.md'), 'utf8');
+
         expect(text).not.toContain('snippet:');
         expect(text).not.toContain('domain:');
     });
 
     it('moves the file when the collection changes', async () => {
         const s = await open();
+
         await s.createCollection('Work', '#8a92b8');
+
         const item = await s.createItem(baseItem({ title: 'Movable' }));
+
         expect(await Bun.file(join(root, 'movable.md')).exists()).toBe(true);
 
         await s.updateItem(item.id, { collectionId: 'Work' });
@@ -384,6 +411,7 @@ describe('store: items', () => {
     it('does not rename the file when the title changes', async () => {
         const s = await open();
         const item = await s.createItem(baseItem({ title: 'Original' }));
+
         await s.updateItem(item.id, { title: 'Completely different' });
 
         // Renaming would churn git history and break inbound wikilinks.
@@ -394,13 +422,18 @@ describe('store: items', () => {
     it('deletes to trash rather than unlinking', async () => {
         const s = await open();
         const item = await s.createItem(baseItem({ title: 'Doomed' }));
+
         await s.deleteItem(item.id);
 
         expect(s.getItem(item.id)).toBeNull();
         expect(await Bun.file(join(root, 'doomed.md')).exists()).toBe(false);
+
         const trashed = await s.vault.listMarkdown();
+
         expect(trashed).toEqual([]); // trash is not scanned
+
         const { readdir } = await import('node:fs/promises');
+
         expect((await readdir(join(root, '.lore/trash'))).length).toBe(1);
     });
 });
@@ -408,8 +441,10 @@ describe('store: items', () => {
 describe('store: collections', () => {
     it('treats a bare folder as a collection with no collections.json', async () => {
         await write('Imported/a.md', '---\ntitle: A\n---\n\nbody');
+
         const s = await open();
         const collections = await s.listCollections();
+
         expect(collections.map((c) => c.id)).toContain('Imported');
         expect(collections.find((c) => c.id === 'Imported')!.color).toMatch(/^#/);
     });
@@ -417,7 +452,9 @@ describe('store: collections', () => {
     it('unfiles children to the root when a collection is deleted', async () => {
         // This is the contract memoryRepository.test.ts asserts, as a file move.
         const s = await open();
+
         await s.createCollection('Work', '#8a92b8');
+
         const item = await s.createItem(baseItem({ collectionId: 'Work', title: 'Filed' }));
 
         await s.deleteCollection('Work');
@@ -429,7 +466,9 @@ describe('store: collections', () => {
 
     it('keeps item ids when a collection is renamed', async () => {
         const s = await open();
+
         await s.createCollection('Work', '#8a92b8');
+
         const item = await s.createItem(baseItem({ collectionId: 'Work', title: 'Kept' }));
 
         await s.updateCollection('Work', { name: 'Job' });
@@ -441,7 +480,9 @@ describe('store: collections', () => {
     it('ignores dot-directories and attachments/', async () => {
         await mkdir(join(root, 'attachments'), { recursive: true });
         await write('attachments/pic.md', '# not an item');
+
         const s = await open();
+
         expect((await s.listCollections()).map((c) => c.id)).not.toContain('attachments');
         expect(s.listItems().length).toBe(0);
     });
@@ -454,7 +495,9 @@ describe('store: wikilinks', () => {
         const b = await s.createItem(baseItem({ related: [a.id], title: 'Beta' }));
 
         expect(s.getItem(b.id)!.related).toEqual([a.id]);
+
         const text = await readFile(join(root, 'beta.md'), 'utf8');
+
         expect(text).toContain('[[alpha]]');
         expect(text).not.toContain(a.id);
     });
@@ -463,19 +506,24 @@ describe('store: wikilinks', () => {
         // Linking to a note you have not written is the normal workflow; Lore must
         // never be the reason it disappears on the next save.
         await write('a.md', '---\ntitle: A\nrelated:\n  - "[[not-yet-written]]"\n---\n\nbody');
+
         const s = await open();
         const item = s.listItems()[0];
 
         expect(item.related).toEqual([]);
 
         await s.updateItem(item.id, { title: 'A renamed' });
+
         const text = await readFile(join(root, 'a.md'), 'utf8');
+
         expect(text).toContain('[[not-yet-written]]');
     });
 
     it('heals a dead link once its target appears', async () => {
         await write('a.md', '---\ntitle: A\nrelated:\n  - "[[later]]"\n---\n\nb');
+
         const s = await open();
+
         expect(s.listItems()[0].related).toEqual([]);
 
         await write('later.md', '---\ntitle: Later\n---\n\nb');
@@ -483,6 +531,7 @@ describe('store: wikilinks', () => {
 
         const a = s.listItems().find((i) => i.title === 'A')!;
         const later = s.listItems().find((i) => i.title === 'Later')!;
+
         expect(a.related).toEqual([later.id]);
     });
 });
@@ -494,6 +543,7 @@ describe('store: itemMeta', () => {
         const source = await s.createItem(baseItem({ related: [target.id], title: 'Source' }));
 
         const meta = s.itemMeta(target.id)!;
+
         expect(meta.path).toBe('target.md');
         expect(meta.words).toBe(3);
         expect(meta.size).toBeGreaterThan(0);
@@ -505,6 +555,7 @@ describe('store: itemMeta', () => {
 
     it('is null for an unknown id', async () => {
         const s = await open();
+
         expect(s.itemMeta('nope')).toBeNull();
     });
 });
@@ -512,6 +563,7 @@ describe('store: itemMeta', () => {
 describe('store: index', () => {
     it('rebuilds from the files after the index is deleted', async () => {
         const s = await open();
+
         await s.createItem(baseItem({ body: 'content', title: 'Durable' }));
         s.close();
 
@@ -519,6 +571,7 @@ describe('store: index', () => {
         store = await VaultStore.open(root);
 
         const item = store.listItems().find((i) => i.title === 'Durable')!;
+
         expect(item).toBeDefined();
         expect(store.getItem(item.id)!.body).toBe('content');
     });
@@ -530,6 +583,7 @@ describe('store: index', () => {
         // Simulate an edit from Obsidian or a git pull.
         const path = join(root, 'edited.md');
         const text = await readFile(path, 'utf8');
+
         await writeFile(path, text.replace('title: Edited', 'title: Edited elsewhere'), 'utf8');
         await s.reconcile();
 
@@ -544,8 +598,11 @@ describe('store: index', () => {
         const before = await import('node:fs/promises').then((fs) => fs.stat(path));
 
         const text = await readFile(path, 'utf8');
+
         await writeFile(path, text.replace('one', 'two-different-length'), 'utf8');
+
         const { utimes } = await import('node:fs/promises');
+
         await utimes(path, before.atime, before.mtime);
 
         await s.reconcile();
@@ -555,6 +612,7 @@ describe('store: index', () => {
     it('drops items whose files are gone', async () => {
         const s = await open();
         const item = await s.createItem(baseItem({ title: 'Vanishing' }));
+
         await rm(join(root, 'vanishing.md'));
         await s.reconcile();
         expect(s.getItem(item.id)).toBeNull();
@@ -564,27 +622,33 @@ describe('store: index', () => {
 describe('store: search and tags', () => {
     it('finds an item by a word in its body', async () => {
         const s = await open();
+
         await s.createItem(
             baseItem({ body: 'mentions perceptual uniformity', title: 'Nothing obvious' }),
         );
+
         const hits = s.search('perceptual');
+
         expect(hits.map((i) => i.title)).toEqual(['Nothing obvious']);
     });
 
     it('prefix-matches so search works while typing', async () => {
         const s = await open();
+
         await s.createItem(baseItem({ title: 'Roadmap' }));
         expect(s.search('roadm').length).toBe(1);
     });
 
     it('returns nothing rather than throwing on a malformed query', async () => {
         const s = await open();
+
         await s.createItem(baseItem({ title: 'X' }));
         expect(s.search('"""').length).toBe(0);
     });
 
     it('counts tags across items', async () => {
         const s = await open();
+
         await s.createItem(baseItem({ tags: ['design', 'work'], title: 'A' }));
         await s.createItem(baseItem({ tags: ['design'], title: 'B' }));
         expect(s.listTags()).toEqual([
@@ -599,6 +663,7 @@ describe('search reaches what the list pane cannot', () => {
         // The derived snippet is only the body's first line, and listItems omits
         // the body entirely — so the client-side filter cannot reach this word.
         const s = await open();
+
         await s.createItem(
             baseItem({
                 body: 'Agenda\n\nWe agreed to defer the antialiasing work.',
@@ -608,6 +673,7 @@ describe('search reaches what the list pane cannot', () => {
         await s.createItem(baseItem({ body: 'Unrelated.', title: 'Other' }));
 
         const listed = s.listItems().find((i) => i.title === 'Meeting notes')!;
+
         expect(listed.body).toBeUndefined();
         expect(listed.snippet).toBe('Agenda');
 
@@ -617,9 +683,11 @@ describe('search reaches what the list pane cannot', () => {
     it("finds a word beyond the derived preview's cut-off", async () => {
         const s = await open();
         const long = `${'filler '.repeat(60)}needle`;
+
         await s.createItem(baseItem({ body: long, title: 'Long note' }));
 
         const listed = s.listItems()[0];
+
         expect(listed.snippet!.length).toBeLessThanOrEqual(200);
         expect(listed.snippet).not.toContain('needle');
 
@@ -628,6 +696,7 @@ describe('search reaches what the list pane cannot', () => {
 
     it('matches a link by its url and description', async () => {
         const s = await open();
+
         await s.createItem(
             baseItem({
                 description: 'Perceptual color',
@@ -642,6 +711,7 @@ describe('search reaches what the list pane cannot', () => {
 
     it('requires every term, so more words narrow the result', async () => {
         const s = await open();
+
         await s.createItem(baseItem({ body: 'shared word here', title: 'Alpha' }));
         await s.createItem(baseItem({ body: 'shared other', title: 'Beta' }));
         expect(s.search('shared')).toHaveLength(2);
@@ -668,6 +738,7 @@ describe('rename', () => {
 
         // The link followed, so nothing dangles.
         const raw = await readFile(join(root, 'points-at-it.md'), 'utf8');
+
         expect(raw).toContain('[[renamed-thing]]');
         expect(raw).not.toContain('[[original]]');
         expect(s.getItem(linker.id)!.related).toEqual([target.id]);
@@ -677,13 +748,16 @@ describe('rename', () => {
         const s = await open();
         const item = await s.createItem(baseItem({ body: 'kept', title: 'Before' }));
         const after = await s.renameItem(item.id, 'After');
+
         expect(after!.id).toBe(item.id);
         expect(after!.body).toBe('kept');
     });
 
     it('suffixes rather than overwriting an existing file', async () => {
         const s = await open();
+
         await s.createItem(baseItem({ title: 'Taken' }));
+
         const other = await s.createItem(baseItem({ title: 'Other' }));
 
         await s.renameItem(other.id, 'Taken');
@@ -695,8 +769,11 @@ describe('rename', () => {
 
     it('stays inside its collection folder', async () => {
         const s = await open();
+
         await s.createCollection('Work', '#8a92b8');
+
         const item = await s.createItem(baseItem({ collectionId: 'Work', title: 'Filed' }));
+
         await s.renameItem(item.id, 'Refiled');
         expect(await Bun.file(join(root, 'Work/refiled.md')).exists()).toBe(true);
         expect(s.getItem(item.id)!.collectionId).toBe('Work');
@@ -706,6 +783,7 @@ describe('rename', () => {
         const s = await open();
         const item = await s.createItem(baseItem({ title: 'Same' }));
         const after = await s.renameItem(item.id, 'Same');
+
         expect(after!.id).toBe(item.id);
         expect(await Bun.file(join(root, 'same.md')).exists()).toBe(true);
     });
@@ -720,6 +798,7 @@ describe('virtual documents', () => {
     };
 
     const realFetch = globalThis.fetch;
+
     afterEach(() => {
         globalThis.fetch = realFetch;
     });
@@ -740,9 +819,11 @@ describe('virtual documents', () => {
         } as Item;
 
         const text = serializeFile(item, []);
+
         expect(text).toContain('kind: github');
 
         const back = toItem(parseFile(text), { id: 'V1', mtime: '', relatedIds: [], stem: 'v' });
+
         expect(back.source).toEqual(source);
     });
 
@@ -753,21 +834,25 @@ describe('virtual documents', () => {
             id: 'N1',
             updatedAt: '2026-01-01T00:00:00.000Z',
         } as Item;
+
         expect(serializeFile(item, [])).not.toContain('source:');
     });
 
     it('ignores a source that names no origin', () => {
         const text = '---\nid: X\ntitle: T\ntype: note\nsource:\n  kind: github\n---\n\nBody\n';
         const back = toItem(parseFile(text), { id: 'X', mtime: '', relatedIds: [], stem: 'x' });
+
         expect(back.source).toBeUndefined();
     });
 
     it('replaces the cached body when the origin changed', async () => {
         const s = await open();
         const created = await s.createItem(baseItem({ body: 'old', source, title: 'Readme' }));
+
         serve('# new');
 
         const refreshed = await s.refreshItem(created.id, true);
+
         expect(refreshed?.body).toBe('# new');
         expect(refreshed?.source?.fetched).not.toBe(source.fetched);
     });
@@ -775,9 +860,11 @@ describe('virtual documents', () => {
     it('does not restamp updated when the origin is unchanged', async () => {
         const s = await open();
         const created = await s.createItem(baseItem({ body: '# same', source, title: 'Readme' }));
+
         serve('# same');
 
         const refreshed = await s.refreshItem(created.id, true);
+
         expect(refreshed?.updatedAt).toBe(created.updatedAt);
         expect(refreshed?.source?.fetched).toBe(source.fetched);
     });
@@ -785,6 +872,7 @@ describe('virtual documents', () => {
     it('keeps the cached copy when the origin cannot be read', async () => {
         const s = await open();
         const created = await s.createItem(baseItem({ body: 'cached', source, title: 'Readme' }));
+
         globalThis.fetch = (async () => {
             throw new Error('offline');
         }) as unknown as typeof fetch;
@@ -796,8 +884,10 @@ describe('virtual documents', () => {
         const s = await open();
         const created = await s.createItem(baseItem({ body: 'old', source, title: 'Readme' }));
         let calls = 0;
+
         globalThis.fetch = (async () => {
             calls += 1;
+
             return new Response('# new');
         }) as unknown as typeof fetch;
 
@@ -809,6 +899,7 @@ describe('virtual documents', () => {
     it('leaves an item with no source alone', async () => {
         const s = await open();
         const created = await s.createItem(baseItem({ body: 'mine' }));
+
         globalThis.fetch = (async () => {
             throw new Error('should not be called');
         }) as unknown as typeof fetch;
@@ -852,6 +943,7 @@ describe('image credit', () => {
     // credit a photographer for an image that is no longer theirs.
     it('drops the credit when the image it belongs to is gone', () => {
         const text = serializeFile(withCredit({ image: undefined }), []);
+
         expect(text).not.toContain('imageCredit');
     });
 
@@ -860,6 +952,7 @@ describe('image credit', () => {
             '---\nid: X\ntitle: T\ntype: note\nimage: https://x/y.jpg\n' +
             'imageCredit:\n  provider: unsplash\n---\n\nBody\n';
         const back = toItem(parseFile(text), { id: 'X', mtime: '', relatedIds: [], stem: 'x' });
+
         expect(back.imageCredit).toBeUndefined();
         expect(back.image).toBe('https://x/y.jpg');
     });
@@ -873,6 +966,7 @@ describe('boards', () => {
         );
 
         const raw = await readFile(join(root, task.path!), 'utf8');
+
         expect(raw).toContain('status: in-review');
         expect(s.getItem(task.id)?.status).toBe('in-review');
     });
@@ -880,6 +974,7 @@ describe('boards', () => {
     it('writes no status key for a task that has never been moved', async () => {
         const s = await open();
         const task = await s.createItem(baseItem({ title: 'Untouched', type: 'task' }));
+
         expect(await readFile(join(root, task.path!), 'utf8')).not.toContain('status:');
     });
 
@@ -894,15 +989,18 @@ describe('boards', () => {
         );
 
         const listed = s.listItems().find((i) => i.id === task.id)!;
+
         expect(listed.body).toBeUndefined();
         expect(listed.subtasks).toEqual({ done: 1, total: 3 });
     });
 
     it('keeps a board per collection, and answers with nothing before one is saved', async () => {
         const s = await open();
+
         expect(await s.listBoards()).toEqual({});
 
         const board = { columns: [{ id: 'todo', name: 'To do' }], view: 'cards' as const };
+
         await s.saveBoard('Work', board);
         // The empty key is the board for tasks in no collection.
         await s.saveBoard('', { ...board, view: 'list' });
@@ -915,6 +1013,7 @@ describe('boards', () => {
 
     it('drops a malformed board rather than failing the whole file', async () => {
         const s = await open();
+
         await write(
             '.lore/boards.json',
             JSON.stringify({
@@ -934,6 +1033,7 @@ describe('boards', () => {
     // reads back as the new one without a migration.
     it('reads a view it does not recognise as the card layout', async () => {
         const s = await open();
+
         await write(
             '.lore/boards.json',
             JSON.stringify({
@@ -948,12 +1048,14 @@ describe('completion dates', () => {
     it('writes `completed` only for a finished task, and reads it back', async () => {
         const s = await open();
         const open_ = await s.createItem(baseItem({ title: 'Open', type: 'task' }));
+
         expect(await readFile(join(root, open_.path!), 'utf8')).not.toContain('completed:');
 
         const at = '2026-09-13T17:30:00.000Z';
         const done = await s.createItem(
             baseItem({ completedAt: at, flags: { done: true }, title: 'Done', type: 'task' }),
         );
+
         expect(await readFile(join(root, done.path!), 'utf8')).toContain('completed: ');
         expect(s.getItem(done.id)?.completedAt).toBe(at);
     });
@@ -965,6 +1067,7 @@ describe('completion dates', () => {
      */
     it('ignores a completion date on a task that is not done', async () => {
         const s = await open();
+
         await write(
             'reopened.md',
             [
@@ -977,7 +1080,9 @@ describe('completion dates', () => {
             ].join('\n'),
         );
         await s.reconcile();
+
         const item = s.listItems().find((i) => i.title === 'Reopened')!;
+
         expect(item.completedAt).toBeUndefined();
     });
 });

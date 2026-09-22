@@ -61,7 +61,10 @@ export function handshakeLine(port: number): string {
  * notice, since the OS reparents us to init rather than signalling.
  */
 export function watchParent(parentPid: null | number, intervalMs = 5000): null | Timer {
-    if (!parentPid) return null;
+    if (!parentPid) {
+        return null;
+    }
+
     return setInterval(() => {
         try {
             // Signal 0 checks for existence without delivering anything.

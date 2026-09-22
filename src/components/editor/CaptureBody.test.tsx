@@ -17,6 +17,7 @@ Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
 
 function setBlockEditor(on: boolean): void {
     const state = useStore.getState();
+
     useStore.setState({
         prefs: { ...state.prefs, switches: { ...state.prefs.switches, blockEditor: on } },
     });
@@ -35,8 +36,10 @@ const mount = (value: string, onChange = vi.fn()) =>
 describe('CaptureBody', () => {
     it('is a plain textarea while the flag is off', () => {
         setBlockEditor(false);
+
         const { container } = mount('hello');
         const textarea = container.querySelector('textarea');
+
         expect(textarea).not.toBeNull();
         expect(textarea?.value).toBe('hello');
         expect(container.querySelector('.ProseMirror')).toBeNull();
@@ -44,8 +47,10 @@ describe('CaptureBody', () => {
 
     it('reports typing through onChange when it is a textarea', () => {
         setBlockEditor(false);
+
         const onChange = vi.fn();
         const { container } = mount('', onChange);
+
         // React tracks the value through a native setter, so assigning
         // `.value` directly does not produce a change event it will see.
         fireEvent.change(container.querySelector('textarea')!, { target: { value: 'typed' } });
@@ -54,7 +59,9 @@ describe('CaptureBody', () => {
 
     it('upgrades to the block editor when the flag is on', async () => {
         setBlockEditor(true);
+
         const { container } = mount('# Heading\n\ntext\n');
+
         await waitFor(
             () => expect(container.querySelector('.ProseMirror')).not.toBeNull(),
             MOUNT_TIMEOUT,
@@ -65,7 +72,9 @@ describe('CaptureBody', () => {
 
     it('keeps the field box so the drawer does not grow', async () => {
         setBlockEditor(true);
+
         const { container } = mount('text\n');
+
         await waitFor(
             () => expect(container.querySelector('.ProseMirror')).not.toBeNull(),
             MOUNT_TIMEOUT,

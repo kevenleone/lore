@@ -59,16 +59,26 @@ export function FocusPanel() {
     useEffect(() => {
         const card = cardRef.current;
         const root = rootRef.current;
-        if (!card || !root) return;
+
+        if (!card || !root) {
+            return;
+        }
+
         let disposed = false;
+
         const resize = async (height: number) => {
             try {
                 const [{ getCurrentWindow }, { LogicalSize }] = await Promise.all([
                     import('@tauri-apps/api/window'),
                     import('@tauri-apps/api/dpi'),
                 ]);
-                if (disposed) return;
+
+                if (disposed) {
+                    return;
+                }
+
                 const win = getCurrentWindow();
+
                 await win.setSize(
                     new LogicalSize(
                         card.offsetWidth + PANEL_MARGIN * 2,
@@ -79,11 +89,14 @@ export function FocusPanel() {
                 // Outside Tauri — the page is just as tall as it is.
             }
         };
+
         const observer = new ResizeObserver(
             ([entry]) =>
                 void resize(entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height),
         );
+
         observer.observe(card);
+
         return () => {
             disposed = true;
             observer.disconnect();
@@ -94,6 +107,7 @@ export function FocusPanel() {
     useEffect(() => {
         let cancelled = false;
         let unlisten: (() => void) | undefined;
+
         void (async () => {
             try {
                 const [{ invoke }, { listen }] = await Promise.all([
@@ -104,16 +118,23 @@ export function FocusPanel() {
                     setSnapshot(e.payload),
                 );
                 const cached = await invoke<FocusSnapshot | null>('focus_snapshot');
+
                 if (cancelled) {
                     off();
+
                     return;
                 }
-                if (cached) setSnapshot(cached);
+
+                if (cached) {
+                    setSnapshot(cached);
+                }
+
                 unlisten = off;
             } catch {
                 // Outside Tauri — the panel only exists as a Tauri window.
             }
         })();
+
         return () => {
             cancelled = true;
             unlisten?.();
@@ -128,9 +149,15 @@ export function FocusPanel() {
             snapshot.running && snapshot.endsAt !== null
                 ? Math.max(0, Math.ceil((snapshot.endsAt - Date.now()) / 1000))
                 : snapshot.remainingSec;
+
         setRemainingSec(read());
-        if (!snapshot.running) return;
+
+        if (!snapshot.running) {
+            return;
+        }
+
         const id = setInterval(() => setRemainingSec(read()), TICK_MS);
+
         return () => clearInterval(id);
     }, [snapshot]);
 
@@ -138,6 +165,7 @@ export function FocusPanel() {
         void (async () => {
             try {
                 const { emitTo } = await import('@tauri-apps/api/event');
+
                 await emitTo('main', event);
             } catch {
                 // Outside Tauri — nothing to drive.
@@ -151,6 +179,7 @@ export function FocusPanel() {
         void (async () => {
             try {
                 const { invoke } = await import('@tauri-apps/api/core');
+
                 await invoke('open_focus_mode');
             } catch {
                 // Outside Tauri — no window to raise.

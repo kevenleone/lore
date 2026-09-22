@@ -23,7 +23,11 @@ export function AskLoreChat() {
 
     const submit = () => {
         const text = draft.trim();
-        if (!text) return;
+
+        if (!text) {
+            return;
+        }
+
         setDraft('');
         void sendChat(text);
     };
@@ -79,8 +83,13 @@ export function AskLoreChat() {
                                     </span>
                                     {m.sources.map((src) => {
                                         const item = items.find((i) => i.id === src.itemId);
-                                        if (!item) return null;
+
+                                        if (!item) {
+                                            return null;
+                                        }
+
                                         const meta = typeMeta(item.type);
+
                                         return (
                                             <button
                                                 className="inline-flex items-center gap-[6px] rounded-lg border border-border bg-surface px-[9px] py-1 font-[inherit] text-body-sm text-text2 hover:bg-surface2"
@@ -113,7 +122,9 @@ export function AskLoreChat() {
                     className="flex-1 rounded-11 border-none bg-surface3 px-[14px] py-[11px] text-subhead text-text"
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter') submit();
+                        if (e.key === 'Enter') {
+                            submit();
+                        }
                     }}
                     placeholder="Ask about anything you've saved…"
                     value={draft}

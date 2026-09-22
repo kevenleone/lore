@@ -23,6 +23,7 @@ export const WORKSPACE_CHANGED = 'workspace:changed';
 export async function broadcastWorkspaceChange(path: null | string): Promise<void> {
     try {
         const { emit } = await import('@tauri-apps/api/event');
+
         await emit(WORKSPACE_CHANGED, { path });
     } catch {
         // Outside Tauri — there is only one window.
@@ -36,6 +37,7 @@ export async function broadcastWorkspaceChange(path: null | string): Promise<voi
 export async function homeDirectory(): Promise<null | string> {
     try {
         const { homeDir } = await import('@tauri-apps/api/path');
+
         return (await homeDir()).replace(/\/+$/, '');
     } catch {
         return null;
@@ -48,6 +50,7 @@ export async function onWorkspaceChanged(
 ): Promise<() => void> {
     try {
         const { listen } = await import('@tauri-apps/api/event');
+
         return await listen<{ path: null | string }>(WORKSPACE_CHANGED, (e) =>
             handler(e.payload?.path ?? null),
         );
@@ -64,6 +67,7 @@ export async function pickExportFolder(): Promise<null | string> {
         multiple: false,
         title: 'Export the vault into…',
     });
+
     return typeof picked === 'string' ? picked : null;
 }
 
@@ -73,6 +77,7 @@ export async function pickExportFolder(): Promise<null | string> {
 export async function pickWorkspaceFolder(): Promise<null | string> {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const picked = await open({ directory: true, multiple: false, title: 'Open a Lore vault' });
+
     return typeof picked === 'string' ? picked : null;
 }
 
@@ -83,6 +88,7 @@ export function rememberWorkspace(recents: readonly WorkspaceRef[], path: string
         name: workspaceName(path),
         path,
     };
+
     return [entry, ...recents.filter((r) => r.path !== path)].slice(0, MAX_RECENTS);
 }
 
@@ -94,6 +100,7 @@ export function rememberWorkspace(recents: readonly WorkspaceRef[], path: string
 export async function suggestedVaultPath(): Promise<null | string> {
     try {
         const { documentDir, join } = await import('@tauri-apps/api/path');
+
         return await join(await documentDir(), 'Lore Vault');
     } catch {
         return null;
@@ -102,12 +109,16 @@ export async function suggestedVaultPath(): Promise<null | string> {
 
 /** `/Users/x/Documents/Lore Vault` → `~/Documents/Lore Vault`. */
 export function tildePath(path: string, home: null | string): string {
-    if (!home || !path.startsWith(`${home}/`)) return path;
+    if (!home || !path.startsWith(`${home}/`)) {
+        return path;
+    }
+
     return `~${path.slice(home.length)}`;
 }
 
 /** The folder's own name, which is what the switcher shows. */
 export function workspaceName(path: string): string {
     const parts = path.replace(/\/+$/, '').split('/');
+
     return parts[parts.length - 1] || path;
 }

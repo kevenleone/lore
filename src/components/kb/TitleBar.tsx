@@ -41,7 +41,9 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
     const [fullscreen, setFullscreen] = useState(false);
 
     useEffect(() => {
-        if (!NATIVE_WINDOW_CONTROLS) return;
+        if (!NATIVE_WINDOW_CONTROLS) {
+            return;
+        }
 
         let unlisten: (() => void) | undefined;
         let mounted = true;
@@ -53,10 +55,15 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
                 const sync = async () => setFullscreen(await currentWindow.isFullscreen());
 
                 await sync();
+
                 // Entering and leaving fullscreen both resize the window.
                 const stop = await currentWindow.onResized(() => void sync());
-                if (mounted) unlisten = stop;
-                else stop();
+
+                if (mounted) {
+                    unlisten = stop;
+                } else {
+                    stop();
+                }
             } catch {
                 // Running outside Tauri (e.g. Vite preview) — never fullscreen.
             }
@@ -74,11 +81,15 @@ export function TitleBar({ onCapture }: { onCapture: () => void }) {
     // preference rather than a ResizeObserver.
     useEffect(() => {
         const bar = barRef.current;
-        if (!NATIVE_WINDOW_CONTROLS || !bar) return;
+
+        if (!NATIVE_WINDOW_CONTROLS || !bar) {
+            return;
+        }
 
         const align = async () => {
             try {
                 const { invoke } = await import('@tauri-apps/api/core');
+
                 // The rect is in screen pixels, zoom included — which is the
                 // height AppKit needs, not the 46 the class asks for.
                 await invoke('set_title_bar_height', {
@@ -224,9 +235,14 @@ async function windowControl(action: 'close' | 'minimize' | 'toggleMaximize') {
     try {
         const { getCurrentWindow } = await import('@tauri-apps/api/window');
         const w = getCurrentWindow();
-        if (action === 'close') await w.close();
-        else if (action === 'minimize') await w.minimize();
-        else await w.toggleMaximize();
+
+        if (action === 'close') {
+            await w.close();
+        } else if (action === 'minimize') {
+            await w.minimize();
+        } else {
+            await w.toggleMaximize();
+        }
     } catch {
         // Running outside Tauri (e.g. Vite preview) — controls are decorative.
     }

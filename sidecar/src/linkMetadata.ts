@@ -29,17 +29,25 @@ export async function fetchLinkMetadata(rawUrl: string): Promise<LinkMetadata> {
     const target = normalizeUrl(rawUrl);
     // Refuse anything that is not http(s) — no file://, no data:.
     const parsed = new URL(target);
+
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
         throw new Error('unsupported protocol');
     }
 
     const videoId = youtubeVideoId(target);
-    if (videoId) return fetchYoutubeMetadata(videoId);
+
+    if (videoId) {
+        return fetchYoutubeMetadata(videoId);
+    }
 
     const vimeo = vimeoVideo(target);
+
     if (vimeo) {
         const vimeoMetadata = await fetchVimeoMetadata(vimeo);
-        if (vimeoMetadata) return vimeoMetadata;
+
+        if (vimeoMetadata) {
+            return vimeoMetadata;
+        }
     }
 
     const controller = new AbortController();
@@ -51,7 +59,10 @@ export async function fetchLinkMetadata(rawUrl: string): Promise<LinkMetadata> {
             redirect: 'follow',
             signal: controller.signal,
         });
-        if (!res.ok || !res.body) return {};
+
+        if (!res.ok || !res.body) {
+            return {};
+        }
 
         const meta: Record<string, string> = {};
         let title: string | undefined;
@@ -62,7 +73,10 @@ export async function fetchLinkMetadata(rawUrl: string): Promise<LinkMetadata> {
                 element(el) {
                     const key = el.getAttribute('property') ?? el.getAttribute('name');
                     const content = el.getAttribute('content');
-                    if (key && content && !(key in meta)) meta[key] = content;
+
+                    if (key && content && !(key in meta)) {
+                        meta[key] = content;
+                    }
                 },
             })
             .on('title', {
@@ -70,8 +84,13 @@ export async function fetchLinkMetadata(rawUrl: string): Promise<LinkMetadata> {
                     inTitle = true;
                 },
                 text(chunk) {
-                    if (inTitle) title = (title ?? '') + chunk.text;
-                    if (chunk.lastInTextNode) inTitle = false;
+                    if (inTitle) {
+                        title = (title ?? '') + chunk.text;
+                    }
+
+                    if (chunk.lastInTextNode) {
+                        inTitle = false;
+                    }
                 },
             });
 
@@ -79,6 +98,7 @@ export async function fetchLinkMetadata(rawUrl: string): Promise<LinkMetadata> {
         await rewriter.transform(new Response(capped(res.body))).arrayBuffer();
 
         let image = pick(meta['og:image'], meta['twitter:image']);
+
         // Resolve protocol-relative and relative image URLs against the page.
         if (image && !/^https?:\/\//i.test(image)) {
             try {
@@ -108,6 +128,7 @@ export async function fetchLinkMetadata(rawUrl: string): Promise<LinkMetadata> {
 
 export function normalizeUrl(raw: string): string {
     const target = raw.trim();
+
     return /^https?:\/\//i.test(target) ? target : `https://${target}`;
 }
 
@@ -115,17 +136,21 @@ export function normalizeUrl(raw: string): string {
 function capped(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
     let seen = 0;
     const reader = body.getReader();
+
     return new ReadableStream({
         cancel() {
             void reader.cancel().catch(() => {});
         },
         async pull(controller) {
             const { done, value } = await reader.read();
+
             if (done || seen >= MAX_BYTES) {
                 controller.close();
                 await reader.cancel().catch(() => {});
+
                 return;
             }
+
             seen += value.byteLength;
             controller.enqueue(value);
         },
@@ -136,7 +161,11 @@ function capped(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
 function pick(...values: (string | undefined)[]): string | undefined {
     for (const v of values) {
         const trimmed = v?.trim();
-        if (trimmed) return trimmed;
+
+        if (trimmed) {
+            return trimmed;
+        }
     }
+
     return undefined;
 }

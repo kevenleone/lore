@@ -49,6 +49,7 @@ describe('initGit', () => {
 
     it('creates the folder when it does not exist yet', async () => {
         const fresh = join(root, 'Lore Vault');
+
         expect(await initGit(fresh)).toEqual({ tracked: true });
         expect(await exists(join(fresh, '.git'))).toBe(true);
     });

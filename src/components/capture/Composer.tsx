@@ -163,16 +163,20 @@ export function Composer({
         if (tab !== 'link' || !value.trim()) {
             setMeta(null);
             setSourceDocument(null);
+
             return;
         }
+
         let cancelled = false;
         const id = setTimeout(async () => {
             setFetching(true);
+
             try {
                 const [metadata, resolved] = await Promise.all([
                     fetchLinkMetadata(value),
                     resolveGithubDocument(value),
                 ]);
+
                 if (!cancelled) {
                     setMeta(metadata);
                     setSourceDocument(resolved);
@@ -183,9 +187,12 @@ export function Composer({
                     setSourceDocument(null);
                 }
             } finally {
-                if (!cancelled) setFetching(false);
+                if (!cancelled) {
+                    setFetching(false);
+                }
             }
         }, 450);
+
         return () => {
             cancelled = true;
             clearTimeout(id);
@@ -199,12 +206,24 @@ export function Composer({
             .listCollections()
             .then((c) => {
                 setCollections(c);
-                if (!c.length) return;
+
+                if (!c.length) {
+                    return;
+                }
+
                 const has = (id: null | string): boolean => !!id && c.some((x) => x.id === id);
+
                 setCollectionId((current) => {
-                    if (has(current)) return current;
-                    if (has(defaultCollectionId)) return defaultCollectionId!;
+                    if (has(current)) {
+                        return current;
+                    }
+
+                    if (has(defaultCollectionId)) {
+                        return defaultCollectionId!;
+                    }
+
                     const last = lastCollectionId();
+
                     return has(last) ? last! : c[0].id;
                 });
             });
@@ -215,30 +234,44 @@ export function Composer({
     useEffect(() => {
         if (!file) {
             setPreview(null);
+
             return;
         }
+
         const url = URL.createObjectURL(file);
+
         setPreview(url);
+
         return () => URL.revokeObjectURL(url);
     }, [file]);
 
     const addTag = (raw: string) => {
         const t = raw.trim().replace(/^#/, '').toLowerCase();
+
         setTagDraft('');
         setAddingTag(false);
-        if (t && !tags.includes(t)) setTags((a) => [...a, t]);
+
+        if (t && !tags.includes(t)) {
+            setTags((a) => [...a, t]);
+        }
     };
+
     const removeTag = (t: string) => setTags((a) => a.filter((x) => x !== t));
 
     const addSubtask = (raw: string) => {
         const text = raw.trim();
+
         setSubtaskDraft('');
-        if (text) setSubtasks((a) => [...a, { done: false, text }]);
+
+        if (text) {
+            setSubtasks((a) => [...a, { done: false, text }]);
+        }
     };
 
     const activeCollection = collections.find((c) => c.id === collectionId) ?? null;
     const collRef = useRef<HTMLDivElement>(null);
     const fieldRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+
     // One ref for all five tabs: each renders its own field, so only ever one of
     // them is mounted, and a plain assignment lets it be typed for both.
     const setFieldRef = (el: HTMLInputElement | HTMLTextAreaElement | null) => {
@@ -249,28 +282,43 @@ export function Composer({
     // again whenever a different tab (or image source) swaps a new field in. `preventScroll` is
     // belt to `focusReady`'s braces: nothing should need scrolling to by then.
     useEffect(() => {
-        if (focusReady) fieldRef.current?.focus({ preventScroll: true });
+        if (focusReady) {
+            fieldRef.current?.focus({ preventScroll: true });
+        }
     }, [focusReady, tab, imageSource]);
 
     // Close the collection dropdown when clicking elsewhere.
     useEffect(() => {
-        if (!collOpen) return;
+        if (!collOpen) {
+            return;
+        }
+
         const onDown = (e: MouseEvent) => {
-            if (collRef.current && !collRef.current.contains(e.target as Node)) setCollOpen(false);
+            if (collRef.current && !collRef.current.contains(e.target as Node)) {
+                setCollOpen(false);
+            }
         };
+
         window.addEventListener('mousedown', onDown);
+
         return () => window.removeEventListener('mousedown', onDown);
     }, [collOpen]);
 
     // An image capture *is* its file. The tab used to accept a bare title, which
     // saved an item with no picture in it at all.
     const canSave = useMemo(() => {
-        if (tab !== 'image') return value.trim().length > 0;
+        if (tab !== 'image') {
+            return value.trim().length > 0;
+        }
+
         return imageSource === 'url' ? imageUrl.trim().length > 0 : !!file;
     }, [tab, value, file, imageSource, imageUrl]);
 
     const save = async () => {
-        if (!canSave || saving) return;
+        if (!canSave || saving) {
+            return;
+        }
+
         try {
             setError(null);
             setSaving(true);
@@ -286,7 +334,10 @@ export function Composer({
     // The footer promises ⏎, so the single-line fields honour it. The note and
     // code textareas — and the task's description — keep Enter for newlines.
     const onFieldKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key !== 'Enter') return;
+        if (e.key !== 'Enter') {
+            return;
+        }
+
         e.preventDefault();
         void save();
     };
@@ -301,8 +352,10 @@ export function Composer({
             title: text,
             type: tab,
         };
+
         if (tab === 'link') {
             const host = hostOf(text);
+
             item = {
                 ...item,
                 description: meta?.description,
@@ -311,6 +364,7 @@ export function Composer({
                 title: meta?.title || host || text,
                 url: text,
             };
+
             if (sourceDocument) {
                 item = {
                     ...item,
@@ -326,6 +380,7 @@ export function Composer({
             }
         } else if (tab === 'task') {
             const body = joinBody(description, subtasks);
+
             item = {
                 ...item,
                 body: body || undefined,
@@ -341,6 +396,7 @@ export function Composer({
             // has no origin to point at, so the store copies it into the vault and
             // answers with the reference the item holds instead.
             const image = source ?? (await getRepository().uploadAttachment?.(file!));
+
             item = {
                 ...item,
                 image,
@@ -350,11 +406,14 @@ export function Composer({
         } else {
             item = { ...item, body: text, title: deriveTitle(text) };
         }
+
         await (onSave ? onSave(item) : saveCapture(item));
     };
 
     const pickFile = (picked: File | null | undefined) => {
-        if (picked) setFile(picked);
+        if (picked) {
+            setFile(picked);
+        }
     };
 
     return (
@@ -370,6 +429,7 @@ export function Composer({
             <div className="flex flex-none gap-[5px] overflow-hidden border-b border-border-soft px-[11px] py-[9px]">
                 {TABS.map((t) => {
                     const active = tab === t.type;
+
                     return (
                         <button
                             aria-pressed={active}
@@ -493,6 +553,7 @@ export function Composer({
                             <span className={SECTION_LABEL}>Deadline</span>
                             {DEADLINES.map((choice) => {
                                 const day = dayFromNow(choice.days);
+
                                 return (
                                     <button
                                         aria-pressed={dueAt === day}
@@ -621,7 +682,10 @@ export function Composer({
                                     onKeyDown={(e) => {
                                         // Enter here means "this subtask", not "the
                                         // capture" — the footer's ⏎ must not fire.
-                                        if (e.key !== 'Enter') return;
+                                        if (e.key !== 'Enter') {
+                                            return;
+                                        }
+
                                         e.preventDefault();
                                         e.stopPropagation();
                                         addSubtask(subtaskDraft);
@@ -798,6 +862,7 @@ export function Composer({
                                     e.stopPropagation();
                                     addTag(tagDraft);
                                 }
+
                                 if (e.key === 'Escape') {
                                     e.stopPropagation();
                                     setAddingTag(false);
@@ -923,6 +988,7 @@ function dayFromNow(days: number): string {
 function urlFileName(raw: string): string {
     try {
         const { hostname, pathname } = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+
         return decodeURIComponent(pathname.split('/').filter(Boolean).pop() ?? '') || hostname;
     } catch {
         return raw;

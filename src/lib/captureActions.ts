@@ -31,8 +31,10 @@ let dismissHeld = false;
 
 export async function hideCapture(): Promise<void> {
     dismissHeld = false;
+
     try {
         const { invoke } = await import('@tauri-apps/api/core');
+
         await invoke('hide_capture');
     } catch {
         // Outside Tauri — no window to hide.
@@ -66,13 +68,20 @@ export function lastCollectionId(): null | string {
 
 /** Releases the hold, reporting whether there was one to release. */
 export function releaseCaptureDismiss(): boolean {
-    if (!dismissHeld) return false;
+    if (!dismissHeld) {
+        return false;
+    }
+
     dismissHeld = false;
+
     return true;
 }
 
 export function rememberCollectionId(id: string | undefined): void {
-    if (!id) return;
+    if (!id) {
+        return;
+    }
+
     try {
         localStorage.setItem(LAST_COLLECTION_KEY, id);
     } catch {
@@ -82,11 +91,14 @@ export function rememberCollectionId(id: string | undefined): void {
 
 export async function saveCapture(input: NewItem): Promise<void> {
     await getRepository().createItem(input);
+
     try {
         const { emit } = await import('@tauri-apps/api/event');
+
         await emit('item:created');
     } catch {
         // Outside Tauri — nothing to notify.
     }
+
     await hideCapture();
 }

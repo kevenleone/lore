@@ -6,6 +6,7 @@ import { useStore } from './useStore';
 
 vi.mock('../lib/workspace', async () => {
     const actual = await vi.importActual<typeof import('../lib/workspace')>('../lib/workspace');
+
     return { ...actual, pickExportFolder: vi.fn(), pickWorkspaceFolder: vi.fn() };
 });
 
@@ -21,6 +22,7 @@ describe('exportVault', () => {
     it('does nothing when the folder picker is cancelled', async () => {
         const repo = getRepository();
         const exportTo = vi.fn();
+
         Object.assign(repo, { exportTo });
         picked.mockResolvedValue(null);
 
@@ -32,6 +34,7 @@ describe('exportVault', () => {
 
     it('reports where the copy landed', async () => {
         const repo = getRepository();
+
         Object.assign(repo, {
             exportTo: vi.fn().mockResolvedValue({ files: 9, path: '/tmp/out/Vault export' }),
         });
@@ -44,6 +47,7 @@ describe('exportVault', () => {
 
     it('says so when the export fails, rather than looking like it worked', async () => {
         const repo = getRepository();
+
         Object.assign(repo, { exportTo: vi.fn().mockRejectedValue(new Error('disk is full')) });
         picked.mockResolvedValue('/tmp/out');
 

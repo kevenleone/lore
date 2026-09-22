@@ -39,21 +39,25 @@ export async function attachmentUrl(relPath: string): Promise<string> {
     const { token, url } = await endpoint();
     const rest = relPath.replace(/^attachments\//, '');
     const encoded = rest.split('/').map(encodeURIComponent).join('/');
+
     return `${url}/attachments/${encoded}?token=${encodeURIComponent(token)}`;
 }
 
 export function endpoint(): Promise<Endpoint> {
-    if (!cached)
+    if (!cached) {
         cached = discover().catch((e) => {
             cached = null;
             throw e;
         });
+    }
+
     return cached;
 }
 
 /** The `/events` URL, token included — `EventSource` cannot set headers. */
 export async function eventsUrl(): Promise<string> {
     const { token, url } = await endpoint();
+
     return `${url}/events?token=${encodeURIComponent(token)}`;
 }
 
@@ -73,12 +77,19 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     try {
         return await attempt<T>(path, init);
     } catch (e) {
-        if (e instanceof HttpError) throw e;
+        if (e instanceof HttpError) {
+            throw e;
+        }
+
         forgetEndpoint();
+
         try {
             return await attempt<T>(path, init);
         } catch (retryError) {
-            if (retryError instanceof HttpError) throw retryError;
+            if (retryError instanceof HttpError) {
+                throw retryError;
+            }
+
             throw new SidecarUnavailable(retryError);
         }
     }
@@ -100,13 +111,19 @@ async function attempt<T>(path: string, init: RequestInit): Promise<T> {
 
     if (!res.ok) {
         const detail = await res.text().catch(() => '');
+
         throw new HttpError(res.status, detail || res.statusText);
     }
-    if (res.status === 204) return undefined as T;
+
+    if (res.status === 204) {
+        return undefined as T;
+    }
+
     return (await res.json()) as T;
 }
 
 async function discover(): Promise<Endpoint> {
     const { invoke } = await import('@tauri-apps/api/core');
+
     return invoke<Endpoint>('sidecar_endpoint');
 }

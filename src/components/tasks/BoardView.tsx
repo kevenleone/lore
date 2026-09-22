@@ -105,7 +105,11 @@ export function BoardView({
     const move = (columnId: string, id: string) => {
         const task = tasks.find((i) => i.id === id);
         const column = board.columns.find((c) => c.id === columnId);
-        if (!task || !column || boardColumnFor(task, board) === columnId) return;
+
+        if (!task || !column || boardColumnFor(task, board) === columnId) {
+            return;
+        }
+
         void updateItem(id, patchForColumn(task, column));
     };
 
@@ -125,14 +129,22 @@ export function BoardView({
     const step = (task: Item, direction: -1 | 1) => {
         const at = board.columns.findIndex((c) => c.id === boardColumnFor(task, board));
         const next = board.columns[at + direction];
-        if (next) move(next.id, task.id);
+
+        if (next) {
+            move(next.id, task.id);
+        }
     };
 
     const commitColumn = () => {
         setAdding(false);
+
         const name = draft.trim();
+
         setDraft('');
-        if (name) void addBoardColumn(name);
+
+        if (name) {
+            void addBoardColumn(name);
+        }
     };
 
     return (
@@ -178,12 +190,22 @@ export function BoardView({
                                     )}
                                     key={task.id}
                                     onClick={() => {
-                                        if (!drag.wasDragged()) selectTask(task.id);
+                                        if (!drag.wasDragged()) {
+                                            selectTask(task.id);
+                                        }
                                     }}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter') selectTask(task.id);
-                                        if (e.key === 'ArrowLeft') step(task, -1);
-                                        if (e.key === 'ArrowRight') step(task, 1);
+                                        if (e.key === 'Enter') {
+                                            selectTask(task.id);
+                                        }
+
+                                        if (e.key === 'ArrowLeft') {
+                                            step(task, -1);
+                                        }
+
+                                        if (e.key === 'ArrowRight') {
+                                            step(task, 1);
+                                        }
                                     }}
                                     onPointerDown={(e) => drag.start(e, task.id)}
                                     role="button"
@@ -215,7 +237,10 @@ export function BoardView({
                             onBlur={commitColumn}
                             onChange={(e) => setDraft(e.target.value)}
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter') commitColumn();
+                                if (e.key === 'Enter') {
+                                    commitColumn();
+                                }
+
                                 if (e.key === 'Escape') {
                                     setDraft('');
                                     setAdding(false);
@@ -338,6 +363,7 @@ function ColumnHeader({
 
     const commit = () => {
         setEditing(false);
+
         if (draft.trim() && draft.trim() !== column.name) {
             void renameBoardColumn(column.id, draft);
         }
@@ -352,7 +378,10 @@ function ColumnHeader({
                     onBlur={commit}
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter') commit();
+                        if (e.key === 'Enter') {
+                            commit();
+                        }
+
                         if (e.key === 'Escape') {
                             setDraft(column.name);
                             setEditing(false);

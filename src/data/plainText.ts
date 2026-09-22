@@ -23,8 +23,12 @@ export function deriveTitle(markdown: string): string {
 export function firstPlainLine(markdown: string): string {
     for (const line of markdownToPlainText(markdown).split('\n')) {
         const trimmed = line.trim();
-        if (trimmed) return trimmed;
+
+        if (trimmed) {
+            return trimmed;
+        }
     }
+
     return '';
 }
 
@@ -34,6 +38,7 @@ export function markdownToPlainText(markdown: string): string {
     const escaped: string[] = [];
     let text = markdown.replace(ESCAPE, (_match, char: string) => {
         escaped.push(char);
+
         return `${SENTINEL}${escaped.length - 1}${SENTINEL}`;
     });
 
