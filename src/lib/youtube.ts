@@ -47,7 +47,7 @@ export function youtubeVideo(rawUrl: string | undefined): null | YoutubeVideo {
 }
 
 /** `t=90`, `t=90s` and `t=1h2m3s` are all forms YouTube's share links use. */
-function parseStart(raw: null | string): number | undefined {
+export function parseStart(raw: null | string): number | undefined {
     if (!raw) return undefined;
     if (/^\d+s?$/.test(raw)) return Number.parseInt(raw, 10) || undefined;
     const match = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/.exec(raw);

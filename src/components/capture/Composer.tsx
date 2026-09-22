@@ -29,7 +29,7 @@ import { documentTitle, type GithubDocument, resolveGithubDocument } from '../..
 import { useImageFallback } from '../../lib/imageFallback';
 import { fetchLinkMetadata, type LinkMetadata } from '../../lib/linkMetadata';
 import { joinBody } from '../../lib/subtasks';
-import { youtubeVideo } from '../../lib/youtube';
+import { linkVideo } from '../../lib/video';
 import { PRIORITIES } from '../../store/types';
 import { localDateKey } from '../../store/views';
 import {
@@ -425,7 +425,7 @@ export function Composer({
                                             onError={onMetaImageError}
                                             src={meta.image}
                                         />
-                                        {youtubeVideo(value) && (
+                                        {linkVideo(value) && (
                                             <span className="absolute top-1/2 left-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[rgba(20,20,28,.6)] text-white">
                                                 <Play className="ml-[2px]" size={18} />
                                             </span>

@@ -1,14 +1,14 @@
 import { useState } from 'react';
 
-import type { YoutubeVideo } from '../../lib/youtube';
+import type { LinkVideo } from '../../lib/video';
 
-import { youtubeEmbedUrl } from '../../lib/youtube';
+import { videoEmbedUrl } from '../../lib/video';
 import { Play } from '../common/glyphs';
 
 interface VideoPlayerProps {
-    thumbnail: string;
+    thumbnail?: string;
     title: string;
-    video: YoutubeVideo;
+    video: LinkVideo;
 }
 
 /**
@@ -27,7 +27,7 @@ export function VideoPlayer({ thumbnail, title, video }: VideoPlayerProps): Reac
                     allowFullScreen
                     className="absolute inset-0 h-full w-full border-none"
                     referrerPolicy="strict-origin-when-cross-origin"
-                    src={youtubeEmbedUrl(video)}
+                    src={videoEmbedUrl(video)}
                     title={title}
                 />
             ) : (
@@ -37,12 +37,14 @@ export function VideoPlayer({ thumbnail, title, video }: VideoPlayerProps): Reac
                     onClick={() => setPlaying(true)}
                     type="button"
                 >
-                    <img
-                        alt=""
-                        className="block h-full w-full object-cover"
-                        draggable={false}
-                        src={thumbnail}
-                    />
+                    {thumbnail && (
+                        <img
+                            alt=""
+                            className="block h-full w-full object-cover"
+                            draggable={false}
+                            src={thumbnail}
+                        />
+                    )}
                     <span className="absolute top-1/2 left-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[rgba(20,20,28,.6)] text-white transition-transform group-hover:scale-110">
                         <Play className="ml-[3px]" size={24} />
                     </span>
