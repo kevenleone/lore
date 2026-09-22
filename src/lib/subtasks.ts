@@ -76,5 +76,7 @@ export function stripSubtasks(body: string | undefined): string {
 }
 
 export function toggleSubtask(subtasks: readonly Subtask[], index: number): Subtask[] {
-    return subtasks.map((subtask, i) => (i === index ? { ...subtask, done: !subtask.done } : subtask));
+    return subtasks.map((subtask, i) =>
+        i === index ? { ...subtask, done: !subtask.done } : subtask,
+    );
 }

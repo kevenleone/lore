@@ -139,7 +139,8 @@ export function SettingsModal() {
         }
 
         return PANES.filter(
-            (paneDef) => paneDef.label.toLowerCase().includes(query) || paneDef.terms.includes(query),
+            (paneDef) =>
+                paneDef.label.toLowerCase().includes(query) || paneDef.terms.includes(query),
         );
     }, [filter]);
 

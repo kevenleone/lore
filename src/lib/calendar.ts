@@ -117,7 +117,9 @@ export function eventsForDay({
 
             const start = minutesOfDay(session.startedAt);
             const end = minutesOfDay(session.endedAt);
-            const task = session.taskId ? items.find((item) => item.id === session.taskId) : undefined;
+            const task = session.taskId
+                ? items.find((item) => item.id === session.taskId)
+                : undefined;
 
             events.push({
                 // A session that ran past midnight would come back with an end

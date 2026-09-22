@@ -182,7 +182,8 @@ export function boardRollups(items: Item[], collections: Collection[]): BoardRol
 export function boardTasks(items: Item[], boardId: string): Item[] {
     return items.filter(
         (item) =>
-            isTask(item) && (boardId === UNFILED_BOARD ? !item.collectionId : item.collectionId === boardId),
+            isTask(item) &&
+            (boardId === UNFILED_BOARD ? !item.collectionId : item.collectionId === boardId),
     );
 }
 
@@ -330,7 +331,9 @@ export function taskTimeline(items: Item[], today: string): TimelineGroup[] {
             label: formatDueDay(day, today),
             tasks: group
                 .slice()
-                .sort((left, right) => (right.completedAt ?? '').localeCompare(left.completedAt ?? '')),
+                .sort((left, right) =>
+                    (right.completedAt ?? '').localeCompare(left.completedAt ?? ''),
+                ),
         }));
 
     return [
@@ -372,7 +375,11 @@ const PRIORITY_RANK: Record<Priority, number> = { high: 2, low: 0, normal: 1, ur
 
 /** Most urgent first, then alphabetical so the order never depends on load. */
 function byUrgency(tasks: Item[]): Item[] {
-    return tasks.slice().sort((left, right) => rankOf(right) - rankOf(left) || left.title.localeCompare(right.title));
+    return tasks
+        .slice()
+        .sort(
+            (left, right) => rankOf(right) - rankOf(left) || left.title.localeCompare(right.title),
+        );
 }
 
 function isTask(item: Item): boolean {

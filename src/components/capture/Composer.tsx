@@ -211,7 +211,8 @@ export function Composer({
                     return;
                 }
 
-                const has = (id: null | string): boolean => !!id && collections.some((collection) => collection.id === id);
+                const has = (id: null | string): boolean =>
+                    !!id && collections.some((collection) => collection.id === id);
 
                 setCollectionId((current) => {
                     if (has(current)) {
@@ -268,7 +269,8 @@ export function Composer({
         }
     };
 
-    const activeCollection = collections.find((collection) => collection.id === collectionId) ?? null;
+    const activeCollection =
+        collections.find((collection) => collection.id === collectionId) ?? null;
     const collRef = useRef<HTMLDivElement>(null);
     const fieldRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
@@ -648,7 +650,9 @@ export function Composer({
                                             onClick={() =>
                                                 setSubtasks((subtasks) =>
                                                     subtasks.map((subtask, j) =>
-                                                        j === index ? { ...subtask, done: !subtask.done } : subtask,
+                                                        j === index
+                                                            ? { ...subtask, done: !subtask.done }
+                                                            : subtask,
                                                     ),
                                                 )
                                             }
@@ -668,7 +672,9 @@ export function Composer({
                                             aria-label={`Remove ${subtask.text}`}
                                             className="border-none bg-transparent p-0 text-faint"
                                             onClick={() =>
-                                                setSubtasks((subtasks) => subtasks.filter((_, j) => j !== index))
+                                                setSubtasks((subtasks) =>
+                                                    subtasks.filter((_, j) => j !== index),
+                                                )
                                             }
                                             type="button"
                                         >

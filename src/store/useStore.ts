@@ -559,7 +559,8 @@ async function hydrateOnce(
         }
     }
 
-    const selectedId = items.find((item) => item.id === get().selectedId)?.id ?? items[0]?.id ?? null;
+    const selectedId =
+        items.find((item) => item.id === get().selectedId)?.id ?? items[0]?.id ?? null;
 
     set({ collections, hydrated: true, items, selectedId });
 
@@ -587,7 +588,9 @@ async function logFocusSession(state: StoreState, session: FocusSession): Promis
         month: 'long',
         year: 'numeric',
     })}`;
-    const task = session.taskId ? state.items.find((item) => item.id === session.taskId) : undefined;
+    const task = session.taskId
+        ? state.items.find((item) => item.id === session.taskId)
+        : undefined;
     const minutes = Math.round(
         (new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime()) / 60_000,
     );
@@ -730,7 +733,8 @@ async function seedDefaultVault(): Promise<void> {
         const { collectionId, createdAt, id, related, updatedAt, ...rest } = item;
         const created = await repo.createItem({
             ...rest,
-            collectionId: SEED_COLLECTIONS.find((collection) => collection.id === collectionId)?.name,
+            collectionId: SEED_COLLECTIONS.find((collection) => collection.id === collectionId)
+                ?.name,
             createdAt,
             related: [],
             updatedAt,
@@ -995,7 +999,9 @@ export const useStore = create<StoreState>((set, get) => ({
         try {
             await exportPdf(
                 {
-                    collectionName: get().collections.find((collection) => collection.id === item.collectionId)?.name,
+                    collectionName: get().collections.find(
+                        (collection) => collection.id === item.collectionId,
+                    )?.name,
                     item,
                 },
                 destination,
@@ -1257,7 +1263,9 @@ export const useStore = create<StoreState>((set, get) => ({
             return;
         }
 
-        const kept = get().recentSearches.filter((recentSearch) => recentSearch.toLowerCase() !== text.toLowerCase());
+        const kept = get().recentSearches.filter(
+            (recentSearch) => recentSearch.toLowerCase() !== text.toLowerCase(),
+        );
 
         set({ recentSearches: [text, ...kept].slice(0, MAX_RECENT_SEARCHES) });
         persist(get());
@@ -1345,7 +1353,9 @@ export const useStore = create<StoreState>((set, get) => ({
 
         await writeBoard(get, set, (board) => ({
             ...board,
-            columns: board.columns.map((column) => (column.id === columnId ? { ...column, name: label } : column)),
+            columns: board.columns.map((column) =>
+                column.id === columnId ? { ...column, name: label } : column,
+            ),
         }));
     },
 
@@ -1698,7 +1708,11 @@ export const useStore = create<StoreState>((set, get) => ({
         // Clears the preset with it: a capture opened from the menu or ⌥Space
         // is not the one a board column asked for, and a stale column would
         // file the next task somewhere the user never chose.
-        set((state) => ({ captureOpen: !state.captureOpen, capturePreset: null, focusPopoverOpen: false }));
+        set((state) => ({
+            captureOpen: !state.captureOpen,
+            capturePreset: null,
+            focusPopoverOpen: false,
+        }));
     },
 
     toggleChat() {
@@ -1783,7 +1797,10 @@ export const useStore = create<StoreState>((set, get) => ({
 
     toggleSwitch(key) {
         set((state) => ({
-            prefs: { ...state.prefs, switches: { ...state.prefs.switches, [key]: !state.prefs.switches[key] } },
+            prefs: {
+                ...state.prefs,
+                switches: { ...state.prefs.switches, [key]: !state.prefs.switches[key] },
+            },
         }));
         persist(get());
     },
@@ -1820,7 +1837,9 @@ export const useStore = create<StoreState>((set, get) => ({
             onboarded: false,
             onboardingStep: 'pick',
             recentItemIds: [],
-            recentWorkspaces: get().recentWorkspaces.filter((recentWorkspace) => recentWorkspace.path !== path),
+            recentWorkspaces: get().recentWorkspaces.filter(
+                (recentWorkspace) => recentWorkspace.path !== path,
+            ),
             selectedId: null,
             settingsOpen: false,
             workspacePath: null,

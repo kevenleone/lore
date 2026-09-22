@@ -233,7 +233,10 @@ export class Vault {
 
     async writeCollectionsFile(collections: readonly Collection[]): Promise<void> {
         const payload = {
-            collections: collections.map((collection) => ({ color: collection.color, folder: collection.id })),
+            collections: collections.map((collection) => ({
+                color: collection.color,
+                folder: collection.id,
+            })),
             version: 1,
         };
 

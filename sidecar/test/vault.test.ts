@@ -459,7 +459,9 @@ describe('store: collections', () => {
 
         await s.deleteCollection('Work');
 
-        expect((await s.listCollections()).map((collection) => collection.id)).not.toContain('Work');
+        expect((await s.listCollections()).map((collection) => collection.id)).not.toContain(
+            'Work',
+        );
         expect(s.getItem(item.id)!.collectionId).toBeUndefined();
         expect(await Bun.file(join(root, 'filed.md')).exists()).toBe(true);
     });
@@ -483,7 +485,9 @@ describe('store: collections', () => {
 
         const s = await open();
 
-        expect((await s.listCollections()).map((collection) => collection.id)).not.toContain('attachments');
+        expect((await s.listCollections()).map((collection) => collection.id)).not.toContain(
+            'attachments',
+        );
         expect(s.listItems().length).toBe(0);
     });
 });

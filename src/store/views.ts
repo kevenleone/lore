@@ -207,7 +207,9 @@ export interface DetailFlags {
 }
 
 export function collectionFor(item: Item, collections: Collection[]): Collection | null {
-    return item.collectionId ? (collections.find((collection) => collection.id === item.collectionId) ?? null) : null;
+    return item.collectionId
+        ? (collections.find((collection) => collection.id === item.collectionId) ?? null)
+        : null;
 }
 
 /**
@@ -273,7 +275,9 @@ export function viewTitle(view: View, collections: Collection[]): string {
         case 'all':
             return 'Everything';
         case 'collection':
-            return collections.find((collection) => collection.id === view.val)?.name ?? 'Collection';
+            return (
+                collections.find((collection) => collection.id === view.val)?.name ?? 'Collection'
+            );
         case 'files':
             return 'Files';
         case 'inbox':

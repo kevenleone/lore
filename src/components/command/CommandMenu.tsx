@@ -335,7 +335,9 @@ function useCommands(): CommandEntry[] {
     const appearance = useStore((state) => state.prefs.appearance);
     const collections = useStore((state) => state.collections);
     const focusRunning = useStore((state) => state.focus.running);
-    const hasRecents = useStore((state) => state.recentItemIds.length + state.recentSearches.length > 0);
+    const hasRecents = useStore(
+        (state) => state.recentItemIds.length + state.recentSearches.length > 0,
+    );
 
     return useMemo(() => {
         const store = useStore.getState;

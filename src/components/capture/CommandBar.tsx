@@ -55,7 +55,9 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
                     return;
                 }
 
-                setCollectionName(collections.find((collection) => collection.id === collectionId)?.name ?? null);
+                setCollectionName(
+                    collections.find((collection) => collection.id === collectionId)?.name ?? null,
+                );
             });
 
         return () => {

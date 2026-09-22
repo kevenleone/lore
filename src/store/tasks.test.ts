@@ -93,7 +93,12 @@ describe('taskGroups', () => {
             task('finished', { dueAt: '2026-09-09', flags: { done: true } }),
         ];
 
-        expect(taskGroups(items, TODAY).map((taskGroup) => [taskGroup.kind, taskGroup.tasks.map((task) => task.id)])).toEqual([
+        expect(
+            taskGroups(items, TODAY).map((taskGroup) => [
+                taskGroup.kind,
+                taskGroup.tasks.map((task) => task.id),
+            ]),
+        ).toEqual([
             ['overdue', ['late']],
             ['today', ['now']],
             ['noDate', ['queued']],
@@ -109,7 +114,12 @@ describe('taskGroups', () => {
         ];
         const [, due] = taskGroups(items, TODAY);
 
-        expect(due.tasks.map((task) => task.id)).toEqual(['z-urgent', 'a-normal', 'b-normal', 'a-low']);
+        expect(due.tasks.map((task) => task.id)).toEqual([
+            'z-urgent',
+            'a-normal',
+            'b-normal',
+            'a-low',
+        ]);
     });
 });
 
@@ -265,7 +275,10 @@ describe('boardColumns', () => {
         ];
 
         expect(
-            boardColumns(items, BOARD).map((boardColumn) => [boardColumn.config.id, boardColumn.tasks.map((task) => task.id)]),
+            boardColumns(items, BOARD).map((boardColumn) => [
+                boardColumn.config.id,
+                boardColumn.tasks.map((task) => task.id),
+            ]),
         ).toEqual([
             ['todo', ['t']],
             ['doing', ['d']],
@@ -285,7 +298,12 @@ describe('taskTimeline', () => {
             { ...task('done-3'), completedAt: at('2026-09-09'), flags: { done: true } },
         ];
 
-        expect(taskTimeline(items, TODAY).map((timelineGroup) => [timelineGroup.key, timelineGroup.tasks.map((task) => task.id)])).toEqual([
+        expect(
+            taskTimeline(items, TODAY).map((timelineGroup) => [
+                timelineGroup.key,
+                timelineGroup.tasks.map((task) => task.id),
+            ]),
+        ).toEqual([
             ['open', ['open-a']],
             // Newest day first, and newest within the day.
             ['2026-09-11', ['done-2', 'done-1']],
@@ -301,7 +319,9 @@ describe('taskTimeline', () => {
     it('keeps undated completions apart rather than guessing a day', () => {
         const items = [{ ...task('old'), flags: { done: true } }];
 
-        expect(taskTimeline(items, TODAY).map((timelineGroup) => timelineGroup.key)).toEqual(['undated']);
+        expect(taskTimeline(items, TODAY).map((timelineGroup) => timelineGroup.key)).toEqual([
+            'undated',
+        ]);
     });
 
     it('drops a group that has nothing in it, and ignores what is not a task', () => {
@@ -326,7 +346,13 @@ describe('upcomingDays', () => {
             '2026-09-17',
             '2026-09-18',
         ]);
-        expect(days.map((day) => day.tasks.map((task) => task.id))).toEqual([['mon'], [], ['wed'], [], []]);
+        expect(days.map((day) => day.tasks.map((task) => task.id))).toEqual([
+            ['mon'],
+            [],
+            ['wed'],
+            [],
+            [],
+        ]);
     });
 });
 

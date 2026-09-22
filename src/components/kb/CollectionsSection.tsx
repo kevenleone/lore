@@ -179,7 +179,9 @@ export function CollectionsSection() {
                 if (confirmId === collection.id) {
                     return (
                         <div className={cn(ROW_BASE, 'bg-danger-tint')} key={collection.id}>
-                            <span className="flex-1 text-body text-danger">Delete “{collection.name}”?</span>
+                            <span className="flex-1 text-body text-danger">
+                                Delete “{collection.name}”?
+                            </span>
                             <button
                                 aria-label={`Keep ${collection.name}`}
                                 className={cn(BARE_BUTTON, 'flex text-text3')}
@@ -239,7 +241,9 @@ export function CollectionsSection() {
                             <button
                                 aria-label={`Rename ${collection.name}`}
                                 className={cn(BARE_BUTTON, 'flex text-text3')}
-                                onClick={() => startEdit(collection.id, collection.name, collection.color)}
+                                onClick={() =>
+                                    startEdit(collection.id, collection.name, collection.color)
+                                }
                                 type="button"
                             >
                                 <Pencil size={13} />

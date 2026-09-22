@@ -29,7 +29,9 @@ export function RelationshipsSection({ item }: { item: Item }) {
     const related = useMemo(() => {
         const byId = new Map(items.map((item) => [item.id, item]));
 
-        return (item.related ?? []).map((id) => byId.get(id)).filter((item): item is Item => !!item);
+        return (item.related ?? [])
+            .map((id) => byId.get(id))
+            .filter((item): item is Item => !!item);
     }, [item.related, items]);
 
     const suggestions = useMemo(() => {
