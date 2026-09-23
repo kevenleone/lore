@@ -16,6 +16,7 @@ import {
     matchesView,
     queueItems,
     relatedItems,
+    savedSearchMatches,
     sortItems,
     tagCounts,
     viewCounts,
@@ -88,6 +89,56 @@ describe('tagCounts', () => {
         expect(design?.count).toBe(
             SEED_ITEMS.filter((item) => item.tags.includes('design')).length,
         );
+    });
+});
+
+describe('savedSearchMatches', () => {
+    const FILTERS = {
+        categories: [],
+        collectionIds: [],
+        from: null,
+        tags: ['product', 'design'],
+        to: null,
+    };
+    const SAVED = {
+        filters: FILTERS,
+        id: 's1',
+        name: 'Product reading',
+        query: 'linear',
+        view: { kind: 'all' as const, val: null },
+    };
+
+    it('matches the state it was saved from', () => {
+        expect(savedSearchMatches(SAVED, SAVED.view, FILTERS, 'linear')).toBe(true);
+    });
+
+    it('matches tags chosen in the other order', () => {
+        // The filter bar appends in click order, which is not meaning.
+        const reordered = { ...FILTERS, tags: ['design', 'product'] };
+
+        expect(savedSearchMatches(SAVED, SAVED.view, reordered, 'linear')).toBe(true);
+    });
+
+    it('does not match a different view', () => {
+        expect(savedSearchMatches(SAVED, { kind: 'inbox', val: null }, FILTERS, 'linear')).toBe(
+            false,
+        );
+    });
+
+    it('does not match a different query', () => {
+        expect(savedSearchMatches(SAVED, SAVED.view, FILTERS, 'something else')).toBe(false);
+    });
+
+    it('does not match when a tag is missing', () => {
+        const fewer = { ...FILTERS, tags: ['product'] };
+
+        expect(savedSearchMatches(SAVED, SAVED.view, fewer, 'linear')).toBe(false);
+    });
+
+    it('does not match when a date bound differs', () => {
+        const dated = { ...FILTERS, from: '2026-01-01' };
+
+        expect(savedSearchMatches(SAVED, SAVED.view, dated, 'linear')).toBe(false);
     });
 });
 

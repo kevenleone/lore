@@ -3,7 +3,7 @@
 // detail-pane visibility booleans from a plain item/collection list, so they
 // are trivially unit-testable.
 
-import type { Collection, Filters, Item, SortOrder, TagCount, View } from './types';
+import type { Collection, Filters, Item, SavedSearch, SortOrder, TagCount, View } from './types';
 
 import { FILE_TYPES } from './types';
 
@@ -270,6 +270,38 @@ export function relatedItems(item: Item, all: Item[]): Item[] {
     return (item.related ?? []).map((id) => byId.get(id)).filter((item): item is Item => !!item);
 }
 
+/**
+ * Whether the library is currently showing exactly what a saved search names.
+ *
+ * Compared by value rather than by remembering which one was clicked: the state
+ * a saved search restores is reachable by hand too, and a row that lights up
+ * only when it was the thing clicked would lie both ways.
+ */
+export function savedSearchMatches(
+    saved: SavedSearch,
+    view: View,
+    filters: Filters,
+    query: string,
+): boolean {
+    if (saved.view.kind !== view.kind || saved.view.val !== view.val) {
+        return false;
+    }
+
+    if (saved.query !== query) {
+        return false;
+    }
+
+    const { categories, collectionIds, from, tags, to } = saved.filters;
+
+    return (
+        from === filters.from &&
+        to === filters.to &&
+        sameSet(categories, filters.categories) &&
+        sameSet(collectionIds, filters.collectionIds) &&
+        sameSet(tags, filters.tags)
+    );
+}
+
 export function viewTitle(view: View, collections: Collection[]): string {
     switch (view.kind) {
         case 'all':
@@ -295,4 +327,9 @@ export function viewTitle(view: View, collections: Collection[]): string {
         default:
             return 'Everything';
     }
+}
+
+/** Order-insensitive: the filter bar appends in click order, which is not meaning. */
+function sameSet(left: readonly string[], right: readonly string[]): boolean {
+    return left.length === right.length && left.every((entry) => right.includes(entry));
 }

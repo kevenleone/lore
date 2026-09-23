@@ -27,8 +27,12 @@ export function FilterBar() {
     const toggleFilter = useStore((state) => state.toggleFilter);
     const setFilters = useStore((state) => state.setFilters);
     const clearFilters = useStore((state) => state.clearFilters);
+    const saveSearch = useStore((state) => state.saveSearch);
+    const search = useStore((state) => state.search);
 
     const [menu, setMenu] = useState<MenuId | null>(null);
+    const [naming, setNaming] = useState(false);
+    const [draft, setDraft] = useState('');
     const barRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -49,6 +53,17 @@ export function FilterBar() {
 
     const tags = tagCounts(items);
     const count = activeFilterCount(filters);
+
+    const commit = () => {
+        const name = draft.trim();
+
+        setNaming(false);
+        setDraft('');
+
+        if (name) {
+            void saveSearch(name);
+        }
+    };
 
     return (
         <div
@@ -134,6 +149,41 @@ export function FilterBar() {
                     Clear {count === 1 ? 'filter' : `all ${count}`}
                 </button>
             )}
+
+            {/* Nothing narrowed is nothing worth naming. */}
+            {(count > 0 || search.trim().length > 0) &&
+                (naming ? (
+                    <input
+                        aria-label="Name this search"
+                        autoFocus
+                        className="ml-auto w-[170px] rounded-7 border border-accent bg-surface px-[8px] py-[4px] font-[inherit] text-body text-text outline-none"
+                        onBlur={() => commit()}
+                        onChange={(event) => setDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                                commit();
+                            }
+
+                            if (event.key === 'Escape') {
+                                setNaming(false);
+                                setDraft('');
+                            }
+                        }}
+                        placeholder="Name this search"
+                        value={draft}
+                    />
+                ) : (
+                    <button
+                        className="ml-auto border-none bg-transparent px-[6px] py-1 font-[inherit] text-body text-text3 hover:bg-hover"
+                        onClick={() => {
+                            setMenu(null);
+                            setNaming(true);
+                        }}
+                        type="button"
+                    >
+                        Save search
+                    </button>
+                ))}
         </div>
     );
 }

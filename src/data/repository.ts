@@ -9,7 +9,15 @@
 // `matchesView` used to live here; it moved to store/views.ts so the data layer
 // no longer imports from the store and vice versa.
 
-import type { BoardConfig, Collection, Item, ItemMeta, TagCount, View } from '../store/types';
+import type {
+    BoardConfig,
+    Collection,
+    Item,
+    ItemMeta,
+    SavedSearch,
+    TagCount,
+    View,
+} from '../store/types';
 
 export type CollectionPatch = Partial<Omit<Collection, 'id'>>;
 export type ItemPatch = Partial<Omit<Item, 'createdAt' | 'id'>>;
@@ -47,6 +55,12 @@ export interface KnowledgeRepository {
     listCollections(): Promise<Collection[]>;
     listItems(view?: View): Promise<Item[]>;
 
+    /**
+     * The vault's named searches. Optional: a store with nowhere to keep them
+     * answers with nothing and the sidebar simply has no Saved section.
+     */
+    listSavedSearches?(): Promise<SavedSearch[]>;
+
     listTags(): Promise<TagCount[]>;
 
     /**
@@ -70,6 +84,12 @@ export interface KnowledgeRepository {
 
     /** Replaces one board; null drops it back to `DEFAULT_BOARD`. Optional. */
     saveBoard?(id: string, board: BoardConfig | null): Promise<void>;
+
+    /**
+     * Replaces the whole list. They are renamed and reordered as a set, so
+     * writing one at a time would buy nothing but a merge problem.
+     */
+    saveSavedSearches?(searches: readonly SavedSearch[]): Promise<void>;
 
     /** ⌘K full-text search across titles, snippets, summaries, tags. */
     search(query: string): Promise<Item[]>;

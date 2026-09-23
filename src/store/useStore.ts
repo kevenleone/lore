@@ -55,6 +55,7 @@ import {
     type OnboardingStep,
     type OpenMode,
     type Prefs,
+    type SavedSearch,
     type SettingsPane,
     type SortOrder,
     type Switches,
@@ -104,6 +105,8 @@ interface StoreState {
     /** Appends a comment to the item's frontmatter. */
     addComment: (id: string, body: string) => Promise<void>;
     addTag: (id: string, tag: string) => Promise<void>;
+    /** Puts a saved search back on screen: its view, its filters and its query. */
+    applySavedSearch: (id: string) => void;
     /** What the open board is filtered by. Empty everywhere means unfiltered. */
     boardFilter: BoardFilter;
     /**
@@ -152,6 +155,7 @@ interface StoreState {
     cycleFocusTask: () => void;
     deleteCollection: (id: string) => Promise<void>;
     deleteItem: (id: string) => Promise<void>;
+    deleteSavedSearch: (id: string) => Promise<void>;
     /**
      * The selected item, with its `body` — `listItems()` omits bodies, so the
      * detail pane reads through here and falls back to the list row until it
@@ -287,6 +291,10 @@ interface StoreState {
     /** Shows the item's file in the OS file manager. */
     revealItemFile: (id: string) => Promise<void>;
 
+    /** The vault's named searches, in the order they were saved. */
+    savedSearches: SavedSearch[];
+    /** Names the current view, filters and query, and records them in the vault. */
+    saveSearch: (name: string) => Promise<void>;
     /** Item id → ISO time it sits at on the calendar. */
     schedule: Record<string, string>;
     /** Places an item on the calendar, or clears it when `at` is null. */
@@ -528,7 +536,11 @@ async function hydrateOnce(
     const selectedId =
         items.find((item) => item.id === get().selectedId)?.id ?? items[0]?.id ?? null;
 
-    set({ collections, hydrated: true, items, selectedId });
+    // A vault with none, or one we cannot read, simply has no Saved section —
+    // not worth failing the whole hydrate over.
+    const savedSearches = await (repo.listSavedSearches?.() ?? Promise.resolve([])).catch(() => []);
+
+    set({ collections, hydrated: true, items, savedSearches, selectedId });
 
     if (selectedId) {
         void get().loadDetail(selectedId);
@@ -766,6 +778,28 @@ async function writeBoard(
     await getRepository().saveBoard?.(boardId, next);
 }
 
+/**
+ * Puts the new list on screen first, then in the vault. The list is the whole
+ * of the state, so a failed write is recoverable by the next one — and a search
+ * that vanished on save would be worse than one that outlives a failed write.
+ */
+async function writeSavedSearches(
+    get: () => StoreState,
+    set: (partial: Partial<StoreState>) => void,
+    next: SavedSearch[],
+): Promise<void> {
+    const previous = get().savedSearches;
+
+    set({ savedSearches: next });
+
+    try {
+        await getRepository().saveSavedSearches?.(next);
+    } catch (e) {
+        set({ savedSearches: previous });
+        get().pushToast(e instanceof Error ? e.message : 'The search could not be saved.');
+    }
+}
+
 export const useStore = create<StoreState>((set, get) => ({
     async addBoardColumn(name) {
         const label = name.trim();
@@ -804,6 +838,21 @@ export const useStore = create<StoreState>((set, get) => ({
         }
 
         await get().updateItem(id, { tags: [...item.tags, clean] });
+    },
+
+    applySavedSearch(id) {
+        const saved = get().savedSearches.find((entry) => entry.id === id);
+
+        if (!saved) {
+            return;
+        }
+
+        // Through `selectView` rather than a bare `set`, so a saved search
+        // closes the chat and the open item the same way picking the view by
+        // hand does. Filters and query follow it, not the other way round.
+        get().selectView(saved.view.kind, saved.view.val);
+        set({ filters: saved.filters });
+        get().setSearch(saved.query);
     },
     boardFilter: EMPTY_BOARD_FILTER,
     boardId: null,
@@ -916,6 +965,14 @@ export const useStore = create<StoreState>((set, get) => ({
                 void get().loadDetail(next);
             }
         }
+    },
+
+    async deleteSavedSearch(id) {
+        await writeSavedSearches(
+            get,
+            set,
+            get().savedSearches.filter((entry) => entry.id !== id),
+        );
     },
 
     detail: null,
@@ -1412,6 +1469,27 @@ export const useStore = create<StoreState>((set, get) => ({
         }
     },
 
+    savedSearches: [],
+
+    async saveSearch(name) {
+        const clean = name.trim();
+
+        if (!clean) {
+            return;
+        }
+
+        const { filters, savedSearches, search, view } = get();
+        const entry: SavedSearch = {
+            filters,
+            id: crypto.randomUUID(),
+            name: clean,
+            query: search,
+            view,
+        };
+
+        await writeSavedSearches(get, set, [...savedSearches, entry]);
+    },
+
     schedule: persisted.schedule,
 
     scheduleItem(id, at) {
@@ -1641,6 +1719,7 @@ export const useStore = create<StoreState>((set, get) => ({
             openAs: null,
             openId: null,
             recentItemIds: [],
+            savedSearches: [],
             search: '',
             searchResults: null,
             selectedId: null,

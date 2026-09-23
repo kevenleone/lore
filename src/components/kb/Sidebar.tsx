@@ -14,6 +14,7 @@ import { isViewActive, tagCounts, viewCounts } from '../../store/views';
 import { Message, Plus, Settings, Sparkle } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 import { CollectionsSection } from './CollectionsSection';
+import { SavedSearchesSection } from './SavedSearchesSection';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
 /** Fixed while the pane collapses, so the contents don't reflow mid-transition. */
@@ -295,6 +296,9 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                     })}
                 </div>
             </nav>
+
+            {/* Saved searches — a named view, filters and query */}
+            <SavedSearchesSection />
 
             {/* Collections (add / edit / remove) */}
             <CollectionsSection />
