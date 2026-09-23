@@ -17,6 +17,7 @@ const saved = (over: Partial<SavedSearch> = {}): SavedSearch => ({
 
 beforeEach(() => {
     useStore.setState({
+        activeSavedSearchId: null,
         filters: EMPTY_FILTERS,
         savedSearches: [],
         search: '',
@@ -95,6 +96,66 @@ describe('applySavedSearch', () => {
 
         expect(useStore.getState().view).toEqual({ kind: 'all', val: null });
         expect(useStore.getState().search).toBe('');
+    });
+});
+
+describe('leaving a saved search', () => {
+    beforeEach(() => {
+        useStore.setState({ savedSearches: [saved()] });
+        useStore.getState().applySavedSearch('s1');
+    });
+
+    it('drops the filters and the query it brought when another view is picked', () => {
+        useStore.getState().selectView('inbox');
+
+        expect(useStore.getState().filters).toEqual(EMPTY_FILTERS);
+        expect(useStore.getState().search).toBe('');
+        expect(useStore.getState().activeSavedSearchId).toBeNull();
+    });
+
+    it('lets go on the way to a collection or a tag too', () => {
+        useStore.getState().selectView('tag', 'design');
+
+        expect(useStore.getState().filters).toEqual(EMPTY_FILTERS);
+        expect(useStore.getState().view).toEqual({ kind: 'tag', val: 'design' });
+    });
+
+    it('leaves hand-set filters alone, which have always composed with the view', () => {
+        // Out of the saved search first, then filter by hand.
+        useStore.getState().selectView('all');
+        useStore.setState({ filters: { ...EMPTY_FILTERS, tags: ['design'] } });
+
+        useStore.getState().selectView('inbox');
+
+        expect(useStore.getState().filters.tags).toEqual(['design']);
+    });
+
+    it('swaps cleanly from one saved search to another', () => {
+        useStore.setState({
+            savedSearches: [
+                saved(),
+                saved({
+                    filters: { ...EMPTY_FILTERS, tags: ['design'] },
+                    id: 's2',
+                    name: 'Design',
+                    query: '',
+                    view: { kind: 'starred', val: null },
+                }),
+            ],
+        });
+
+        useStore.getState().applySavedSearch('s2');
+
+        expect(useStore.getState().activeSavedSearchId).toBe('s2');
+        expect(useStore.getState().filters.tags).toEqual(['design']);
+        expect(useStore.getState().view).toEqual({ kind: 'starred', val: null });
+        expect(useStore.getState().search).toBe('');
+    });
+
+    it('stops being in one that is deleted', async () => {
+        await useStore.getState().deleteSavedSearch('s1');
+
+        expect(useStore.getState().activeSavedSearchId).toBeNull();
     });
 });
 
