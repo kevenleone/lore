@@ -13,8 +13,7 @@ import type { BoardFilter } from './tasks';
 
 import { MockAiProvider } from '../ai/mockAiProvider';
 import { getRepository } from '../data';
-import { ensureWorkspaceOpen, setWorkspace } from '../data';
-import { migrateSqlite } from '../data/migrateSqlite';
+import { setWorkspace } from '../data';
 import { defaultVaultPath } from '../data/vaultRepository';
 import { formatTime } from '../lib/calendar';
 import { exportPdf, pdfFileName, pickPdfPath } from '../lib/exportPdf';
@@ -159,7 +158,6 @@ interface StoreState {
      * arrives (no spinner, no layout shift).
      */
     detail: Item | null;
-    dismissMigrationNotice: () => void;
     dismissToast: (id: string) => void;
     /**
      * The item whose body has unsaved edits. Any vault change re-reads
@@ -212,9 +210,6 @@ interface StoreState {
     loadItemMeta: (id: string) => Promise<void>;
     /** Which surface the window's main area shows: the library or the calendar. */
     mainView: MainView;
-
-    /** Set once by a migration so the UI can say what happened. */
-    migrationNotice: null | string;
 
     /** Drops a column onto another's place, from a drag of its handle. */
     moveBoardColumn: (columnId: string, targetId: string) => Promise<void>;
@@ -511,42 +506,6 @@ async function hydrateOnce(
     const repo = getRepository();
     let [items, collections] = await Promise.all([repo.listItems(), repo.listCollections()]);
 
-    // Import a legacy SQLite library when the vault is empty.
-    //
-    // The condition is the vault's actual state, not a "have I migrated yet"
-    // flag. A flag can be set by an attempt that then failed, and the cost of
-    // getting that wrong is someone's whole library stranded in a database the
-    // app no longer reads. An empty vault means there is nothing to duplicate
-    // or overwrite, so importing is always safe — and always right.
-    if (items.length === 0) {
-        try {
-            // The import writes straight to the engine, so the vault has to be
-            // open first or it is refused and quietly imports nothing.
-            await ensureWorkspaceOpen();
-
-            const result = await migrateSqlite();
-
-            if (result) {
-                const from = result.sources.join(' and ');
-
-                set({
-                    migrationNotice: `Moved ${result.items} item${result.items === 1 ? '' : 's'} from ${from} into your vault.`,
-                });
-                [items, collections] = await Promise.all([
-                    repo.listItems(),
-                    repo.listCollections(),
-                ]);
-            }
-
-            persisted.migratedAt = new Date().toISOString();
-            persist({ ...get(), migratedAt: persisted.migratedAt });
-        } catch (e) {
-            // A failed import must not block the app. The old database is renamed
-            // only on success, so the next launch simply tries again.
-            console.error('lore: could not import the previous library', e);
-        }
-    }
-
     // A brand-new default vault gets the sample library, so a first launch is
     // something to look at rather than an empty window. Only the default vault:
     // writing sample notes into a folder someone chose themselves is hostile.
@@ -618,9 +577,7 @@ async function logFocusSession(state: StoreState, session: FocusSession): Promis
 }
 
 function persist(
-    s: {
-        migratedAt?: null | string;
-    } & Pick<
+    s: Pick<
         StoreState,
         | 'focusSessions'
         | 'onboarded'
@@ -634,7 +591,6 @@ function persist(
 ): void {
     savePersisted({
         focusSessions: s.focusSessions,
-        migratedAt: s.migratedAt ?? persisted.migratedAt,
         onboarded: s.onboarded,
         prefs: s.prefs,
         recentItemIds: s.recentItemIds,
@@ -957,9 +913,6 @@ export const useStore = create<StoreState>((set, get) => ({
 
     detail: null,
 
-    dismissMigrationNotice() {
-        set({ migrationNotice: null });
-    },
     dismissToast(id) {
         set({ toasts: get().toasts.filter((toast) => toast.id !== id) });
     },
@@ -1149,7 +1102,6 @@ export const useStore = create<StoreState>((set, get) => ({
         }
     },
     mainView: 'library',
-    migrationNotice: null,
     /**
      * The column goes; its cards stay tasks. They fall into the first column on
      * the next render because their `status` now names nothing — no rewrite of
@@ -1678,6 +1630,7 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     taskRailOpen: false,
+
     taskView: 'summary',
 
     tickFocus() {
