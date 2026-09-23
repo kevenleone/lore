@@ -53,7 +53,7 @@ export function TableView({ items, onContextMenu }: SurfaceProps) {
                         className={cn(
                             // Table rows have no thumbnail column to anchor them, so
                             // they take a hover of their own.
-                            'group grid items-center gap-4 border-b border-border-soft px-[18px] py-[9px] hover:bg-hover',
+                            'grid items-center gap-4 border-b border-border-soft px-[18px] py-[9px] hover:bg-hover',
                             selected && 'bg-sel shadow-[inset_2px_0_0_var(--ac)]',
                         )}
                         key={item.id}
@@ -62,12 +62,13 @@ export function TableView({ items, onContextMenu }: SurfaceProps) {
                         style={{ gridTemplateColumns: GRID_COLUMNS }}
                     >
                         <div className="flex min-w-0 items-center gap-[11px]">
-                            <RowCheckbox
-                                checked={selection.isChecked(item.id)}
-                                label={item.title}
-                                onToggle={(event) => selection.onToggle(event, item.id)}
-                                shown={selection.active}
-                            />
+                            {selection.active && (
+                                <RowCheckbox
+                                    checked={selection.isChecked(item.id)}
+                                    label={item.title}
+                                    onToggle={(event) => selection.onToggle(event, item.id)}
+                                />
+                            )}
                             {hasBanner(item) ? (
                                 <span className="relative h-[30px] w-[44px] flex-none overflow-hidden rounded-5 bg-surface3">
                                     <ItemBanner item={item} />
