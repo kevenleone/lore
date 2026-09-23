@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.19.0](https://github.com/kevenleone/lore/compare/v1.18.0...v1.19.0) (2026-09-23)
+
+
+### Features
+
+* **library:** name a search and put it back ([4bacc18](https://github.com/kevenleone/lore/commit/4bacc18470ddb69cbbfc80f7bb9f26a97eb2d1f7))
+* **sidecar:** let the vault carry named searches ([ad54695](https://github.com/kevenleone/lore/commit/ad54695f2936f042aa6d02d63a1990eab1e4ae7e))
+
+
+### Bug Fixes
+
+* **library:** let go of a saved search when you leave it ([3c2ca96](https://github.com/kevenleone/lore/commit/3c2ca964b58f0083d5b3faa79f795bd03fc2e846))
+* **theme:** write the user-select prefix rather than leave it to the build ([02d9089](https://github.com/kevenleone/lore/commit/02d908952bf263d5d34d8eb65f1e9ad9c9f2ec83))
+
+
+### Refactoring
+
+* **sidecar:** drop tagOrder and pass unknown keys through instead ([fdeb5b2](https://github.com/kevenleone/lore/commit/fdeb5b21eb8394c1ed52bd344561c0baa6226c56))
+
 ## [1.18.0](https://github.com/kevenleone/lore/compare/v1.17.0...v1.18.0) (2026-09-23)
 
 
