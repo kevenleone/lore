@@ -321,8 +321,13 @@
 
     /* A desktop window is chrome, not a document: dragging across a sidebar or a
        toolbar selects nothing, and ⌘A has no page to select. Text the user came
-       to read says so for itself, below. */
+       to read says so for itself, below.
+
+       The `-webkit-` prefix is written out rather than left to the build:
+       Lightning CSS only adds it when bundling, so without it the dev build
+       lets you drag-select the whole window while the shipped one does not. */
     body {
+        -webkit-user-select: none;
         user-select: none;
     }
 
@@ -334,6 +339,7 @@
         .lore-document,
         .select-text
     ) {
+        -webkit-user-select: text;
         user-select: text;
     }
 
@@ -448,6 +454,7 @@
     .lore-editor .ProseMirror li[data-checked] > label {
         flex: none;
         margin-top: 3px;
+        -webkit-user-select: none;
         user-select: none;
     }
     .lore-editor .ProseMirror li[data-checked] > div {
