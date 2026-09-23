@@ -57,6 +57,48 @@ describe('exportVault', () => {
     });
 });
 
+describe('reindexVault', () => {
+    it('says so when nothing had drifted, rather than nothing at all', async () => {
+        const repo = getRepository();
+
+        Object.assign(repo, { reindex: vi.fn().mockResolvedValue({ indexed: 0, removed: 0 }) });
+
+        await useStore.getState().reindexVault();
+
+        expect(useStore.getState().toasts[0].message).toBe('The index was already up to date.');
+    });
+
+    it('names only the halves that moved, and counts them in singular', async () => {
+        const repo = getRepository();
+
+        Object.assign(repo, { reindex: vi.fn().mockResolvedValue({ indexed: 1, removed: 0 }) });
+
+        await useStore.getState().reindexVault();
+
+        expect(useStore.getState().toasts[0].message).toBe('1 file reindexed.');
+    });
+
+    it('reports both halves when both moved', async () => {
+        const repo = getRepository();
+
+        Object.assign(repo, { reindex: vi.fn().mockResolvedValue({ indexed: 4, removed: 2 }) });
+
+        await useStore.getState().reindexVault();
+
+        expect(useStore.getState().toasts[0].message).toBe('4 files reindexed, 2 entries dropped.');
+    });
+
+    it('says so when the rebuild fails, rather than looking like it worked', async () => {
+        const repo = getRepository();
+
+        Object.assign(repo, { reindex: vi.fn().mockRejectedValue(new Error('the vault is gone')) });
+
+        await useStore.getState().reindexVault();
+
+        expect(useStore.getState().toasts[0].message).toBe('the vault is gone');
+    });
+});
+
 describe('restoreDefaultPrefs', () => {
     it('puts every preference back', () => {
         useStore.getState().setPref('density', 'Roomy');

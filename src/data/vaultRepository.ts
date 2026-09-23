@@ -11,6 +11,7 @@ import type {
     KnowledgeRepository,
     NewCollection,
     NewItem,
+    ReindexResult,
     VaultSize,
 } from './repository';
 
@@ -136,6 +137,10 @@ export class VaultRepository implements KnowledgeRepository {
         return this.call(() =>
             request<Item>(`/items/${encodeURIComponent(id)}/refresh`, { method: 'POST' }),
         );
+    }
+
+    async reindex(): Promise<ReindexResult> {
+        return this.call(() => request<ReindexResult>('/workspace/reindex', { method: 'POST' }));
     }
 
     async renameItem(id: string, stem: string): Promise<Item> {

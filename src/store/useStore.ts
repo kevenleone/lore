@@ -264,6 +264,13 @@ interface StoreState {
      * the data engine holds the interval, so this carries no policy.
      */
     refreshSource: (id: string) => Promise<void>;
+    /**
+     * Rebuilds the index from the files and reports what moved. The watcher
+     * normally keeps the two in step, so this is the recovery for the case
+     * where it missed something — a vault restored from a backup, or edited
+     * while Lore was not running.
+     */
+    reindexVault: () => Promise<void>;
     /** Drops a column; its cards fall back into the first one. */
     removeBoardColumn: (columnId: string) => Promise<void>;
     removeComment: (id: string, commentId: string) => Promise<void>;
@@ -1262,6 +1269,40 @@ export const useStore = create<StoreState>((set, get) => ({
 
         await get().refresh();
         await get().loadDetail(id);
+    },
+
+    async reindexVault() {
+        const repo = getRepository();
+
+        if (!repo.reindex) {
+            return;
+        }
+
+        try {
+            const { indexed, removed } = await repo.reindex();
+
+            await get().refresh();
+
+            if (!indexed && !removed) {
+                get().pushToast('The index was already up to date.');
+
+                return;
+            }
+
+            const parts = [];
+
+            if (indexed) {
+                parts.push(`${indexed} ${indexed === 1 ? 'file' : 'files'} reindexed`);
+            }
+
+            if (removed) {
+                parts.push(`${removed} ${removed === 1 ? 'entry' : 'entries'} dropped`);
+            }
+
+            get().pushToast(`${parts.join(', ')}.`);
+        } catch (e) {
+            get().pushToast(e instanceof Error ? e.message : 'The reindex failed.');
+        }
     },
 
     async removeBoardColumn(columnId) {
