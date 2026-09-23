@@ -8,6 +8,7 @@ import { Elysia } from 'elysia';
 import { gitStatus, initGit } from './git';
 import { parseGithubTarget, resolveDocument } from './github';
 import { fetchLinkMetadata } from './linkMetadata';
+import { listTemplates } from './templates';
 import { searchPhotos, triggerDownload, UnsplashError } from './unsplash';
 import { ATTACHMENTS_DIR, hashColor } from './vault';
 import { exportVault, measureVault } from './vaultSize';
@@ -461,6 +462,8 @@ export function routes(workspace: Workspace) {
             /* ---------------- derived reads ---------------- */
 
             .get('/tags', () => workspace.current.listTags())
+
+            .get('/templates', () => listTemplates(workspace.current.vault))
 
             /**
              * The whole list on every write. There are a handful of them and they

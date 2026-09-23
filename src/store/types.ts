@@ -308,6 +308,22 @@ export interface TagCount {
     name: string;
 }
 
+/**
+ * A skeleton for a new item, read from a Markdown file in `.lore/templates/`.
+ * The file's frontmatter says what kind of item it makes; its body is the body,
+ * placeholders and all.
+ */
+export interface Template {
+    body: string;
+    collectionId?: string;
+    /** The file's stem, which is what the New menu shows. */
+    name: string;
+    tags: string[];
+    /** Seeds the title. Left out when the template does not suggest one. */
+    title?: string;
+    type: ItemType;
+}
+
 export interface View {
     kind: ViewKind;
     /** collection id for `collection`, tag name for `tag`, else null. */
@@ -490,6 +506,12 @@ export interface Prefs {
      * usually kept apart from whatever captures happen to be landing.
      */
     dailyNoteCollection: null | string;
+    /**
+     * Template today's note starts from, by name; null writes it empty. A name
+     * that no longer matches a file is treated as null, so deleting a template
+     * does not break the hotkey.
+     */
+    dailyNoteTemplate: null | string;
     /** The theme style used whenever the effective mode is dark. */
     darkTheme: ThemeId;
     /**
@@ -525,6 +547,7 @@ export const DEFAULT_PREFS: Prefs = {
     appearance: 'light',
     bannerPlacement: 'inline',
     dailyNoteCollection: null,
+    dailyNoteTemplate: null,
     darkTheme: DEFAULT_DARK_THEME,
     defaultCaptureType: 'auto',
     defaultCollection: null,
