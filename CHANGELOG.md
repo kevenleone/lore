@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.21.0](https://github.com/kevenleone/lore/compare/v1.20.0...v1.21.0) (2026-09-23)
+
+
+### Features
+
+* **library:** new item from a template, from the command menu ([c90d059](https://github.com/kevenleone/lore/commit/c90d059a932464a11aeb851f0d4d7806f016441e))
+* **library:** ship six templates of Lore's own ([9c4aed0](https://github.com/kevenleone/lore/commit/9c4aed03b3b1dafd53dbbc67a5b0ab0f0fcfac49))
+* **library:** start today's note from a template ([e33854c](https://github.com/kevenleone/lore/commit/e33854c10e73b792ade0feeef723542eefbb66a6))
+* **library:** turn a template into the item it describes ([ac9df82](https://github.com/kevenleone/lore/commit/ac9df82573ee04273b5c4e20e09b75b38907c556))
+* **settings:** reach the templates folder from the Vault pane ([7c4b3c6](https://github.com/kevenleone/lore/commit/7c4b3c6baf17cadb279e609528469e78055157cd))
+* **vault:** give every vault a templates folder ([eebe09b](https://github.com/kevenleone/lore/commit/eebe09b0545e7e27f058974c0652658229fe63e0))
+* **vault:** read item templates from .lore/templates ([fae91c6](https://github.com/kevenleone/lore/commit/fae91c698da3b771838e71d5f9f385575bd3ade7))
+
+
+### Documentation
+
+* how templates work and how to write one ([0c3a71c](https://github.com/kevenleone/lore/commit/0c3a71c6d6f025ca2d60a26facf7a7332550888c))
+* templates ([c2ede04](https://github.com/kevenleone/lore/commit/c2ede04a012e1b239e37df3e33d310c56b5d76fc))
+
 ## [1.20.0](https://github.com/kevenleone/lore/compare/v1.19.0...v1.20.0) (2026-09-23)
 
 
