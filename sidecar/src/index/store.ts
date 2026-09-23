@@ -8,7 +8,14 @@ import { deriveDomain, deriveProse, deriveSnippet, deriveSubtaskCounts } from '@
 import { mkdir, rm, rmdir, stat } from 'node:fs/promises';
 
 import { parseGithubTarget, resolveDocument } from '../github';
-import { type Resolver, resolveRelated, rewriteRelated, serializeRelated } from '../links';
+import {
+    bodyWikilinks,
+    parseWikilink,
+    type Resolver,
+    resolveRelated,
+    rewriteRelated,
+    serializeRelated,
+} from '../links';
 import { parseFile, serializeFile, toItem } from '../markdown';
 import { newId, uniqueStem } from '../slug';
 import { collectionOf, INDEX_FILE, joinPath, stemOf, TRASH_DIR, Vault } from '../vault';
@@ -589,7 +596,7 @@ export class VaultStore {
                 row.indexed_at,
             ],
         );
-        this.writeLinks(id, parsed.data.related, ids);
+        this.writeLinks(id, parsed.data.related, ids, row.body);
         this.writeFts(id, item, row.body);
 
         return row;
@@ -610,8 +617,12 @@ export class VaultStore {
 
         for (const row of rows) {
             const unresolved = JSON.parse(row.unresolved) as string[];
+            // A body mention of a file indexed after this one resolved to
+            // nothing on the first pass, and nothing else would ever revisit
+            // it: unlike a frontmatter entry, it leaves no `unresolved` trace.
+            const hasBodyLinks = bodyWikilinks(row.body).length > 0;
 
-            if (unresolved.length === 0) {
+            if (unresolved.length === 0 && !hasBodyLinks) {
                 continue;
             }
 
@@ -625,17 +636,16 @@ export class VaultStore {
                 resolver,
             );
 
-            if (next.unresolved.length === unresolved.length) {
-                continue;
+            if (next.unresolved.length < unresolved.length) {
+                item.related = next.ids;
+                this.db.run('UPDATE files SET json = ?, unresolved = ? WHERE path = ?', [
+                    JSON.stringify(item),
+                    JSON.stringify(next.unresolved),
+                    row.path,
+                ]);
             }
 
-            item.related = next.ids;
-            this.db.run('UPDATE files SET json = ?, unresolved = ? WHERE path = ?', [
-                JSON.stringify(item),
-                JSON.stringify(next.unresolved),
-                row.path,
-            ]);
-            this.writeLinks(row.id, combined, next.ids);
+            this.writeLinks(row.id, combined, next.ids, row.body);
         }
     }
 
@@ -707,31 +717,43 @@ export class VaultStore {
         this.indexOne(path, text, Math.floor(st.mtimeMs), st.size, hashContent(text), item.id);
     }
 
-    private writeLinks(srcId: string, rawRelated: unknown, ids: string[]): void {
+    /**
+     * Both kinds of edge this file declares: the curated frontmatter list, and
+     * every `[[…]]` written in the prose. A body mention is a real relationship
+     * — it is how a note actually gets written — and without it the graph would
+     * only ever show the links someone stopped to record by hand.
+     */
+    private writeLinks(srcId: string, rawRelated: unknown, ids: string[], body: string): void {
         this.db.run('DELETE FROM links WHERE src_id = ?', [srcId]);
 
-        if (!Array.isArray(rawRelated)) {
-            return;
-        }
-
         const insert = this.db.query(
-            'INSERT OR REPLACE INTO links (src_id, target_raw, target_id) VALUES (?,?,?)',
+            'INSERT OR REPLACE INTO links (src_id, target_raw, target_id, via) VALUES (?,?,?,?)',
         );
         const resolver = this.resolver();
 
-        for (const raw of rawRelated) {
-            if (typeof raw !== 'string') {
-                continue;
-            }
-
-            const target = raw
-                .replace(/^\[\[|\]\]$/g, '')
-                .split('|')[0]
-                .split('#')[0]
-                .trim();
+        const write = (raw: string, via: 'body' | 'related'): void => {
+            const target = parseWikilink(raw);
             const resolved = resolver.idForStem(target) ?? (ids.includes(target) ? target : null);
 
-            insert.run(srcId, raw, resolved);
+            // A note that links to itself is not related to itself, and a
+            // self-loop is noise in every reader of this table.
+            if (resolved === srcId) {
+                return;
+            }
+
+            insert.run(srcId, raw, resolved, via);
+        };
+
+        if (Array.isArray(rawRelated)) {
+            for (const raw of rawRelated) {
+                if (typeof raw === 'string') {
+                    write(raw, 'related');
+                }
+            }
+        }
+
+        for (const raw of bodyWikilinks(body)) {
+            write(raw, 'body');
         }
     }
 }

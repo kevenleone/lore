@@ -9,6 +9,11 @@
 
 const WIKILINK = /^\[\[(.*)\]\]$/;
 
+/** Anywhere in a line, unlike `WIKILINK`, which anchors a whole frontmatter entry. */
+const BODY_WIKILINK = /\[\[([^[\]\n]+)\]\]/g;
+const FENCED_BLOCK = /^[ \t]*(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:^[ \t]*\1[^\n]*$|$)/gm;
+const INLINE_CODE = /`+[^`\n]*`+/g;
+
 export interface ResolvedRelated {
     /** Ids the renderer sees. */
     ids: string[];
@@ -23,6 +28,29 @@ export interface Resolver {
     idForStem(stem: string): string | undefined;
     /** Filename stem for an item id, for writing links back out. */
     stemForId(id: string): string | undefined;
+}
+
+/**
+ * Every `[[…]]` written in the prose, in the order they appear and without
+ * repeats. These are edges too — a note that mentions another in a sentence is
+ * related to it whether or not anyone maintained a frontmatter list.
+ *
+ * Code is not prose: a fenced block or a backtick span showing `[[…]]` is
+ * showing the syntax, not using it, so both are removed before matching.
+ */
+export function bodyWikilinks(body: string): string[] {
+    const prose = body.replace(FENCED_BLOCK, '').replace(INLINE_CODE, '');
+    const seen: string[] = [];
+
+    for (const match of prose.matchAll(BODY_WIKILINK)) {
+        const raw = `[[${match[1]}]]`;
+
+        if (!seen.includes(raw)) {
+            seen.push(raw);
+        }
+    }
+
+    return seen;
 }
 
 /** Strips `[[ ]]`, an `|alias`, and a `#heading` down to the bare target. */
