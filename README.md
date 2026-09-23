@@ -367,8 +367,9 @@ Known gaps:
 - Several settings panes show placeholder figures.
 
 Decided against: arranging tags by hand. Tags read alphabetically, which is what
-makes a long list scannable — so the `tagOrder` a vault can carry in
-`.lore/workspace.json`, and the `POST /tags/order` that writes it, are vestigial.
+makes a long list scannable, so the stored order and the route that wrote it are
+gone. A `tagOrder` left behind in an older vault's `.lore/workspace.json` is
+carried through writes untouched — nothing reads it, and nothing destroys it.
 
 Deferred by design: nested collections, and replacing the full `refresh()` after
 every mutation with optimistic updates.

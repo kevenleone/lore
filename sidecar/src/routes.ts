@@ -46,24 +46,16 @@ export function routes(workspace: Workspace) {
 
             .get('/workspace', async () => {
                 if (!workspace.isOpen) {
-                    return {
-                        itemCount: 0,
-                        open: false,
-                        path: null,
-                        savedSearches: [],
-                        tagOrder: [],
-                    };
+                    return { itemCount: 0, open: false, path: null, savedSearches: [] };
                 }
 
-                const { savedSearches, tagOrder } =
-                    await workspace.current.vault.readWorkspaceFile();
+                const { savedSearches } = await workspace.current.vault.readWorkspaceFile();
 
                 return {
                     itemCount: workspace.current.listItems().length,
                     open: true,
                     path: workspace.path,
                     savedSearches,
-                    tagOrder,
                 };
             })
 
@@ -469,15 +461,6 @@ export function routes(workspace: Workspace) {
             /* ---------------- derived reads ---------------- */
 
             .get('/tags', () => workspace.current.listTags())
-
-            /** Persists the sidebar's tag order into the vault itself. */
-            .post('/tags/order', async ({ body }) => {
-                const { tagOrder } = body as { tagOrder?: string[] };
-
-                await workspace.current.vault.writeWorkspaceFile({ tagOrder: tagOrder ?? [] });
-
-                return { ok: true };
-            })
 
             /**
              * The whole list on every write. There are a handful of them and they
