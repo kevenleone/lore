@@ -230,6 +230,13 @@ export function CommandMenu() {
                         aria-controls={listId}
                         aria-expanded="true"
                         aria-label="Search or run a command"
+                        // Stated here as well as on the document root: the
+                        // inherited form of these is recent, and this is the
+                        // field where a correction lands on top of what is
+                        // being typed rather than beside it.
+                        autoCapitalize="off"
+                        autoComplete="off"
+                        autoCorrect="off"
                         className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-title text-text outline-none placeholder:text-text3"
                         onChange={(event) => setQuery(event.target.value)}
                         onKeyDown={onKeyDown}
