@@ -5,7 +5,7 @@
 
 import { Database } from 'bun:sqlite';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS files (
@@ -27,7 +27,10 @@ CREATE TABLE IF NOT EXISTS links (
   src_id     TEXT NOT NULL,
   target_raw TEXT NOT NULL,
   target_id  TEXT,
-  PRIMARY KEY (src_id, target_raw)
+  -- 'related' for a frontmatter entry, 'body' for one written in the prose. In
+  -- the key because a note may do both, and the graph draws them differently.
+  via        TEXT NOT NULL,
+  PRIMARY KEY (src_id, target_raw, via)
 );
 CREATE INDEX IF NOT EXISTS idx_links_target ON links(target_id);
 
