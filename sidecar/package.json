@@ -7,6 +7,7 @@
         "@types/bun": "^1.1.0",
         "typescript": "~5.8.3"
     },
+    "license": "AGPL-3.0-only",
     "name": "@lore/sidecar",
     "private": true,
     "scripts": {
