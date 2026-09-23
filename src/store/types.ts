@@ -288,6 +288,21 @@ export const EMPTY_FILTERS: Filters = {
     to: null,
 };
 
+/**
+ * A named library state — the sidebar view, the filter bar and the query,
+ * together. Stored in `.lore/workspace.json`, so a search travels with the
+ * folder the way collection colours and boards do rather than living in this
+ * machine's preferences.
+ */
+export interface SavedSearch {
+    filters: Filters;
+    id: string;
+    name: string;
+    /** The text query. Empty when the search is purely faceted. */
+    query: string;
+    view: View;
+}
+
 export interface TagCount {
     count: number;
     name: string;

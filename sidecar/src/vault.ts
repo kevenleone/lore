@@ -1,7 +1,7 @@
 // The vault directory: path safety, the folders-are-collections mapping, and
 // `.lore/`.
 
-import type { BoardConfig, Collection } from '@lore/types';
+import type { BoardConfig, Collection, SavedSearch } from '@lore/types';
 
 import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -25,6 +25,12 @@ index.db-shm
 cache/
 trash/
 `;
+
+/** What `.lore/workspace.json` carries. */
+export interface WorkspaceFile {
+    savedSearches: SavedSearch[];
+    tagOrder: string[];
+}
 
 export class Vault {
     constructor(readonly root: string) {}
@@ -192,20 +198,29 @@ export class Vault {
 
     /**
      * Per-vault settings. Committed alongside the notes, so a vault carries its
-     * own sidebar tag order rather than inheriting the app's sample one.
+     * own saved searches and sidebar tag order rather than inheriting the app's.
+     *
+     * The file is hand-editable and travels through git, so every field is
+     * validated rather than trusted: a malformed entry is dropped and the rest
+     * of the file still loads.
      */
-    async readWorkspaceFile(): Promise<{ tagOrder: string[] }> {
+    async readWorkspaceFile(): Promise<WorkspaceFile> {
         try {
             const parsed = JSON.parse(await this.readText(WORKSPACE_FILE)) as {
+                savedSearches?: unknown;
                 tagOrder?: unknown;
             };
-            const tagOrder = Array.isArray(parsed.tagOrder)
-                ? parsed.tagOrder.filter((t): t is string => typeof t === 'string')
-                : [];
 
-            return { tagOrder };
+            return {
+                savedSearches: Array.isArray(parsed.savedSearches)
+                    ? parsed.savedSearches.filter(isSavedSearch)
+                    : [],
+                tagOrder: Array.isArray(parsed.tagOrder)
+                    ? parsed.tagOrder.filter((entry): entry is string => typeof entry === 'string')
+                    : [],
+            };
         } catch {
-            return { tagOrder: [] };
+            return EMPTY_WORKSPACE_FILE;
         }
     }
 
@@ -250,13 +265,22 @@ export class Vault {
         await writeFile(full, text, 'utf8');
     }
 
-    async writeWorkspaceFile(tagOrder: readonly string[]): Promise<void> {
-        await this.writeText(
-            WORKSPACE_FILE,
-            `${JSON.stringify({ tagOrder, version: 1 }, null, 2)}\n`,
-        );
+    /**
+     * Merges into what is already there. The file has more than one writer and
+     * they arrive independently — saving a search must not drop the tag order
+     * the sidebar wrote a moment earlier.
+     */
+    async writeWorkspaceFile(patch: Partial<WorkspaceFile>): Promise<void> {
+        const current = await this.readWorkspaceFile();
+        const next = { ...current, ...patch, version: 1 };
+
+        await this.writeText(WORKSPACE_FILE, `${JSON.stringify(next, null, 2)}\n`);
     }
 }
+
+const EMPTY_WORKSPACE_FILE: WorkspaceFile = { savedSearches: [], tagOrder: [] };
+
+const FILTER_LISTS = ['categories', 'collectionIds', 'tags'] as const;
 
 /** The directory part of a vault-relative file path — "" at the root. */
 export function collectionOf(relPath: string): string {
@@ -384,6 +408,32 @@ function boardConfig(value: unknown): BoardConfig | null {
     // Anything but `list` is the card layout, which also folds the `board`
     // this field used to be written as into its new name.
     return { columns: parsed, view: view === 'list' ? 'list' : 'cards' };
+}
+
+/**
+ * Whether a parsed entry is usable as a saved search. Only the fields the app
+ * reads back are checked; a hand-written file that gets one wrong loses that
+ * entry rather than breaking the vault.
+ */
+function isSavedSearch(raw: unknown): raw is SavedSearch {
+    if (!raw || typeof raw !== 'object') {
+        return false;
+    }
+
+    const entry = raw as Record<string, unknown>;
+
+    if (typeof entry.id !== 'string' || typeof entry.name !== 'string') {
+        return false;
+    }
+
+    const filters = entry.filters as Record<string, unknown> | undefined;
+    const view = entry.view as Record<string, unknown> | undefined;
+
+    if (!filters || !view || typeof view.kind !== 'string') {
+        return false;
+    }
+
+    return FILTER_LISTS.every((key) => Array.isArray(filters[key]));
 }
 
 export { join, resolve };
