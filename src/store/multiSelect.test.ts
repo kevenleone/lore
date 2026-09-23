@@ -84,6 +84,38 @@ describe('ticking rows', () => {
         useStore.getState().selectView('inbox');
 
         expect(useStore.getState().checkedIds).toEqual([]);
+        expect(useStore.getState().selecting).toBe(false);
+    });
+});
+
+describe('selection mode', () => {
+    it('opens with nothing ticked, from the Select button', () => {
+        useStore.getState().startSelecting();
+
+        expect(useStore.getState().selecting).toBe(true);
+        expect(useStore.getState().checkedIds).toEqual([]);
+    });
+
+    it('is entered by ticking, so the modifiers work without pressing Select', () => {
+        useStore.getState().toggleChecked('a');
+
+        expect(useStore.getState().selecting).toBe(true);
+    });
+
+    it('drops the set on the way out', () => {
+        useStore.getState().toggleChecked('a');
+        useStore.getState().stopSelecting();
+
+        expect(useStore.getState().selecting).toBe(false);
+        expect(useStore.getState().checkedIds).toEqual([]);
+    });
+
+    it('closes once a bulk action has been carried out', async () => {
+        useStore.setState({ checkedIds: ['a'], selecting: true });
+
+        await useStore.getState().bulkStar(true);
+
+        expect(useStore.getState().selecting).toBe(false);
     });
 });
 

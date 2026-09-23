@@ -224,21 +224,21 @@ interface StoreState {
     // lifecycle
     hydrate: () => Promise<void>;
     hydrated: boolean;
-
     /**
      * Per-file facts for the Properties panel — size, mtime, word count and
      * backlinks. Null until the panel is open and a response has landed.
      */
     itemMeta: ItemMeta | null;
+
     // data
     items: Item[];
     loadDetail: (id: string) => Promise<void>;
     loadItemMeta: (id: string) => Promise<void>;
     /** Which surface the window's main area shows: the library or the calendar. */
     mainView: MainView;
-
     /** Drops a column onto another's place, from a drag of its handle. */
     moveBoardColumn: (columnId: string, targetId: string) => Promise<void>;
+
     onboarded: boolean;
     onboardingStep: OnboardingStep;
     /**
@@ -248,8 +248,8 @@ interface StoreState {
     openAs: null | OpenMode;
     /** Opens a collection's board. `UNFILED_BOARD` is the one for loose tasks. */
     openBoard: (boardId: string) => void;
-
     openCapture: () => void;
+
     /** Opens the capture drawer with a column's board and status already set. */
     openCaptureIn: (collectionId: null | string, column: BoardColumnConfig) => void;
     /** Opens the photo picker against an item, to choose its thumbnail. */
@@ -312,9 +312,9 @@ interface StoreState {
     restoreDefaultPrefs: () => void;
     /** Shows the item's file in the OS file manager. */
     revealItemFile: (id: string) => Promise<void>;
-
     /** The vault's named searches, in the order they were saved. */
     savedSearches: SavedSearch[];
+
     /** Names the current view, filters and query, and records them in the vault. */
     saveSearch: (name: string) => Promise<void>;
     /** Item id → ISO time it sits at on the calendar. */
@@ -323,13 +323,19 @@ interface StoreState {
     scheduleItem: (id: string, at: Date | null) => void;
     search: string;
     searching: boolean;
-
     /**
      * Ids the index matched, or null when the query is too short to run one and
      * the client-side filter is doing the work instead.
      */
     searchResults: null | string[];
+
     selectedId: null | string;
+    /**
+     * Whether the list is in selection mode: the header is the selection bar
+     * and every row shows its checkbox. Entered from the Select button, or by
+     * ticking a row with ⌘ or ⇧ — either way, the mode follows the intent.
+     */
+    selecting: boolean;
     selectItem: (id: string) => void;
     /**
      * Selection from inside the Tasks surface. `selectItem` sends the window
@@ -343,15 +349,15 @@ interface StoreState {
     sendChat: (question: string) => Promise<void>;
     setAccent: (accent: Accent) => void;
     setAppearance: (appearance: Appearance) => void;
-
     /** Marks which column completes a task, or none when it is already set. */
     setBoardDoneColumn: (columnId: string) => Promise<void>;
+
     /** Narrows the open board. Passing null clears every facet. */
     setBoardFilter: (patch: null | Partial<BoardFilter>) => void;
     /** Switches the open board between cards and a list. */
     setBoardView: (view: BoardViewMode) => Promise<void>;
-
     setEditorDirty: (id: null | string) => void;
+
     setFilters: (patch: Partial<Filters>) => void;
     setFocusTask: (id: null | string) => void;
     setMainView: (view: MainView) => void;
@@ -371,13 +377,17 @@ interface StoreState {
     sidebarVisible: boolean;
     /** Ends the current interval early and moves to the next one. */
     skipFocusInterval: () => void;
-
     sort: SortOrder;
+
+    /** Enters selection mode with nothing ticked yet. */
+    startSelecting: () => void;
     /**
      * Ends the session: back to a fresh first interval, which is also what
      * clears the countdown from the menu bar.
      */
     stopFocus: () => void;
+    /** Leaves selection mode and drops the set with it. */
+    stopSelecting: () => void;
     switchWorkspace: (path: null | string) => Promise<void>;
     // vault
     /** Whether the Tasks surface is showing the selected task beside its list. */
@@ -444,7 +454,7 @@ async function bulkEdit(
         get().pushToast(e instanceof Error ? e.message : 'Not every item could be changed.');
     }
 
-    set({ checkedIds: [] });
+    set({ checkedIds: [], selecting: false });
     await get().refresh();
 }
 
@@ -959,7 +969,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
         const gone = new Set(ids);
 
-        set({ checkedIds: [] });
+        set({ checkedIds: [], selecting: false });
         await get().refresh();
 
         // The detail pane was reading one of these; move it somewhere real.
@@ -1013,7 +1023,7 @@ export const useStore = create<StoreState>((set, get) => ({
     chat: [],
     chatOpen: false,
     checkAll(ids) {
-        set({ checkedIds: [...ids] });
+        set({ checkedIds: [...ids], selecting: true });
     },
 
     checkedIds: [],
@@ -1038,6 +1048,7 @@ export const useStore = create<StoreState>((set, get) => ({
         // same place rather than from wherever the range happened to end.
         set({
             checkedIds: [...new Set([...checkedIds, ...span.filter((entry) => entry !== anchor)])],
+            selecting: true,
         });
     },
 
@@ -1048,6 +1059,7 @@ export const useStore = create<StoreState>((set, get) => ({
     clearFilters() {
         set({ filters: EMPTY_FILTERS });
     },
+
     clearRecents() {
         set({ recentItemIds: [], recentSearches: [] });
         persist(get());
@@ -1056,10 +1068,10 @@ export const useStore = create<StoreState>((set, get) => ({
     closeBoard() {
         set({ boardId: null });
     },
-
     closeCapture() {
         set({ captureOpen: false });
     },
+
     closeCommandMenu() {
         set({ commandMenuOpen: false });
     },
@@ -1067,13 +1079,14 @@ export const useStore = create<StoreState>((set, get) => ({
     closeOpenItem() {
         set({ openAs: null, openId: null });
     },
-
     closePhotoPicker() {
         set({ photoPickerItemId: null });
     },
+
     closeSettings() {
         set({ settingsOpen: false });
     },
+
     closeTask() {
         // The selection survives, the way closing a drawer leaves `selectedId`
         // alone in the library — and the rail collapses by width rather than
@@ -1109,7 +1122,6 @@ export const useStore = create<StoreState>((set, get) => ({
 
         get().setFocusTask(queue[(current + 1) % queue.length].id);
     },
-
     async deleteCollection(id) {
         await getRepository().deleteCollection(id);
 
@@ -1148,19 +1160,17 @@ export const useStore = create<StoreState>((set, get) => ({
             get().savedSearches.filter((entry) => entry.id !== id),
         );
     },
-
     detail: null,
 
     dismissToast(id) {
         set({ toasts: get().toasts.filter((toast) => toast.id !== id) });
     },
+
     editorDirtyId: null,
+
     expandOpenItem() {
         set({ openAs: 'page' });
     },
-
-    /* ---------------- focus timer ---------------- */
-
     async exportItemPdf(id) {
         const target = id ?? get().selectedId;
 
@@ -1211,7 +1221,6 @@ export const useStore = create<StoreState>((set, get) => ({
             }
         }
     },
-
     async exportVault() {
         const repo = getRepository();
 
@@ -1236,7 +1245,10 @@ export const useStore = create<StoreState>((set, get) => ({
         }
     },
 
+    /* ---------------- focus timer ---------------- */
+
     filters: EMPTY_FILTERS,
+
     async finishOnboarding({ git, path, starter }) {
         set({ workspaceError: null });
 
@@ -1279,6 +1291,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
         return true;
     },
+
     focus: {
         endsAt: null,
         phase: 'focus',
@@ -1289,9 +1302,9 @@ export const useStore = create<StoreState>((set, get) => ({
         taskId: null,
     },
     focusModeOpen: false,
-
     focusPopoverOpen: false,
     focusSessions: persisted.focusSessions,
+
     async hydrate() {
         if (hydrating) {
             return hydrating;
@@ -1308,9 +1321,7 @@ export const useStore = create<StoreState>((set, get) => ({
         return hydrating;
     },
     hydrated: false,
-
     itemMeta: null,
-
     items: [],
 
     async loadDetail(id) {
@@ -1339,7 +1350,9 @@ export const useStore = create<StoreState>((set, get) => ({
             set({ itemMeta: meta });
         }
     },
+
     mainView: 'library',
+
     /**
      * The column goes; its cards stay tasks. They fall into the first column on
      * the next render because their `status` now names nothing — no rewrite of
@@ -1365,10 +1378,9 @@ export const useStore = create<StoreState>((set, get) => ({
             return { ...board, columns };
         });
     },
-
     onboarded: persisted.onboarded,
-
     onboardingStep: 'pick',
+
     openAs: null,
 
     openBoard(boardId) {
@@ -1377,10 +1389,10 @@ export const useStore = create<StoreState>((set, get) => ({
         // the user can see.
         set({ boardFilter: EMPTY_BOARD_FILTER, boardId, mainView: 'tasks', taskView: 'board' });
     },
-
     openCapture() {
         set({ captureOpen: true, capturePreset: null, focusPopoverOpen: false });
     },
+
     openCaptureIn(collectionId, column) {
         set({
             captureOpen: true,
@@ -1393,12 +1405,11 @@ export const useStore = create<StoreState>((set, get) => ({
             focusPopoverOpen: false,
         });
     },
+
     openCommandMenu() {
         set({ commandMenuOpen: true });
     },
-
     openId: null,
-
     openItemPage(id) {
         get().selectItem(id);
         set({ openAs: 'page', openId: id });
@@ -1431,7 +1442,9 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     photoPickerItemId: null,
+
     prefs: persisted.prefs,
+
     pushToast(message, action) {
         const toast = { action, id: crypto.randomUUID(), message };
 
@@ -1460,7 +1473,6 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ recentSearches: [text, ...kept].slice(0, MAX_RECENT_SEARCHES) });
         persist(get());
     },
-
     async refresh() {
         const repo = getRepository();
         const [items, collections, boards] = await Promise.all([
@@ -1478,7 +1490,6 @@ export const useStore = create<StoreState>((set, get) => ({
             void get().loadDetail(id);
         }
     },
-
     async refreshSource(id) {
         const repo = getRepository();
 
@@ -1684,8 +1695,11 @@ export const useStore = create<StoreState>((set, get) => ({
     search: '',
 
     searching: false,
+
     searchResults: null,
+
     selectedId: 'i1',
+    selecting: false,
     selectItem(id) {
         // Opening an item always means the library — the calendar and the chat
         // are both places you leave to look at one.
@@ -1706,6 +1720,7 @@ export const useStore = create<StoreState>((set, get) => ({
         get().recordRecentItem(id);
         void get().loadDetail(id);
     },
+
     selectTask(id) {
         set({
             chatOpen: false,
@@ -1731,6 +1746,7 @@ export const useStore = create<StoreState>((set, get) => ({
             mainView: 'library',
             openAs: null,
             openId: null,
+            selecting: false,
             view: { kind, val },
         });
 
@@ -1764,16 +1780,14 @@ export const useStore = create<StoreState>((set, get) => ({
 
         set((state) => ({ chat: [...state.chat, aiMsg] }));
     },
-
-    /* ---------------- onboarding ---------------- */
-
     setAccent(accent) {
         get().setPref('accent', accent);
     },
-
     setAppearance(appearance) {
         get().setPref('appearance', appearance);
     },
+
+    /* ---------------- onboarding ---------------- */
 
     /** Exactly one column can complete a task; choosing the current one clears it. */
     async setBoardDoneColumn(columnId) {
@@ -1801,8 +1815,6 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ editorDirtyId: id });
     },
 
-    /* ---------------- settings ---------------- */
-
     setFilters(patch) {
         set((state) => ({ filters: { ...state.filters, ...patch } }));
     },
@@ -1811,12 +1823,16 @@ export const useStore = create<StoreState>((set, get) => ({
         set((state) => ({ focus: { ...state.focus, taskId: id } }));
     },
 
+    /* ---------------- settings ---------------- */
+
     setMainView(view) {
         set({ mainView: view });
     },
+
     setOnboardingStep(step) {
         set({ onboardingStep: step });
     },
+
     setOpenMode(mode) {
         // Whatever is open was opened the old way; close it rather than teleport
         // it from a drawer into a page.
@@ -1827,31 +1843,29 @@ export const useStore = create<StoreState>((set, get) => ({
         set((state) => ({ prefs: { ...state.prefs, [key]: value } }));
         persist(get());
     },
-
     setSearch(q) {
         set({ search: q });
         runSearch(get, q);
     },
-
     setSettingsPane(pane) {
         set({ settingsPane: pane });
     },
+
     setSort(sort) {
         set({ sort });
     },
+
     setTaskView(view) {
         // Choosing the tab means the overview. A single board is opened by
         // clicking it — in the overview or in the sidebar — so the tab itself
         // is always the way back out of one.
         set({ boardId: null, mainView: 'tasks', taskView: view });
     },
-
     setTheme(id) {
         const mode = effectiveTheme(get().prefs.appearance);
 
         get().setPref(mode === 'dark' ? 'darkTheme' : 'lightTheme', id);
     },
-
     settingsOpen: false,
 
     settingsPane: 'general',
@@ -1868,6 +1882,10 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     sort: 'newest',
+
+    startSelecting() {
+        set({ selecting: true });
+    },
 
     /**
      * Points Lore at another vault. `null` means the default one.
@@ -1889,6 +1907,10 @@ export const useStore = create<StoreState>((set, get) => ({
                 taskId: state.focus.taskId,
             },
         }));
+    },
+
+    stopSelecting() {
+        set({ checkedIds: [], selecting: false });
     },
 
     async switchWorkspace(path) {
@@ -1914,6 +1936,7 @@ export const useStore = create<StoreState>((set, get) => ({
             search: '',
             searchResults: null,
             selectedId: null,
+            selecting: false,
             view: { kind: 'all', val: null },
             workspaceError: null,
             workspacePath: path,
@@ -1990,6 +2013,9 @@ export const useStore = create<StoreState>((set, get) => ({
             checkedIds: checkedIds.includes(id)
                 ? checkedIds.filter((entry) => entry !== id)
                 : [...checkedIds, id],
+            // Ticking is itself a way into the mode, so ⌘-click works without
+            // pressing Select first.
+            selecting: true,
         });
     },
 

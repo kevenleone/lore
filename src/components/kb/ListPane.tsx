@@ -47,6 +47,8 @@ export function ListPane() {
     const clearFilters = useStore((state) => state.clearFilters);
     const openCapture = useStore((state) => state.openCapture);
     const checkedIds = useStore((state) => state.checkedIds);
+    const selecting = useStore((state) => state.selecting);
+    const startSelecting = useStore((state) => state.startSelecting);
     const contextMenu = useContextMenu();
 
     useEffect(() => {
@@ -106,73 +108,83 @@ export function ListPane() {
             // stays a constant rather than becoming a class.
             style={isList ? { width: LIST_PANE_WIDTH } : undefined}
         >
-            <div className="flex flex-none items-center gap-[10px] border-b border-border px-4 py-[11px]">
-                <span className="text-title-lg font-[680]">{viewTitle(view, collections)}</span>
-                <span className="rounded-[20px] bg-surface3 px-2 py-px text-body-sm text-faint tabular-nums">
-                    {filtered.length}
-                </span>
-                <span className="ml-auto flex items-center gap-2">
-                    {!isList && <OpenModePicker />}
-                    <button
-                        aria-label="Filter"
-                        aria-pressed={showFilters}
-                        className={cn(
-                            'flex items-center gap-[3px] border-none bg-transparent p-0 font-[inherit]',
-                            filterColor,
-                        )}
-                        onClick={() => setFiltersOpen((o) => !o)}
-                        type="button"
-                    >
-                        <Filter />
-                        {filterCount > 0 && (
-                            <span className="text-caption font-[650]">{filterCount}</span>
-                        )}
-                    </button>
-                    <ViewModePicker />
-                    <div className="relative" ref={sortRef}>
+            {selecting ? (
+                <SelectionBar count={checkedCount} />
+            ) : (
+                <div className="flex flex-none items-center gap-[10px] border-b border-border px-4 py-[11px]">
+                    <span className="text-title-lg font-[680]">{viewTitle(view, collections)}</span>
+                    <span className="rounded-[20px] bg-surface3 px-2 py-px text-body-sm text-faint tabular-nums">
+                        {filtered.length}
+                    </span>
+                    <span className="ml-auto flex items-center gap-2">
+                        {!isList && <OpenModePicker />}
                         <button
-                            aria-expanded={sortOpen}
-                            aria-haspopup="listbox"
-                            aria-label={`Sort: ${SORT_LABELS[sort]}`}
-                            className={cn(
-                                'flex border-none bg-transparent p-0',
-                                sortOpen ? 'text-text' : 'text-faint',
-                            )}
-                            onClick={() => setSortOpen((o) => !o)}
+                            className="border-none bg-transparent p-0 font-[inherit] text-body text-text3 hover:text-text"
+                            onClick={startSelecting}
                             type="button"
                         >
-                            <Sort />
+                            Select
                         </button>
-                        {sortOpen && (
-                            <div className="absolute top-[26px] right-0 z-20 min-w-[150px] rounded-10 border border-border bg-surface p-[5px] shadow-[0_12px_30px_-10px_rgba(24,24,48,.3)]">
-                                {(Object.keys(SORT_LABELS) as SortOrder[]).map((key) => (
-                                    <button
-                                        aria-selected={key === sort}
-                                        className={cn(
-                                            'w-full rounded-7 border-none px-[10px] py-[7px] text-left font-[inherit] text-body-lg',
-                                            key === sort
-                                                ? 'bg-accent-tint font-semibold text-accent'
-                                                : 'bg-transparent font-normal text-text2',
-                                        )}
-                                        key={key}
-                                        onClick={() => {
-                                            setSort(key);
-                                            setSortOpen(false);
-                                        }}
-                                        role="option"
-                                        type="button"
-                                    >
-                                        {SORT_LABELS[key]}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </span>
-            </div>
+                        <button
+                            aria-label="Filter"
+                            aria-pressed={showFilters}
+                            className={cn(
+                                'flex items-center gap-[3px] border-none bg-transparent p-0 font-[inherit]',
+                                filterColor,
+                            )}
+                            onClick={() => setFiltersOpen((o) => !o)}
+                            type="button"
+                        >
+                            <Filter />
+                            {filterCount > 0 && (
+                                <span className="text-caption font-[650]">{filterCount}</span>
+                            )}
+                        </button>
+                        <ViewModePicker />
+                        <div className="relative" ref={sortRef}>
+                            <button
+                                aria-expanded={sortOpen}
+                                aria-haspopup="listbox"
+                                aria-label={`Sort: ${SORT_LABELS[sort]}`}
+                                className={cn(
+                                    'flex border-none bg-transparent p-0',
+                                    sortOpen ? 'text-text' : 'text-faint',
+                                )}
+                                onClick={() => setSortOpen((o) => !o)}
+                                type="button"
+                            >
+                                <Sort />
+                            </button>
+                            {sortOpen && (
+                                <div className="absolute top-[26px] right-0 z-20 min-w-[150px] rounded-10 border border-border bg-surface p-[5px] shadow-[0_12px_30px_-10px_rgba(24,24,48,.3)]">
+                                    {(Object.keys(SORT_LABELS) as SortOrder[]).map((key) => (
+                                        <button
+                                            aria-selected={key === sort}
+                                            className={cn(
+                                                'w-full rounded-7 border-none px-[10px] py-[7px] text-left font-[inherit] text-body-lg',
+                                                key === sort
+                                                    ? 'bg-accent-tint font-semibold text-accent'
+                                                    : 'bg-transparent font-normal text-text2',
+                                            )}
+                                            key={key}
+                                            onClick={() => {
+                                                setSort(key);
+                                                setSortOpen(false);
+                                            }}
+                                            role="option"
+                                            type="button"
+                                        >
+                                            {SORT_LABELS[key]}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </span>
+                </div>
+            )}
 
             {showFilters && <FilterBar />}
-            {checkedCount > 0 && <SelectionBar count={checkedCount} />}
 
             <div className="flex-1 overflow-auto">
                 {/* Either the empty state or a layout — never both. Table drew its

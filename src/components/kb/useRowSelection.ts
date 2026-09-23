@@ -12,7 +12,7 @@ import type { Item } from '../../store/types';
 import { useStore } from '../../store/useStore';
 
 export interface RowSelection {
-    /** Whether any row is ticked, which is what reveals the checkboxes. */
+    /** Whether the list is in selection mode, which is what shows the boxes. */
     active: boolean;
     checkedIds: string[];
     isChecked: (id: string) => boolean;
@@ -24,6 +24,7 @@ export interface RowSelection {
 
 export function useRowSelection(items: Item[]): RowSelection {
     const checkedIds = useStore((state) => state.checkedIds);
+    const selecting = useStore((state) => state.selecting);
     const toggleChecked = useStore((state) => state.toggleChecked);
     const checkRange = useStore((state) => state.checkRange);
     const selectItem = useStore((state) => state.selectItem);
@@ -31,7 +32,7 @@ export function useRowSelection(items: Item[]): RowSelection {
     const ordered = items.map((item) => item.id);
 
     return {
-        active: checkedIds.length > 0,
+        active: selecting,
         checkedIds,
         isChecked: (id) => checkedIds.includes(id),
         onRowClick: (event, id) => {
@@ -44,7 +45,9 @@ export function useRowSelection(items: Item[]): RowSelection {
                 return;
             }
 
-            if (event.metaKey || event.ctrlKey) {
+            // In selection mode the whole row is the checkbox; opening an item
+            // is not what the click is for any more.
+            if (selecting || event.metaKey || event.ctrlKey) {
                 toggleChecked(id);
 
                 return;
