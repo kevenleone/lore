@@ -90,14 +90,12 @@ describe('writeWorkspaceFile', () => {
         expect((await readRaw()).somethingNewer).toEqual({ nested: true });
     });
 
-    it('keeps a tag order left behind by a version that still had one', async () => {
-        // Lore arranged tags by hand once. It does not any more, and the field
-        // is no longer read — but a vault carrying one does not get it wiped.
-        await writeRaw(JSON.stringify({ tagOrder: ['product', 'research'] }));
+    it('keeps a field an older version wrote and this one has dropped', async () => {
+        await writeRaw(JSON.stringify({ retiredSetting: ['one', 'two'], version: 1 }));
 
         await vault.writeWorkspaceFile({ savedSearches: [search()] });
 
-        expect((await readRaw()).tagOrder).toEqual(['product', 'research']);
+        expect((await readRaw()).retiredSetting).toEqual(['one', 'two']);
     });
 
     it('keeps the file versioned so a later schema can tell what it is reading', async () => {

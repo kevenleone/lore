@@ -23,9 +23,6 @@ export const SEED_COLLECTIONS: Collection[] = [
     { color: '#b88a98', id: 'recipes', name: 'Recipes' },
 ];
 
-/** Sidebar tag order, from the prototype's `tagNames`. */
-export const SEED_TAG_ORDER = ['design', 'research', 'product', 'tools', 'work'];
-
 export const SEED_ITEMS: Item[] = [
     {
         collectionId: 'reading',
