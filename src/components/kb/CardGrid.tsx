@@ -13,11 +13,14 @@ import { collectionFor } from '../../store/views';
 import { Icon } from '../common/Icon';
 import { ItemBanner } from './ItemBanner';
 import { subtitle } from './itemText';
+import { Checkbox } from './RowCheckbox';
+import { useRowSelection } from './useRowSelection';
 
 export function CardGrid({ items, onContextMenu }: SurfaceProps) {
     const collections = useStore((state) => state.collections);
     const selectedId = useStore((state) => state.selectedId);
-    const selectItem = useStore((state) => state.selectItem);
+    const reduceMotion = useStore((state) => state.prefs.switches.motion);
+    const selection = useRowSelection(items);
 
     return (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(216px,1fr))] content-start gap-[14px] p-4">
@@ -25,20 +28,40 @@ export function CardGrid({ items, onContextMenu }: SurfaceProps) {
                 const meta = typeMeta(item.type);
                 const coll = collectionFor(item, collections);
                 const selected = item.id === selectedId;
+                const checked = selection.isChecked(item.id);
 
                 return (
                     <div
                         className={cn(
                             'flex flex-col overflow-hidden rounded-xl border bg-surface',
-                            selected
+                            selected || checked
                                 ? 'border-accent shadow-[0_0_0_2px_var(--ac-tint)]'
                                 : 'border-border',
                         )}
                         key={item.id}
-                        onClick={() => selectItem(item.id)}
+                        onClick={(event) => selection.onRowClick(event, item.id)}
                         onContextMenu={(event) => onContextMenu(event, item.id)}
                     >
                         <div className="relative h-[118px] flex-none overflow-hidden bg-surface3">
+                            {/* Over the banner rather than beside it: a card has
+                                somewhere to put this that costs no layout, so
+                                opening the mode moves nothing at all. */}
+                            <span
+                                className={cn(
+                                    'absolute top-[9px] left-[9px] z-1 rounded-[5px] bg-surface p-[3px] shadow-float',
+                                    !reduceMotion && 'transition-opacity duration-200 ease-out',
+                                    selection.active
+                                        ? 'opacity-100'
+                                        : 'pointer-events-none opacity-0',
+                                )}
+                            >
+                                <Checkbox
+                                    checked={checked}
+                                    label={item.title}
+                                    onToggle={(event) => selection.onToggle(event, item.id)}
+                                    tabbable={selection.active}
+                                />
+                            </span>
                             {hasBanner(item) ? (
                                 <ItemBanner chip item={item} />
                             ) : (

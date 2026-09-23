@@ -47,6 +47,7 @@ export function TableView({ items, onContextMenu }: SurfaceProps) {
                 const meta = typeMeta(item.type);
                 const coll = collectionFor(item, collections);
                 const selected = item.id === selectedId;
+                const checked = selection.isChecked(item.id);
 
                 return (
                     <div
@@ -54,7 +55,7 @@ export function TableView({ items, onContextMenu }: SurfaceProps) {
                             // Table rows have no thumbnail column to anchor them, so
                             // they take a hover of their own.
                             'grid items-center gap-4 border-b border-border-soft px-[18px] py-[9px] hover:bg-hover',
-                            selected && 'bg-sel shadow-[inset_2px_0_0_var(--ac)]',
+                            (selected || checked) && 'bg-sel shadow-[inset_2px_0_0_var(--ac)]',
                         )}
                         key={item.id}
                         onClick={(event) => selection.onRowClick(event, item.id)}
