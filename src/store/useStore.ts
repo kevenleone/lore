@@ -21,6 +21,7 @@ import { primeChime } from '../lib/focusChime';
 import { ensureNotificationPermission, notifyIntervalEnd } from '../lib/focusNotify';
 import { nextPhase, phaseSeconds, remainingSeconds } from '../lib/focusTimer';
 import { revealPath, revealVaultFile } from '../lib/reveal';
+import { applyTemplate } from '../lib/templates';
 import { initVaultGit } from '../lib/vaultGit';
 import {
     broadcastWorkspaceChange,
@@ -60,6 +61,7 @@ import {
     type SortOrder,
     type Switches,
     type TaskView,
+    type Template,
     type Toast,
     type ToastAction,
     type VaultSetup,
@@ -172,6 +174,8 @@ interface StoreState {
     collections: Collection[];
     commandMenuOpen: boolean;
     createCollection: (input: NewCollection) => Promise<void>;
+    /** Writes the item a template describes and opens it for editing. */
+    createFromTemplate: (name: string) => Promise<void>;
     createItem: (input: NewItem) => Promise<Item>;
     /** Steps "Working on" to the next item in the queue. */
     cycleFocusTask: () => void;
@@ -234,6 +238,8 @@ interface StoreState {
     items: Item[];
     loadDetail: (id: string) => Promise<void>;
     loadItemMeta: (id: string) => Promise<void>;
+    /** Re-reads `.lore/templates/`, which the file watcher deliberately ignores. */
+    loadTemplates: () => Promise<void>;
     /** Which surface the window's main area shows: the library or the calendar. */
     mainView: MainView;
     /** Drops a column onto another's place, from a drag of its handle. */
@@ -400,6 +406,8 @@ interface StoreState {
     taskRailOpen: boolean;
     /** Which tab the Tasks surface is on. */
     taskView: TaskView;
+    /** The skeletons in `.lore/templates/`, by name. Empty when there are none. */
+    templates: Template[];
     /** Recomputes the countdown from the clock, and rolls over at zero. */
     tickFocus: () => void;
     /** Shows or hides the right-hand Properties panel. Persisted with the prefs. */
@@ -615,6 +623,8 @@ async function hydrateOnce(
     const savedSearches = await (repo.listSavedSearches?.() ?? Promise.resolve([])).catch(() => []);
 
     set({ collections, hydrated: true, items, savedSearches, selectedId });
+
+    void get().loadTemplates();
 
     if (selectedId) {
         void get().loadDetail(selectedId);
@@ -1105,6 +1115,19 @@ export const useStore = create<StoreState>((set, get) => ({
         await getRepository().createCollection(input);
         await get().refresh();
     },
+    async createFromTemplate(name) {
+        const template = get().templates.find((entry) => entry.name === name);
+
+        if (!template) {
+            return;
+        }
+
+        try {
+            await get().createItem(applyTemplate(template));
+        } catch (e) {
+            get().pushToast(e instanceof Error ? e.message : `"${name}" could not be created.`);
+        }
+    },
     async createItem(input) {
         const item = await getRepository().createItem(input);
 
@@ -1357,6 +1380,15 @@ export const useStore = create<StoreState>((set, get) => ({
         }
     },
 
+    async loadTemplates() {
+        const repo = getRepository();
+        // A vault with no templates folder, or one we cannot read, simply has
+        // none — not worth a toast, let alone failing a hydrate over.
+        const templates = await (repo.listTemplates?.() ?? Promise.resolve([])).catch(() => []);
+
+        set({ templates });
+    },
+
     mainView: 'library',
 
     /**
@@ -1414,6 +1446,9 @@ export const useStore = create<StoreState>((set, get) => ({
 
     openCommandMenu() {
         set({ commandMenuOpen: true });
+        // `.lore/` is outside what the watcher reports, so a template written
+        // while Lore was open would otherwise not appear until the next launch.
+        void get().loadTemplates();
     },
 
     async openDailyNote() {
@@ -1428,15 +1463,19 @@ export const useStore = create<StoreState>((set, get) => ({
             return;
         }
 
-        const { dailyNoteCollection } = get().prefs;
+        const { dailyNoteCollection, dailyNoteTemplate } = get().prefs;
+        const template = get().templates.find((entry) => entry.name === dailyNoteTemplate);
+        // The template supplies the body and the tags; the day supplies the
+        // title and the collection, which is what the hotkey is for.
+        const skeleton = template ? applyTemplate(template, { title: today }) : null;
 
         try {
             await get().createItem({
-                body: '',
+                body: skeleton?.body ?? '',
                 collectionId: dailyNoteCollection ?? undefined,
                 flags: {},
                 related: [],
-                tags: [],
+                tags: skeleton?.tags ?? [],
                 title: today,
                 type: 'note',
             });
@@ -1973,6 +2012,7 @@ export const useStore = create<StoreState>((set, get) => ({
             searchResults: null,
             selectedId: null,
             selecting: false,
+            templates: [],
             view: { kind: 'all', val: null },
             workspaceError: null,
             workspacePath: path,
@@ -2002,6 +2042,8 @@ export const useStore = create<StoreState>((set, get) => ({
     taskRailOpen: false,
 
     taskView: 'summary',
+
+    templates: [],
 
     tickFocus() {
         const state = get();
@@ -2056,7 +2098,13 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     toggleCommandMenu() {
-        set((state) => ({ commandMenuOpen: !state.commandMenuOpen }));
+        if (get().commandMenuOpen) {
+            set({ commandMenuOpen: false });
+
+            return;
+        }
+
+        get().openCommandMenu();
     },
 
     toggleFilter(facet, value) {
