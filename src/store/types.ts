@@ -484,6 +484,12 @@ export interface Prefs {
     accent: Accent;
     appearance: Appearance;
     bannerPlacement: BannerPlacement;
+    /**
+     * Collection today's note is written into; null leaves it at the vault
+     * root. Its own setting rather than `defaultCollection`: a journal is
+     * usually kept apart from whatever captures happen to be landing.
+     */
+    dailyNoteCollection: null | string;
     /** The theme style used whenever the effective mode is dark. */
     darkTheme: ThemeId;
     /**
@@ -518,6 +524,7 @@ export const DEFAULT_PREFS: Prefs = {
     accent: DEFAULT_ACCENT,
     appearance: 'light',
     bannerPlacement: 'inline',
+    dailyNoteCollection: null,
     darkTheme: DEFAULT_DARK_THEME,
     defaultCaptureType: 'auto',
     defaultCollection: null,

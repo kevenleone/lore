@@ -74,6 +74,7 @@ export default function App() {
     const closePhotoPicker = useStore((state) => state.closePhotoPicker);
     const statusBarVisible = useStore((state) => state.prefs.switches.statusBar);
     const toggleCapture = useStore((state) => state.toggleCapture);
+    const openDailyNote = useStore((state) => state.openDailyNote);
     const toggleCommandMenu = useStore((state) => state.toggleCommandMenu);
     const toggleFocus = useStore((state) => state.toggleFocus);
     const toggleProperties = useStore((state) => state.toggleProperties);
@@ -140,6 +141,7 @@ export default function App() {
         () => ({
             capture: () => toggleCapture(),
             contribute: () => void openExternal(APP_LINKS.issues),
+            'daily-note': () => void openDailyNote(),
             documentation: () => void openExternal(APP_LINKS.readme),
             'export-pdf': () => void exportItemPdf(),
             'open-vault': () => openSettings('vault'),
@@ -164,6 +166,7 @@ export default function App() {
             selectView,
             setMainView,
             setTaskView,
+            openDailyNote,
             toggleCapture,
             toggleCommandMenu,
             toggleProperties,

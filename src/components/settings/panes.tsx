@@ -14,7 +14,13 @@ import { APP_LINKS, APP_VERSION, openExternal } from '../../lib/appInfo';
 import { APP_MODE, captureShortcutKeys } from '../../lib/appMode';
 import { cn } from '../../lib/cn';
 import { formatBytes } from '../../lib/format';
-import { type HotkeyCommand, hotkeyKeys, HOTKEYS } from '../../lib/hotkeys';
+import {
+    formatHotkey,
+    type HotkeyCommand,
+    hotkeyFor,
+    hotkeyKeys,
+    HOTKEYS,
+} from '../../lib/hotkeys';
 import { revealPath } from '../../lib/reveal';
 import { workspaceName } from '../../lib/workspace';
 import {
@@ -68,6 +74,7 @@ export function GeneralPane() {
     const collections = useStore((state) => state.collections);
     const defaultCollection = useStore((state) => state.prefs.defaultCollection);
     const defaultCaptureType = useStore((state) => state.prefs.defaultCaptureType);
+    const dailyNoteCollection = useStore((state) => state.prefs.dailyNoteCollection);
     const setPref = useStore((state) => state.setPref);
 
     // A collection deleted since the preference was set falls back to the
@@ -79,9 +86,22 @@ export function GeneralPane() {
         ],
         [collections],
     );
+    const journalTargets = useMemo<ChoiceOption<string>[]>(
+        () => [
+            { label: 'No collection', value: ROOT_TARGET },
+            ...collections.map((collection) => ({ label: collection.name, value: collection.id })),
+        ],
+        [collections],
+    );
     const target = targets.some((target) => target.value === defaultCollection)
         ? (defaultCollection ?? INBOX_TARGET)
         : INBOX_TARGET;
+
+    // Same fallback, and the same reason: the vault root is where a note with
+    // nowhere to go lives.
+    const journal = collections.some((entry) => entry.id === dailyNoteCollection)
+        ? (dailyNoteCollection ?? ROOT_TARGET)
+        : ROOT_TARGET;
 
     return (
         <>
@@ -110,12 +130,26 @@ export function GeneralPane() {
                     value={target}
                 />
             </Row>
-            <Row desc="Which tab the capture window opens on." last title="Default capture type">
+            <Row desc="Which tab the capture window opens on." title="Default capture type">
                 <Chooser<'auto' | ItemType>
                     label="Default capture type"
                     onChange={(v) => setPref('defaultCaptureType', v)}
                     options={CAPTURE_TYPES}
                     value={defaultCaptureType}
+                />
+            </Row>
+            <Row
+                desc={`Where ${formatHotkey(hotkeyFor('daily-note'))} writes today's note. One note per day, named for the day.`}
+                last
+                title="Keep today's note in"
+            >
+                <Chooser<string>
+                    label="Keep today's note in"
+                    onChange={(choice) =>
+                        setPref('dailyNoteCollection', choice === ROOT_TARGET ? null : choice)
+                    }
+                    options={journalTargets}
+                    value={journal}
                 />
             </Row>
         </>
@@ -127,6 +161,9 @@ export function GeneralPane() {
  * and an id is never this string.
  */
 const INBOX_TARGET = 'inbox';
+
+/** The same stand-in for the vault root, which is not a collection either. */
+const ROOT_TARGET = 'root';
 
 export function VaultPane() {
     const workspacePath = useStore((state) => state.workspacePath);

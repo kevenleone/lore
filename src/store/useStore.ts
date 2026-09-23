@@ -32,7 +32,7 @@ import {
 import { effectiveTheme } from '../theme/tokens';
 import { loadPersisted, savePersisted } from './persisted';
 import { SEED_COLLECTIONS, SEED_ITEMS } from './seed';
-import { boardFor, EMPTY_BOARD_FILTER } from './tasks';
+import { boardFor, dayKey, EMPTY_BOARD_FILTER } from './tasks';
 import {
     type Accent,
     type BoardColumnConfig,
@@ -254,6 +254,12 @@ interface StoreState {
     openCaptureIn: (collectionId: null | string, column: BoardColumnConfig) => void;
     /** Opens the photo picker against an item, to choose its thumbnail. */
     openCommandMenu: () => void;
+    /**
+     * Opens today's note, writing it first if this is the first time it has
+     * been asked for today. One note per day, named for the day: the date is
+     * the filename, so they sort and a second call finds the first one.
+     */
+    openDailyNote: () => Promise<void>;
     /**
      * The item Cards or Table has opened, or null. List mode never sets it —
      * there the detail pane is a permanent column, so there is nothing to open.
@@ -1409,6 +1415,36 @@ export const useStore = create<StoreState>((set, get) => ({
     openCommandMenu() {
         set({ commandMenuOpen: true });
     },
+
+    async openDailyNote() {
+        const today = dayKey(new Date());
+        const existing = get().items.find((item) => item.type === 'note' && item.title === today);
+
+        get().selectView('all', null);
+
+        if (existing) {
+            get().selectItem(existing.id);
+
+            return;
+        }
+
+        const { dailyNoteCollection } = get().prefs;
+
+        try {
+            await get().createItem({
+                body: '',
+                collectionId: dailyNoteCollection ?? undefined,
+                flags: {},
+                related: [],
+                tags: [],
+                title: today,
+                type: 'note',
+            });
+        } catch (e) {
+            get().pushToast(e instanceof Error ? e.message : "Today's note could not be created.");
+        }
+    },
+
     openId: null,
     openItemPage(id) {
         get().selectItem(id);
