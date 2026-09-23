@@ -189,16 +189,36 @@ The Markdown body — the note's content, or your own notes on a link.
 
 ### Templates
 
-A template is the item it makes: an ordinary Markdown file in `.lore/templates/`,
-with the frontmatter and the body a new item should start from. The stem is the
-name, and it shows up in ⌘K under **New from template**.
+A template is the item it makes. Not a special format — an ordinary Markdown
+file with the frontmatter and the body a new item should start from.
+
+**Using one.** Press ⌘K and pick a template. Lore writes the item and opens it,
+so the skeleton is already on screen with the cursor in it. Nothing is filled in
+for you beyond the placeholders below; a template is a starting shape, not a form.
+
+Lore ships six, so ⌘K is useful in a vault where nobody has written one yet:
+
+| Template          | Makes                                                       |
+| ----------------- | ----------------------------------------------------------- |
+| **Daily**         | Today / Notes / Tomorrow, tagged `journal`                  |
+| **Meeting**       | When, who, agenda, notes, actions — titled `Meeting <date>` |
+| **Weekly Review** | What shipped, what slipped, what you learned, next week     |
+| **Book**          | Author, why you picked it up, notes, what to keep           |
+| **Decision**      | Context, options, the decision, what it costs               |
+| **Project**       | Goal, out of scope, milestones, open questions              |
+
+**Writing your own.** Put a `.md` file in `.lore/templates/` — Settings → Vault →
+Templates reveals the folder. The filename's stem is the name ⌘K shows, so
+`Standup.md` becomes **Standup**. It appears the next time you open ⌘K; `.lore/`
+sits outside what the file watcher reports, so the menu re-reads the folder each
+time it opens rather than waiting for a restart.
 
 ```markdown
 ---
-type: note
-tags: [meeting]
-collection: Work # where its items land — templates are the one place this is written
-title: Standup {{date}}
+type: note # link | note | task | code | image — note if left out
+tags: [meeting, work]
+collection: Work # the folder its items land in
+title: Standup {{date}} # seeds the title; the filename is used if absent
 ---
 
 ## Agenda
@@ -206,9 +226,36 @@ title: Standup {{date}}
 ## Decisions
 ```
 
-`{{date}}`, `{{time}}` and `{{title}}` are expanded on use; anything else is left
-exactly as written, so a typo shows up in the note instead of eating text. Today's
-note can start from one too — Settings → General.
+Every key is optional. `collection` is the one place a collection is ever
+written down: everywhere else a file's folder decides, and a template's folder
+is `.lore/templates`, so where _its_ items land has to be said outright. It is
+not copied into the note — the note lands in `Work/`, and its frontmatter stays
+quiet about it, exactly like a file you moved there in Finder.
+
+**Placeholders**, in both the title and the body:
+
+|             |                                                     |
+| ----------- | --------------------------------------------------- |
+| `{{date}}`  | `2026-09-23` — the same shape a daily note is named |
+| `{{time}}`  | `14:30`, in your locale's clock                     |
+| `{{title}}` | the item's title, once it has one                   |
+
+Anything else is left exactly as you wrote it, so `{{weekday}}` shows up in the
+note as `{{weekday}}` instead of silently eating the line.
+
+**Replacing one of Lore's.** Name your file after a built-in — `Daily.md` — and
+yours takes its place in ⌘K rather than sitting beside it. There is no way to
+edit a built-in in place; copy the shape you want out of the table above, save
+it under the same name, and it is yours.
+
+**Today's note.** Settings → General → _Start today's note from_ points ⌘⇧D at a
+template. It takes the body and the tags; the title stays the day and the
+collection stays whatever _Keep today's note in_ says, since that is what the
+hotkey is for. A template named there and later deleted writes a blank note
+rather than failing.
+
+Templates are committed with the vault, so they travel with it — clone the
+folder on another machine and your templates come too.
 
 ### Documents that live somewhere else
 
