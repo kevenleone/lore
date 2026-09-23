@@ -16,6 +16,7 @@ import type {
     ItemMeta,
     SavedSearch,
     TagCount,
+    Template,
     View,
 } from '../store/types';
 
@@ -62,6 +63,12 @@ export interface KnowledgeRepository {
     listSavedSearches?(): Promise<SavedSearch[]>;
 
     listTags(): Promise<TagCount[]>;
+
+    /**
+     * The skeletons in `.lore/templates/`. Optional: a store with no folder
+     * behind it has none, and the New menu simply offers only the blank item.
+     */
+    listTemplates?(): Promise<Template[]>;
 
     /**
      * Re-reads a virtual document from its origin. Safe to call on every open —

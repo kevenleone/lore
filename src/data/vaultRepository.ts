@@ -11,6 +11,7 @@ import type {
     ItemMeta,
     SavedSearch,
     TagCount,
+    Template,
     View,
 } from '../store/types';
 import type {
@@ -144,6 +145,10 @@ export class VaultRepository implements KnowledgeRepository {
 
     async listTags(): Promise<TagCount[]> {
         return this.call(() => request<TagCount[]>('/tags'));
+    }
+
+    async listTemplates(): Promise<Template[]> {
+        return this.call(() => request<Template[]>('/templates'));
     }
 
     /* ---------------- collections ---------------- */
