@@ -1,7 +1,9 @@
-// A row's tick box. Drawn while the list is in selection mode, and otherwise
-// only on hover or focus — so a library nobody is triaging keeps the look it
-// had. It holds its space either way: a control that appears on hover must not
-// shove the row sideways.
+// A row's tick box, drawn only while the list is in selection mode.
+//
+// It reserves no space outside that mode — a library nobody is triaging keeps
+// the flush left edge it always had. Entering the mode shifts the rows once,
+// which is what a mode is allowed to do; revealing the box on hover instead
+// would have had to hold the gutter open permanently to avoid jitter.
 
 import type { MouseEvent } from 'react';
 
@@ -11,13 +13,10 @@ export function RowCheckbox({
     checked,
     label,
     onToggle,
-    shown,
 }: {
     checked: boolean;
     label: string;
     onToggle: (event: MouseEvent) => void;
-    /** True in selection mode; otherwise the box waits for a hover. */
-    shown: boolean;
 }) {
     return (
         <button
@@ -26,11 +25,6 @@ export function RowCheckbox({
             className={cn(
                 'flex h-[15px] w-[15px] flex-none items-center justify-center rounded-sm border-[1.5px] bg-transparent p-0',
                 checked ? 'border-accent bg-accent' : 'border-border',
-                // Focus reveals it too: on hover alone it cannot be reached by
-                // keyboard at all.
-                shown || checked
-                    ? 'opacity-100'
-                    : 'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100',
             )}
             onClick={onToggle}
             role="checkbox"
