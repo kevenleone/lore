@@ -29,7 +29,8 @@ _are_ the data. Point Lore at a git repo, edit a note in Obsidian or vim,
 - 🗂️ **The filesystem is the database.** Folders are collections, files are
   items. Move a file in Finder and it is refiled in Lore.
 - ✍️ **Never lose what you typed.** Unknown frontmatter keys survive a
-  round-trip; a `[[wikilink]]` to a note that does not exist yet is preserved
+  round-trip, as do keys in `.lore/workspace.json` that this version does not
+  own; a `[[wikilink]]` to a note that does not exist yet is preserved
   byte-for-byte and heals itself when the target appears.
 - 🔌 **Offline first, network never required.** No account, no sync service, no
   telemetry. AI is a pluggable provider and ships as a deterministic mock.
@@ -153,7 +154,7 @@ hostile.
   .lore/
     .gitignore          committed — ignores the derived files below
     collections.json    committed — folder colours and order
-    workspace.json      committed — schema version, tag order
+    workspace.json      committed — schema version, saved searches
     index.db            ignored — derived, deletable, rebuilt on open
     cache/  trash/      ignored
   attachments/          reserved; never a collection
@@ -367,9 +368,7 @@ Known gaps:
 - Several settings panes show placeholder figures.
 
 Decided against: arranging tags by hand. Tags read alphabetically, which is what
-makes a long list scannable, so the stored order and the route that wrote it are
-gone. A `tagOrder` left behind in an older vault's `.lore/workspace.json` is
-carried through writes untouched — nothing reads it, and nothing destroys it.
+makes a long list scannable.
 
 Deferred by design: nested collections, and replacing the full `refresh()` after
 every mutation with optimistic updates.
