@@ -4,7 +4,15 @@
 // is a translation layer and nothing more. The one piece of real logic is
 // making sure a workspace is open before the first read.
 
-import type { BoardConfig, Collection, Item, ItemMeta, TagCount, View } from '../store/types';
+import type {
+    BoardConfig,
+    Collection,
+    Item,
+    ItemMeta,
+    SavedSearch,
+    TagCount,
+    View,
+} from '../store/types';
 import type {
     CollectionPatch,
     ItemPatch,
@@ -22,6 +30,7 @@ interface WorkspaceInfo {
     itemCount: number;
     open: boolean;
     path: null | string;
+    savedSearches: SavedSearch[];
 }
 
 export class VaultRepository implements KnowledgeRepository {
@@ -127,6 +136,12 @@ export class VaultRepository implements KnowledgeRepository {
         return view ? items.filter((item) => matchesView(item, view)) : items;
     }
 
+    async listSavedSearches(): Promise<SavedSearch[]> {
+        const info = await this.call(() => request<WorkspaceInfo>('/workspace'));
+
+        return info.savedSearches ?? [];
+    }
+
     async listTags(): Promise<TagCount[]> {
         return this.call(() => request<TagCount[]>('/tags'));
     }
@@ -156,6 +171,15 @@ export class VaultRepository implements KnowledgeRepository {
         await this.call(() =>
             request<{ ok: true }>('/boards', {
                 body: JSON.stringify({ board, id }),
+                method: 'POST',
+            }),
+        );
+    }
+
+    async saveSavedSearches(searches: readonly SavedSearch[]): Promise<void> {
+        await this.call(() =>
+            request<{ ok: true }>('/saved-searches', {
+                body: JSON.stringify({ savedSearches: searches }),
                 method: 'POST',
             }),
         );
