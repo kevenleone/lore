@@ -7,6 +7,16 @@ import type { Collection, Filters, Item, SavedSearch, SortOrder, TagCount, View 
 
 import { FILE_TYPES } from './types';
 
+/** The library state a visible-items question is asked against. */
+export interface LibraryQuery {
+    filters: Filters;
+    items: Item[];
+    search: string;
+    searchResults: null | string[];
+    sort: SortOrder;
+    view: View;
+}
+
 export interface ViewCounts {
     all: number;
     files: number;
@@ -106,6 +116,17 @@ export function matchesFilters(item: Item, filters: Filters): boolean {
  * every repository implementation — it lives here rather than in the data layer
  * so the two do not import each other.
  */
+/**
+ * Fallback for queries too short to send to the index. It can only see what
+ * `listItems()` returns — titles, tags and the derived preview — never bodies.
+ */
+export function matchesSearch(item: Item, query: string): boolean {
+    const hay =
+        `${item.title} ${item.domain ?? ''} ${item.snippet ?? ''} ${item.summary ?? ''} ${item.tags.join(' ')}`.toLowerCase();
+
+    return hay.includes(query);
+}
+
 export function matchesView(item: Item, view: View): boolean {
     switch (view.kind) {
         case 'all':
@@ -188,6 +209,31 @@ export function viewCounts(items: Item[]): ViewCounts {
         starred: items.filter((item) => item.flags.starred).length,
         today: items.filter((item) => item.flags.today).length,
     };
+}
+
+/**
+ * Exactly what the list pane is showing: the view, then the filter bar, then
+ * the query. One selector rather than three steps repeated per caller, because
+ * a bulk action has to agree with the list about what "everything here" means —
+ * ticking a row and then filtering it away must not leave it in the set.
+ */
+export function visibleItems(query: LibraryQuery): Item[] {
+    const shown = applyFilters(filterByView(query.items, query.view, query.sort), query.filters);
+    const text = query.search.trim();
+
+    if (!text) {
+        return shown;
+    }
+
+    // The index searches full bodies; the client-side filter is the fallback
+    // for queries too short to be worth a round-trip.
+    const hits = query.searchResults && new Set(query.searchResults);
+
+    if (hits) {
+        return shown.filter((item) => hits.has(item.id));
+    }
+
+    return shown.filter((item) => matchesSearch(item, query.search));
 }
 
 export const SORT_LABELS: Record<SortOrder, string> = {

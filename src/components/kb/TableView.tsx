@@ -16,6 +16,8 @@ import { collectionFor } from '../../store/views';
 import { Icon } from '../common/Icon';
 import { ItemBanner } from './ItemBanner';
 import { subtitle } from './itemText';
+import { RowCheckbox } from './RowCheckbox';
+import { useRowSelection } from './useRowSelection';
 
 const GRID_COLUMNS = 'minmax(240px, 1fr) 168px 176px 116px 92px';
 
@@ -24,7 +26,7 @@ const COLUMNS = ['Item', 'Collection', 'Tags', 'Type', 'Added'];
 export function TableView({ items, onContextMenu }: SurfaceProps) {
     const collections = useStore((state) => state.collections);
     const selectedId = useStore((state) => state.selectedId);
-    const selectItem = useStore((state) => state.selectItem);
+    const selection = useRowSelection(items);
 
     return (
         <>
@@ -51,15 +53,21 @@ export function TableView({ items, onContextMenu }: SurfaceProps) {
                         className={cn(
                             // Table rows have no thumbnail column to anchor them, so
                             // they take a hover of their own.
-                            'grid items-center gap-4 border-b border-border-soft px-[18px] py-[9px] hover:bg-hover',
+                            'group grid items-center gap-4 border-b border-border-soft px-[18px] py-[9px] hover:bg-hover',
                             selected && 'bg-sel shadow-[inset_2px_0_0_var(--ac)]',
                         )}
                         key={item.id}
-                        onClick={() => selectItem(item.id)}
+                        onClick={(event) => selection.onRowClick(event, item.id)}
                         onContextMenu={(event) => onContextMenu(event, item.id)}
                         style={{ gridTemplateColumns: GRID_COLUMNS }}
                     >
                         <div className="flex min-w-0 items-center gap-[11px]">
+                            <RowCheckbox
+                                checked={selection.isChecked(item.id)}
+                                label={item.title}
+                                onToggle={(event) => selection.onToggle(event, item.id)}
+                                shown={selection.active}
+                            />
                             {hasBanner(item) ? (
                                 <span className="relative h-[30px] w-[44px] flex-none overflow-hidden rounded-5 bg-surface3">
                                     <ItemBanner item={item} />

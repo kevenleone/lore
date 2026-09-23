@@ -66,7 +66,7 @@ import {
     type View,
     type ViewMode,
 } from './types';
-import { queueItems } from './views';
+import { queueItems, visibleItems } from './views';
 
 const ai: AiProvider = new MockAiProvider();
 
@@ -122,6 +122,12 @@ interface StoreState {
     boardId: null | string;
     /** Every board, keyed by collection id. Absent means `DEFAULT_BOARD`. */
     boards: Record<string, BoardConfig>;
+    /** Adds one tag to every ticked item, skipping the ones that have it. */
+    bulkAddTag: (tag: string) => Promise<void>;
+    bulkDelete: () => Promise<void>;
+    /** Refiles every ticked item; null unfiles them to the vault root. */
+    bulkMove: (collectionId: null | string) => Promise<void>;
+    bulkStar: (starred: boolean) => Promise<void>;
     bumpDuration: (key: keyof Durations, delta: number) => void;
     /**
      * True while the in-window capture drawer is open. The floating capture
@@ -140,6 +146,17 @@ interface StoreState {
     chat: ChatMessage[];
 
     chatOpen: boolean;
+    /** Ticks every item handed in — whatever the list is currently showing. */
+    checkAll: (ids: string[]) => void;
+    /**
+     * Items ticked for a bulk action. Kept apart from `selectedId`, which is
+     * the one the detail pane is reading: ticking is about acting on a set,
+     * not about looking at one.
+     */
+    checkedIds: string[];
+    /** Ticks everything between the last tick and this one, for a shift-click. */
+    checkRange: (id: string, ordered: string[]) => void;
+    clearChecked: () => void;
     clearFilters: () => void;
     clearRecents: () => void;
     /** Back to the list of projects, from one project's board. */
@@ -373,6 +390,7 @@ interface StoreState {
     toasts: Toast[];
     toggleCapture: () => void;
     toggleChat: () => void;
+    toggleChecked: (id: string) => void;
     toggleCommandMenu: () => void;
     /** Adds or removes one value from a multi-select filter facet. */
     toggleFilter: <F extends FilterFacet>(facet: F, value: Filters[F][number]) => void;
@@ -393,6 +411,41 @@ interface StoreState {
     /** Set when a vault cannot be opened — an unmounted drive, a deleted folder. */
     workspaceError: null | string;
     workspacePath: null | string;
+}
+
+/**
+ * Applies one change to every ticked item and refreshes once at the end.
+ *
+ * Not through `updateItem`: that refreshes after each write, which on a set of
+ * forty would re-read the whole vault forty times. The ticks are dropped
+ * afterwards — the set was a way of naming a change, and the change is done.
+ */
+async function bulkEdit(
+    get: () => StoreState,
+    set: (partial: Partial<StoreState>) => void,
+    patch: (item: Item) => ItemPatch | null,
+): Promise<void> {
+    const { checkedIds } = get();
+    const targets = visibleItems(get()).filter((item) => checkedIds.includes(item.id));
+
+    if (targets.length === 0) {
+        return;
+    }
+
+    try {
+        for (const item of targets) {
+            const change = patch(item);
+
+            if (change) {
+                await getRepository().updateItem(item.id, stampCompletion(item, change));
+            }
+        }
+    } catch (e) {
+        get().pushToast(e instanceof Error ? e.message : 'Not every item could be changed.');
+    }
+
+    set({ checkedIds: [] });
+    await get().refresh();
 }
 
 /**
@@ -867,6 +920,80 @@ export const useStore = create<StoreState>((set, get) => ({
     boardFilter: EMPTY_BOARD_FILTER,
     boardId: null,
     boards: {},
+
+    async bulkAddTag(tag) {
+        const clean = tag.trim().replace(/^#/, '').toLowerCase();
+
+        if (!clean) {
+            return;
+        }
+
+        await bulkEdit(get, set, (item) => {
+            if (item.tags.includes(clean)) {
+                return null;
+            }
+
+            return { tags: [...item.tags, clean] };
+        });
+    },
+
+    async bulkDelete() {
+        const { checkedIds } = get();
+        // Only what the list is actually showing — a tick left on an item that
+        // has since been filtered away must not be deleted unseen.
+        const ids = visibleItems(get())
+            .filter((item) => checkedIds.includes(item.id))
+            .map((item) => item.id);
+
+        if (ids.length === 0) {
+            return;
+        }
+
+        try {
+            for (const id of ids) {
+                await getRepository().deleteItem(id);
+            }
+        } catch (e) {
+            get().pushToast(e instanceof Error ? e.message : 'Not every item could be deleted.');
+        }
+
+        const gone = new Set(ids);
+
+        set({ checkedIds: [] });
+        await get().refresh();
+
+        // The detail pane was reading one of these; move it somewhere real.
+        if (gone.has(get().selectedId ?? '')) {
+            const next = get().items[0]?.id ?? null;
+
+            set({ detail: null, itemMeta: null, selectedId: next });
+
+            if (next) {
+                void get().loadDetail(next);
+            }
+        }
+    },
+
+    async bulkMove(collectionId) {
+        await bulkEdit(get, set, (item) => {
+            if ((item.collectionId ?? null) === collectionId) {
+                return null;
+            }
+
+            return { collectionId: collectionId ?? undefined };
+        });
+    },
+
+    async bulkStar(starred) {
+        await bulkEdit(get, set, (item) => {
+            if (!!item.flags.starred === starred) {
+                return null;
+            }
+
+            return { flags: { ...item.flags, starred } };
+        });
+    },
+
     bumpDuration(key, delta) {
         set((state) => ({
             prefs: {
@@ -885,6 +1012,39 @@ export const useStore = create<StoreState>((set, get) => ({
     capturePreset: null,
     chat: [],
     chatOpen: false,
+    checkAll(ids) {
+        set({ checkedIds: [...ids] });
+    },
+
+    checkedIds: [],
+
+    checkRange(id, ordered) {
+        const { checkedIds } = get();
+        const anchor = checkedIds[checkedIds.length - 1];
+        const from = anchor === undefined ? -1 : ordered.indexOf(anchor);
+        const to = ordered.indexOf(id);
+
+        // No anchor yet, or one that is no longer on screen: a shift-click with
+        // nothing to reach back to is an ordinary tick.
+        if (from < 0 || to < 0) {
+            get().toggleChecked(id);
+
+            return;
+        }
+
+        const span = ordered.slice(Math.min(from, to), Math.max(from, to) + 1);
+
+        // The anchor stays last, so a second shift-click re-reaches from the
+        // same place rather than from wherever the range happened to end.
+        set({
+            checkedIds: [...new Set([...checkedIds, ...span.filter((entry) => entry !== anchor)])],
+        });
+    },
+
+    clearChecked() {
+        set({ checkedIds: [] });
+    },
+
     clearFilters() {
         set({ filters: EMPTY_FILTERS });
     },
@@ -1565,6 +1725,9 @@ export const useStore = create<StoreState>((set, get) => ({
         set({
             activeSavedSearchId: null,
             chatOpen: false,
+            // A tick means "this one, here". Carrying it into another view would
+            // put items in the set that the list never showed together.
+            checkedIds: [],
             mainView: 'library',
             openAs: null,
             openId: null,
@@ -1738,6 +1901,7 @@ export const useStore = create<StoreState>((set, get) => ({
         set({
             activeSavedSearchId: null,
             chatOpen: false,
+            checkedIds: [],
             collections: [],
             detail: null,
             filters: EMPTY_FILTERS,
@@ -1817,6 +1981,16 @@ export const useStore = create<StoreState>((set, get) => ({
 
     toggleChat() {
         set((state) => ({ chatOpen: !state.chatOpen }));
+    },
+
+    toggleChecked(id) {
+        const { checkedIds } = get();
+
+        set({
+            checkedIds: checkedIds.includes(id)
+                ? checkedIds.filter((entry) => entry !== id)
+                : [...checkedIds, id],
+        });
     },
 
     toggleCommandMenu() {
