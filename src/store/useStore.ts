@@ -100,6 +100,11 @@ let searchTimer: null | ReturnType<typeof setTimeout> = null;
 let searchSeq = 0;
 
 interface StoreState {
+    /**
+     * The saved search the library is currently showing, or null. Tracked so
+     * stepping to another view can put back what it brought — see `selectView`.
+     */
+    activeSavedSearchId: null | string;
     /** Appends a column to the open board. */
     addBoardColumn: (name: string) => Promise<void>;
     /** Appends a comment to the item's frontmatter. */
@@ -801,6 +806,7 @@ async function writeSavedSearches(
 }
 
 export const useStore = create<StoreState>((set, get) => ({
+    activeSavedSearchId: null,
     async addBoardColumn(name) {
         const label = name.trim();
 
@@ -829,6 +835,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
         await get().updateItem(id, { comments: [...(item.comments ?? []), comment] });
     },
+
     async addTag(id, tag) {
         const clean = tag.trim().replace(/^#/, '').toLowerCase();
         const item = get().items.find((item) => item.id === id);
@@ -847,11 +854,14 @@ export const useStore = create<StoreState>((set, get) => ({
             return;
         }
 
+        // Stop being in the previous search before switching views, or
+        // `selectView` clears the filters this one is about to set.
+        set({ activeSavedSearchId: null });
         // Through `selectView` rather than a bare `set`, so a saved search
         // closes the chat and the open item the same way picking the view by
         // hand does. Filters and query follow it, not the other way round.
         get().selectView(saved.view.kind, saved.view.val);
-        set({ filters: saved.filters });
+        set({ activeSavedSearchId: saved.id, filters: saved.filters });
         get().setSearch(saved.query);
     },
     boardFilter: EMPTY_BOARD_FILTER,
@@ -968,6 +978,10 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     async deleteSavedSearch(id) {
+        if (get().activeSavedSearchId === id) {
+            set({ activeSavedSearchId: null });
+        }
+
         await writeSavedSearches(
             get,
             set,
@@ -1546,13 +1560,25 @@ export const useStore = create<StoreState>((set, get) => ({
         void get().loadDetail(id);
     },
     selectView(kind, val = null) {
+        const leaving = get().activeSavedSearchId !== null;
+
         set({
+            activeSavedSearchId: null,
             chatOpen: false,
             mainView: 'library',
             openAs: null,
             openId: null,
             view: { kind, val },
         });
+
+        // A saved search owns the filters and the query it arrived with, so
+        // stepping to another view leaves it and takes them along. Filters set
+        // by hand are left alone: those have always composed with whichever
+        // view is selected, and that is not what changed here.
+        if (leaving) {
+            set({ filters: EMPTY_FILTERS });
+            get().setSearch('');
+        }
     },
     async sendChat(question) {
         const text = question.trim();
@@ -1710,6 +1736,7 @@ export const useStore = create<StoreState>((set, get) => ({
         }
 
         set({
+            activeSavedSearchId: null,
             chatOpen: false,
             collections: [],
             detail: null,
