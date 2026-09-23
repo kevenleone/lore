@@ -1,6 +1,7 @@
-// A row's tick box. Hidden until the row is hovered or something is ticked, so
-// an untouched library keeps the layout it had — but it holds its space either
-// way, because a control that appears on hover must not shove the row sideways.
+// A row's tick box. Drawn while the list is in selection mode, and otherwise
+// only on hover or focus — so a library nobody is triaging keeps the look it
+// had. It holds its space either way: a control that appears on hover must not
+// shove the row sideways.
 
 import type { MouseEvent } from 'react';
 
@@ -15,7 +16,7 @@ export function RowCheckbox({
     checked: boolean;
     label: string;
     onToggle: (event: MouseEvent) => void;
-    /** True once anything is ticked; otherwise it waits for a hover. */
+    /** True in selection mode; otherwise the box waits for a hover. */
     shown: boolean;
 }) {
     return (

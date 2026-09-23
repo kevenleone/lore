@@ -14,9 +14,12 @@ type MenuId = 'move' | 'tag';
 const ACTION =
     'flex items-center gap-[5px] rounded-7 border-none bg-transparent px-[7px] py-[4px] font-[inherit] text-body text-text2 hover:bg-hover';
 
+/** The mode opens with nothing ticked, so the actions are there but inert. */
+const DISABLED = 'cursor-default opacity-40 hover:bg-transparent';
+
 export function SelectionBar({ count }: { count: number }) {
     const collections = useStore((state) => state.collections);
-    const clearChecked = useStore((state) => state.clearChecked);
+    const stopSelecting = useStore((state) => state.stopSelecting);
     const bulkAddTag = useStore((state) => state.bulkAddTag);
     const bulkMove = useStore((state) => state.bulkMove);
     const bulkStar = useStore((state) => state.bulkStar);
@@ -26,6 +29,7 @@ export function SelectionBar({ count }: { count: number }) {
     const [draft, setDraft] = useState('');
     const [confirming, setConfirming] = useState(false);
     const barRef = useRef<HTMLDivElement>(null);
+    const idle = count === 0;
 
     useEffect(() => {
         if (!menu && !confirming) {
@@ -67,7 +71,8 @@ export function SelectionBar({ count }: { count: number }) {
             <span className="ml-3 flex items-center gap-[2px]">
                 <div className="relative">
                     <button
-                        className={ACTION}
+                        className={cn(ACTION, idle && DISABLED)}
+                        disabled={idle}
                         onClick={() => setMenu((open) => (open === 'tag' ? null : 'tag'))}
                         type="button"
                     >
@@ -99,7 +104,8 @@ export function SelectionBar({ count }: { count: number }) {
 
                 <div className="relative">
                     <button
-                        className={ACTION}
+                        className={cn(ACTION, idle && DISABLED)}
+                        disabled={idle}
                         onClick={() => setMenu((open) => (open === 'move' ? null : 'move'))}
                         type="button"
                     >
@@ -131,13 +137,19 @@ export function SelectionBar({ count }: { count: number }) {
                     )}
                 </div>
 
-                <button className={ACTION} onClick={() => void bulkStar(true)} type="button">
+                <button
+                    className={cn(ACTION, idle && DISABLED)}
+                    disabled={idle}
+                    onClick={() => void bulkStar(true)}
+                    type="button"
+                >
                     <StarOutline size={12} />
                     Star
                 </button>
 
                 <button
-                    className={cn(ACTION, 'text-danger')}
+                    className={cn(ACTION, 'text-danger', idle && DISABLED)}
+                    disabled={idle}
                     onClick={() => setConfirming(true)}
                     type="button"
                 >
@@ -166,9 +178,9 @@ export function SelectionBar({ count }: { count: number }) {
             )}
 
             <button
-                aria-label="Clear selection"
+                aria-label="Done selecting"
                 className={cn(ACTION, 'ml-auto')}
-                onClick={clearChecked}
+                onClick={stopSelecting}
                 type="button"
             >
                 <Close size={12} />
