@@ -12,21 +12,15 @@ import type { IconName, SortOrder, View } from '../../store/types';
 
 import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
-import {
-    activeFilterCount,
-    applyFilters,
-    filterByView,
-    SORT_LABELS,
-    viewTitle,
-} from '../../store/views';
+import { activeFilterCount, SORT_LABELS, viewTitle, visibleItems } from '../../store/views';
 import { useContextMenu } from '../common/ContextMenu';
 import { EmptyState } from '../common/EmptyState';
 import { Filter, Sort } from '../common/glyphs';
 import { CardGrid } from './CardGrid';
 import { FilterBar } from './FilterBar';
 import { ItemContextMenu } from './ItemContextMenu';
-import { matchesSearch } from './itemText';
 import { ListRows } from './ListRows';
+import { SelectionBar } from './SelectionBar';
 import { TableView } from './TableView';
 import { OpenModePicker, ViewModePicker } from './ViewModeControls';
 
@@ -52,6 +46,7 @@ export function ListPane() {
     const selectItem = useStore((state) => state.selectItem);
     const clearFilters = useStore((state) => state.clearFilters);
     const openCapture = useStore((state) => state.openCapture);
+    const checkedIds = useStore((state) => state.checkedIds);
     const contextMenu = useContextMenu();
 
     useEffect(() => {
@@ -70,17 +65,7 @@ export function ListPane() {
         return () => window.removeEventListener('mousedown', onDown);
     }, [sortOpen]);
 
-    let filtered = applyFilters(filterByView(items, view, sort), filters);
-
-    if (search) {
-        // The index searches full bodies; the client-side filter is the fallback
-        // for queries too short to be worth a round-trip.
-        const hits = searchResults && new Set(searchResults);
-
-        filtered = hits
-            ? filtered.filter((item) => hits.has(item.id))
-            : filtered.filter((item) => matchesSearch(item, search));
-    }
+    const filtered = visibleItems({ filters, items, search, searchResults, sort, view });
 
     const isList = viewMode === 'list';
 
@@ -95,6 +80,9 @@ export function ListPane() {
         contextMenu.openAt(event, id);
     };
 
+    // Ticks on rows the list is no longer showing are not in the set a bulk
+    // action would touch, so they are not in the count either.
+    const checkedCount = filtered.filter((item) => checkedIds.includes(item.id)).length;
     const filterCount = activeFilterCount(filters);
     // A filter that is on must stay visible, or it silently shortens the list.
     const showFilters = filtersOpen || filterCount > 0;
@@ -184,6 +172,7 @@ export function ListPane() {
             </div>
 
             {showFilters && <FilterBar />}
+            {checkedCount > 0 && <SelectionBar count={checkedCount} />}
 
             <div className="flex-1 overflow-auto">
                 {/* Either the empty state or a layout — never both. Table drew its

@@ -12,14 +12,16 @@ import { useStore } from '../../store/useStore';
 import { Icon } from '../common/Icon';
 import { ItemBanner } from './ItemBanner';
 import { subtitle } from './itemText';
+import { RowCheckbox } from './RowCheckbox';
+import { useRowSelection } from './useRowSelection';
 
 /** Compact hides the tag row until its own row is hovered — hence `group`. */
 const TAG_ROW = 'mt-[6px] flex flex-wrap gap-[5px]';
 
 export function ListRows({ items, onContextMenu }: SurfaceProps) {
     const selectedId = useStore((state) => state.selectedId);
-    const selectItem = useStore((state) => state.selectItem);
     const density = useStore((state) => state.prefs.density);
+    const selection = useRowSelection(items);
 
     // "List density" (Settings → Look & Feel): Compact also hides the tag row
     // until the row is hovered, exactly as the setting's description promises.
@@ -43,9 +45,17 @@ export function ListRows({ items, onContextMenu }: SurfaceProps) {
                             selected && 'bg-accent-tint shadow-[inset_2px_0_0_var(--ac)]',
                         )}
                         key={item.id}
-                        onClick={() => selectItem(item.id)}
+                        onClick={(event) => selection.onRowClick(event, item.id)}
                         onContextMenu={(event) => onContextMenu(event, item.id)}
                     >
+                        <span className="mt-[3px] flex">
+                            <RowCheckbox
+                                checked={selection.isChecked(item.id)}
+                                label={item.title}
+                                onToggle={(event) => selection.onToggle(event, item.id)}
+                                shown={selection.active}
+                            />
+                        </span>
                         {hasBanner(item) ? (
                             <span className="relative mt-px h-[38px] w-[56px] flex-none overflow-hidden rounded-7 bg-surface3">
                                 <ItemBanner item={item} />
