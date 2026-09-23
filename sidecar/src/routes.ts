@@ -1,7 +1,7 @@
 // The HTTP surface. Every route maps onto exactly one KnowledgeRepository
 // method, so the renderer's implementation stays a thin translation layer.
 
-import type { BoardConfig, Item } from '@lore/types';
+import type { BoardConfig, Item, SavedSearch } from '@lore/types';
 
 import { Elysia } from 'elysia';
 
@@ -46,15 +46,23 @@ export function routes(workspace: Workspace) {
 
             .get('/workspace', async () => {
                 if (!workspace.isOpen) {
-                    return { itemCount: 0, open: false, path: null, tagOrder: [] };
+                    return {
+                        itemCount: 0,
+                        open: false,
+                        path: null,
+                        savedSearches: [],
+                        tagOrder: [],
+                    };
                 }
 
-                const { tagOrder } = await workspace.current.vault.readWorkspaceFile();
+                const { savedSearches, tagOrder } =
+                    await workspace.current.vault.readWorkspaceFile();
 
                 return {
                     itemCount: workspace.current.listItems().length,
                     open: true,
                     path: workspace.path,
+                    savedSearches,
                     tagOrder,
                 };
             })
@@ -466,7 +474,22 @@ export function routes(workspace: Workspace) {
             .post('/tags/order', async ({ body }) => {
                 const { tagOrder } = body as { tagOrder?: string[] };
 
-                await workspace.current.vault.writeWorkspaceFile(tagOrder ?? []);
+                await workspace.current.vault.writeWorkspaceFile({ tagOrder: tagOrder ?? [] });
+
+                return { ok: true };
+            })
+
+            /**
+             * The whole list on every write. There are a handful of them and they
+             * are reordered and renamed as a set, so a per-entry API would buy
+             * nothing but a merge problem.
+             */
+            .post('/saved-searches', async ({ body }) => {
+                const { savedSearches } = body as { savedSearches?: SavedSearch[] };
+
+                await workspace.current.vault.writeWorkspaceFile({
+                    savedSearches: savedSearches ?? [],
+                });
 
                 return { ok: true };
             })
