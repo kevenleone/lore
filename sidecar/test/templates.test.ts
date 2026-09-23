@@ -2,12 +2,12 @@
 // ones about a file someone wrote without reading a spec.
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { listTemplates, TEMPLATES_DIR } from '../src/templates';
-import { Vault } from '../src/vault';
+import { listTemplates } from '../src/templates';
+import { TEMPLATES_DIR, Vault } from '../src/vault';
 
 let root: string;
 let vault: Vault;
@@ -28,6 +28,15 @@ const write = async (filename: string, text: string): Promise<void> => {
 
 describe('listTemplates', () => {
     it('answers empty when the vault has no templates folder', async () => {
+        expect(await listTemplates(vault)).toEqual([]);
+    });
+
+    it('is given a folder by the scaffold, so Finder can answer "where?"', async () => {
+        await vault.ensureScaffold();
+
+        expect(await stat(join(root, TEMPLATES_DIR)).then((entry) => entry.isDirectory())).toBe(
+            true,
+        );
         expect(await listTemplates(vault)).toEqual([]);
     });
 

@@ -13,6 +13,7 @@ export const TRASH_DIR = `${LORE_DIR}/trash`;
 export const COLLECTIONS_FILE = `${LORE_DIR}/collections.json`;
 export const BOARDS_FILE = `${LORE_DIR}/boards.json`;
 export const WORKSPACE_FILE = `${LORE_DIR}/workspace.json`;
+export const TEMPLATES_DIR = `${LORE_DIR}/templates`;
 export const INDEX_FILE = `${LORE_DIR}/index.db`;
 
 /** Never a collection: reserved for pasted files. */
@@ -38,6 +39,9 @@ export class Vault {
     async ensureScaffold(): Promise<void> {
         await mkdir(this.path(LORE_DIR), { recursive: true });
         await mkdir(this.path(TRASH_DIR), { recursive: true });
+        // Made empty rather than on first use, so "where do templates go?" is
+        // answerable by opening the vault in Finder.
+        await mkdir(this.path(TEMPLATES_DIR), { recursive: true });
 
         const ignorePath = this.path(`${LORE_DIR}/.gitignore`);
 
