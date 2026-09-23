@@ -13,11 +13,12 @@ import { DetailPane } from './DetailPane';
 const TARGET_ID = 'i2';
 const SOURCE_ID = 'i1';
 
-const meta = (backlinks: Item[]): ItemMeta => ({
+const meta = (backlinks: Item[], unresolved: string[] = []): ItemMeta => ({
     backlinks,
     modifiedAt: '2026-09-21T10:00:00.000Z',
     path: 'target.md',
     size: 0,
+    unresolved,
     words: 0,
 });
 

@@ -5,7 +5,7 @@
 import type { Item } from '@lore/types';
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -144,6 +144,39 @@ describe('item meta route', () => {
         expect(meta.body.size).toBeGreaterThan(0);
         expect(meta.body.modifiedAt).toBeTruthy();
         expect(meta.body.backlinks.map((backlink: Item) => backlink.id)).toEqual([source.body.id]);
+    });
+
+    it('names the links it could not resolve, so a dead one is visible', async () => {
+        // Written straight to disk: a link to a note that does not exist is
+        // something only a hand-edited vault (or Obsidian) can produce.
+        await writeFile(
+            join(root, 'source.md'),
+            ['---', 'title: Source', 'related:', "  - '[[missing-note]]'", '---', '', 'text'].join(
+                '\n',
+            ),
+            'utf8',
+        );
+        await call('POST', '/workspace/reindex');
+
+        const items = await call('GET', '/items');
+        const source = items.body.find((item: Item) => item.title === 'Source');
+
+        const meta = await call('GET', `/items/${source.id}/meta`);
+
+        expect(meta.body.unresolved).toEqual(['[[missing-note]]']);
+        // The resolved side stays empty rather than inventing an id for it.
+        expect(source.related).toEqual([]);
+    });
+
+    it('has nothing unresolved when every link lands', async () => {
+        const target = await call('POST', '/items', newItem({ title: 'Target' }));
+
+        await call('POST', '/items', newItem({ related: [target.body.id], title: 'Source' }));
+
+        const items = await call('GET', '/items');
+        const source = items.body.find((item: Item) => item.title === 'Source');
+
+        expect((await call('GET', `/items/${source.id}/meta`)).body.unresolved).toEqual([]);
     });
 
     it('404s an unknown id', async () => {

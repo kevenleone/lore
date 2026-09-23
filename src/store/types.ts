@@ -225,6 +225,13 @@ export interface ItemMeta {
     path: string;
     /** Bytes on disk, frontmatter included. */
     size: number;
+    /**
+     * Frontmatter `related` entries pointing at nothing this vault holds, kept
+     * verbatim. Usually a note not written yet rather than a mistake, which is
+     * why the detail pane names them rather than hiding them: a link that shows
+     * nothing at all is how a typo survives for months.
+     */
+    unresolved: string[];
     words: number;
 }
 
