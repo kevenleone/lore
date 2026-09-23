@@ -345,6 +345,7 @@ function useCommands(): CommandEntry[] {
     const hasRecents = useStore(
         (state) => state.recentItemIds.length + state.recentSearches.length > 0,
     );
+    const templates = useStore((state) => state.templates);
 
     return useMemo(() => {
         const store = useStore.getState;
@@ -499,6 +500,15 @@ function useCommands(): CommandEntry[] {
             terms: 'collection',
         }));
 
+        const templateEntries: CommandEntry[] = templates.map((template) => ({
+            group: 'New from template',
+            icon: <Plus size={14} />,
+            id: `template:${template.name}`,
+            label: template.name,
+            run: () => void store().createFromTemplate(template.name),
+            terms: 'template new create skeleton',
+        }));
+
         const help: CommandEntry[] = [
             {
                 group: 'Help',
@@ -518,8 +528,8 @@ function useCommands(): CommandEntry[] {
             },
         ];
 
-        return [...actions, ...goTo, ...collectionEntries, ...help];
-    }, [appearance, collections, focusRunning, hasRecents]);
+        return [...actions, ...templateEntries, ...goTo, ...collectionEntries, ...help];
+    }, [appearance, collections, focusRunning, hasRecents, templates]);
 }
 
 /** Body text lives only in the index, so longer queries go there too. */
