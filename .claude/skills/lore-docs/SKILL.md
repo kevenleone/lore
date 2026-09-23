@@ -24,6 +24,7 @@ boards, due dates, related links. Aim for the full shape.
     ship-the-release.md
   attachments/                ← reserved for pasted files; never a collection
   .lore/                      ← Lore's own state; never write here
+    templates/                ← the one exception, see below
 ```
 
 - **The parent folder is the collection.** Never write a `collection` or
@@ -32,6 +33,15 @@ boards, due dates, related links. Aim for the full shape.
 - A new folder becomes a new collection automatically.
 - Lore ignores dotfiles/dot-folders, `attachments/`, `node_modules/`, and
   editor temp files (`*~`, `*.swp`). Only `*.md` is read.
+
+**Templates** are the one thing you may write under `.lore/`. A file in
+`.lore/templates/` is a skeleton for new items, offered in Lore's ⌘K menu under
+its filename's stem. It looks like any other item, with two differences: it may
+carry a `collection:` key naming the folder its items land in (the only place
+that key is ever written), and `{{date}}`, `{{time}}` and `{{title}}` in its
+title or body are expanded when it is used. Anything else in double braces is
+left alone. Write one only when asked for a template — an ordinary note goes in
+the vault proper.
 
 ## 2. The filename
 
