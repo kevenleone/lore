@@ -360,6 +360,14 @@ function useCommands(): CommandEntry[] {
                 terms: 'new create add note link task',
             },
             {
+                icon: <Icon name="sun" size={14} />,
+                id: 'daily-note',
+                keys: formatHotkey(hotkeyFor('daily-note')),
+                label: "Today's note",
+                run: () => void store().openDailyNote(),
+                terms: 'daily journal today log diary',
+            },
+            {
                 icon: <Sparkle size={14} />,
                 id: 'ask-lore',
                 label: 'Ask Lore',

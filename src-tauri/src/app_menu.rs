@@ -26,11 +26,16 @@ struct Command {
     label: &'static str,
 }
 
-const FILE_COMMANDS: [Command; 3] = [
+const FILE_COMMANDS: [Command; 4] = [
     Command {
         accelerator: "CmdOrCtrl+N",
         id: "capture",
         label: "Quick Capture",
+    },
+    Command {
+        accelerator: "CmdOrCtrl+Shift+D",
+        id: "daily-note",
+        label: "Today's Note",
     },
     Command {
         accelerator: "CmdOrCtrl+Shift+E",
@@ -147,10 +152,11 @@ pub fn install<R: Runtime>(app: &App<R>) -> tauri::Result<()> {
 
     let file = SubmenuBuilder::new(app, "File")
         .item(&command_item(app, &FILE_COMMANDS[0])?)
-        .separator()
         .item(&command_item(app, &FILE_COMMANDS[1])?)
         .separator()
         .item(&command_item(app, &FILE_COMMANDS[2])?)
+        .separator()
+        .item(&command_item(app, &FILE_COMMANDS[3])?)
         .separator()
         .close_window()
         .build()?;

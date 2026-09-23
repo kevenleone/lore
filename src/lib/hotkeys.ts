@@ -17,6 +17,7 @@ export interface HotkeyCommand {
 export const HOTKEYS = [
     { group: 'main', hotkey: 'Mod+K', id: 'search', label: 'Search or run a command' },
     { group: 'main', hotkey: 'Mod+N', id: 'capture', label: 'Capture drawer' },
+    { group: 'main', hotkey: 'Mod+Shift+D', id: 'daily-note', label: "Today's note" },
     {
         group: 'main',
         hotkey: 'Mod+Shift+E',
