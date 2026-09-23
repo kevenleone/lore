@@ -75,6 +75,8 @@ export function GeneralPane() {
     const defaultCollection = useStore((state) => state.prefs.defaultCollection);
     const defaultCaptureType = useStore((state) => state.prefs.defaultCaptureType);
     const dailyNoteCollection = useStore((state) => state.prefs.dailyNoteCollection);
+    const dailyNoteTemplate = useStore((state) => state.prefs.dailyNoteTemplate);
+    const templates = useStore((state) => state.templates);
     const setPref = useStore((state) => state.setPref);
 
     // A collection deleted since the preference was set falls back to the
@@ -102,6 +104,19 @@ export function GeneralPane() {
     const journal = collections.some((entry) => entry.id === dailyNoteCollection)
         ? (dailyNoteCollection ?? ROOT_TARGET)
         : ROOT_TARGET;
+
+    const templateOptions = useMemo<ChoiceOption<string>[]>(
+        () => [
+            { label: 'Blank', value: BLANK_TEMPLATE },
+            ...templates.map((template) => ({ label: template.name, value: template.name })),
+        ],
+        [templates],
+    );
+    // A template deleted since the preference was set writes a blank note
+    // rather than leaving the chooser naming a file that is not there.
+    const journalTemplate = templates.some((template) => template.name === dailyNoteTemplate)
+        ? (dailyNoteTemplate ?? BLANK_TEMPLATE)
+        : BLANK_TEMPLATE;
 
     return (
         <>
@@ -140,7 +155,6 @@ export function GeneralPane() {
             </Row>
             <Row
                 desc={`Where ${formatHotkey(hotkeyFor('daily-note'))} writes today's note. One note per day, named for the day.`}
-                last
                 title="Keep today's note in"
             >
                 <Chooser<string>
@@ -152,6 +166,20 @@ export function GeneralPane() {
                     value={journal}
                 />
             </Row>
+            <Row
+                desc="What today's note starts with. Templates are Markdown files in .lore/templates."
+                last
+                title="Start today's note from"
+            >
+                <Chooser<string>
+                    label="Start today's note from"
+                    onChange={(choice) =>
+                        setPref('dailyNoteTemplate', choice === BLANK_TEMPLATE ? null : choice)
+                    }
+                    options={templateOptions}
+                    value={journalTemplate}
+                />
+            </Row>
         </>
     );
 }
@@ -161,6 +189,10 @@ export function GeneralPane() {
  * and an id is never this string.
  */
 const INBOX_TARGET = 'inbox';
+
+/** The same stand-in for "no template". A name comes from a file stem, so it
+ * can never contain a slash — unlike `blank`, which someone could call a file. */
+const BLANK_TEMPLATE = '/blank';
 
 /** The same stand-in for the vault root, which is not a collection either. */
 const ROOT_TARGET = 'root';
