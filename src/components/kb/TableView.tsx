@@ -62,13 +62,13 @@ export function TableView({ items, onContextMenu }: SurfaceProps) {
                         style={{ gridTemplateColumns: GRID_COLUMNS }}
                     >
                         <div className="flex min-w-0 items-center gap-[11px]">
-                            {selection.active && (
-                                <RowCheckbox
-                                    checked={selection.isChecked(item.id)}
-                                    label={item.title}
-                                    onToggle={(event) => selection.onToggle(event, item.id)}
-                                />
-                            )}
+                            <RowCheckbox
+                                checked={selection.isChecked(item.id)}
+                                closedMargin="-mr-[11px]"
+                                label={item.title}
+                                onToggle={(event) => selection.onToggle(event, item.id)}
+                                shown={selection.active}
+                            />
                             {hasBanner(item) ? (
                                 <span className="relative h-[30px] w-[44px] flex-none overflow-hidden rounded-5 bg-surface3">
                                     <ItemBanner item={item} />

@@ -21,6 +21,7 @@ import { FilterBar } from './FilterBar';
 import { ItemContextMenu } from './ItemContextMenu';
 import { ListRows } from './ListRows';
 import { SelectionBar } from './SelectionBar';
+import { LIST_HEADER_ROW } from './surface';
 import { TableView } from './TableView';
 import { OpenModePicker, ViewModePicker } from './ViewModeControls';
 
@@ -111,7 +112,7 @@ export function ListPane() {
             {selecting ? (
                 <SelectionBar count={checkedCount} />
             ) : (
-                <div className="flex flex-none items-center gap-[10px] border-b border-border px-4 py-[11px]">
+                <div className={cn(LIST_HEADER_ROW, 'gap-[10px]')}>
                     <span className="text-title-lg font-[680]">{viewTitle(view, collections)}</span>
                     <span className="rounded-[20px] bg-surface3 px-2 py-px text-body-sm text-faint tabular-nums">
                         {filtered.length}

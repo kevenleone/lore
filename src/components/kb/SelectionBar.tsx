@@ -7,12 +7,13 @@ import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 import { Close, Plus, Trash } from '../common/glyphs';
 import { StarOutline } from '../common/glyphs';
+import { LIST_HEADER_ROW } from './surface';
 
 /** Which popover is open. */
 type MenuId = 'move' | 'tag';
 
 const ACTION =
-    'flex items-center gap-[5px] rounded-7 border-none bg-transparent px-[7px] py-[4px] font-[inherit] text-body text-text2 hover:bg-hover';
+    'flex items-center gap-[5px] rounded-7 border-none bg-transparent px-[7px] py-[2px] font-[inherit] text-body text-text2 hover:bg-hover';
 
 /** The mode opens with nothing ticked, so the actions are there but inert. */
 const DISABLED = 'cursor-default opacity-40 hover:bg-transparent';
@@ -60,11 +61,11 @@ export function SelectionBar({ count }: { count: number }) {
     };
 
     return (
-        <div
-            className="flex flex-none items-center gap-[6px] border-b border-border bg-accent-tint px-4 py-[9px]"
-            ref={barRef}
-        >
-            <span className="text-body-lg font-[620] text-accent tabular-nums">
+        <div className={cn(LIST_HEADER_ROW, 'gap-[6px] bg-accent-tint')} ref={barRef}>
+            {/* Title-sized, like the view name it stands in for: the bar has to
+                resolve to the same height as the header or the whole list jumps
+                when the mode opens. */}
+            <span className="text-title-lg font-[680] text-accent tabular-nums">
                 {count} selected
             </span>
 
