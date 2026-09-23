@@ -1,9 +1,6 @@
 // Single place that decides which repository backs the app:
 //   - inside Tauri  → VaultRepository (Markdown files, via the data engine)
 //   - elsewhere     → MemoryRepository (Vite browser preview, unit tests)
-//
-// LocalRepository (SQLite) is no longer selected. It stays in the tree only so
-// the one-shot migration can still read a legacy `lore.db`; see migrateSqlite.
 
 import type { KnowledgeRepository } from './repository';
 
@@ -16,18 +13,6 @@ function isTauri(): boolean {
 
 let instance: KnowledgeRepository | null = null;
 let workspacePath: null | string = null;
-
-/**
- * Makes sure the backing store is ready before anything writes to it directly.
- * Only the SQLite import needs this; every normal call opens lazily on its own.
- */
-export async function ensureWorkspaceOpen(): Promise<void> {
-    const repo = getRepository();
-
-    if (repo instanceof VaultRepository) {
-        await repo.ensureOpen();
-    }
-}
 
 export function getRepository(): KnowledgeRepository {
     if (!instance) {

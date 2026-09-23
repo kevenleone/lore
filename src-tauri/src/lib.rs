@@ -1,11 +1,10 @@
 // Lore — Tauri entry point.
-// Plugins back the one-shot import of the legacy store (sql), opening external
-// links (opener), the quick-capture global shortcut (global-shortcut, desktop
-// only — the combination is per build mode, see `mode.rs`), and spawning the
-// Bun data engine (shell).
+// Plugins back opening external links (opener), the quick-capture global
+// shortcut (global-shortcut, desktop only — the combination is per build mode,
+// see `mode.rs`), and spawning the Bun data engine (shell).
 //
-// `sql` is only still here for the legacy import; nothing else in the app
-// touches a database. Link metadata moved into the engine, so `http` and its
+// Nothing in the app touches a database: the vault is the store and the engine
+// owns its index. Link metadata moved into the engine too, so `http` and its
 // `http://**` grant are gone.
 //
 // `shell` is registered for Rust's use only — the webview is granted no
@@ -32,7 +31,6 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())

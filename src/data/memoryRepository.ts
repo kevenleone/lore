@@ -1,6 +1,6 @@
 // In-memory repository backed by the seed data. Used for the static UI phase
-// and unit tests; the SQLite-backed localRepository replaces it as the real
-// source of truth in Phase 3.
+// and unit tests; the Markdown-backed vaultRepository replaces it as the real
+// source of truth inside Tauri.
 
 import type { BoardConfig, Collection, Item, TagCount, View } from '../store/types';
 

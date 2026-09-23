@@ -18,7 +18,6 @@ import { useFocusTimer } from './components/focus/useFocusTimer';
 import { AskLoreChat } from './components/kb/AskLoreChat';
 import { DetailPane } from './components/kb/DetailPane';
 import { ListPane } from './components/kb/ListPane';
-import { Notice } from './components/kb/Notice';
 import { UnsplashPicker } from './components/kb/properties/UnsplashPicker';
 import { PROPERTIES_WIDTH, PropertiesPanel } from './components/kb/PropertiesPanel';
 import { Sidebar, SIDEBAR_WIDTH } from './components/kb/Sidebar';
@@ -301,7 +300,6 @@ export default function App() {
                 style={{ zoom: textSize }}
             >
                 <TitleBar onCapture={openCapture} />
-                <Notice />
                 <div className="relative flex min-h-0 flex-1">
                     {/*
                      * The sidebar stays mounted and collapses by width so the pane

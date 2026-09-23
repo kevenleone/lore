@@ -1,8 +1,7 @@
 // The storage/sync seam. Every UI and store interaction goes through a
 // KnowledgeRepository, so the app is agnostic to where data lives:
 //   - memoryRepository  — seed-backed, for the static UI phase and tests
-//   - localRepository   — SQLite via @tauri-apps/plugin-sql (source of truth)
-//   - vaultRepository   — the Markdown vault, via the Bun sidecar
+//   - vaultRepository   — the Markdown vault, via the Bun sidecar (source of truth)
 //
 // Keeping this interface narrow is what makes swapping the backing store a
 // config change rather than a rewrite.

@@ -16,8 +16,6 @@
         "core:event:default",
         "opener:default",
         "opener:allow-reveal-item-in-dir",
-        "sql:default",
-        "sql:allow-execute",
         "global-shortcut:default",
         "dialog:allow-open",
         "notification:default",

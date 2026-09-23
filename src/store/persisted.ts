@@ -13,8 +13,6 @@ export interface Persisted {
      * across launches. Trimmed to the most recent `MAX_SESSIONS`.
      */
     focusSessions: FocusSession[];
-    /** When the legacy SQLite store was imported. Guards the one-shot migration. */
-    migratedAt: null | string;
     /** True once the user has finished `Lore Onboarding` either way. */
     onboarded: boolean;
     prefs: Prefs;
@@ -43,7 +41,6 @@ export interface WorkspaceRef {
 
 export const DEFAULT_PERSISTED: Persisted = {
     focusSessions: [],
-    migratedAt: null,
     onboarded: false,
     prefs: DEFAULT_PREFS,
     recentItemIds: [],
@@ -70,7 +67,6 @@ export function loadPersisted(): Persisted {
         // its default instead of coming back undefined.
         return {
             focusSessions: saved.focusSessions ?? [],
-            migratedAt: saved.migratedAt ?? null,
             onboarded: saved.onboarded ?? false,
             prefs: {
                 ...DEFAULT_PREFS,
