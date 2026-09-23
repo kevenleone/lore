@@ -21,7 +21,7 @@ import { primeChime } from '../lib/focusChime';
 import { ensureNotificationPermission, notifyIntervalEnd } from '../lib/focusNotify';
 import { nextPhase, phaseSeconds, remainingSeconds } from '../lib/focusTimer';
 import { revealPath, revealVaultFile } from '../lib/reveal';
-import { applyTemplate } from '../lib/templates';
+import { applyTemplate, findTemplate } from '../lib/templates';
 import { initVaultGit } from '../lib/vaultGit';
 import {
     broadcastWorkspaceChange,
@@ -406,7 +406,11 @@ interface StoreState {
     taskRailOpen: boolean;
     /** Which tab the Tasks surface is on. */
     taskView: TaskView;
-    /** The skeletons in `.lore/templates/`, by name. Empty when there are none. */
+    /**
+     * The vault's own skeletons, from `.lore/templates/`. Lore's built-ins are
+     * not in here — they are a constant, and a vault that has replaced one by
+     * name must not end up offering both.
+     */
     templates: Template[];
     /** Recomputes the countdown from the clock, and rolls over at zero. */
     tickFocus: () => void;
@@ -1116,7 +1120,7 @@ export const useStore = create<StoreState>((set, get) => ({
         await get().refresh();
     },
     async createFromTemplate(name) {
-        const template = get().templates.find((entry) => entry.name === name);
+        const template = findTemplate(get().templates, name);
 
         if (!template) {
             return;
@@ -1464,7 +1468,9 @@ export const useStore = create<StoreState>((set, get) => ({
         }
 
         const { dailyNoteCollection, dailyNoteTemplate } = get().prefs;
-        const template = get().templates.find((entry) => entry.name === dailyNoteTemplate);
+        const template = dailyNoteTemplate
+            ? findTemplate(get().templates, dailyNoteTemplate)
+            : null;
         // The template supplies the body and the tags; the day supplies the
         // title and the collection, which is what the hotkey is for.
         const skeleton = template ? applyTemplate(template, { title: today }) : null;

@@ -76,6 +76,15 @@ describe('createFromTemplate', () => {
         });
     });
 
+    it("falls back to one of Lore's own in a vault with none", async () => {
+        useStore.setState({ templates: [] });
+
+        await useStore.getState().createFromTemplate('Weekly Review');
+
+        expect(createItem.mock.calls[0][0].title).toMatch(/^Week of \d{4}-\d{2}-\d{2}$/);
+        expect(createItem.mock.calls[0][0].tags).toEqual(['review']);
+    });
+
     it('does nothing at all when the template is gone', async () => {
         await useStore.getState().createFromTemplate('Deleted');
 
