@@ -26,10 +26,9 @@ cache/
 trash/
 `;
 
-/** What `.lore/workspace.json` carries. */
+/** The parts of `.lore/workspace.json` this version of Lore owns. */
 export interface WorkspaceFile {
     savedSearches: SavedSearch[];
-    tagOrder: string[];
 }
 
 export class Vault {
@@ -198,30 +197,14 @@ export class Vault {
 
     /**
      * Per-vault settings. Committed alongside the notes, so a vault carries its
-     * own saved searches and sidebar tag order rather than inheriting the app's.
+     * own saved searches rather than inheriting this machine's.
      *
      * The file is hand-editable and travels through git, so every field is
      * validated rather than trusted: a malformed entry is dropped and the rest
      * of the file still loads.
      */
     async readWorkspaceFile(): Promise<WorkspaceFile> {
-        try {
-            const parsed = JSON.parse(await this.readText(WORKSPACE_FILE)) as {
-                savedSearches?: unknown;
-                tagOrder?: unknown;
-            };
-
-            return {
-                savedSearches: Array.isArray(parsed.savedSearches)
-                    ? parsed.savedSearches.filter(isSavedSearch)
-                    : [],
-                tagOrder: Array.isArray(parsed.tagOrder)
-                    ? parsed.tagOrder.filter((entry): entry is string => typeof entry === 'string')
-                    : [],
-            };
-        } catch {
-            return EMPTY_WORKSPACE_FILE;
-        }
+        return ownedFields(await this.readWorkspaceRaw());
     }
 
     /**
@@ -266,19 +249,33 @@ export class Vault {
     }
 
     /**
-     * Merges into what is already there. The file has more than one writer and
-     * they arrive independently — saving a search must not drop the tag order
-     * the sidebar wrote a moment earlier.
+     * Merges into what is already there, keys this version does not know
+     * included. The same rule the frontmatter follows: a field written by a
+     * newer Lore, or one this version has stopped using, is carried through a
+     * write rather than destroyed by it.
      */
     async writeWorkspaceFile(patch: Partial<WorkspaceFile>): Promise<void> {
-        const current = await this.readWorkspaceFile();
-        const next = { ...current, ...patch, version: 1 };
+        const raw = await this.readWorkspaceRaw();
+        const next = { ...raw, ...ownedFields(raw), ...patch, version: 1 };
 
         await this.writeText(WORKSPACE_FILE, `${JSON.stringify(next, null, 2)}\n`);
     }
-}
 
-const EMPTY_WORKSPACE_FILE: WorkspaceFile = { savedSearches: [], tagOrder: [] };
+    /** The file as it sits on disk, or `{}` when it is missing or unreadable. */
+    private async readWorkspaceRaw(): Promise<Record<string, unknown>> {
+        try {
+            const parsed: unknown = JSON.parse(await this.readText(WORKSPACE_FILE));
+
+            if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+                return {};
+            }
+
+            return parsed as Record<string, unknown>;
+        } catch {
+            return {};
+        }
+    }
+}
 
 const FILTER_LISTS = ['categories', 'collectionIds', 'tags'] as const;
 
@@ -434,6 +431,15 @@ function isSavedSearch(raw: unknown): raw is SavedSearch {
     }
 
     return FILTER_LISTS.every((key) => Array.isArray(filters[key]));
+}
+
+/** Validates what we own; anything else in the file is none of our business. */
+function ownedFields(raw: Record<string, unknown>): WorkspaceFile {
+    return {
+        savedSearches: Array.isArray(raw.savedSearches)
+            ? raw.savedSearches.filter(isSavedSearch)
+            : [],
+    };
 }
 
 export { join, resolve };

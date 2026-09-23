@@ -38,13 +38,13 @@ const search = (over: Partial<SavedSearch> = {}): SavedSearch => ({
 
 describe('readWorkspaceFile', () => {
     it('answers empty when there is no file at all', async () => {
-        expect(await vault.readWorkspaceFile()).toEqual({ savedSearches: [], tagOrder: [] });
+        expect(await vault.readWorkspaceFile()).toEqual({ savedSearches: [] });
     });
 
     it('answers empty rather than throwing on a file that is not JSON', async () => {
         await writeRaw('{ this is not json');
 
-        expect(await vault.readWorkspaceFile()).toEqual({ savedSearches: [], tagOrder: [] });
+        expect(await vault.readWorkspaceFile()).toEqual({ savedSearches: [] });
     });
 
     it('keeps the entries it can read and drops the ones it cannot', async () => {
@@ -56,14 +56,12 @@ describe('readWorkspaceFile', () => {
                     'not an object',
                     search({ id: 's2', name: 'Second' }),
                 ],
-                tagOrder: ['product', 42, 'research'],
             }),
         );
 
         const parsed = await vault.readWorkspaceFile();
 
         expect(parsed.savedSearches.map((entry) => entry.id)).toEqual(['s1', 's2']);
-        expect(parsed.tagOrder).toEqual(['product', 'research']);
     });
 
     it('drops a search whose filters are the wrong shape', async () => {
@@ -82,16 +80,24 @@ describe('writeWorkspaceFile', () => {
         expect((await vault.readWorkspaceFile()).savedSearches).toEqual([search()]);
     });
 
-    it('leaves the other half of the file alone', async () => {
-        // The two have separate writers that arrive independently; saving a
-        // search must not drop the tag order the sidebar wrote a moment ago.
-        await vault.writeWorkspaceFile({ tagOrder: ['product', 'research'] });
+    it('carries through a key this version does not know', async () => {
+        // Written by a newer Lore, or by a hand. Destroying it on our next write
+        // is the one thing a settings file must never do.
+        await writeRaw(JSON.stringify({ somethingNewer: { nested: true }, version: 1 }));
+
         await vault.writeWorkspaceFile({ savedSearches: [search()] });
 
-        const parsed = await vault.readWorkspaceFile();
+        expect((await readRaw()).somethingNewer).toEqual({ nested: true });
+    });
 
-        expect(parsed.tagOrder).toEqual(['product', 'research']);
-        expect(parsed.savedSearches).toHaveLength(1);
+    it('keeps a tag order left behind by a version that still had one', async () => {
+        // Lore arranged tags by hand once. It does not any more, and the field
+        // is no longer read — but a vault carrying one does not get it wiped.
+        await writeRaw(JSON.stringify({ tagOrder: ['product', 'research'] }));
+
+        await vault.writeWorkspaceFile({ savedSearches: [search()] });
+
+        expect((await readRaw()).tagOrder).toEqual(['product', 'research']);
     });
 
     it('keeps the file versioned so a later schema can tell what it is reading', async () => {
