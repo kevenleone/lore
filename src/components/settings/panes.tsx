@@ -136,7 +136,9 @@ export function VaultPane() {
     const trashVault = useStore((state) => state.trashVault);
     const items = useStore((state) => state.items);
     const pushToast = useStore((state) => state.pushToast);
+    const reindexVault = useStore((state) => state.reindexVault);
     const [confirming, setConfirming] = useState(false);
+    const [reindexing, setReindexing] = useState(false);
     const size = useVaultSize();
 
     return (
@@ -193,6 +195,21 @@ export function VaultPane() {
                 title="Export as Markdown"
             >
                 <PillButton onClick={() => void exportVault()}>Choose a folder…</PillButton>
+            </Row>
+            <Row
+                desc="Lore follows the folder as you edit it. Rebuild if something you changed outside Lore has not shown up — the index is derived, so nothing you wrote is at stake."
+                title="Rebuild the index"
+            >
+                <PillButton
+                    className={cn(reindexing && 'cursor-default opacity-45')}
+                    disabled={reindexing}
+                    onClick={() => {
+                        setReindexing(true);
+                        void reindexVault().finally(() => setReindexing(false));
+                    }}
+                >
+                    {reindexing ? 'Rebuilding…' : 'Rebuild'}
+                </PillButton>
             </Row>
             <Row
                 desc="Moves the whole folder to the Trash, where it stays until you empty it. Lore starts over with a new vault."

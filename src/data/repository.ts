@@ -56,6 +56,12 @@ export interface KnowledgeRepository {
     refreshItem?(id: string): Promise<Item>;
 
     /**
+     * Re-reads every file and brings the index back in line with them. Optional:
+     * only a store with an index derived from something else can drift from it.
+     */
+    reindex?(): Promise<ReindexResult>;
+
+    /**
      * Renames the file behind an item. Separate from `updateItem` because a
      * retitle deliberately leaves the filename alone — a rename rewrites every
      * inbound link and churns history, so it only happens when asked for.
@@ -91,6 +97,13 @@ export interface KnowledgeRepository {
 export type NewCollection = Omit<Collection, 'id'>;
 
 export type NewItem = Omit<Item, 'createdAt' | 'deletedAt' | 'id' | 'updatedAt'>;
+
+export interface ReindexResult {
+    /** Files whose contents were read back into the index. */
+    indexed: number;
+    /** Rows dropped because the file behind them is gone. */
+    removed: number;
+}
 
 export interface VaultSize {
     /** Bytes outside `.lore/`: the Markdown and anything pasted beside it. */
