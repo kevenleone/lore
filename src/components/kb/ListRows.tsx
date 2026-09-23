@@ -48,15 +48,15 @@ export function ListRows({ items, onContextMenu }: SurfaceProps) {
                         onClick={(event) => selection.onRowClick(event, item.id)}
                         onContextMenu={(event) => onContextMenu(event, item.id)}
                     >
-                        {selection.active && (
-                            <span className="mt-[3px] flex">
-                                <RowCheckbox
-                                    checked={selection.isChecked(item.id)}
-                                    label={item.title}
-                                    onToggle={(event) => selection.onToggle(event, item.id)}
-                                />
-                            </span>
-                        )}
+                        <span className="mt-[3px] flex">
+                            <RowCheckbox
+                                checked={selection.isChecked(item.id)}
+                                closedMargin="-mr-3"
+                                label={item.title}
+                                onToggle={(event) => selection.onToggle(event, item.id)}
+                                shown={selection.active}
+                            />
+                        </span>
                         {hasBanner(item) ? (
                             <span className="relative mt-px h-[38px] w-[56px] flex-none overflow-hidden rounded-7 bg-surface3">
                                 <ItemBanner item={item} />
