@@ -133,9 +133,8 @@ node scripts/mode-icons.mjs
 
 ## Getting started
 
-First launch shows onboarding: sign in with Apple / Google / an email link, or
-start a local vault. Identity providers and mail delivery are stubs today, so
-**start a local vault** is the path that works end to end.
+First launch shows onboarding, which sets up a local vault. There is no account
+to create and nothing to sign into — the vault is a folder of files you own.
 
 You get a global vault at `~/Library/Application Support/com.lore.app/Vault`,
 plus **Open Folder…** to point Lore at any directory — a git repo, an existing
@@ -234,11 +233,10 @@ Three processes, with one seam between them.
 Everything the UI does goes through a single `KnowledgeRepository`
 (`src/data/repository.ts`), so the app is agnostic to where data lives:
 
-| Implementation                             | When it's used           | Role                                                               |
-| ------------------------------------------ | ------------------------ | ------------------------------------------------------------------ |
-| `VaultRepository` (`vaultRepository.ts`)   | inside Tauri             | **source of truth** — Markdown files, over HTTP to the engine      |
-| `MemoryRepository` (`memoryRepository.ts`) | Vite preview, unit tests | seed-backed                                                        |
-| `LocalRepository` (`localRepository.ts`)   | _legacy_                 | SQLite; kept only so the one-shot import can read an old `lore.db` |
+| Implementation                             | When it's used           | Role                                                          |
+| ------------------------------------------ | ------------------------ | ------------------------------------------------------------- |
+| `VaultRepository` (`vaultRepository.ts`)   | inside Tauri             | **source of truth** — Markdown files, over HTTP to the engine |
+| `MemoryRepository` (`memoryRepository.ts`) | Vite preview, unit tests | seed-backed                                                   |
 
 `src/data/index.ts` picks the implementation and owns the teardown a workspace
 switch needs.
@@ -277,17 +275,6 @@ The capture window is a separate webview with its own repository instance, so it
 follows a `workspace:changed` broadcast — otherwise the next capture after a
 workspace switch would land in the folder you just left.
 
-### Migration
-
-On a launch where the vault is empty, Lore imports a legacy `lore.db` and renames
-it to `lore.db.premigration` — never deletes it. The guard is the vault's actual
-state, not a "have I migrated" flag: a flag can be set by an attempt that then
-failed, and the cost of that is a whole library stranded in a database the app no
-longer reads.
-
-Changing the bundle identifier moves the entire app-data folder, so it is a data
-migration and not a rename. The import only looks in the current one.
-
 ### AI, settings, styling
 
 **AI is pluggable** (`src/ai/aiProvider.ts`). The deterministic `MockAiProvider`
@@ -320,12 +307,12 @@ src/
     common/LoreMark          logo mark + serif wordmark font
     kb/                      TitleBar, Sidebar, WorkspaceSwitcher, ListPane,
                              DetailPane, AiSummaryCard, RelatedCards,
-                             AskLoreChat, Notice
+                             AskLoreChat
     capture/                 CaptureApp, CommandBar (A), Composer (B)
-    onboarding/              first-launch sheet (sign in / local vault / magic link)
+    onboarding/              first-launch sheet (new vault / open a folder)
     settings/                modal sheet, ten panes, shared controls
   data/                      repository seam; vault (HTTP) + memory impls,
-                             sidecarClient, derive, migrateSqlite, legacy SQLite
+                             sidecarClient, derive
   store/                     types, seed, typeMeta, views (selectors), useStore,
                              persisted (prefs, auth, workspaces)
   ai/                        AiProvider + MockAiProvider
@@ -371,25 +358,19 @@ path-traversal guard on the HTTP boundary.
 
 The knowledge base, quick capture, onboarding, the settings modal, light/dark
 theming and the Markdown vault are all in place, including workspaces, live
-updates from external edits, full-text search and the import from the legacy
-SQLite store.
+updates from external edits, full-text search, the Tasks and Calendar surfaces,
+the focus timer and PDF export.
 
 Known gaps:
 
-- **`tauri-plugin-sql` is still present.** It is the only reader of the legacy
-  store; it should be dropped a release after the import has shipped, along with
-  `migrateSqlite.ts`, `localRepository.ts` and `schema.ts`.
-- **Tag order is half-built.** A vault can carry its own order in
-  `.lore/workspace.json` and the engine serves it, but nothing writes it — there
-  is no reordering UI, so vaults fall back to the sample order.
-- **No manual reindex.** `POST /workspace/reindex` exists with no UI, so a missed
-  watcher event has no recovery short of deleting `.lore/index.db`.
 - **AI is still the mock, and still in the renderer.**
 - Several settings panes show placeholder figures.
 
-Deferred by design: the Focus and Calendar surfaces — the designs treat those as
-windows of their own, so only their preference panes are built. Also nested
-collections, dead-link chips in Related, and replacing the full `refresh()` after
+Decided against: arranging tags by hand. Tags read alphabetically, which is what
+makes a long list scannable — so the `tagOrder` a vault can carry in
+`.lore/workspace.json`, and the `POST /tags/order` that writes it, are vestigial.
+
+Deferred by design: nested collections, and replacing the full `refresh()` after
 every mutation with optimistic updates.
 
 ## Contributing
