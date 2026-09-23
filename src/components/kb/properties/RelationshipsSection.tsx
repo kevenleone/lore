@@ -19,6 +19,8 @@ import { Empty, Section } from './controls';
 /** Enough to pick from without turning the panel into a second list pane. */
 const MAX_SUGGESTIONS = 8;
 
+const WIKILINK = /^\[\[(.*)\]\]$/;
+
 export function RelationshipsSection({ item }: { item: Item }) {
     const items = useStore((state) => state.items);
     const itemMeta = useStore((state) => state.itemMeta);
@@ -45,6 +47,7 @@ export function RelationshipsSection({ item }: { item: Item }) {
     }, [item.id, item.related, items, query]);
 
     const backlinks = itemMeta?.backlinks ?? [];
+    const unresolved = itemMeta?.unresolved ?? [];
 
     const add = (id: string) => {
         setAdding(false);
@@ -64,6 +67,9 @@ export function RelationshipsSection({ item }: { item: Item }) {
             <div className="flex flex-col gap-[5px]">
                 {related.map((item) => (
                     <RelationCard item={item} key={item.id} onRemove={() => remove(item.id)} />
+                ))}
+                {unresolved.map((raw) => (
+                    <DeadLink key={raw} raw={raw} />
                 ))}
                 {adding ? (
                     <div className="overflow-hidden rounded-9 border border-accent">
@@ -129,6 +135,34 @@ export function RelationshipsSection({ item }: { item: Item }) {
             )}
         </Section>
     );
+}
+
+/**
+ * A `related` entry pointing at a note this vault does not hold — usually one
+ * not written yet. Shown but not editable: the engine round-trips these
+ * untouched and `updateItem` only ever carries resolved ids, so there is
+ * nothing the panel could write back without dropping what the user typed.
+ */
+function DeadLink({ raw }: { raw: string }) {
+    return (
+        <div
+            className="flex items-center gap-2 rounded-9 border border-dashed border-dash px-[9px] py-[7px]"
+            title={`${raw} — nothing in this vault matches it yet`}
+        >
+            <span className="flex h-[22px] w-[22px] flex-none items-center justify-center text-faint">
+                <Icon name="file" size={12} />
+            </span>
+            <span className="min-w-0 flex-1 truncate text-body text-text3">{linkTarget(raw)}</span>
+            <span className="flex-none text-body-sm text-faint">Not here yet</span>
+        </div>
+    );
+}
+
+/** The bare target of `[[stem|alias]]` — what is missing, not what it would read as. */
+function linkTarget(raw: string): string {
+    const inner = WIKILINK.exec(raw.trim())?.[1] ?? raw.trim();
+
+    return inner.split('|')[0].split('#')[0].trim() || raw;
 }
 
 function RelationCard({ item, onRemove }: { item: Item; onRemove?: () => void }) {

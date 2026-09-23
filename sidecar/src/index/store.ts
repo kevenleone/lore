@@ -177,6 +177,7 @@ export class VaultStore {
             modifiedAt: new Date(row.mtime_ms).toISOString(),
             path: row.path,
             size: row.size,
+            unresolved: JSON.parse(row.unresolved) as string[],
             words: body ? body.split(/\s+/).length : 0,
         };
     }
