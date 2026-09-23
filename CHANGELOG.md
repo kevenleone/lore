@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.18.0](https://github.com/kevenleone/lore/compare/v1.17.0...v1.18.0) (2026-09-23)
+
+
+### Features
+
+* **detail:** name the related links that point at nothing ([a3572ad](https://github.com/kevenleone/lore/commit/a3572ad3bd1639610e25a2f1011d6f1951d88d59))
+* **vault:** add a manual reindex button ([2400d29](https://github.com/kevenleone/lore/commit/2400d29cd1ac467a5fc5923400cdc51e4c78393e))
+
+
+### Documentation
+
+* bring the README status back in line with the app ([c127270](https://github.com/kevenleone/lore/commit/c127270fd19bac0208b7f95891ea973213c0430c))
+
 ## [1.17.0](https://github.com/kevenleone/lore/compare/v1.16.1...v1.17.0) (2026-09-22)
 
 
