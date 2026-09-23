@@ -9,6 +9,7 @@ import type { NewItem } from '../data/repository';
 import type { Template } from '../store/types';
 
 import { dayKey } from '../store/tasks';
+import { BUILTIN_TEMPLATES } from './builtinTemplates';
 
 export function applyTemplate(
     template: Template,
@@ -33,6 +34,17 @@ export function applyTemplate(
 }
 
 /**
+ * The built-ins a vault has not replaced. Writing a `.lore/templates/Daily.md`
+ * is how you take one over: the vault's own always wins, so a template that
+ * has been made your own does not also sit in the menu in its original form.
+ */
+export function availableBuiltins(vault: readonly Template[]): Template[] {
+    return BUILTIN_TEMPLATES.filter(
+        (builtin) => !vault.some((template) => template.name === builtin.name),
+    );
+}
+
+/**
  * `{{date}}`, `{{time}}` and `{{title}}`, in both the body and the title. An
  * unknown placeholder is left exactly as written rather than blanked, so a
  * typo is visible in the note instead of silently eating text.
@@ -49,4 +61,13 @@ export function expand(text: string, title: string, now: Date): string {
 
         return title || whole;
     });
+}
+
+/** Looks a template up by name, the vault's own ahead of Lore's. */
+export function findTemplate(vault: readonly Template[], name: string): null | Template {
+    return (
+        vault.find((template) => template.name === name) ??
+        BUILTIN_TEMPLATES.find((template) => template.name === name) ??
+        null
+    );
 }

@@ -4,12 +4,13 @@
 
 import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
 
-import type { Item, ViewKind } from '../../store/types';
+import type { Item, Template, ViewKind } from '../../store/types';
 
 import { getRepository } from '../../data';
 import { APP_LINKS, openExternal } from '../../lib/appInfo';
 import { cn } from '../../lib/cn';
 import { formatHotkey, hotkeyFor } from '../../lib/hotkeys';
+import { availableBuiltins } from '../../lib/templates';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
 import { effectiveTheme } from '../../theme/tokens';
@@ -500,14 +501,23 @@ function useCommands(): CommandEntry[] {
             terms: 'collection',
         }));
 
-        const templateEntries: CommandEntry[] = templates.map((template) => ({
-            group: 'New from template',
+        const templateEntry = (template: Template, group: string): CommandEntry => ({
+            group,
             icon: <Plus size={14} />,
             id: `template:${template.name}`,
             label: template.name,
             run: () => void store().createFromTemplate(template.name),
             terms: 'template new create skeleton',
-        }));
+        });
+
+        // The vault's own first: someone who has written templates is looking
+        // for theirs, and Lore's are the fallback they have not replaced.
+        const templateEntries: CommandEntry[] = [
+            ...templates.map((template) => templateEntry(template, 'New from template')),
+            ...availableBuiltins(templates).map((template) =>
+                templateEntry(template, 'Templates from Lore'),
+            ),
+        ];
 
         const help: CommandEntry[] = [
             {
