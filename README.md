@@ -155,6 +155,7 @@ hostile.
     .gitignore          committed — ignores the derived files below
     collections.json    committed — folder colours and order
     workspace.json      committed — schema version, saved searches
+    templates/          committed — item skeletons, ordinary Markdown
     index.db            ignored — derived, deletable, rebuilt on open
     cache/  trash/      ignored
   attachments/          reserved; never a collection
@@ -185,6 +186,29 @@ related:
 
 The Markdown body — the note's content, or your own notes on a link.
 ```
+
+### Templates
+
+A template is the item it makes: an ordinary Markdown file in `.lore/templates/`,
+with the frontmatter and the body a new item should start from. The stem is the
+name, and it shows up in ⌘K under **New from template**.
+
+```markdown
+---
+type: note
+tags: [meeting]
+collection: Work # where its items land — templates are the one place this is written
+title: Standup {{date}}
+---
+
+## Agenda
+
+## Decisions
+```
+
+`{{date}}`, `{{time}}` and `{{title}}` are expanded on use; anything else is left
+exactly as written, so a typo shows up in the note instead of eating text. Today's
+note can start from one too — Settings → General.
 
 ### Documents that live somewhere else
 
