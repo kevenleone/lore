@@ -11,9 +11,7 @@ import type { ItemType, Template } from '@lore/types';
 import { readdir } from 'node:fs/promises';
 
 import { parseFile } from './markdown';
-import { isIgnoredFile, LORE_DIR, type Vault } from './vault';
-
-export const TEMPLATES_DIR = `${LORE_DIR}/templates`;
+import { isIgnoredFile, TEMPLATES_DIR, type Vault } from './vault';
 
 const ITEM_TYPES: ItemType[] = ['link', 'note', 'task', 'code', 'image'];
 
