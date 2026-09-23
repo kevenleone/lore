@@ -51,6 +51,7 @@
         "vite": "^7.0.4",
         "vitest": "^3.0.5"
     },
+    "license": "AGPL-3.0-only",
     "name": "lore",
     "packageManager": "pnpm@11.17.0",
     "private": true,

@@ -397,3 +397,7 @@ every mutation with optimistic updates.
 Read [AGENTS.md](AGENTS.md) first — it is the single source of truth for
 conventions in this repo, and it covers styling, code style and the commit rules
 (Conventional Commits, `bun format` before committing).
+
+## License
+
+Lore is licensed under the [GNU Affero General Public License v3.0](LICENSE).

@@ -4,6 +4,7 @@ version = "1.17.0" # x-release-please-version
 description = "Lore — offline-first knowledge base with quick capture"
 authors = ["you"]
 edition = "2021"
+license = "AGPL-3.0-only"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
