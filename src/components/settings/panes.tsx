@@ -21,7 +21,8 @@ import {
     hotkeyKeys,
     HOTKEYS,
 } from '../../lib/hotkeys';
-import { revealPath } from '../../lib/reveal';
+import { revealPath, revealVaultFile } from '../../lib/reveal';
+import { availableBuiltins } from '../../lib/templates';
 import { workspaceName } from '../../lib/workspace';
 import {
     type Accent,
@@ -105,16 +106,17 @@ export function GeneralPane() {
         ? (dailyNoteCollection ?? ROOT_TARGET)
         : ROOT_TARGET;
 
+    const choosable = useMemo(() => [...templates, ...availableBuiltins(templates)], [templates]);
     const templateOptions = useMemo<ChoiceOption<string>[]>(
         () => [
             { label: 'Blank', value: BLANK_TEMPLATE },
-            ...templates.map((template) => ({ label: template.name, value: template.name })),
+            ...choosable.map((template) => ({ label: template.name, value: template.name })),
         ],
-        [templates],
+        [choosable],
     );
     // A template deleted since the preference was set writes a blank note
     // rather than leaving the chooser naming a file that is not there.
-    const journalTemplate = templates.some((template) => template.name === dailyNoteTemplate)
+    const journalTemplate = choosable.some((template) => template.name === dailyNoteTemplate)
         ? (dailyNoteTemplate ?? BLANK_TEMPLATE)
         : BLANK_TEMPLATE;
 
@@ -167,7 +169,7 @@ export function GeneralPane() {
                 />
             </Row>
             <Row
-                desc="What today's note starts with. Templates are Markdown files in .lore/templates."
+                desc="What today's note starts with. Lore ships a few; your own go in .lore/templates."
                 last
                 title="Start today's note from"
             >
@@ -278,6 +280,22 @@ export function VaultPane() {
                     }}
                 >
                     {reindexing ? 'Rebuilding…' : 'Rebuild'}
+                </PillButton>
+            </Row>
+            <Row
+                desc="Skeletons for new items, as Markdown files you edit like any other. Lore's own are in ⌘K already; a file here with the same name replaces one."
+                title="Templates"
+            >
+                <PillButton
+                    onClick={() => {
+                        void revealVaultFile(workspacePath, '.lore/templates').then((ok) => {
+                            if (!ok) {
+                                pushToast('Could not open the templates folder in Finder.');
+                            }
+                        });
+                    }}
+                >
+                    Reveal in Finder
                 </PillButton>
             </Row>
             <Row
