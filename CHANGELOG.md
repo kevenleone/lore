@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.20.0](https://github.com/kevenleone/lore/compare/v1.19.0...v1.20.0) (2026-09-23)
+
+
+### Features
+
+* **library:** open today's note ([4e83b25](https://github.com/kevenleone/lore/commit/4e83b25a6ab472b76d7f7750368867442618294f))
+* **library:** put selection behind a Select button ([b2f7338](https://github.com/kevenleone/lore/commit/b2f7338c0244b5533ccb938e131c933b84a2990f))
+* **library:** select in Cards too ([6c7e768](https://github.com/kevenleone/lore/commit/6c7e76864014388c91756ce67346c4549b2e95fe))
+* **library:** tick several items and act on them at once ([570b306](https://github.com/kevenleone/lore/commit/570b306f237701b5a13956ee1892e8f8858aa86b))
+
+
+### Bug Fixes
+
+* **app:** stop the system autocorrecting what is typed into Lore ([2b6f2d6](https://github.com/kevenleone/lore/commit/2b6f2d6e585b6c39cdb18ffe601ea2b0c7b51ebf))
+* **library:** keep the list flush left outside selection mode ([551ec9e](https://github.com/kevenleone/lore/commit/551ec9ed0fbfbfcf6b9154d459e35557a5681759))
+* **library:** let the selection gutter open instead of jumping ([45f6b74](https://github.com/kevenleone/lore/commit/45f6b74f0ec868eb508df5a4dca450c13648c378))
+
 ## [1.19.0](https://github.com/kevenleone/lore/compare/v1.18.0...v1.19.0) (2026-09-23)
 
 
