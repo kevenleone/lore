@@ -11,6 +11,51 @@ import type { MouseEvent } from 'react';
 import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 
+/**
+ * The box itself. Cards lay it over their banner, where it costs no layout at
+ * all; the list and the table need the slot below to make room for it.
+ */
+export function Checkbox({
+    checked,
+    label,
+    onToggle,
+    tabbable = true,
+}: {
+    checked: boolean;
+    label: string;
+    onToggle: (event: MouseEvent) => void;
+    tabbable?: boolean;
+}) {
+    return (
+        <button
+            aria-checked={checked}
+            aria-label={`Select ${label}`}
+            className={cn(
+                'flex h-[15px] w-[15px] flex-none items-center justify-center rounded-sm border-[1.5px] bg-transparent p-0',
+                checked ? 'border-accent bg-accent' : 'border-border',
+            )}
+            onClick={onToggle}
+            role="checkbox"
+            // Out of the tab order while the slot is shut, or every row holds a
+            // control nobody can see.
+            tabIndex={tabbable ? 0 : -1}
+            type="button"
+        >
+            {checked && (
+                <svg fill="none" height="10" viewBox="0 0 24 24" width="10">
+                    <polyline
+                        points="20 6 9 17 4 12"
+                        stroke="#fff"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="3.2"
+                    />
+                </svg>
+            )}
+        </button>
+    );
+}
+
 export function RowCheckbox({
     checked,
     closedMargin,
@@ -36,32 +81,7 @@ export function RowCheckbox({
                 shown ? 'w-[15px] opacity-100' : cn('w-0 opacity-0', closedMargin),
             )}
         >
-            <button
-                aria-checked={checked}
-                aria-label={`Select ${label}`}
-                className={cn(
-                    'flex h-[15px] w-[15px] flex-none items-center justify-center rounded-sm border-[1.5px] bg-transparent p-0',
-                    checked ? 'border-accent bg-accent' : 'border-border',
-                )}
-                onClick={onToggle}
-                role="checkbox"
-                // Out of the tab order while the slot is shut, or every row
-                // holds a control nobody can see.
-                tabIndex={shown ? 0 : -1}
-                type="button"
-            >
-                {checked && (
-                    <svg fill="none" height="10" viewBox="0 0 24 24" width="10">
-                        <polyline
-                            points="20 6 9 17 4 12"
-                            stroke="#fff"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="3.2"
-                        />
-                    </svg>
-                )}
-            </button>
+            <Checkbox checked={checked} label={label} onToggle={onToggle} tabbable={shown} />
         </span>
     );
 }

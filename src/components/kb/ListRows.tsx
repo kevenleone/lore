@@ -36,13 +36,15 @@ export function ListRows({ items, onContextMenu }: SurfaceProps) {
             {items.map((item) => {
                 const meta = typeMeta(item.type);
                 const selected = item.id === selectedId;
+                const checked = selection.isChecked(item.id);
 
                 return (
                     <div
                         className={cn(
                             'group flex items-start gap-3 border-b border-border',
                             rowPadding,
-                            selected && 'bg-accent-tint shadow-[inset_2px_0_0_var(--ac)]',
+                            (selected || checked) &&
+                                'bg-accent-tint shadow-[inset_2px_0_0_var(--ac)]',
                         )}
                         key={item.id}
                         onClick={(event) => selection.onRowClick(event, item.id)}
