@@ -16,6 +16,16 @@ const TEXT_SURFACE = '.lore-editor, .lore-document, .select-text';
  * its own document.
  */
 export function installNativeChrome(): void {
+    // Autocorrect belongs to prose, and almost nothing typed into this app is
+    // prose: a query, a tag, a filename, a collection. Rewriting `cnapp` to
+    // `snap` mid-search is the system helping with something it cannot read.
+    // Both attributes inherit, so the root is the only place they are needed.
+    //
+    // Spellcheck is deliberately left alone — it underlines a word without
+    // touching it, which is the half worth keeping in a note body.
+    document.documentElement.setAttribute('autocorrect', 'off');
+    document.documentElement.setAttribute('autocapitalize', 'off');
+
     document.addEventListener('contextmenu', (event) => {
         if (isTextSurface(event.target) || !document.getSelection()?.isCollapsed) {
             return;
