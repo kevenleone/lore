@@ -10,15 +10,9 @@ import type { GraphNode, ItemType } from '../../store/types';
 import type { Frame } from './viewport';
 
 import { cn } from '../../lib/cn';
-import {
-    type LayoutNode,
-    nearestNeighbourSpacing,
-    seed,
-    SETTLE_STEPS,
-    step,
-} from '../../lib/forceLayout';
+import { type LayoutNode, seed, SETTLE_STEPS, step } from '../../lib/forceLayout';
 import { useStore } from '../../store/useStore';
-import { DetailPane } from '../kb/DetailPane';
+import { GraphPreview } from './GraphPreview';
 import { labelDetailFor, shortTitle, showsLabel } from './labels';
 import { IDENTITY, panBy, toWorld, type Viewport, zoomAt } from './viewport';
 
@@ -27,9 +21,6 @@ const RADIUS = { base: 4, max: 13, perDegree: 1 };
 
 /** Slack around a dot, so a link does not need the pointer on its centre. */
 const HIT_SLACK = 7;
-
-/** No dot is harder to hit than this, however small it is drawn. */
-const MIN_HIT = 12;
 
 const TYPE_TOKEN: Record<ItemType, string> = {
     code: '--color-type-code-fg',
@@ -42,13 +33,10 @@ const TYPE_TOKEN: Record<ItemType, string> = {
 export function GraphView() {
     const graph = useStore((state) => state.graph);
     const loadGraph = useStore((state) => state.loadGraph);
-    const selectItem = useStore((state) => state.selectItem);
     const selectedId = useStore((state) => state.selectedId);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const nodesRef = useRef<LayoutNode[]>([]);
-    /** Typical gap between dots, in graph units; decides how many get named. */
-    const spacingRef = useRef(0);
     const dragRef = useRef<{ moved: boolean; x: number; y: number } | null>(null);
 
     const [viewport, setViewport] = useState<Viewport>(IDENTITY);
@@ -83,36 +71,10 @@ export function GraphView() {
         }
 
         nodesRef.current = laid;
-        spacingRef.current = nearestNeighbourSpacing(laid);
         setViewport(IDENTITY);
         setReady(true);
     }, [graph]);
 
-    /**
-     * The frame is the box the canvas fills, measured on the box and never on
-     * the canvas.
-     *
-     * Both of those matter. Measuring one element rather than two is what keeps
-     * the hit test agreeing with the drawing — reading the size from the parent
-     * and the pointer from the canvas left a constant offset between where a dot
-     * was drawn and where it could be clicked. But it has to be the *parent*:
-     * `draw` sets the canvas's own width and height, so measuring the canvas
-     * would feed each draw its own output, and every redraw — one per mouse
-     * move, while hovering — would shrink the picture a little further.
-     */
-    /**
-     * The frame, in the same pixels the canvas is laid out in.
-     *
-     * `clientWidth`, not `getBoundingClientRect`: `App` scales the whole tree
-     * with CSS `zoom` for the text-size preference, and a bounding rect is
-     * reported in visual pixels after that scaling while the element's own box
-     * — and therefore the canvas backing store sized from it — is in layout
-     * pixels. Mixing the two drew the graph at the wrong size entirely.
-     *
-     * It is also read off the parent rather than the canvas, because `draw`
-     * sizes the canvas from this: measuring what a redraw writes lets every
-     * redraw change its own input, and the picture walks away a little at a time.
-     */
     const frameOf = useCallback((): Frame | null => {
         const box = canvasRef.current?.parentElement;
 
@@ -141,28 +103,14 @@ export function GraphView() {
             return;
         }
 
+        const ratio = window.devicePixelRatio || 1;
         const { height, width } = frame;
-        // How many device pixels the canvas actually occupies, per layout pixel
-        // it is laid out in. That is the display's pixel ratio *and* whatever
-        // the tree's CSS `zoom` is doing for the text-size preference — and it
-        // has to be measured, because a backing store sized for one and painted
-        // into the other is stretched by the difference, which is what made
-        // everything on the canvas oversized.
-        const rect = canvas.getBoundingClientRect();
-        const perLayoutPixel =
-            width > 0 && rect.width > 0
-                ? (rect.width * (window.devicePixelRatio || 1)) / width
-                : window.devicePixelRatio || 1;
 
-        // Only the backing store is sized here. The element's own width and
-        // height come from `inset-0`, and writing them from a routine that
-        // measures the layout is what lets a redraw change its own input.
-        canvas.width = Math.round(width * perLayoutPixel);
-        canvas.height = Math.round(height * perLayoutPixel);
-        // Everything below is drawn in layout pixels — the same ones `frameOf`
-        // reports and `offsetX` arrives in — so the picture and the hit test
-        // never need converting between spaces.
-        context.setTransform(perLayoutPixel, 0, 0, perLayoutPixel, 0, 0);
+        canvas.width = width * ratio;
+        canvas.height = height * ratio;
+        canvas.style.height = `${height}px`;
+        canvas.style.width = `${width}px`;
+        context.setTransform(ratio, 0, 0, ratio, 0, 0);
         context.clearRect(0, 0, width, height);
 
         const styles = getComputedStyle(document.documentElement);
@@ -226,11 +174,11 @@ export function GraphView() {
         }
 
         // Labels last, so no dot is drawn over a name.
-        const detail = labelDetailFor(spacingRef.current * scale);
+        const detail = labelDetailFor(scale);
 
         context.textAlign = 'center';
         context.textBaseline = 'top';
-        context.font = `${11 / scale}px ui-sans-serif, system-ui, sans-serif`;
+        context.font = `${12 / scale}px ui-sans-serif, system-ui, sans-serif`;
 
         for (const node of nodesRef.current) {
             const meta = byId.get(node.id);
@@ -269,17 +217,13 @@ export function GraphView() {
         return () => window.removeEventListener('resize', onResize);
     }, [draw, ready]);
 
-    /**
-     * Pointer position within the frame.
-     *
-     * `offsetX`/`offsetY` are already relative to the canvas and already in
-     * layout pixels, so they need no rect and survive the tree's CSS `zoom`
-     * untouched — which subtracting a bounding rect from `clientX` does not.
-     */
-    const pointIn = (event: { nativeEvent: MouseEvent }) => ({
-        x: event.nativeEvent.offsetX,
-        y: event.nativeEvent.offsetY,
-    });
+    const pointIn = (event: { clientX: number; clientY: number }) => {
+        const bounds = canvasRef.current?.getBoundingClientRect();
+
+        return bounds
+            ? { x: event.clientX - bounds.left, y: event.clientY - bounds.top }
+            : { x: 0, y: 0 };
+    };
 
     const nodeAt = (point: { x: number; y: number }): GraphNode | null => {
         const frame = frameOf();
@@ -294,7 +238,7 @@ export function GraphView() {
 
         for (const node of nodesRef.current) {
             const distance = Math.hypot(node.x - world.x, node.y - world.y);
-            const reach = Math.max(radiusFor(node.degree) + HIT_SLACK, MIN_HIT) / scale;
+            const reach = (radiusFor(node.degree) + HIT_SLACK) / scale;
 
             if (distance <= reach && (!closest || distance < closest.distance)) {
                 closest = { distance, id: node.id };
@@ -363,13 +307,6 @@ export function GraphView() {
 
                         const node = nodeAt(pointIn(event));
 
-                        if (node) {
-                            // The pane reads the store's selection, which is
-                            // what makes this the same pane the library shows
-                            // rather than a second one that drifts from it.
-                            selectItem(node.id);
-                        }
-
                         setPreviewId(node ? node.id : null);
                     }}
                     onWheel={(event) => {
@@ -388,11 +325,7 @@ export function GraphView() {
                     }}
                     ref={canvasRef}
                 />
-                {previewId && (
-                    <div className="absolute top-0 right-0 bottom-0 z-30 flex min-h-0 w-[496px] flex-col border-l border-border bg-surface shadow-float">
-                        <DetailPane chrome="drawer" onClose={() => setPreviewId(null)} />
-                    </div>
-                )}
+                {previewId && <GraphPreview id={previewId} onClose={() => setPreviewId(null)} />}
                 {hovered && !previewId && (
                     <div
                         className="pointer-events-none absolute max-w-[260px] truncate rounded-7 border border-border bg-surface2 px-[10px] py-[5px] text-body shadow-float"
