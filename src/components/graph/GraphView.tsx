@@ -12,6 +12,8 @@ import type { Frame } from './viewport';
 import { cn } from '../../lib/cn';
 import { type LayoutNode, seed, SETTLE_STEPS, step } from '../../lib/forceLayout';
 import { useStore } from '../../store/useStore';
+import { GraphPreview } from './GraphPreview';
+import { labelDetailFor, shortTitle, showsLabel } from './labels';
 import { IDENTITY, panBy, toWorld, type Viewport, zoomAt } from './viewport';
 
 /** Node radius by how many links touch it, so hubs read as hubs. */
@@ -32,14 +34,13 @@ export function GraphView() {
     const graph = useStore((state) => state.graph);
     const loadGraph = useStore((state) => state.loadGraph);
     const selectedId = useStore((state) => state.selectedId);
-    const selectItem = useStore((state) => state.selectItem);
-    const setMainView = useStore((state) => state.setMainView);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const nodesRef = useRef<LayoutNode[]>([]);
     const dragRef = useRef<{ moved: boolean; x: number; y: number } | null>(null);
 
     const [viewport, setViewport] = useState<Viewport>(IDENTITY);
+    const [previewId, setPreviewId] = useState<null | string>(null);
     const [hovered, setHovered] = useState<{ node: GraphNode; x: number; y: number } | null>(null);
     const [ready, setReady] = useState(false);
 
@@ -164,7 +165,7 @@ export function GraphView() {
             context.globalAlpha = !focus || lit || touches(graph.edges, focus, node.id) ? 1 : 0.3;
             context.fill();
 
-            if (lit || node.id === selectedId) {
+            if (lit || node.id === selectedId || node.id === previewId) {
                 context.globalAlpha = 1;
                 context.strokeStyle = token('--color-accent');
                 context.lineWidth = 2 / scale;
@@ -172,8 +173,35 @@ export function GraphView() {
             }
         }
 
+        // Labels last, so no dot is drawn over a name.
+        const detail = labelDetailFor(scale);
+
+        context.textAlign = 'center';
+        context.textBaseline = 'top';
+        context.font = `${12 / scale}px ui-sans-serif, system-ui, sans-serif`;
+
+        for (const node of nodesRef.current) {
+            const meta = byId.get(node.id);
+            const near = node.id === focus || (!!focus && touches(graph.edges, focus, node.id));
+
+            if (!meta || !showsLabel(node, detail, near)) {
+                continue;
+            }
+
+            const top = node.y + (radiusFor(node.degree) + 5) / scale;
+
+            context.globalAlpha = !focus || near ? 1 : 0.35;
+            context.fillStyle = token(near && focus ? '--color-text' : '--color-text2');
+            // Drawn twice: the ground behind a label is whatever the graph put
+            // there, and a name over an edge is unreadable without it.
+            context.lineWidth = 3 / scale;
+            context.strokeStyle = token('--color-canvas');
+            context.strokeText(shortTitle(meta.title), node.x, top);
+            context.fillText(shortTitle(meta.title), node.x, top);
+        }
+
         context.restore();
-    }, [byId, frameOf, graph, hovered, selectedId, viewport]);
+    }, [byId, frameOf, graph, hovered, previewId, selectedId, viewport]);
 
     useEffect(() => {
         if (!ready) {
@@ -279,10 +307,7 @@ export function GraphView() {
 
                         const node = nodeAt(pointIn(event));
 
-                        if (node) {
-                            selectItem(node.id);
-                            setMainView('library');
-                        }
+                        setPreviewId(node ? node.id : null);
                     }}
                     onWheel={(event) => {
                         const frame = frameOf();
@@ -300,7 +325,8 @@ export function GraphView() {
                     }}
                     ref={canvasRef}
                 />
-                {hovered && (
+                {previewId && <GraphPreview id={previewId} onClose={() => setPreviewId(null)} />}
+                {hovered && !previewId && (
                     <div
                         className="pointer-events-none absolute max-w-[260px] truncate rounded-7 border border-border bg-surface2 px-[10px] py-[5px] text-body shadow-float"
                         // Follows the pointer: a label pinned to a corner makes
