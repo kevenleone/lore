@@ -7,6 +7,7 @@
 import type {
     BoardConfig,
     Collection,
+    Graph,
     Item,
     ItemMeta,
     SavedSearch,
@@ -105,6 +106,10 @@ export class VaultRepository implements KnowledgeRepository {
 
             throw e;
         }
+    }
+
+    async graph(): Promise<Graph> {
+        return this.call(() => request<Graph>('/graph'));
     }
 
     async itemMeta(id: string): Promise<ItemMeta | null> {

@@ -202,6 +202,19 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                 <span className={KEY_CAP}>{formatHotkey(hotkeyFor('view-calendar'))}</span>
             </button>
 
+            {/* The graph is a surface too: the whole vault at once, not a filter of it. */}
+            <button
+                aria-current={mainView === 'graph' ? 'page' : undefined}
+                className={rowClass(mainView === 'graph')}
+                onClick={() => setMainView('graph')}
+                type="button"
+            >
+                <span className="flex flex-none">
+                    <Icon name="layers" />
+                </span>
+                <span className="flex-1">Graph</span>
+            </button>
+
             {/* Tasks — a surface of its own, like the calendar, with four reads of it. */}
             <nav aria-label="Tasks">
                 <div className="flex items-center gap-[7px] px-[9px] pt-[15px] pb-[5px]">

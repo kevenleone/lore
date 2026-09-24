@@ -15,6 +15,7 @@ import { Toasts } from './components/common/Toasts';
 import { FocusMode } from './components/focus/FocusMode';
 import { FocusPopover } from './components/focus/FocusPopover';
 import { useFocusTimer } from './components/focus/useFocusTimer';
+import { GraphView } from './components/graph/GraphView';
 import { AskLoreChat } from './components/kb/AskLoreChat';
 import { DetailPane } from './components/kb/DetailPane';
 import { ListPane } from './components/kb/ListPane';
@@ -325,6 +326,8 @@ export default function App() {
                     </div>
                     {mainView === 'calendar' ? (
                         <CalendarView onCapture={openCapture} />
+                    ) : mainView === 'graph' ? (
+                        <GraphView />
                     ) : mainView === 'tasks' ? (
                         <TasksView />
                     ) : (
