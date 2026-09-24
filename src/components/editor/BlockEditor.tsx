@@ -3,11 +3,14 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import { useRef, useState } from 'react';
 
 import { openExternal } from '../../lib/appInfo';
+import { resolveWikilink } from '../../lib/wikilinks';
 import { applyDocument, diffBlocks } from '../../markdown/apply';
 import { guard } from '../../markdown/fragility';
 import { parse } from '../../markdown/parse';
 import { EXTENSIONS } from '../../markdown/schema';
 import { toDocument } from '../../markdown/to-prosemirror';
+import { Wikilink } from '../../markdown/wikilinkDecoration';
+import { useStore } from '../../store/useStore';
 import { LinkBubble } from './LinkBubble';
 
 interface BlockEditorProps {
@@ -61,7 +64,17 @@ export function BlockEditor({
                     return true;
                 },
             },
-            extensions: [...EXTENSIONS, Placeholder.configure({ placeholder: placeholder ?? '' })],
+            extensions: [
+                ...EXTENSIONS,
+                Placeholder.configure({ placeholder: placeholder ?? '' }),
+                // Read through the store rather than captured: the editor is
+                // built once, and a note written afterwards must still light up
+                // the link that was pointing at nothing a moment ago.
+                Wikilink.configure({
+                    onOpen: (id) => useStore.getState().openLinkedItem(id),
+                    resolve: (target) => resolveWikilink(target, useStore.getState().items),
+                }),
+            ],
             onUpdate: ({ editor: instance, transaction }) => {
                 const changed = diffBlocks(transaction.before, transaction.doc);
 
