@@ -33,6 +33,34 @@ export interface LayoutOptions {
  */
 const DEFAULTS = { gravity: 0.015, linkDistance: 45, repulsion: 1400 };
 
+/** Past this, repulsion moves a node by less than a pixel — see `step`. */
+const CUTOFF = 260;
+
+/** A stable number from an id, for separating two nodes at the same point. */
+function hash(id: string): number {
+    let value = 0;
+
+    for (let index = 0; index < id.length; index += 1) {
+        value = (value * 31 + id.charCodeAt(index)) | 0;
+    }
+
+    return Math.abs(value);
+}
+
+/** The node's own cell and the eight around it. */
+function* neighbours(grid: Map<string, LayoutNode[]>, node: LayoutNode): Generator<LayoutNode> {
+    const column = Math.floor(node.x / CUTOFF);
+    const row = Math.floor(node.y / CUTOFF);
+
+    for (let dx = -1; dx <= 1; dx += 1) {
+        for (let dy = -1; dy <= 1; dy += 1) {
+            for (const other of grid.get(`${column + dx},${row + dy}`) ?? []) {
+                yield other;
+            }
+        }
+    }
+}
+
 /** Enough for the layout to settle; beyond this the picture stops changing. */
 export const SETTLE_STEPS = 220;
 
@@ -61,7 +89,7 @@ export function settle(
     nodes: LayoutNode[],
     edges: readonly { source: string; target: string }[],
     options: LayoutOptions = {},
-    steps = SETTLE_STEPS,
+    steps = stepsFor(nodes.length),
 ): LayoutNode[] {
     for (let index = 0; index < steps; index += 1) {
         step(nodes, edges, 1 - index / steps, options);
@@ -88,19 +116,47 @@ export function step(
     const { gravity, linkDistance, repulsion } = { ...DEFAULTS, ...options };
     const byId = new Map(nodes.map((node) => [node.id, node]));
 
-    for (let outer = 0; outer < nodes.length; outer += 1) {
-        for (let inner = outer + 1; inner < nodes.length; inner += 1) {
-            const first = nodes[outer];
-            const second = nodes[inner];
+    // Repulsion falls off with the square of the distance, so past a few cells
+    // away it moves a node by less than a pixel — and checking every pair to
+    // work that out is what made a 2,000-note vault take five seconds a layout,
+    // with the whole app stopped while it ran. Nodes go into a grid of
+    // `CUTOFF`-sized cells and only their own cell and its neighbours are
+    // considered, which is linear in the node count rather than quadratic.
+    const grid = new Map<string, LayoutNode[]>();
+
+    for (const node of nodes) {
+        const key = `${Math.floor(node.x / CUTOFF)},${Math.floor(node.y / CUTOFF)}`;
+        const cell = grid.get(key);
+
+        if (cell) {
+            cell.push(node);
+        } else {
+            grid.set(key, [node]);
+        }
+    }
+
+    for (const first of nodes) {
+        for (const second of neighbours(grid, first)) {
+            // Each pair is pushed apart once, by whichever of the two the outer
+            // loop reaches first.
+            if (second.id <= first.id) {
+                continue;
+            }
+
             let deltaX = second.x - first.x;
             let deltaY = second.y - first.y;
             let distanceSquared = deltaX * deltaX + deltaY * deltaY;
 
+            if (distanceSquared > CUTOFF * CUTOFF) {
+                continue;
+            }
+
             // Two nodes at the same point have no direction to separate along.
-            // Nudging by index rather than at random keeps the layout repeatable.
+            // Derived from the ids rather than drawn at random, so a layout is
+            // repeatable.
             if (distanceSquared < 0.01) {
-                deltaX = ((outer % 7) - 3) * 0.1 || 0.1;
-                deltaY = ((inner % 5) - 2) * 0.1 || 0.1;
+                deltaX = (hash(first.id) % 7) * 0.1 - 0.3 || 0.1;
+                deltaY = (hash(second.id) % 5) * 0.1 - 0.2 || 0.1;
                 distanceSquared = deltaX * deltaX + deltaY * deltaY;
             }
 
@@ -144,4 +200,20 @@ export function step(
         node.x -= node.x * gravity * alpha;
         node.y -= node.y * gravity * alpha;
     }
+}
+
+/**
+ * How many steps a graph of this size is worth.
+ *
+ * A large graph is settled by its overall shape long before a small one is, and
+ * every step costs more, so running the full count on a big vault spends
+ * seconds to move dots by a pixel. Fewer steps there keeps opening the graph
+ * quick without the picture visibly suffering.
+ */
+export function stepsFor(count: number): number {
+    if (count <= 200) {
+        return SETTLE_STEPS;
+    }
+
+    return Math.max(70, Math.round(SETTLE_STEPS * Math.sqrt(200 / count)));
 }
