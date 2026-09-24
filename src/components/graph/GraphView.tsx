@@ -79,27 +79,31 @@ export function GraphView() {
     }, [graph]);
 
     /**
-     * Measured from the canvas itself wherever possible, because this is what
-     * both the drawing and the hit test read. Taking the size from the parent
-     * and the pointer from the canvas leaves any disagreement between the two
-     * as a constant offset between where a dot is drawn and where it can be
-     * clicked — which is exactly what it looked like.
+     * The frame is the box the canvas fills, measured on the box and never on
+     * the canvas.
+     *
+     * Both of those matter. Measuring one element rather than two is what keeps
+     * the hit test agreeing with the drawing — reading the size from the parent
+     * and the pointer from the canvas left a constant offset between where a dot
+     * was drawn and where it could be clicked. But it has to be the *parent*:
+     * `draw` sets the canvas's own width and height, so measuring the canvas
+     * would feed each draw its own output, and every redraw — one per mouse
+     * move, while hovering — would shrink the picture a little further.
      */
     const frameOf = useCallback((): Frame | null => {
-        const canvas = canvasRef.current;
-        const box = canvas?.parentElement;
+        const box = canvasRef.current?.parentElement;
 
-        if (!canvas || !box) {
+        if (!box) {
             return null;
         }
 
-        const rect = canvas.getBoundingClientRect();
-        // Before the first draw the canvas has no size of its own; the parent
-        // is what it is about to be sized to.
-        const width = rect.width || box.clientWidth;
-        const height = rect.height || box.clientHeight;
+        const rect = box.getBoundingClientRect();
 
-        return { base: fitScale(nodesRef.current, width, height), height, width };
+        return {
+            base: fitScale(nodesRef.current, rect.width, rect.height),
+            height: rect.height,
+            width: rect.width,
+        };
     }, []);
 
     const draw = useCallback(() => {
@@ -119,10 +123,12 @@ export function GraphView() {
         const ratio = window.devicePixelRatio || 1;
         const { height, width } = frame;
 
-        canvas.width = width * ratio;
-        canvas.height = height * ratio;
-        canvas.style.height = `${height}px`;
-        canvas.style.width = `${width}px`;
+        // Only the backing store is sized here. The element's own width and
+        // height come from `inset-0`, and writing them from a routine that
+        // measures the layout is what makes a redraw able to change its own
+        // input — so this deliberately does not touch them.
+        canvas.width = Math.round(width * ratio);
+        canvas.height = Math.round(height * ratio);
         context.setTransform(ratio, 0, 0, ratio, 0, 0);
         context.clearRect(0, 0, width, height);
 
@@ -230,8 +236,9 @@ export function GraphView() {
         return () => window.removeEventListener('resize', onResize);
     }, [draw, ready]);
 
+    /** Pointer position within the frame — the same box `frameOf` measures. */
     const pointIn = (event: { clientX: number; clientY: number }) => {
-        const bounds = canvasRef.current?.getBoundingClientRect();
+        const bounds = canvasRef.current?.parentElement?.getBoundingClientRect();
 
         return bounds
             ? { x: event.clientX - bounds.left, y: event.clientY - bounds.top }
