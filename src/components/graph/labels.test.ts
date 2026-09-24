@@ -3,16 +3,20 @@ import { describe, expect, it } from 'vitest';
 import { labelDetailFor, shortTitle, showsLabel } from './labels';
 
 describe('labelDetailFor', () => {
-    it('names everything once the picture is close enough to read', () => {
-        expect(labelDetailFor(1.2)).toBe('all');
+    it('names everything when each dot has room for a name', () => {
+        expect(labelDetailFor(80)).toBe('all');
     });
 
-    it('names only the hubs at a middling zoom', () => {
-        expect(labelDetailFor(0.6)).toBe('hubs');
+    it('names only the hubs when the room is tight', () => {
+        expect(labelDetailFor(35)).toBe('hubs');
     });
 
-    it('names only what is in focus when pulled right back', () => {
-        expect(labelDetailFor(0.1)).toBe('focus');
+    it('names only what is in focus when the dots are on top of each other', () => {
+        expect(labelDetailFor(8)).toBe('focus');
+    });
+
+    it('names nothing extra for a graph with no room at all', () => {
+        expect(labelDetailFor(0)).toBe('focus');
     });
 });
 

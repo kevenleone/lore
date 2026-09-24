@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { seed, settle, step } from './forceLayout';
+import { nearestNeighbourSpacing, seed, settle, step } from './forceLayout';
 
 const degrees = (ids: string[]) => new Map(ids.map((id) => [id, 1]));
 
@@ -130,5 +130,37 @@ describe('settle', () => {
 
     it('handles an empty graph', () => {
         expect(settle([], [])).toEqual([]);
+    });
+});
+
+describe('nearestNeighbourSpacing', () => {
+    it('measures the gap between neighbours', () => {
+        const nodes = [
+            { degree: 0, id: 'a', x: 0, y: 0 },
+            { degree: 0, id: 'b', x: 10, y: 0 },
+            { degree: 0, id: 'c', x: 20, y: 0 },
+        ];
+
+        expect(nearestNeighbourSpacing(nodes)).toBe(10);
+    });
+
+    it('is not dragged down by one crowded pair', () => {
+        const nodes = [
+            { degree: 0, id: 'a', x: 0, y: 0 },
+            { degree: 0, id: 'b', x: 0.5, y: 0 },
+            { degree: 0, id: 'c', x: 100, y: 0 },
+            { degree: 0, id: 'd', x: 200, y: 0 },
+            { degree: 0, id: 'e', x: 300, y: 0 },
+        ];
+
+        expect(nearestNeighbourSpacing(nodes)).toBeGreaterThan(50);
+    });
+
+    it('calls a single node infinitely roomy, so its name is always drawn', () => {
+        expect(nearestNeighbourSpacing([{ degree: 0, id: 'a', x: 0, y: 0 }])).toBe(Infinity);
+    });
+
+    it('handles an empty graph', () => {
+        expect(nearestNeighbourSpacing([])).toBe(Infinity);
     });
 });

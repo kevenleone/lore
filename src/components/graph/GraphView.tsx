@@ -10,7 +10,13 @@ import type { GraphNode, ItemType } from '../../store/types';
 import type { Frame } from './viewport';
 
 import { cn } from '../../lib/cn';
-import { type LayoutNode, seed, SETTLE_STEPS, step } from '../../lib/forceLayout';
+import {
+    type LayoutNode,
+    nearestNeighbourSpacing,
+    seed,
+    SETTLE_STEPS,
+    step,
+} from '../../lib/forceLayout';
 import { useStore } from '../../store/useStore';
 import { DetailPane } from '../kb/DetailPane';
 import { labelDetailFor, shortTitle, showsLabel } from './labels';
@@ -41,6 +47,8 @@ export function GraphView() {
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const nodesRef = useRef<LayoutNode[]>([]);
+    /** Typical gap between dots, in graph units; decides how many get named. */
+    const spacingRef = useRef(0);
     const dragRef = useRef<{ moved: boolean; x: number; y: number } | null>(null);
 
     const [viewport, setViewport] = useState<Viewport>(IDENTITY);
@@ -75,6 +83,7 @@ export function GraphView() {
         }
 
         nodesRef.current = laid;
+        spacingRef.current = nearestNeighbourSpacing(laid);
         setViewport(IDENTITY);
         setReady(true);
     }, [graph]);
@@ -132,16 +141,28 @@ export function GraphView() {
             return;
         }
 
-        const ratio = window.devicePixelRatio || 1;
         const { height, width } = frame;
+        // How many device pixels the canvas actually occupies, per layout pixel
+        // it is laid out in. That is the display's pixel ratio *and* whatever
+        // the tree's CSS `zoom` is doing for the text-size preference — and it
+        // has to be measured, because a backing store sized for one and painted
+        // into the other is stretched by the difference, which is what made
+        // everything on the canvas oversized.
+        const rect = canvas.getBoundingClientRect();
+        const perLayoutPixel =
+            width > 0 && rect.width > 0
+                ? (rect.width * (window.devicePixelRatio || 1)) / width
+                : window.devicePixelRatio || 1;
 
         // Only the backing store is sized here. The element's own width and
         // height come from `inset-0`, and writing them from a routine that
-        // measures the layout is what makes a redraw able to change its own
-        // input — so this deliberately does not touch them.
-        canvas.width = Math.round(width * ratio);
-        canvas.height = Math.round(height * ratio);
-        context.setTransform(ratio, 0, 0, ratio, 0, 0);
+        // measures the layout is what lets a redraw change its own input.
+        canvas.width = Math.round(width * perLayoutPixel);
+        canvas.height = Math.round(height * perLayoutPixel);
+        // Everything below is drawn in layout pixels — the same ones `frameOf`
+        // reports and `offsetX` arrives in — so the picture and the hit test
+        // never need converting between spaces.
+        context.setTransform(perLayoutPixel, 0, 0, perLayoutPixel, 0, 0);
         context.clearRect(0, 0, width, height);
 
         const styles = getComputedStyle(document.documentElement);
@@ -205,11 +226,11 @@ export function GraphView() {
         }
 
         // Labels last, so no dot is drawn over a name.
-        const detail = labelDetailFor(scale);
+        const detail = labelDetailFor(spacingRef.current * scale);
 
         context.textAlign = 'center';
         context.textBaseline = 'top';
-        context.font = `${12 / scale}px ui-sans-serif, system-ui, sans-serif`;
+        context.font = `${11 / scale}px ui-sans-serif, system-ui, sans-serif`;
 
         for (const node of nodesRef.current) {
             const meta = byId.get(node.id);
