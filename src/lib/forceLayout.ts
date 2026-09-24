@@ -37,38 +37,6 @@ const DEFAULTS = { gravity: 0.015, linkDistance: 45, repulsion: 1400 };
 export const SETTLE_STEPS = 220;
 
 /**
- * Typical distance from a node to its nearest neighbour, in graph units.
- *
- * The median rather than the mean: one pair sitting almost on top of each other
- * would drag an average down and claim the whole picture is crowded.
- */
-export function nearestNeighbourSpacing(nodes: readonly LayoutNode[]): number {
-    if (nodes.length < 2) {
-        return Number.POSITIVE_INFINITY;
-    }
-
-    const nearest: number[] = [];
-
-    for (const node of nodes) {
-        let best = Number.POSITIVE_INFINITY;
-
-        for (const other of nodes) {
-            if (other === node) {
-                continue;
-            }
-
-            best = Math.min(best, Math.hypot(node.x - other.x, node.y - other.y));
-        }
-
-        nearest.push(best);
-    }
-
-    nearest.sort((left, right) => left - right);
-
-    return nearest[Math.floor(nearest.length / 2)];
-}
-
-/**
  * Starting positions: a ring, widened as the count grows so a large vault does
  * not begin as one dense knot the repulsion has to spend its whole budget
  * unpicking.
