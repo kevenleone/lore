@@ -66,6 +66,24 @@ describe('openItemDrawer', () => {
     });
 });
 
+describe('expandOpenItem', () => {
+    it('goes to the library, which is the only surface that draws a page', () => {
+        useStore.getState().openItemDrawer('one');
+        useStore.getState().expandOpenItem();
+
+        expect(useStore.getState().openAs).toBe('page');
+        expect(useStore.getState().mainView).toBe('library');
+    });
+
+    it('keeps the item it was showing', () => {
+        useStore.getState().openItemDrawer('one');
+        useStore.getState().expandOpenItem();
+
+        expect(useStore.getState().openId).toBe('one');
+        expect(useStore.getState().selectedId).toBe('one');
+    });
+});
+
 describe('selectItem, for contrast', () => {
     it('does go to the library', () => {
         useStore.getState().selectItem('one');

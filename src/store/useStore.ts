@@ -1209,7 +1209,11 @@ export const useStore = create<StoreState>((set, get) => ({
     editorDirtyId: null,
 
     expandOpenItem() {
-        set({ openAs: 'page' });
+        // A page fills the window, and the library is the only surface that
+        // draws one — expanding from the graph means going there, the way
+        // `selectItem` does. Without this the drawer simply vanished, because
+        // the graph has no page of its own to promote it into.
+        set({ mainView: 'library', openAs: 'page' });
     },
     async exportItemPdf(id) {
         const target = id ?? get().selectedId;
