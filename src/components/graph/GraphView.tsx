@@ -12,7 +12,7 @@ import type { Frame } from './viewport';
 import { cn } from '../../lib/cn';
 import { type LayoutNode, seed, SETTLE_STEPS, step } from '../../lib/forceLayout';
 import { useStore } from '../../store/useStore';
-import { GraphPreview } from './GraphPreview';
+import { DetailPane } from '../kb/DetailPane';
 import { labelDetailFor, shortTitle, showsLabel } from './labels';
 import { IDENTITY, panBy, toWorld, type Viewport, zoomAt } from './viewport';
 
@@ -34,13 +34,19 @@ export function GraphView() {
     const graph = useStore((state) => state.graph);
     const loadGraph = useStore((state) => state.loadGraph);
     const selectedId = useStore((state) => state.selectedId);
+    const selectItem = useStore((state) => state.selectItem);
+    // The drawer is opened and closed through the same store fields the library
+    // uses, so the pane's own Close button works here without being told about
+    // the graph at all.
+    const openId = useStore((state) => state.openId);
+    const openAs = useStore((state) => state.openAs);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const nodesRef = useRef<LayoutNode[]>([]);
     const dragRef = useRef<{ moved: boolean; x: number; y: number } | null>(null);
 
     const [viewport, setViewport] = useState<Viewport>(IDENTITY);
-    const [previewId, setPreviewId] = useState<null | string>(null);
+    const previewOpen = openId !== null && openAs === 'drawer';
     const [hovered, setHovered] = useState<{ node: GraphNode; x: number; y: number } | null>(null);
     const [ready, setReady] = useState(false);
 
@@ -165,7 +171,7 @@ export function GraphView() {
             context.globalAlpha = !focus || lit || touches(graph.edges, focus, node.id) ? 1 : 0.3;
             context.fill();
 
-            if (lit || node.id === selectedId || node.id === previewId) {
+            if (lit || node.id === selectedId) {
                 context.globalAlpha = 1;
                 context.strokeStyle = token('--color-accent');
                 context.lineWidth = 2 / scale;
@@ -201,7 +207,7 @@ export function GraphView() {
         }
 
         context.restore();
-    }, [byId, frameOf, graph, hovered, previewId, selectedId, viewport]);
+    }, [byId, frameOf, graph, hovered, selectedId, viewport]);
 
     useEffect(() => {
         if (!ready) {
@@ -307,7 +313,15 @@ export function GraphView() {
 
                         const node = nodeAt(pointIn(event));
 
-                        setPreviewId(node ? node.id : null);
+                        if (node) {
+                            // The pane draws whatever the store has selected,
+                            // which is what makes this the library's pane rather
+                            // than a second one that drifts from it.
+                            selectItem(node.id);
+                            useStore.setState({ openAs: 'drawer', openId: node.id });
+                        } else {
+                            useStore.setState({ openAs: null, openId: null });
+                        }
                     }}
                     onWheel={(event) => {
                         const frame = frameOf();
@@ -325,8 +339,13 @@ export function GraphView() {
                     }}
                     ref={canvasRef}
                 />
-                {previewId && <GraphPreview id={previewId} onClose={() => setPreviewId(null)} />}
-                {hovered && !previewId && (
+                {previewOpen && (
+                    /* The library's drawer, at the library's width and chrome. */
+                    <div className="absolute top-0 right-0 bottom-0 z-30 flex min-h-0 w-[496px] flex-col border-l border-border bg-surface shadow-float">
+                        <DetailPane chrome="drawer" />
+                    </div>
+                )}
+                {hovered && !previewOpen && (
                     <div
                         className="pointer-events-none absolute max-w-[260px] truncate rounded-7 border border-border bg-surface2 px-[10px] py-[5px] text-body shadow-float"
                         // Follows the pointer: a label pinned to a corner makes
