@@ -24,6 +24,19 @@ import { type FileRow, hashContent, IndexVersionMismatch, openIndex } from './db
 /** How long a virtual document is trusted before it is checked again. */
 const REFRESH_TTL_MS = 6 * 60 * 60 * 1000;
 
+/** Files read per transaction. Bounds both the lock and the memory held. */
+const BATCH = 250;
+
+interface PendingFile {
+    hash: string;
+    mtime: number;
+    path: string;
+    prevHash?: string;
+    prevId?: string;
+    raw: string;
+    size: number;
+}
+
 export class VaultStore {
     /**
      * Told about every path this process writes, so the watcher can ignore the
@@ -238,29 +251,29 @@ export class VaultStore {
 
         let indexed = 0;
 
-        for (const path of paths) {
-            const st = await stat(this.vault.path(path));
-            const prev = existing.get(path);
-            const mtime = Math.floor(st.mtimeMs);
+        // Read a batch from disk, then write it in one transaction.
+        //
+        // Batched because each `db.run` is otherwise its own transaction, and a
+        // body's worth of wikilinks is a dozen writes per file rather than the
+        // one or two a curated `related` list was — on a 2,000-note vault that
+        // is most of two seconds. Bounded rather than one transaction for the
+        // whole pass because reading a file is async: an HTTP capture arriving
+        // mid-await would otherwise land inside this transaction and be rolled
+        // back with it if a later file failed to read.
+        for (let start = 0; start < paths.length; start += BATCH) {
+            const batch = await this.readBatch(paths.slice(start, start + BATCH), existing);
 
-            if (prev && prev.mtime_ms === mtime && prev.size === st.size) {
-                continue;
+            this.db.run('BEGIN');
+
+            try {
+                indexed += this.writeBatch(batch);
+            } catch (error) {
+                this.db.run('ROLLBACK');
+
+                throw error;
             }
 
-            const raw = await this.vault.readText(path);
-            const hash = hashContent(raw);
-
-            if (prev && prev.hash === hash) {
-                this.db.run('UPDATE files SET mtime_ms = ?, size = ? WHERE path = ?', [
-                    mtime,
-                    st.size,
-                    path,
-                ]);
-                continue;
-            }
-
-            this.indexOne(path, raw, mtime, st.size, hash, prev?.id);
-            indexed += 1;
+            this.db.run('COMMIT');
         }
 
         let removed = 0;
@@ -279,8 +292,6 @@ export class VaultStore {
 
         return { indexed, removed };
     }
-
-    /* ---------------- reads ---------------- */
 
     /**
      * Re-reads a virtual document from its origin. The file is only rewritten
@@ -397,6 +408,8 @@ export class VaultStore {
 
         return this.getItem(id);
     }
+
+    /* ---------------- reads ---------------- */
 
     /** Replaces one board. Passing null drops it back to the default columns. */
     async saveBoard(id: string, board: BoardConfig | null): Promise<void> {
@@ -538,8 +551,6 @@ export class VaultStore {
             .filter((src) => src !== id);
     }
 
-    /* ---------------- writes ---------------- */
-
     private indexOne(
         path: string,
         raw: string,
@@ -610,22 +621,74 @@ export class VaultStore {
         await this.vault.move(fromRel, toRel);
     }
 
-    /** Re-points links whose target has since appeared. Lets dead links self-heal. */
-    private reresolveAll(): void {
-        const resolver = this.resolver();
-        const rows = this.db.query<FileRow, []>('SELECT * FROM files').all();
+    /* ---------------- writes ---------------- */
 
-        for (const row of rows) {
-            const unresolved = JSON.parse(row.unresolved) as string[];
-            // A body mention of a file indexed after this one resolved to
-            // nothing on the first pass, and nothing else would ever revisit
-            // it: unlike a frontmatter entry, it leaves no `unresolved` trace.
-            const hasBodyLinks = bodyWikilinks(row.body).length > 0;
+    /** Everything the write pass needs, gathered off disk before it starts. */
+    private async readBatch(
+        paths: string[],
+        existing: Map<string, FileRow>,
+    ): Promise<PendingFile[]> {
+        const batch: PendingFile[] = [];
 
-            if (unresolved.length === 0 && !hasBodyLinks) {
+        for (const path of paths) {
+            const st = await stat(this.vault.path(path));
+            const prev = existing.get(path);
+            const mtime = Math.floor(st.mtimeMs);
+
+            if (prev && prev.mtime_ms === mtime && prev.size === st.size) {
                 continue;
             }
 
+            const raw = await this.vault.readText(path);
+
+            batch.push({
+                hash: hashContent(raw),
+                mtime,
+                path,
+                prevHash: prev?.hash,
+                prevId: prev?.id,
+                raw,
+                size: st.size,
+            });
+        }
+
+        return batch;
+    }
+
+    /**
+     * Re-points links whose target has since appeared. Lets dead links self-heal.
+     *
+     * Only the files that could still change are read back. A frontmatter entry
+     * that did not resolve says so in `unresolved`; a body mention leaves no
+     * such trace, so the index is asked instead — it already recorded which
+     * links landed on nothing. Re-parsing every body here instead cost 2.1s of
+     * a 2,000-note vault's first open.
+     */
+    private reresolveAll(): void {
+        const resolver = this.resolver();
+        const pending = new Set(
+            this.db
+                .query<{ src_id: string }, []>(
+                    'SELECT DISTINCT src_id FROM links WHERE target_id IS NULL',
+                )
+                .all()
+                .map((link) => link.src_id),
+        );
+        const rows = this.db
+            .query<FileRow, []>("SELECT * FROM files WHERE unresolved <> '[]'")
+            .all()
+            .concat(
+                pending.size === 0
+                    ? []
+                    : this.db
+                          .query<FileRow, []>(
+                              `SELECT * FROM files WHERE id IN (${[...pending].map(() => '?').join(',')}) AND unresolved = '[]'`,
+                          )
+                          .all(...pending),
+            );
+
+        for (const row of rows) {
+            const unresolved = JSON.parse(row.unresolved) as string[];
             const item = JSON.parse(row.json) as Item;
             const combined = [
                 ...item.related.map((id) => resolver.stemForId(id) ?? id),
@@ -675,6 +738,26 @@ export class VaultStore {
         }
 
         return stems;
+    }
+
+    private writeBatch(batch: PendingFile[]): number {
+        let indexed = 0;
+
+        for (const file of batch) {
+            if (file.prevHash === file.hash) {
+                this.db.run('UPDATE files SET mtime_ms = ?, size = ? WHERE path = ?', [
+                    file.mtime,
+                    file.size,
+                    file.path,
+                ]);
+                continue;
+            }
+
+            this.indexOne(file.path, file.raw, file.mtime, file.size, file.hash, file.prevId);
+            indexed += 1;
+        }
+
+        return indexed;
     }
 
     /** Records a write and performs it, so the two can never drift apart. */
