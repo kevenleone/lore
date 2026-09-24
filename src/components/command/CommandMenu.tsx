@@ -461,7 +461,7 @@ function useCommands(): CommandEntry[] {
         ];
 
         const goTo: CommandEntry[] = views
-            .map(({ kind, ...view }) => ({
+            .map(({ kind, ...view }): CommandEntry => ({
                 ...view,
                 group: 'Go to',
                 id: `view:${kind}`,
@@ -475,6 +475,14 @@ function useCommands(): CommandEntry[] {
                     keys: formatHotkey(hotkeyFor('view-tasks')),
                     label: 'Tasks',
                     run: () => store().setTaskView('summary'),
+                },
+                {
+                    group: 'Go to',
+                    icon: <Icon name="layers" size={14} />,
+                    id: 'view:graph',
+                    label: 'Graph',
+                    run: () => store().setMainView('graph'),
+                    terms: 'links map connections network',
                 },
                 {
                     group: 'Go to',

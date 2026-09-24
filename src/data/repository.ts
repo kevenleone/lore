@@ -12,6 +12,7 @@
 import type {
     BoardConfig,
     Collection,
+    Graph,
     Item,
     ItemMeta,
     SavedSearch,
@@ -38,6 +39,12 @@ export interface KnowledgeRepository {
      */
     exportTo?(path: string): Promise<{ files: number; path: string }>;
     getItem(id: string): Promise<Item | null>;
+
+    /**
+     * The vault's link structure. Optional: only a store with an index has an
+     * edge list, and the graph surface simply has nothing to draw without one.
+     */
+    graph?(): Promise<Graph>;
     /**
      * Per-file facts for the Properties panel. Optional: only the vault knows a
      * file's size or who links to it, so the other stores simply do not answer.

@@ -49,6 +49,7 @@ import {
     type Filters,
     type FocusSession,
     type FocusState,
+    type Graph,
     type Item,
     type ItemComment,
     type ItemMeta,
@@ -225,26 +226,30 @@ interface StoreState {
     focusPopoverOpen: boolean;
     /** Finished intervals, newest last. Drawn on the calendar. */
     focusSessions: FocusSession[];
+    /** The vault's link structure. Null until the graph surface has asked for it. */
+    graph: Graph | null;
     // lifecycle
     hydrate: () => Promise<void>;
     hydrated: boolean;
+
     /**
      * Per-file facts for the Properties panel — size, mtime, word count and
      * backlinks. Null until the panel is open and a response has landed.
      */
     itemMeta: ItemMeta | null;
-
     // data
     items: Item[];
     loadDetail: (id: string) => Promise<void>;
+    /** Re-reads the vault's link structure for the graph surface. */
+    loadGraph: () => Promise<void>;
     loadItemMeta: (id: string) => Promise<void>;
     /** Re-reads `.lore/templates/`, which the file watcher deliberately ignores. */
     loadTemplates: () => Promise<void>;
     /** Which surface the window's main area shows: the library or the calendar. */
     mainView: MainView;
+
     /** Drops a column onto another's place, from a drag of its handle. */
     moveBoardColumn: (columnId: string, targetId: string) => Promise<void>;
-
     onboarded: boolean;
     onboardingStep: OnboardingStep;
     /**
@@ -254,8 +259,8 @@ interface StoreState {
     openAs: null | OpenMode;
     /** Opens a collection's board. `UNFILED_BOARD` is the one for loose tasks. */
     openBoard: (boardId: string) => void;
-    openCapture: () => void;
 
+    openCapture: () => void;
     /** Opens the capture drawer with a column's board and status already set. */
     openCaptureIn: (collectionId: null | string, column: BoardColumnConfig) => void;
     /** Opens the photo picker against an item, to choose its thumbnail. */
@@ -1338,6 +1343,7 @@ export const useStore = create<StoreState>((set, get) => ({
     focusPopoverOpen: false,
     focusSessions: persisted.focusSessions,
 
+    graph: null,
     async hydrate() {
         if (hydrating) {
             return hydrating;
@@ -1355,6 +1361,7 @@ export const useStore = create<StoreState>((set, get) => ({
     },
     hydrated: false,
     itemMeta: null,
+
     items: [],
 
     async loadDetail(id) {
@@ -1373,6 +1380,15 @@ export const useStore = create<StoreState>((set, get) => ({
 
         set({ detail: item && keepBody ? { ...item, body: state.detail?.body } : item });
         void get().loadItemMeta(id);
+    },
+
+    async loadGraph() {
+        const repo = getRepository();
+        // A store with no index has no edge list; the surface says so rather
+        // than failing.
+        const graph = await (repo.graph?.() ?? Promise.resolve(null)).catch(() => null);
+
+        set({ graph });
     },
 
     async loadItemMeta(id) {
@@ -2008,6 +2024,7 @@ export const useStore = create<StoreState>((set, get) => ({
             collections: [],
             detail: null,
             filters: EMPTY_FILTERS,
+            graph: null,
             hydrated: false,
             items: [],
             openAs: null,
