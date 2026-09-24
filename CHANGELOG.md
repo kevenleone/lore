@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.23.0](https://github.com/kevenleone/lore/compare/v1.22.0...v1.23.0) (2026-09-24)
+
+
+### Features
+
+* **library:** a small force-directed layout ([af283f7](https://github.com/kevenleone/lore/commit/af283f79dad0480f0ca92894f5450427e28f4e65))
+* **library:** draw the vault's links as a graph ([0ef1e7b](https://github.com/kevenleone/lore/commit/0ef1e7b95c938b9420fc628dc6b3fdbafb4fba3d))
+* **library:** name the dots, and read a note without leaving the graph ([f9ae3d7](https://github.com/kevenleone/lore/commit/f9ae3d7f4db17e4931352bde59c570517144071e))
+* **library:** open the library's own detail pane from the graph ([0d0a30f](https://github.com/kevenleone/lore/commit/0d0a30fc95c991ef1c965ee13729d8a3755b4170))
+* **library:** zoom, pan and focus the graph ([3f7068d](https://github.com/kevenleone/lore/commit/3f7068d6a8cfd7bb26fdd44f48f26a55539d405d))
+* **vault:** read the link structure as a graph ([274042f](https://github.com/kevenleone/lore/commit/274042f5a13c4e6a0e14c8212d74bb6d7be3bc4d))
+
+
+### Bug Fixes
+
+* **library:** draw the graph at the size it is laid out at ([4076db8](https://github.com/kevenleone/lore/commit/4076db8619de14bf93d0cdd9f70a286c4f7bd11e))
+* **library:** let Open full screen work from the graph ([ee21dbc](https://github.com/kevenleone/lore/commit/ee21dbc4335128b992f8b1e456dc77e04f8a8888))
+* **library:** open the drawer on the graph, not by leaving it ([70b101a](https://github.com/kevenleone/lore/commit/70b101a444038ca6d067526a0b979d1e8ecc5c18))
+* **library:** show the real detail pane from the graph, in the right pixels ([1c29b68](https://github.com/kevenleone/lore/commit/1c29b686f2e22fa2d40ba7dd4109625e7045c4c2))
+* **library:** stop the graph shrinking under the pointer ([dfd4847](https://github.com/kevenleone/lore/commit/dfd48479a30396305ebf5912310c4c7180f8a160))
+* **library:** use the drawer for a graph preview, and land clicks on the dot ([f8e8936](https://github.com/kevenleone/lore/commit/f8e89366f6ee6fe8fda8665741f06b163dfaaee1))
+
+
+### Performance
+
+* **app:** load the optional surfaces only when they are opened ([efd0190](https://github.com/kevenleone/lore/commit/efd01905abd31a17a4c72aa47ebe0c62f2859936))
+* **library:** lay the graph out in a fraction of the time ([9646a00](https://github.com/kevenleone/lore/commit/9646a00a613b27b67914755b55742e1539a0d367))
+
 ## [1.22.0](https://github.com/kevenleone/lore/compare/v1.21.0...v1.22.0) (2026-09-24)
 
 
