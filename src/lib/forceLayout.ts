@@ -104,7 +104,10 @@ export function step(
                 distanceSquared = deltaX * deltaX + deltaY * deltaY;
             }
 
-            const push = (repulsion * alpha) / distanceSquared;
+            // Weighted by degree: a hub is drawn larger, so it needs more room
+            // than a leaf or the dots at the centre of a cluster overlap.
+            const weight = 1 + (first.degree + second.degree) * 0.12;
+            const push = (repulsion * weight * alpha) / distanceSquared;
             const distance = Math.sqrt(distanceSquared);
             const shiftX = (deltaX / distance) * push;
             const shiftY = (deltaY / distance) * push;

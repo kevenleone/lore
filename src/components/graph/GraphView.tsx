@@ -7,13 +7,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { GraphNode, ItemType } from '../../store/types';
+import type { Frame } from './viewport';
 
 import { cn } from '../../lib/cn';
 import { type LayoutNode, seed, SETTLE_STEPS, step } from '../../lib/forceLayout';
 import { useStore } from '../../store/useStore';
+import { IDENTITY, panBy, toWorld, type Viewport, zoomAt } from './viewport';
 
 /** Node radius by how many links touch it, so hubs read as hubs. */
-const RADIUS = { base: 3.5, max: 11, perDegree: 0.9 };
+const RADIUS = { base: 4, max: 13, perDegree: 1 };
+
+/** Slack around a dot, so a link does not need the pointer on its centre. */
+const HIT_SLACK = 7;
 
 const TYPE_TOKEN: Record<ItemType, string> = {
     code: '--color-type-code-fg',
@@ -29,11 +34,13 @@ export function GraphView() {
     const selectedId = useStore((state) => state.selectedId);
     const selectItem = useStore((state) => state.selectItem);
     const setMainView = useStore((state) => state.setMainView);
-    const reduceMotion = useStore((state) => state.prefs.switches.motion);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const nodesRef = useRef<LayoutNode[]>([]);
-    const [hovered, setHovered] = useState<GraphNode | null>(null);
+    const dragRef = useRef<{ moved: boolean; x: number; y: number } | null>(null);
+
+    const [viewport, setViewport] = useState<Viewport>(IDENTITY);
+    const [hovered, setHovered] = useState<{ node: GraphNode; x: number; y: number } | null>(null);
     const [ready, setReady] = useState(false);
 
     useEffect(() => {
@@ -53,10 +60,9 @@ export function GraphView() {
             return;
         }
 
-        const degrees = new Map(graph.nodes.map((node) => [node.id, node.degree]));
         const laid = seed(
             graph.nodes.map((node) => node.id),
-            degrees,
+            new Map(graph.nodes.map((node) => [node.id, node.degree])),
         );
 
         for (let index = 0; index < SETTLE_STEPS; index += 1) {
@@ -64,27 +70,40 @@ export function GraphView() {
         }
 
         nodesRef.current = laid;
+        setViewport(IDENTITY);
         setReady(true);
     }, [graph]);
 
+    const frameOf = useCallback((): Frame | null => {
+        const box = canvasRef.current?.parentElement;
+
+        if (!box) {
+            return null;
+        }
+
+        return {
+            base: fitScale(nodesRef.current, box.clientWidth, box.clientHeight),
+            height: box.clientHeight,
+            width: box.clientWidth,
+        };
+    }, []);
+
     const draw = useCallback(() => {
         const canvas = canvasRef.current;
-        const nodes = nodesRef.current;
+        const frame = frameOf();
 
-        if (!canvas || !graph) {
+        if (!canvas || !frame || !graph) {
             return;
         }
 
         const context = canvas.getContext('2d');
-        const frame = canvas.parentElement;
 
-        if (!context || !frame) {
+        if (!context) {
             return;
         }
 
         const ratio = window.devicePixelRatio || 1;
-        const width = frame.clientWidth;
-        const height = frame.clientHeight;
+        const { height, width } = frame;
 
         canvas.width = width * ratio;
         canvas.height = height * ratio;
@@ -95,15 +114,13 @@ export function GraphView() {
 
         const styles = getComputedStyle(document.documentElement);
         const token = (name: string) => styles.getPropertyValue(name).trim() || '#888';
-        const scale = fitScale(nodes, width, height);
+        const scale = frame.base * viewport.zoom;
+        const positions = new Map(nodesRef.current.map((node) => [node.id, node]));
+        const focus = hovered?.node.id ?? selectedId;
 
         context.save();
-        context.translate(width / 2, height / 2);
+        context.translate(width / 2 + viewport.panX, height / 2 + viewport.panY);
         context.scale(scale, scale);
-
-        const positions = new Map(nodesRef.current.map((node) => [node.id, node]));
-
-        context.lineWidth = 1 / scale;
 
         for (const edge of graph.edges) {
             const from = positions.get(edge.source);
@@ -113,13 +130,14 @@ export function GraphView() {
                 continue;
             }
 
-            const touchesSelection = edge.source === selectedId || edge.target === selectedId;
+            const lit = edge.source === focus || edge.target === focus;
 
-            context.strokeStyle = token(touchesSelection ? '--color-accent' : '--color-border');
+            context.strokeStyle = token(lit ? '--color-accent' : '--color-text3');
             // A curated relation is a firmer claim than a passing mention, and
             // the picture should not present them as the same thing.
             context.setLineDash(edge.via === 'body' ? [3 / scale, 3 / scale] : []);
-            context.globalAlpha = touchesSelection ? 0.9 : 0.5;
+            context.globalAlpha = lit ? 1 : 0.55;
+            context.lineWidth = (lit ? 1.6 : 1) / scale;
             context.beginPath();
             context.moveTo(from.x, from.y);
             context.lineTo(to.x, to.y);
@@ -127,30 +145,35 @@ export function GraphView() {
         }
 
         context.setLineDash([]);
-        context.globalAlpha = 1;
 
-        for (const node of nodes) {
+        for (const node of nodesRef.current) {
             const meta = byId.get(node.id);
 
             if (!meta) {
                 continue;
             }
 
+            const lit = node.id === focus;
+
             context.beginPath();
             context.arc(node.x, node.y, radiusFor(node.degree) / scale, 0, Math.PI * 2);
             context.fillStyle = token(TYPE_TOKEN[meta.type]);
+            // With something in focus, its neighbours keep full weight and the
+            // rest of the vault recedes — which is what makes a hairball
+            // readable without filtering anything out of it.
+            context.globalAlpha = !focus || lit || touches(graph.edges, focus, node.id) ? 1 : 0.3;
             context.fill();
 
-            if (node.id === selectedId || node.id === hovered?.id) {
+            if (lit || node.id === selectedId) {
+                context.globalAlpha = 1;
                 context.strokeStyle = token('--color-accent');
                 context.lineWidth = 2 / scale;
                 context.stroke();
-                context.lineWidth = 1 / scale;
             }
         }
 
         context.restore();
-    }, [byId, graph, hovered, selectedId]);
+    }, [byId, frameOf, graph, hovered, selectedId, viewport]);
 
     useEffect(() => {
         if (!ready) {
@@ -166,31 +189,35 @@ export function GraphView() {
         return () => window.removeEventListener('resize', onResize);
     }, [draw, ready]);
 
-    const nodeAt = (event: React.MouseEvent<HTMLCanvasElement>): GraphNode | null => {
-        const canvas = canvasRef.current;
-        const frame = canvas?.parentElement;
+    const pointIn = (event: { clientX: number; clientY: number }) => {
+        const bounds = canvasRef.current?.getBoundingClientRect();
 
-        if (!canvas || !frame) {
+        return bounds
+            ? { x: event.clientX - bounds.left, y: event.clientY - bounds.top }
+            : { x: 0, y: 0 };
+    };
+
+    const nodeAt = (point: { x: number; y: number }): GraphNode | null => {
+        const frame = frameOf();
+
+        if (!frame) {
             return null;
         }
 
-        const bounds = canvas.getBoundingClientRect();
-        const scale = fitScale(nodesRef.current, frame.clientWidth, frame.clientHeight);
-        const x = (event.clientX - bounds.left - frame.clientWidth / 2) / scale;
-        const y = (event.clientY - bounds.top - frame.clientHeight / 2) / scale;
-
-        let closest: { distance: number; node: LayoutNode } | null = null;
+        const world = toWorld(point, frame, viewport);
+        const scale = frame.base * viewport.zoom;
+        let closest: { distance: number; id: string } | null = null;
 
         for (const node of nodesRef.current) {
-            const distance = Math.hypot(node.x - x, node.y - y);
-            const reach = Math.max(radiusFor(node.degree), 6) / scale;
+            const distance = Math.hypot(node.x - world.x, node.y - world.y);
+            const reach = (radiusFor(node.degree) + HIT_SLACK) / scale;
 
             if (distance <= reach && (!closest || distance < closest.distance)) {
-                closest = { distance, node };
+                closest = { distance, id: node.id };
             }
         }
 
-        return closest ? (byId.get(closest.node.id) ?? null) : null;
+        return closest ? (byId.get(closest.id) ?? null) : null;
     };
 
     if (graph && graph.nodes.length === 0) {
@@ -204,36 +231,98 @@ export function GraphView() {
 
     return (
         <div className="relative flex min-h-0 flex-1 flex-col">
-            <div className="relative min-h-0 flex-1">
+            <div className="relative min-h-0 flex-1 overflow-hidden">
                 <canvas
-                    className="absolute inset-0"
-                    onClick={(event) => {
-                        const node = nodeAt(event);
+                    className={cn('absolute inset-0', hovered ? 'cursor-pointer' : 'cursor-grab')}
+                    onMouseDown={(event) => {
+                        dragRef.current = { moved: false, x: event.clientX, y: event.clientY };
+                    }}
+                    onMouseLeave={() => {
+                        dragRef.current = null;
+                        setHovered(null);
+                    }}
+                    onMouseMove={(event) => {
+                        const drag = dragRef.current;
+
+                        if (drag) {
+                            const deltaX = event.clientX - drag.x;
+                            const deltaY = event.clientY - drag.y;
+
+                            // A few pixels of travel is a click with a shaky
+                            // hand, not a pan; past that the click is cancelled.
+                            if (drag.moved || Math.hypot(deltaX, deltaY) > 3) {
+                                dragRef.current = {
+                                    moved: true,
+                                    x: event.clientX,
+                                    y: event.clientY,
+                                };
+                                setViewport((current) => panBy(current, deltaX, deltaY));
+                                setHovered(null);
+
+                                return;
+                            }
+                        }
+
+                        const point = pointIn(event);
+                        const node = nodeAt(point);
+
+                        setHovered(node ? { node, x: point.x, y: point.y } : null);
+                    }}
+                    onMouseUp={(event) => {
+                        const dragged = dragRef.current?.moved ?? false;
+
+                        dragRef.current = null;
+
+                        if (dragged) {
+                            return;
+                        }
+
+                        const node = nodeAt(pointIn(event));
 
                         if (node) {
                             selectItem(node.id);
                             setMainView('library');
                         }
                     }}
-                    onMouseLeave={() => setHovered(null)}
-                    onMouseMove={(event) => setHovered(nodeAt(event))}
+                    onWheel={(event) => {
+                        const frame = frameOf();
+
+                        if (frame) {
+                            setViewport((current) =>
+                                zoomAt(
+                                    current,
+                                    pointIn(event),
+                                    Math.exp(-event.deltaY * 0.002),
+                                    frame,
+                                ),
+                            );
+                        }
+                    }}
                     ref={canvasRef}
                 />
                 {hovered && (
                     <div
-                        className={cn(
-                            'pointer-events-none absolute top-3 left-3 max-w-[280px] truncate rounded-7 border border-border bg-surface2 px-[10px] py-[6px] text-body shadow-float',
-                            !reduceMotion && 'transition-opacity duration-100',
-                        )}
+                        className="pointer-events-none absolute max-w-[260px] truncate rounded-7 border border-border bg-surface2 px-[10px] py-[5px] text-body shadow-float"
+                        // Follows the pointer: a label pinned to a corner makes
+                        // you look away from the dot you are asking about.
+                        style={{ left: hovered.x + 14, top: hovered.y + 14 }}
                     >
-                        {hovered.title}
+                        {hovered.node.title}
                     </div>
                 )}
             </div>
-            <div className="flex flex-none items-center gap-3 border-t border-border px-4 py-[9px] text-caption text-text3">
+            <div className="flex flex-none items-center gap-4 border-t border-border px-4 py-[9px] text-caption text-text3">
                 <span>
                     {graph?.nodes.length ?? 0} notes · {graph?.edges.length ?? 0} links
                 </span>
+                <button
+                    className="rounded-5 border border-border bg-transparent px-[8px] py-[2px] text-caption text-text2"
+                    onClick={() => setViewport(IDENTITY)}
+                    type="button"
+                >
+                    Fit
+                </button>
+                <span className="text-faint">{Math.round(viewport.zoom * 100)}%</span>
                 <span className="ml-auto flex items-center gap-[6px]">
                     <svg height="7" width="22">
                         <line stroke="currentColor" x1="0" x2="22" y1="3.5" y2="3.5" />
@@ -280,4 +369,17 @@ function fitScale(nodes: readonly LayoutNode[], width: number, height: number): 
 
 function radiusFor(degree: number): number {
     return Math.min(RADIUS.base + degree * RADIUS.perDegree, RADIUS.max);
+}
+
+/** Whether an edge joins these two, so a neighbour stays lit while the rest dim. */
+function touches(
+    edges: readonly { source: string; target: string }[],
+    focus: string,
+    id: string,
+): boolean {
+    return edges.some(
+        (edge) =>
+            (edge.source === focus && edge.target === id) ||
+            (edge.target === focus && edge.source === id),
+    );
 }
