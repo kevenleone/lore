@@ -2,6 +2,8 @@
 // counts), Collections, Tags,
 // and the footer (Ask Lore + Settings).
 
+import { useState } from 'react';
+
 import type { IconName, TaskView, View } from '../../store/types';
 
 import { captureShortcut } from '../../lib/appMode';
@@ -11,10 +13,12 @@ import { boardRollups, dayKey, taskCounts } from '../../store/tasks';
 import { UNFILED_BOARD } from '../../store/types';
 import { useStore } from '../../store/useStore';
 import { isViewActive, tagCounts, viewCounts } from '../../store/views';
-import { Message, Plus, Settings, Sparkle } from '../common/glyphs';
+import { ChevronRight, Message, Plus, Settings, Sparkle } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 import { CollectionsSection } from './CollectionsSection';
 import { SavedSearchesSection } from './SavedSearchesSection';
+import { SidebarEditor } from './SidebarEditor';
+import { hiddenSurfaces, isSurfaceVisible } from './sidebarItems';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
 /** Fixed while the pane collapses, so the contents don't reflow mid-transition. */
@@ -129,6 +133,15 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
     const toggleChat = useStore((state) => state.toggleChat);
     const view = useStore((state) => state.view);
 
+    const hidden = useStore((state) => state.prefs.hiddenSurfaces);
+    const [moreOpen, setMoreOpen] = useState(false);
+    const [editing, setEditing] = useState(false);
+
+    const showCalendar = isSurfaceVisible('calendar', hidden);
+    const showGraph = isSurfaceVisible('graph', hidden);
+    const showTasks = isSurfaceVisible('tasks', hidden);
+    const putAway = hiddenSurfaces(hidden);
+
     const counts = viewCounts(items);
     const projects = boardRollups(items, collections);
     const tags = tagCounts(items);
@@ -189,126 +202,181 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
             </nav>
 
             {/* The calendar is a surface rather than a filter, so it sits apart. */}
-            <button
-                aria-current={mainView === 'calendar' ? 'page' : undefined}
-                className={rowClass(mainView === 'calendar')}
-                onClick={() => setMainView('calendar')}
-                type="button"
-            >
-                <span className="flex flex-none">
-                    <Icon name="calendar" />
-                </span>
-                <span className="flex-1">Calendar</span>
-                <span className={KEY_CAP}>{formatHotkey(hotkeyFor('view-calendar'))}</span>
-            </button>
+            {showCalendar && (
+                <button
+                    aria-current={mainView === 'calendar' ? 'page' : undefined}
+                    className={rowClass(mainView === 'calendar')}
+                    onClick={() => setMainView('calendar')}
+                    type="button"
+                >
+                    <span className="flex flex-none">
+                        <Icon name="calendar" />
+                    </span>
+                    <span className="flex-1">Calendar</span>
+                    <span className={KEY_CAP}>{formatHotkey(hotkeyFor('view-calendar'))}</span>
+                </button>
+            )}
 
             {/* The graph is a surface too: the whole vault at once, not a filter of it. */}
-            <button
-                aria-current={mainView === 'graph' ? 'page' : undefined}
-                className={rowClass(mainView === 'graph')}
-                onClick={() => setMainView('graph')}
-                type="button"
-            >
-                <span className="flex flex-none">
-                    <Icon name="layers" />
-                </span>
-                <span className="flex-1">Graph</span>
-            </button>
+            {showGraph && (
+                <button
+                    aria-current={mainView === 'graph' ? 'page' : undefined}
+                    className={rowClass(mainView === 'graph')}
+                    onClick={() => setMainView('graph')}
+                    type="button"
+                >
+                    <span className="flex flex-none">
+                        <Icon name="layers" />
+                    </span>
+                    <span className="flex-1">Graph</span>
+                </button>
+            )}
 
             {/* Tasks — a surface of its own, like the calendar, with four reads of it. */}
-            <nav aria-label="Tasks">
-                <div className="flex items-center gap-[7px] px-[9px] pt-[15px] pb-[5px]">
-                    <span className="text-caption font-[680] tracking-[.06em] text-faint uppercase">
-                        Tasks
-                    </span>
-                    {tasks.overdue > 0 && (
-                        <span className="rounded-full bg-danger-tint px-[7px] py-[1px] text-caption font-[620] text-danger">
-                            {tasks.overdue} overdue
+            {showTasks && (
+                <nav aria-label="Tasks">
+                    <div className="flex items-center gap-[7px] px-[9px] pt-[15px] pb-[5px]">
+                        <span className="text-caption font-[680] tracking-[.06em] text-faint uppercase">
+                            Tasks
                         </span>
-                    )}
-                    <button
-                        aria-label="New task"
-                        className="ml-auto flex flex-none items-center justify-center border-none bg-transparent p-0 font-[inherit] text-faint hover:text-text2"
-                        onClick={onCapture}
-                        type="button"
-                    >
-                        <Plus size={14} />
-                    </button>
-                </div>
-                {TASK_VIEWS.map((v) => {
-                    // Board is a parent row: with one of the boards under it
-                    // open, that row carries the selection instead, so the two
-                    // are never lit at once.
-                    const active =
-                        mainView === 'tasks' &&
-                        taskView === v.view &&
-                        !(v.view === 'board' && boardId !== null);
-
-                    return (
+                        {tasks.overdue > 0 && (
+                            <span className="rounded-full bg-danger-tint px-[7px] py-[1px] text-caption font-[620] text-danger">
+                                {tasks.overdue} overdue
+                            </span>
+                        )}
                         <button
-                            aria-current={active ? 'page' : undefined}
-                            className={rowClass(active)}
-                            key={v.view}
-                            onClick={() => setTaskView(v.view)}
+                            aria-label="New task"
+                            className="ml-auto flex flex-none items-center justify-center border-none bg-transparent p-0 font-[inherit] text-faint hover:text-text2"
+                            onClick={onCapture}
                             type="button"
                         >
-                            <span className="flex flex-none">
-                                <Icon name={v.icon} />
-                            </span>
-                            <span className="flex-1">{v.label}</span>
-                            {showCounts && (
-                                <span
-                                    className={
-                                        v.countKey === 'today' && tasks.overdue > 0
-                                            ? OVERDUE_COUNT
-                                            : COUNT
-                                    }
-                                >
-                                    {tasks[v.countKey]}
-                                </span>
-                            )}
-                            {v.keys && <span className={KEY_CAP}>{v.keys}</span>}
+                            <Plus size={14} />
                         </button>
-                    );
-                })}
-                {/*
-                 * One row per board: a board is a collection, and its columns
-                 * are how that collection's tasks are laid out. The Board row
-                 * above opens the overview, which lists these same boards with
-                 * their progress; these are the shortcut straight into one.
-                 */}
-                <div className="ml-[9px] flex flex-col border-l border-border pl-[10px]">
-                    {projects.map((project) => {
-                        const id = project.collectionId ?? UNFILED_BOARD;
+                    </div>
+                    {TASK_VIEWS.map((v) => {
+                        // Board is a parent row: with one of the boards under it
+                        // open, that row carries the selection instead, so the two
+                        // are never lit at once.
                         const active =
-                            mainView === 'tasks' && taskView === 'board' && boardId === id;
+                            mainView === 'tasks' &&
+                            taskView === v.view &&
+                            !(v.view === 'board' && boardId !== null);
 
                         return (
                             <button
                                 aria-current={active ? 'page' : undefined}
-                                className={cn(
-                                    ROW_BASE,
-                                    'text-body-lg',
-                                    active
-                                        ? 'bg-accent-tint font-[590] text-accent'
-                                        : 'text-text2 hover:bg-hover',
-                                )}
-                                key={id}
-                                onClick={() => openBoard(id)}
+                                className={rowClass(active)}
+                                key={v.view}
+                                onClick={() => setTaskView(v.view)}
                                 type="button"
                             >
-                                <span
-                                    className="h-[9px] w-[9px] flex-none rounded-xs"
-                                    // The collection's own colour, which the user picks.
-                                    style={{ background: project.color }}
-                                />
-                                <span className="flex-1 truncate">{project.name}</span>
-                                {showCounts && <span className={COUNT}>{project.open}</span>}
+                                <span className="flex flex-none">
+                                    <Icon name={v.icon} />
+                                </span>
+                                <span className="flex-1">{v.label}</span>
+                                {showCounts && (
+                                    <span
+                                        className={
+                                            v.countKey === 'today' && tasks.overdue > 0
+                                                ? OVERDUE_COUNT
+                                                : COUNT
+                                        }
+                                    >
+                                        {tasks[v.countKey]}
+                                    </span>
+                                )}
+                                {v.keys && <span className={KEY_CAP}>{v.keys}</span>}
                             </button>
                         );
                     })}
-                </div>
-            </nav>
+                    {/*
+                     * One row per board: a board is a collection, and its columns
+                     * are how that collection's tasks are laid out. The Board row
+                     * above opens the overview, which lists these same boards with
+                     * their progress; these are the shortcut straight into one.
+                     */}
+                    <div className="ml-[9px] flex flex-col border-l border-border pl-[10px]">
+                        {projects.map((project) => {
+                            const id = project.collectionId ?? UNFILED_BOARD;
+                            const active =
+                                mainView === 'tasks' && taskView === 'board' && boardId === id;
+
+                            return (
+                                <button
+                                    aria-current={active ? 'page' : undefined}
+                                    className={cn(
+                                        ROW_BASE,
+                                        'text-body-lg',
+                                        active
+                                            ? 'bg-accent-tint font-[590] text-accent'
+                                            : 'text-text2 hover:bg-hover',
+                                    )}
+                                    key={id}
+                                    onClick={() => openBoard(id)}
+                                    type="button"
+                                >
+                                    <span
+                                        className="h-[9px] w-[9px] flex-none rounded-xs"
+                                        // The collection's own colour, which the user picks.
+                                        style={{ background: project.color }}
+                                    />
+                                    <span className="flex-1 truncate">{project.name}</span>
+                                    {showCounts && <span className={COUNT}>{project.open}</span>}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </nav>
+            )}
+
+            {putAway.length > 0 && (
+                <>
+                    <button
+                        aria-expanded={moreOpen}
+                        className={cn(rowClass(false), 'text-text3')}
+                        onClick={() => setMoreOpen(!moreOpen)}
+                        type="button"
+                    >
+                        <span className={cn('flex flex-none', moreOpen && 'rotate-90')}>
+                            <ChevronRight size={14} />
+                        </span>
+                        <span className="flex-1">More</span>
+                    </button>
+                    {moreOpen &&
+                        putAway.map((surface) => (
+                            <button
+                                className={cn(rowClass(false), 'pl-[26px]')}
+                                key={surface.id}
+                                onClick={() => {
+                                    if (surface.id === 'tasks') {
+                                        setTaskView('summary');
+                                    } else {
+                                        setMainView(surface.id);
+                                    }
+                                }}
+                                type="button"
+                            >
+                                <span className="flex flex-none">
+                                    <Icon name={surface.icon} />
+                                </span>
+                                <span className="flex-1">{surface.label}</span>
+                            </button>
+                        ))}
+                    {moreOpen && (
+                        <button
+                            className={cn(rowClass(false), 'pl-[26px] text-text3')}
+                            onClick={() => setEditing(true)}
+                            type="button"
+                        >
+                            <span className="flex flex-none">
+                                <Settings size={15} />
+                            </span>
+                            <span className="flex-1">Edit sidebar…</span>
+                        </button>
+                    )}
+                </>
+            )}
+            {editing && <SidebarEditor onClose={() => setEditing(false)} />}
 
             {/* Saved searches — a named view, filters and query */}
             <SavedSearchesSection />
