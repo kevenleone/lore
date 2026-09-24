@@ -276,9 +276,11 @@ interface StoreState {
      * there the detail pane is a permanent column, so there is nothing to open.
      */
     openId: null | string;
+    /** Follows a link from the open item, staying a full page when that is how it is open. */
+    /** Opens an item in a drawer, leaving the current surface where it is. */
+    openItemDrawer: (id: string) => void;
     /** Opens an item as a full page, whatever the view mode and open-mode preference say. */
     openItemPage: (id: string) => void;
-    /** Follows a link from the open item, staying a full page when that is how it is open. */
     openLinkedItem: (id: string) => void;
     openPhotoPicker: (itemId: string) => void;
     // settings actions
@@ -1507,6 +1509,27 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     openId: null,
+    /**
+     * Opens an item in a drawer without leaving the surface asking for it.
+     *
+     * `selectItem` goes to the library, which is right for the calendar and the
+     * chat — they are places you leave to read something. The graph is not: the
+     * whole point of it is to open one note after another while the picture
+     * stays put behind you.
+     */
+    openItemDrawer(id) {
+        set({
+            chatOpen: false,
+            detail: null,
+            itemMeta: null,
+            openAs: 'drawer',
+            openId: id,
+            selectedId: id,
+        });
+        get().recordRecentItem(id);
+        void get().loadDetail(id);
+    },
+
     openItemPage(id) {
         get().selectItem(id);
         set({ openAs: 'page', openId: id });
@@ -1541,7 +1564,6 @@ export const useStore = create<StoreState>((set, get) => ({
     photoPickerItemId: null,
 
     prefs: persisted.prefs,
-
     pushToast(message, action) {
         const toast = { action, id: crypto.randomUUID(), message };
 
@@ -1587,6 +1609,7 @@ export const useStore = create<StoreState>((set, get) => ({
             void get().loadDetail(id);
         }
     },
+
     async refreshSource(id) {
         const repo = getRepository();
 
@@ -1794,9 +1817,9 @@ export const useStore = create<StoreState>((set, get) => ({
     searching: false,
 
     searchResults: null,
-
     selectedId: 'i1',
     selecting: false,
+
     selectItem(id) {
         // Opening an item always means the library — the calendar and the chat
         // are both places you leave to look at one.

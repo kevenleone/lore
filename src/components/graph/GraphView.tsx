@@ -34,7 +34,8 @@ export function GraphView() {
     const graph = useStore((state) => state.graph);
     const loadGraph = useStore((state) => state.loadGraph);
     const selectedId = useStore((state) => state.selectedId);
-    const selectItem = useStore((state) => state.selectItem);
+    const openItemDrawer = useStore((state) => state.openItemDrawer);
+    const closeOpenItem = useStore((state) => state.closeOpenItem);
     // The drawer is opened and closed through the same store fields the library
     // uses, so the pane's own Close button works here without being told about
     // the graph at all.
@@ -313,14 +314,13 @@ export function GraphView() {
 
                         const node = nodeAt(pointIn(event));
 
+                        // The pane draws whatever the store has open, which is
+                        // what makes this the library's pane rather than a
+                        // second one that drifts from it.
                         if (node) {
-                            // The pane draws whatever the store has selected,
-                            // which is what makes this the library's pane rather
-                            // than a second one that drifts from it.
-                            selectItem(node.id);
-                            useStore.setState({ openAs: 'drawer', openId: node.id });
+                            openItemDrawer(node.id);
                         } else {
-                            useStore.setState({ openAs: null, openId: null });
+                            closeOpenItem();
                         }
                     }}
                     onWheel={(event) => {
