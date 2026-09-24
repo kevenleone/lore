@@ -12,7 +12,7 @@ import type { Frame } from './viewport';
 import { cn } from '../../lib/cn';
 import { type LayoutNode, seed, SETTLE_STEPS, step } from '../../lib/forceLayout';
 import { useStore } from '../../store/useStore';
-import { GraphPreview } from './GraphPreview';
+import { DetailPane } from '../kb/DetailPane';
 import { labelDetailFor, shortTitle, showsLabel } from './labels';
 import { IDENTITY, panBy, toWorld, type Viewport, zoomAt } from './viewport';
 
@@ -36,6 +36,7 @@ const TYPE_TOKEN: Record<ItemType, string> = {
 export function GraphView() {
     const graph = useStore((state) => state.graph);
     const loadGraph = useStore((state) => state.loadGraph);
+    const selectItem = useStore((state) => state.selectItem);
     const selectedId = useStore((state) => state.selectedId);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -90,6 +91,19 @@ export function GraphView() {
      * would feed each draw its own output, and every redraw — one per mouse
      * move, while hovering — would shrink the picture a little further.
      */
+    /**
+     * The frame, in the same pixels the canvas is laid out in.
+     *
+     * `clientWidth`, not `getBoundingClientRect`: `App` scales the whole tree
+     * with CSS `zoom` for the text-size preference, and a bounding rect is
+     * reported in visual pixels after that scaling while the element's own box
+     * — and therefore the canvas backing store sized from it — is in layout
+     * pixels. Mixing the two drew the graph at the wrong size entirely.
+     *
+     * It is also read off the parent rather than the canvas, because `draw`
+     * sizes the canvas from this: measuring what a redraw writes lets every
+     * redraw change its own input, and the picture walks away a little at a time.
+     */
     const frameOf = useCallback((): Frame | null => {
         const box = canvasRef.current?.parentElement;
 
@@ -97,12 +111,10 @@ export function GraphView() {
             return null;
         }
 
-        const rect = box.getBoundingClientRect();
-
         return {
-            base: fitScale(nodesRef.current, rect.width, rect.height),
-            height: rect.height,
-            width: rect.width,
+            base: fitScale(nodesRef.current, box.clientWidth, box.clientHeight),
+            height: box.clientHeight,
+            width: box.clientWidth,
         };
     }, []);
 
@@ -236,14 +248,17 @@ export function GraphView() {
         return () => window.removeEventListener('resize', onResize);
     }, [draw, ready]);
 
-    /** Pointer position within the frame — the same box `frameOf` measures. */
-    const pointIn = (event: { clientX: number; clientY: number }) => {
-        const bounds = canvasRef.current?.parentElement?.getBoundingClientRect();
-
-        return bounds
-            ? { x: event.clientX - bounds.left, y: event.clientY - bounds.top }
-            : { x: 0, y: 0 };
-    };
+    /**
+     * Pointer position within the frame.
+     *
+     * `offsetX`/`offsetY` are already relative to the canvas and already in
+     * layout pixels, so they need no rect and survive the tree's CSS `zoom`
+     * untouched — which subtracting a bounding rect from `clientX` does not.
+     */
+    const pointIn = (event: { nativeEvent: MouseEvent }) => ({
+        x: event.nativeEvent.offsetX,
+        y: event.nativeEvent.offsetY,
+    });
 
     const nodeAt = (point: { x: number; y: number }): GraphNode | null => {
         const frame = frameOf();
@@ -327,6 +342,13 @@ export function GraphView() {
 
                         const node = nodeAt(pointIn(event));
 
+                        if (node) {
+                            // The pane reads the store's selection, which is
+                            // what makes this the same pane the library shows
+                            // rather than a second one that drifts from it.
+                            selectItem(node.id);
+                        }
+
                         setPreviewId(node ? node.id : null);
                     }}
                     onWheel={(event) => {
@@ -345,7 +367,11 @@ export function GraphView() {
                     }}
                     ref={canvasRef}
                 />
-                <GraphPreview id={previewId} onClose={() => setPreviewId(null)} />
+                {previewId && (
+                    <div className="absolute top-0 right-0 bottom-0 z-30 flex min-h-0 w-[496px] flex-col border-l border-border bg-surface shadow-float">
+                        <DetailPane chrome="drawer" onClose={() => setPreviewId(null)} />
+                    </div>
+                )}
                 {hovered && !previewId && (
                     <div
                         className="pointer-events-none absolute max-w-[260px] truncate rounded-7 border border-border bg-surface2 px-[10px] py-[5px] text-body shadow-float"
