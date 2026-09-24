@@ -549,12 +549,6 @@ export interface Prefs {
     defaultCollection: null | string;
     density: Density;
     durations: Durations;
-    /**
-     * Sidebar surfaces put away, by id. Stores what to hide rather than what to
-     * show, so an empty list — and a vault with no preference at all — means
-     * everything is on, and a surface added later arrives visible.
-     */
-    hiddenSurfaces: string[];
     /** The theme style used whenever the effective mode is light. */
     lightTheme: ThemeId;
     longBreakAfter: number;
@@ -584,7 +578,6 @@ export const DEFAULT_PREFS: Prefs = {
     defaultCollection: null,
     density: 'Cozy',
     durations: { focus: 25, long: 15, short: 5 },
-    hiddenSurfaces: [],
     lightTheme: DEFAULT_LIGHT_THEME,
     longBreakAfter: 4,
     notifStyle: 'Banner',
