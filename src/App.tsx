@@ -6,16 +6,14 @@
 // Before any of that is reachable, `Lore Onboarding` covers the window until
 // the user has chosen a folder to hold their vault.
 
-import { useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo } from 'react';
 
-import { CalendarView } from './components/calendar/CalendarView';
 import { CaptureDrawer } from './components/capture/CaptureDrawer';
 import { CommandMenu } from './components/command/CommandMenu';
 import { Toasts } from './components/common/Toasts';
 import { FocusMode } from './components/focus/FocusMode';
 import { FocusPopover } from './components/focus/FocusPopover';
 import { useFocusTimer } from './components/focus/useFocusTimer';
-import { GraphView } from './components/graph/GraphView';
 import { AskLoreChat } from './components/kb/AskLoreChat';
 import { DetailPane } from './components/kb/DetailPane';
 import { ListPane } from './components/kb/ListPane';
@@ -26,7 +24,6 @@ import { StatusBar } from './components/kb/StatusBar';
 import { TitleBar } from './components/kb/TitleBar';
 import { Onboarding } from './components/onboarding/Onboarding';
 import { SettingsModal } from './components/settings/SettingsModal';
-import { TasksView } from './components/tasks/TasksView';
 import { APP_LINKS, openExternal } from './lib/appInfo';
 import { cn } from './lib/cn';
 import { hotkeyCommandFor } from './lib/hotkeys';
@@ -37,6 +34,24 @@ import { useMountTransition } from './lib/useMountTransition';
 import { useStartupPrefs } from './lib/useStartupPrefs';
 import { useStore } from './store/useStore';
 import { effectiveTheme, paintTheme } from './theme/tokens';
+
+/*
+ * The optional surfaces, split out of the entry chunk.
+ *
+ * Each is a whole way of looking at a vault that plenty of people never open —
+ * and the sidebar now lets them be put away entirely — so making the editor wait
+ * on their code before it can start is the wrong trade. They arrive on first
+ * visit instead, which is a read from local disk.
+ */
+const CalendarView = lazy(async () => ({
+    default: (await import('./components/calendar/CalendarView')).CalendarView,
+}));
+const GraphView = lazy(async () => ({
+    default: (await import('./components/graph/GraphView')).GraphView,
+}));
+const TasksView = lazy(async () => ({
+    default: (await import('./components/tasks/TasksView')).TasksView,
+}));
 
 export default function App() {
     const hydrate = useStore((state) => state.hydrate);
@@ -325,11 +340,17 @@ export default function App() {
                         <Sidebar onCapture={openCapture} />
                     </div>
                     {mainView === 'calendar' ? (
-                        <CalendarView onCapture={openCapture} />
+                        <Suspense fallback={<SurfaceLoading />}>
+                            <CalendarView onCapture={openCapture} />
+                        </Suspense>
                     ) : mainView === 'graph' ? (
-                        <GraphView />
+                        <Suspense fallback={<SurfaceLoading />}>
+                            <GraphView />
+                        </Suspense>
                     ) : mainView === 'tasks' ? (
-                        <TasksView />
+                        <Suspense fallback={<SurfaceLoading />}>
+                            <TasksView />
+                        </Suspense>
                     ) : (
                         <>
                             {/*
@@ -459,4 +480,13 @@ function selectAllInFocusedField(): void {
     range.selectNodeContents(target as HTMLElement);
     selection?.removeAllRanges();
     selection?.addRange(range);
+}
+
+/**
+ * Held while a surface's code arrives. Deliberately blank rather than a spinner:
+ * the file is on this machine, so the wait is a frame or two, and a spinner that
+ * flashes and goes reads as a fault rather than as loading.
+ */
+function SurfaceLoading() {
+    return <div className="flex min-h-0 flex-1 bg-canvas" />;
 }
