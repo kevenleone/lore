@@ -461,6 +461,8 @@ export function routes(workspace: Workspace) {
 
             /* ---------------- derived reads ---------------- */
 
+            .get('/graph', () => workspace.current.graph())
+
             .get('/tags', () => workspace.current.listTags())
 
             .get('/templates', () => listTemplates(workspace.current.vault))

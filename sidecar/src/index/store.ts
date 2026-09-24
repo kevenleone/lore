@@ -1,7 +1,15 @@
 // The vault store: the index plus the read/write operations the routes expose.
 // This is where the file tree and the derived index are kept in agreement.
 
-import type { BoardConfig, Collection, Item, ItemMeta, TagCount } from '@lore/types';
+import type {
+    BoardConfig,
+    Collection,
+    Graph,
+    GraphEdge,
+    Item,
+    ItemMeta,
+    TagCount,
+} from '@lore/types';
 import type { Database } from 'bun:sqlite';
 
 import { deriveDomain, deriveProse, deriveSnippet, deriveSubtaskCounts } from '@lore/derive';
@@ -178,6 +186,53 @@ export class VaultStore {
         const row = this.db.query<FileRow, [string]>('SELECT * FROM files WHERE id = ?').get(id);
 
         return row ? rowToItem(row, true) : null;
+    }
+
+    /**
+     * The whole link structure in one read. Sent entire rather than as a
+     * neighbourhood around one note: it is a few dozen bytes a node, and having
+     * it all in the renderer is what lets the depth control redraw without a
+     * round trip.
+     *
+     * Only resolved edges are here. A link pointing at a file nobody has written
+     * has nothing to draw at the other end; the Properties panel is where those
+     * are surfaced.
+     */
+    graph(): Graph {
+        const items = this.listItems();
+        const known = new Set(items.map((item) => item.id));
+        const rows = this.db
+            .query<{ src_id: string; target_id: string; via: string }, []>(
+                'SELECT DISTINCT src_id, target_id, via FROM links WHERE target_id IS NOT NULL',
+            )
+            .all();
+
+        const degree = new Map<string, number>();
+        const edges: GraphEdge[] = [];
+
+        for (const row of rows) {
+            if (!known.has(row.src_id) || !known.has(row.target_id)) {
+                continue;
+            }
+
+            degree.set(row.src_id, (degree.get(row.src_id) ?? 0) + 1);
+            degree.set(row.target_id, (degree.get(row.target_id) ?? 0) + 1);
+            edges.push({
+                source: row.src_id,
+                target: row.target_id,
+                via: row.via === 'body' ? 'body' : 'related',
+            });
+        }
+
+        return {
+            edges,
+            nodes: items.map((item) => ({
+                degree: degree.get(item.id) ?? 0,
+                id: item.id,
+                title: item.title,
+                type: item.type,
+            })),
+        };
     }
 
     /** The per-file facts the Properties panel shows. Null when the id is unknown. */

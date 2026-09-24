@@ -288,6 +288,31 @@ export const EMPTY_FILTERS: Filters = {
     to: null,
 };
 
+/** The vault's link structure, as the graph surface draws it. */
+export interface Graph {
+    edges: GraphEdge[];
+    nodes: GraphNode[];
+}
+
+export interface GraphEdge {
+    source: string;
+    target: string;
+    /**
+     * Where the link was written. A curated `related` entry and a mention in the
+     * prose are both edges, but they are not the same claim, so the graph draws
+     * them differently.
+     */
+    via: 'body' | 'related';
+}
+
+export interface GraphNode {
+    /** How many edges touch it, in either direction. Sets the dot's size. */
+    degree: number;
+    id: string;
+    title: string;
+    type: ItemType;
+}
+
 /**
  * A named library state — the sidebar view, the filter bar and the query,
  * together. Stored in `.lore/workspace.json`, so a search travels with the
@@ -608,7 +633,7 @@ export interface FocusState {
 }
 
 /** Which surface the window's main area is showing. */
-export type MainView = 'calendar' | 'library' | 'tasks';
+export type MainView = 'calendar' | 'graph' | 'library' | 'tasks';
 
 /**
  * The tabs inside the Tasks surface. `board` holds both the overview and a
