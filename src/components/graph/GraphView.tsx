@@ -22,6 +22,9 @@ const RADIUS = { base: 4, max: 13, perDegree: 1 };
 /** Slack around a dot, so a link does not need the pointer on its centre. */
 const HIT_SLACK = 7;
 
+/** No dot is harder to hit than this, however small it is drawn. */
+const MIN_HIT = 12;
+
 const TYPE_TOKEN: Record<ItemType, string> = {
     code: '--color-type-code-fg',
     image: '--color-type-image-fg',
@@ -75,18 +78,28 @@ export function GraphView() {
         setReady(true);
     }, [graph]);
 
+    /**
+     * Measured from the canvas itself wherever possible, because this is what
+     * both the drawing and the hit test read. Taking the size from the parent
+     * and the pointer from the canvas leaves any disagreement between the two
+     * as a constant offset between where a dot is drawn and where it can be
+     * clicked — which is exactly what it looked like.
+     */
     const frameOf = useCallback((): Frame | null => {
-        const box = canvasRef.current?.parentElement;
+        const canvas = canvasRef.current;
+        const box = canvas?.parentElement;
 
-        if (!box) {
+        if (!canvas || !box) {
             return null;
         }
 
-        return {
-            base: fitScale(nodesRef.current, box.clientWidth, box.clientHeight),
-            height: box.clientHeight,
-            width: box.clientWidth,
-        };
+        const rect = canvas.getBoundingClientRect();
+        // Before the first draw the canvas has no size of its own; the parent
+        // is what it is about to be sized to.
+        const width = rect.width || box.clientWidth;
+        const height = rect.height || box.clientHeight;
+
+        return { base: fitScale(nodesRef.current, width, height), height, width };
     }, []);
 
     const draw = useCallback(() => {
@@ -238,7 +251,7 @@ export function GraphView() {
 
         for (const node of nodesRef.current) {
             const distance = Math.hypot(node.x - world.x, node.y - world.y);
-            const reach = (radiusFor(node.degree) + HIT_SLACK) / scale;
+            const reach = Math.max(radiusFor(node.degree) + HIT_SLACK, MIN_HIT) / scale;
 
             if (distance <= reach && (!closest || distance < closest.distance)) {
                 closest = { distance, id: node.id };
@@ -325,7 +338,7 @@ export function GraphView() {
                     }}
                     ref={canvasRef}
                 />
-                {previewId && <GraphPreview id={previewId} onClose={() => setPreviewId(null)} />}
+                <GraphPreview id={previewId} onClose={() => setPreviewId(null)} />
                 {hovered && !previewId && (
                     <div
                         className="pointer-events-none absolute max-w-[260px] truncate rounded-7 border border-border bg-surface2 px-[10px] py-[5px] text-body shadow-float"
