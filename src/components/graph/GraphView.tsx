@@ -10,7 +10,7 @@ import type { GraphNode, ItemType } from '../../store/types';
 import type { Frame } from './viewport';
 
 import { cn } from '../../lib/cn';
-import { type LayoutNode, seed, SETTLE_STEPS, step } from '../../lib/forceLayout';
+import { type LayoutNode, seed, step, stepsFor } from '../../lib/forceLayout';
 import { useStore } from '../../store/useStore';
 import { DetailPane } from '../kb/DetailPane';
 import { labelDetailFor, shortTitle, showsLabel } from './labels';
@@ -72,9 +72,10 @@ export function GraphView() {
             graph.nodes.map((node) => node.id),
             new Map(graph.nodes.map((node) => [node.id, node.degree])),
         );
+        const steps = stepsFor(laid.length);
 
-        for (let index = 0; index < SETTLE_STEPS; index += 1) {
-            step(laid, graph.edges, 1 - index / SETTLE_STEPS);
+        for (let index = 0; index < steps; index += 1) {
+            step(laid, graph.edges, 1 - index / steps);
         }
 
         nodesRef.current = laid;
@@ -125,6 +126,19 @@ export function GraphView() {
         const scale = frame.base * viewport.zoom;
         const positions = new Map(nodesRef.current.map((node) => [node.id, node]));
         const focus = hovered?.node.id ?? selectedId;
+        // Built once per draw. Asking `edges.some(...)` per node instead is a
+        // scan of the whole edge list for every dot, on every mouse move.
+        const lit = new Set<string>();
+
+        if (focus) {
+            for (const edge of graph.edges) {
+                if (edge.source === focus) {
+                    lit.add(edge.target);
+                } else if (edge.target === focus) {
+                    lit.add(edge.source);
+                }
+            }
+        }
 
         context.save();
         context.translate(width / 2 + viewport.panX, height / 2 + viewport.panY);
@@ -161,7 +175,7 @@ export function GraphView() {
                 continue;
             }
 
-            const lit = node.id === focus;
+            const isFocus = node.id === focus;
 
             context.beginPath();
             context.arc(node.x, node.y, radiusFor(node.degree) / scale, 0, Math.PI * 2);
@@ -169,10 +183,10 @@ export function GraphView() {
             // With something in focus, its neighbours keep full weight and the
             // rest of the vault recedes — which is what makes a hairball
             // readable without filtering anything out of it.
-            context.globalAlpha = !focus || lit || touches(graph.edges, focus, node.id) ? 1 : 0.3;
+            context.globalAlpha = !focus || isFocus || lit.has(node.id) ? 1 : 0.3;
             context.fill();
 
-            if (lit || node.id === selectedId) {
+            if (isFocus || node.id === selectedId) {
                 context.globalAlpha = 1;
                 context.strokeStyle = token('--color-accent');
                 context.lineWidth = 2 / scale;
@@ -189,7 +203,7 @@ export function GraphView() {
 
         for (const node of nodesRef.current) {
             const meta = byId.get(node.id);
-            const near = node.id === focus || (!!focus && touches(graph.edges, focus, node.id));
+            const near = node.id === focus || lit.has(node.id);
 
             if (!meta || !showsLabel(node, detail, near)) {
                 continue;
@@ -414,17 +428,4 @@ function fitScale(nodes: readonly LayoutNode[], width: number, height: number): 
 
 function radiusFor(degree: number): number {
     return Math.min(RADIUS.base + degree * RADIUS.perDegree, RADIUS.max);
-}
-
-/** Whether an edge joins these two, so a neighbour stays lit while the rest dim. */
-function touches(
-    edges: readonly { source: string; target: string }[],
-    focus: string,
-    id: string,
-): boolean {
-    return edges.some(
-        (edge) =>
-            (edge.source === focus && edge.target === id) ||
-            (edge.target === focus && edge.source === id),
-    );
 }
