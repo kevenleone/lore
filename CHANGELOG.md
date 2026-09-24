@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.22.0](https://github.com/kevenleone/lore/compare/v1.21.0...v1.22.0) (2026-09-24)
+
+
+### Features
+
+* **editor:** draw body wikilinks as links you can click ([8357173](https://github.com/kevenleone/lore/commit/83571732f8dfbd61e7d0387f7e48df5c15b82911))
+* **vault:** index wikilinks written in the body as edges ([d9dfd4e](https://github.com/kevenleone/lore/commit/d9dfd4e3eedfba6cfc373cb0f07f101d398a7b22))
+
+
+### Performance
+
+* **vault:** index a body's links without a query each, and batch the writes ([8e8e2fe](https://github.com/kevenleone/lore/commit/8e8e2fe6f5e1a0a29a2c291c75b80334e471f9c4))
+
 ## [1.21.0](https://github.com/kevenleone/lore/compare/v1.20.0...v1.21.0) (2026-09-23)
 
 
