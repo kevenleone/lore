@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.24.0](https://github.com/kevenleone/lore/compare/v1.23.0...v1.24.0) (2026-09-25)
+
+
+### Features
+
+* **settings:** make the sidebar guide lines a preference ([5bafd95](https://github.com/kevenleone/lore/commit/5bafd958fd6dc51f18c090cd6c55e036d71bb602))
+* **settings:** one preference for every rail the sidebar draws ([419458d](https://github.com/kevenleone/lore/commit/419458d763792df30dbf98aeaa037aa02866fcc4))
+* **sidebar:** rail the nested collections, so a branch shows where it starts ([86758f0](https://github.com/kevenleone/lore/commit/86758f0bbaea22fa5a91bcbda5568c2f24ee2c03))
+* **vault:** treat folders inside folders as collections ([1f8758b](https://github.com/kevenleone/lore/commit/1f8758bd9b1b8628e078c0b4fb0711093ad98c4c))
+
+
+### Bug Fixes
+
+* **library:** draw only the graph labels that fit ([30a9e67](https://github.com/kevenleone/lore/commit/30a9e67bc8e97503c601a568841d3eef665eb070))
+* **library:** land graph clicks on the dot at any text size ([1dd0226](https://github.com/kevenleone/lore/commit/1dd0226d06bd68d6b6aeb17b067919e9e1b75190))
+* **library:** repaint the graph when the theme changes ([ad76269](https://github.com/kevenleone/lore/commit/ad762694f92436c22f09885cbc6c625d0d56791b))
+* **sidebar:** draw the collection rails in the flow, where they show ([0f00ae2](https://github.com/kevenleone/lore/commit/0f00ae2fa17c39d8c8d61f538646812b48cfa761))
+* **sidebar:** run the collection rail unbroken, from the top level down ([3f91e1b](https://github.com/kevenleone/lore/commit/3f91e1b4b69f8730a12686532dca31fde488c0b4))
+
 ## [1.23.0](https://github.com/kevenleone/lore/compare/v1.22.0...v1.23.0) (2026-09-24)
 
 
