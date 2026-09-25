@@ -182,7 +182,7 @@ export function CollectionsSection() {
     );
 
     return (
-        <>
+        <nav aria-label="Collections">
             <div className="flex items-center px-[9px] pt-[15px] pb-[5px]">
                 <span className="text-caption font-[680] tracking-[.06em] text-faint uppercase">
                     Collections
@@ -197,152 +197,164 @@ export function CollectionsSection() {
                 </button>
             </div>
 
-            {rows.map(({ collection, depth, hasChildren, name }) => {
-                if (editingId === collection.id) {
-                    return renderEditor(collection.id);
-                }
+            {/*
+             * The same wrapper the boards under Tasks use, down to the numbers:
+             * the outermost rail is the container's own left border, so a root
+             * collection and a root board are indented by one construction
+             * rather than by two that have to be kept agreeing.
+             */}
+            <div
+                className={cn(
+                    'ml-[9px] flex flex-col pl-[10px]',
+                    rails && 'border-l border-border',
+                )}
+            >
+                {rows.map(({ collection, depth, hasChildren, name }) => {
+                    if (editingId === collection.id) {
+                        return renderEditor(collection.id);
+                    }
 
-                if (confirmId === collection.id) {
+                    if (confirmId === collection.id) {
+                        return (
+                            <div className={cn(ROW_BASE, 'bg-danger-tint')} key={collection.id}>
+                                <span className="flex-1 text-body text-danger">
+                                    Delete “{collection.name}”?
+                                </span>
+                                <button
+                                    aria-label={`Keep ${collection.name}`}
+                                    className={cn(BARE_BUTTON, 'flex text-text3')}
+                                    onClick={() => setConfirmId(null)}
+                                    type="button"
+                                >
+                                    <Close size={14} />
+                                </button>
+                                <button
+                                    aria-label={`Delete ${collection.name}`}
+                                    className={cn(BARE_BUTTON, 'flex text-danger')}
+                                    onClick={() => {
+                                        setConfirmId(null);
+                                        void deleteCollection(collection.id);
+                                    }}
+                                    type="button"
+                                >
+                                    <Check size={14} sw={2.4} />
+                                </button>
+                            </div>
+                        );
+                    }
+
+                    const active = isViewActive(view, 'collection', collection.id);
+
                     return (
-                        <div className={cn(ROW_BASE, 'bg-danger-tint')} key={collection.id}>
-                            <span className="flex-1 text-body text-danger">
-                                Delete “{collection.name}”?
+                        // The row is a group rather than a button: it holds the
+                        // collection's own button plus two more, and a button
+                        // cannot contain buttons.
+                        <div
+                            className={cn(
+                                ROW_BASE,
+                                'group relative',
+                                active
+                                    ? 'bg-accent-tint font-[590] text-accent'
+                                    : 'text-text2 hover:bg-hover',
+                            )}
+                            key={collection.id}
+                        >
+                            {/*
+                             * One spacer per level of nesting, carrying the indent
+                             * and — when the preference is on — the rail that says
+                             * where that branch began. The outermost rail is the
+                             * wrapper's border, so a root row has none of these.
+                             *
+                             * In the flow rather than absolutely placed, so it
+                             * cannot end up under the row's own contents. The
+                             * negative margin cancels the row's vertical padding,
+                             * which `self-stretch` alone stops short of — that gap
+                             * is what left the line dashed between rows.
+                             */}
+                            {Array.from({ length: depth }, (_unused, level) => (
+                                <span
+                                    aria-hidden="true"
+                                    className={cn(
+                                        '-my-[6px] -mr-[9px] flex-none self-stretch',
+                                        rails && 'border-l border-border',
+                                    )}
+                                    key={level}
+                                    style={{ width: INDENT }}
+                                />
+                            ))}
+                            {hasChildren ? (
+                                <button
+                                    aria-expanded={!collapsed.includes(collection.id)}
+                                    aria-label={`${collapsed.includes(collection.id) ? 'Expand' : 'Collapse'} ${name}`}
+                                    className={cn(BARE_BUTTON, 'flex flex-none text-faint')}
+                                    onClick={() =>
+                                        setPref(
+                                            'collapsedCollections',
+                                            toggleCollapsed(collection.id, collapsed),
+                                        )
+                                    }
+                                    type="button"
+                                >
+                                    <ChevronRight
+                                        className={cn(
+                                            !collapsed.includes(collection.id) && 'rotate-90',
+                                        )}
+                                        size={12}
+                                    />
+                                </button>
+                            ) : (
+                                // Keeps a childless row's swatch in line with the
+                                // ones that carry a chevron.
+                                <span className="w-[12px] flex-none" />
+                            )}
+                            <span
+                                className="h-[10px] w-[10px] flex-none rounded-[3px]"
+                                // The collection's own colour, which the user picks.
+                                style={{ background: collection.color }}
+                            />
+                            <button
+                                aria-current={active ? 'page' : undefined}
+                                className={cn(BARE_BUTTON, 'min-w-0 flex-1 truncate text-left')}
+                                onClick={() => selectView('collection', collection.id)}
+                                type="button"
+                            >
+                                {name}
+                            </button>
+                            <span className="text-body-sm tabular-nums opacity-50 group-focus-within:invisible group-hover:invisible">
+                                {collectionCount(items, collection.id)}
                             </span>
-                            <button
-                                aria-label={`Keep ${collection.name}`}
-                                className={cn(BARE_BUTTON, 'flex text-text3')}
-                                onClick={() => setConfirmId(null)}
-                                type="button"
-                            >
-                                <Close size={14} />
-                            </button>
-                            <button
-                                aria-label={`Delete ${collection.name}`}
-                                className={cn(BARE_BUTTON, 'flex text-danger')}
-                                onClick={() => {
-                                    setConfirmId(null);
-                                    void deleteCollection(collection.id);
-                                }}
-                                type="button"
-                            >
-                                <Check size={14} sw={2.4} />
-                            </button>
+                            <span className={ROW_ACTIONS}>
+                                <button
+                                    aria-label={`Rename ${name}`}
+                                    className={cn(BARE_BUTTON, 'flex text-text3')}
+                                    onClick={() => startEdit(collection.id, name, collection.color)}
+                                    type="button"
+                                >
+                                    <Pencil size={13} />
+                                </button>
+                                <button
+                                    aria-label={`New collection inside ${name}`}
+                                    className={cn(BARE_BUTTON, 'flex text-text3')}
+                                    onClick={() => startAdd(collection.id)}
+                                    type="button"
+                                >
+                                    <Plus size={13} sw={2} />
+                                </button>
+                                <button
+                                    aria-label={`Delete ${name}`}
+                                    className={cn(BARE_BUTTON, 'flex text-danger')}
+                                    onClick={() => setConfirmId(collection.id)}
+                                    type="button"
+                                >
+                                    <Trash size={13} />
+                                </button>
+                            </span>
                         </div>
                     );
-                }
-
-                const active = isViewActive(view, 'collection', collection.id);
-
-                return (
-                    // The row is a group rather than a button: it holds the
-                    // collection's own button plus two more, and a button
-                    // cannot contain buttons.
-                    <div
-                        className={cn(
-                            ROW_BASE,
-                            'group relative',
-                            active
-                                ? 'bg-accent-tint font-[590] text-accent'
-                                : 'text-text2 hover:bg-hover',
-                        )}
-                        key={collection.id}
-                    >
-                        {/*
-                         * A spacer per level, carrying the indent and — when the
-                         * preference is on — the rail that says where its branch
-                         * began. In the flow rather than absolutely placed, so it
-                         * cannot end up under the row's own contents.
-                         *
-                         * One more than the depth, so the outermost rail runs
-                         * down the whole section the way the boards under Tasks
-                         * do, rather than appearing only once something is
-                         * nested. The negative margin cancels the row's vertical
-                         * padding, which `self-stretch` alone stops short of —
-                         * that gap is what left the line dashed between rows.
-                         */}
-                        {Array.from({ length: depth + 1 }, (_unused, level) => (
-                            <span
-                                aria-hidden="true"
-                                className={cn(
-                                    '-my-[6px] -mr-[9px] flex-none self-stretch',
-                                    rails && 'border-l border-border',
-                                )}
-                                key={level}
-                                style={{ width: INDENT }}
-                            />
-                        ))}
-                        {hasChildren ? (
-                            <button
-                                aria-expanded={!collapsed.includes(collection.id)}
-                                aria-label={`${collapsed.includes(collection.id) ? 'Expand' : 'Collapse'} ${name}`}
-                                className={cn(BARE_BUTTON, 'flex flex-none text-faint')}
-                                onClick={() =>
-                                    setPref(
-                                        'collapsedCollections',
-                                        toggleCollapsed(collection.id, collapsed),
-                                    )
-                                }
-                                type="button"
-                            >
-                                <ChevronRight
-                                    className={cn(
-                                        !collapsed.includes(collection.id) && 'rotate-90',
-                                    )}
-                                    size={12}
-                                />
-                            </button>
-                        ) : (
-                            // Keeps a childless row's swatch in line with the
-                            // ones that carry a chevron.
-                            <span className="w-[12px] flex-none" />
-                        )}
-                        <span
-                            className="h-[10px] w-[10px] flex-none rounded-[3px]"
-                            // The collection's own colour, which the user picks.
-                            style={{ background: collection.color }}
-                        />
-                        <button
-                            aria-current={active ? 'page' : undefined}
-                            className={cn(BARE_BUTTON, 'min-w-0 flex-1 truncate text-left')}
-                            onClick={() => selectView('collection', collection.id)}
-                            type="button"
-                        >
-                            {name}
-                        </button>
-                        <span className="text-body-sm tabular-nums opacity-50 group-focus-within:invisible group-hover:invisible">
-                            {collectionCount(items, collection.id)}
-                        </span>
-                        <span className={ROW_ACTIONS}>
-                            <button
-                                aria-label={`Rename ${name}`}
-                                className={cn(BARE_BUTTON, 'flex text-text3')}
-                                onClick={() => startEdit(collection.id, name, collection.color)}
-                                type="button"
-                            >
-                                <Pencil size={13} />
-                            </button>
-                            <button
-                                aria-label={`New collection inside ${name}`}
-                                className={cn(BARE_BUTTON, 'flex text-text3')}
-                                onClick={() => startAdd(collection.id)}
-                                type="button"
-                            >
-                                <Plus size={13} sw={2} />
-                            </button>
-                            <button
-                                aria-label={`Delete ${name}`}
-                                className={cn(BARE_BUTTON, 'flex text-danger')}
-                                onClick={() => setConfirmId(collection.id)}
-                                type="button"
-                            >
-                                <Trash size={13} />
-                            </button>
-                        </span>
-                    </div>
-                );
-            })}
+                })}
+            </div>
 
             {editingId === NEW && renderEditor(NEW)}
-        </>
+        </nav>
     );
 }

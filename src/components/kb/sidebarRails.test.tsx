@@ -89,6 +89,24 @@ describe('collection rails', () => {
     });
 });
 
+describe('the two sections line up', () => {
+    // A root collection sat one indent right of a root board, because each
+    // section built its own indent out of different pieces. They now share one.
+    const wrapper = (root: HTMLElement, label: string) =>
+        root
+            .querySelector(`[aria-label="${label}"] .flex-col`)
+            ?.className.replace(/border-l border-border/, '')
+            .trim();
+
+    it('indents the boards and the collections by the same construction', () => {
+        setup(true);
+
+        const container = render(<Sidebar onCapture={vi.fn()} />).container;
+
+        expect(wrapper(container, 'Tasks')).toBe(wrapper(container, 'Collections'));
+    });
+});
+
 describe('the board rail', () => {
     it('follows the same preference, so the two cannot disagree', () => {
         setup(true);
