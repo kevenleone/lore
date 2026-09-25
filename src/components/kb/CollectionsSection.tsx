@@ -55,6 +55,7 @@ export function CollectionsSection() {
     const setPref = useStore((state) => state.setPref);
     const collapsed = useStore((state) => state.prefs.collapsedCollections);
     const rails = useStore((state) => state.prefs.switches.sidebarRails);
+    const flat = useStore((state) => state.prefs.switches.flatCollections);
 
     const [editingId, setEditingId] = useState<null | string>(null);
     /** The collection a new one is being created inside, or '' for the root. */
@@ -70,7 +71,7 @@ export function CollectionsSection() {
         }
     }, [editingId]);
 
-    const rows = collectionRows(collections, collapsed);
+    const rows = collectionRows(collections, collapsed, flat);
     /*
      * A disclosure column only where something discloses. With nothing nested
      * every row would otherwise reserve room for a chevron none of them has,

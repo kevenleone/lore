@@ -450,6 +450,13 @@ export interface Switches {
      */
     // Capture & AI
     detailSections: boolean;
+    /**
+     * List every collection at the root, labelled with its whole path, rather
+     * than nesting each one inside its parent. The tree is the shape of the
+     * vault; the flat list is the shape of a search result, and a deep vault
+     * reads faster as one than as five levels of indent.
+     */
+    flatCollections: boolean;
     focusEnd: boolean;
     /**
      * Registered as a login item. The login item itself is the truth; this is
@@ -504,6 +511,7 @@ export const DEFAULT_SWITCHES: Switches = {
     blockEditor: false,
     counts: true,
     detailSections: true,
+    flatCollections: false,
     focusEnd: true,
     launchAtLogin: false,
     logFocus: false,

@@ -126,25 +126,41 @@ describe('a vault with nothing nested', () => {
     // The disclosure column is reserved per row, so a flat vault used to hold
     // room for a chevron no row had — which is what put every collection one
     // notch to the right of the boards above it.
-    const flatSetup = (collections: Collection[]) => {
+    const flatSetup = (flatCollections: boolean, collections: Collection[]) => {
         useStore.setState({
             collections,
             items: [task('a', collections[0]!.id)],
-            prefs: { ...DEFAULT_PREFS, collapsedCollections: [] },
+            prefs: {
+                ...DEFAULT_PREFS,
+                collapsedCollections: [],
+                switches: { ...DEFAULT_SWITCHES, flatCollections },
+            },
         });
     };
 
     const chevronColumn = (root: HTMLElement) => root.querySelectorAll('.w-\\[12px\\]').length;
 
     it('reserves no disclosure column', () => {
-        flatSetup([{ color: '#888', id: 'Work', name: 'Work' }]);
+        flatSetup(false, [{ color: '#888', id: 'Work', name: 'Work' }]);
 
         expect(chevronColumn(render(<CollectionsSection />).container)).toBe(0);
     });
 
     it('still reserves one where something does nest', () => {
-        flatSetup(COLLECTIONS);
+        flatSetup(false, COLLECTIONS);
 
         expect(chevronColumn(render(<CollectionsSection />).container)).toBeGreaterThan(0);
+    });
+
+    it('reserves none in the flat view, where nothing nests by definition', () => {
+        flatSetup(true, COLLECTIONS);
+
+        expect(chevronColumn(render(<CollectionsSection />).container)).toBe(0);
+    });
+
+    it('labels the flat rows with their whole path', () => {
+        flatSetup(true, COLLECTIONS);
+
+        expect(render(<CollectionsSection />).container.textContent).toContain('Work/Projects');
     });
 });
