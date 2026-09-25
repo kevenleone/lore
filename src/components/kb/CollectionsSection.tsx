@@ -6,7 +6,8 @@ import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 import { collectionCount, isViewActive } from '../../store/views';
-import { Check, Close, Pencil, Plus, Trash } from '../common/glyphs';
+import { Check, ChevronRight, Close, Pencil, Plus, Trash } from '../common/glyphs';
+import { collectionRows, renamedTo, toggleCollapsed } from './collectionTree';
 
 const NEW = '__new__';
 
@@ -39,6 +40,9 @@ const BARE_BUTTON = 'border-none bg-transparent p-0 font-[inherit] text-[inherit
 const ROW_ACTIONS =
     'absolute inset-y-0 right-[9px] flex items-center gap-2 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100';
 
+/** How far each level of nesting steps in, in pixels. */
+const INDENT = 11;
+
 export function CollectionsSection() {
     const items = useStore((state) => state.items);
     const collections = useStore((state) => state.collections);
@@ -48,7 +52,12 @@ export function CollectionsSection() {
     const updateCollection = useStore((state) => state.updateCollection);
     const deleteCollection = useStore((state) => state.deleteCollection);
 
+    const setPref = useStore((state) => state.setPref);
+    const collapsed = useStore((state) => state.prefs.collapsedCollections);
+
     const [editingId, setEditingId] = useState<null | string>(null);
+    /** The collection a new one is being created inside, or '' for the root. */
+    const [addingUnder, setAddingUnder] = useState('');
     const [confirmId, setConfirmId] = useState<null | string>(null);
     const [draftName, setDraftName] = useState('');
     const [draftColor, setDraftColor] = useState(COLLECTION_COLORS[0]);
@@ -60,8 +69,11 @@ export function CollectionsSection() {
         }
     }, [editingId]);
 
-    const startAdd = () => {
+    const rows = collectionRows(collections, collapsed);
+
+    const startAdd = (under = '') => {
         setConfirmId(null);
+        setAddingUnder(under);
         setDraftName('');
         setDraftColor(COLLECTION_COLORS[0]);
         setEditingId(NEW);
@@ -84,9 +96,22 @@ export function CollectionsSection() {
         }
 
         if (editingId === NEW) {
-            await createCollection({ color: draftColor, name });
+            // A name typed with a slash is taken at its word, so a path can be
+            // written out in one go; otherwise it lands inside whichever row's
+            // plus was pressed.
+            const path = name.includes('/') || !addingUnder ? name : `${addingUnder}/${name}`;
+
+            await createCollection({ color: draftColor, name: path });
+            // The new child would be invisible inside a folded parent.
+            setPref(
+                'collapsedCollections',
+                collapsed.filter((entry) => entry !== addingUnder),
+            );
         } else if (editingId) {
-            await updateCollection(editingId, { color: draftColor, name });
+            await updateCollection(editingId, {
+                color: draftColor,
+                name: renamedTo(editingId, name),
+            });
         }
 
         setEditingId(null);
@@ -164,14 +189,14 @@ export function CollectionsSection() {
                 <button
                     aria-label="New collection"
                     className={cn(BARE_BUTTON, 'ml-auto flex text-faint hover:text-text2')}
-                    onClick={startAdd}
+                    onClick={() => startAdd()}
                     type="button"
                 >
                     <Plus size={13} sw={2} />
                 </button>
             </div>
 
-            {collections.map((collection) => {
+            {rows.map(({ collection, depth, hasChildren, name }) => {
                 if (editingId === collection.id) {
                     return renderEditor(collection.id);
                 }
@@ -220,7 +245,34 @@ export function CollectionsSection() {
                                 : 'text-text2 hover:bg-hover',
                         )}
                         key={collection.id}
+                        // A computed indent: the depth is data, not a class.
+                        style={{ paddingLeft: 9 + depth * INDENT }}
                     >
+                        {hasChildren ? (
+                            <button
+                                aria-expanded={!collapsed.includes(collection.id)}
+                                aria-label={`${collapsed.includes(collection.id) ? 'Expand' : 'Collapse'} ${name}`}
+                                className={cn(BARE_BUTTON, 'flex flex-none text-faint')}
+                                onClick={() =>
+                                    setPref(
+                                        'collapsedCollections',
+                                        toggleCollapsed(collection.id, collapsed),
+                                    )
+                                }
+                                type="button"
+                            >
+                                <ChevronRight
+                                    className={cn(
+                                        !collapsed.includes(collection.id) && 'rotate-90',
+                                    )}
+                                    size={12}
+                                />
+                            </button>
+                        ) : (
+                            // Keeps a childless row's swatch in line with the
+                            // ones that carry a chevron.
+                            <span className="w-[12px] flex-none" />
+                        )}
                         <span
                             className="h-[10px] w-[10px] flex-none rounded-[3px]"
                             // The collection's own colour, which the user picks.
@@ -232,24 +284,30 @@ export function CollectionsSection() {
                             onClick={() => selectView('collection', collection.id)}
                             type="button"
                         >
-                            {collection.name}
+                            {name}
                         </button>
                         <span className="text-body-sm tabular-nums opacity-50 group-focus-within:invisible group-hover:invisible">
                             {collectionCount(items, collection.id)}
                         </span>
                         <span className={ROW_ACTIONS}>
                             <button
-                                aria-label={`Rename ${collection.name}`}
+                                aria-label={`Rename ${name}`}
                                 className={cn(BARE_BUTTON, 'flex text-text3')}
-                                onClick={() =>
-                                    startEdit(collection.id, collection.name, collection.color)
-                                }
+                                onClick={() => startEdit(collection.id, name, collection.color)}
                                 type="button"
                             >
                                 <Pencil size={13} />
                             </button>
                             <button
-                                aria-label={`Delete ${collection.name}`}
+                                aria-label={`New collection inside ${name}`}
+                                className={cn(BARE_BUTTON, 'flex text-text3')}
+                                onClick={() => startAdd(collection.id)}
+                                type="button"
+                            >
+                                <Plus size={13} sw={2} />
+                            </button>
+                            <button
+                                aria-label={`Delete ${name}`}
                                 className={cn(BARE_BUTTON, 'flex text-danger')}
                                 onClick={() => setConfirmId(collection.id)}
                                 type="button"

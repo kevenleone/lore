@@ -54,8 +54,9 @@ export function applyFilters(items: Item[], filters: Filters): Item[] {
     return items.filter((item) => matchesFilters(item, filters));
 }
 
+/** Counts a collection and everything nested inside it — see `matchesView`. */
 export function collectionCount(items: Item[], collectionId: string): number {
-    return items.filter((item) => item.collectionId === collectionId).length;
+    return items.filter((item) => isUnderCollection(item.collectionId, collectionId)).length;
 }
 
 /** Filter to a view and apply the given sort order (default: newest first). */
@@ -67,6 +68,15 @@ export function filterByView(items: Item[], view: View, sort: SortOrder = 'newes
 
 export function hasActiveFilters(filters: Filters): boolean {
     return activeFilterCount(filters) > 0;
+}
+
+/**
+ * A collection id is its folder path, so "under `Work`" means `Work` itself or
+ * anything with `Work/` in front of it — and a slash is what separates them, so
+ * `Workshop` is not under `Work`.
+ */
+export function isUnderCollection(collectionId: string | undefined, parent: string): boolean {
+    return collectionId === parent || !!collectionId?.startsWith(`${parent}/`);
 }
 
 /**
@@ -132,7 +142,10 @@ export function matchesView(item: Item, view: View): boolean {
         case 'all':
             return true;
         case 'collection':
-            return item.collectionId === view.val;
+            // Descendants included: a parent holding only subfolders would
+            // otherwise read as empty while holding every note beneath it,
+            // which is the kind of thing that gets reported as data loss.
+            return !!view.val && isUnderCollection(item.collectionId, view.val);
         case 'files':
             return FILE_TYPES.includes(item.type);
         case 'inbox':

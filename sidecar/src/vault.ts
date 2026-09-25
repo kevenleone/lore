@@ -51,16 +51,37 @@ export class Vault {
     }
 
     /**
-     * Collection folders. Only top-level directories count — nested folders are
-     * deliberately not collections yet, since the sidebar has no tree.
+     * Collection folders, at any depth, as vault-relative paths.
+     *
+     * Nested folders were once left out of this while `collectionOf` already
+     * read the whole path — so a note in `Work/Projects` carried a collection
+     * id that matched no collection, and went missing from the sidebar while
+     * still appearing in Everything. Anyone opening a vault with folders inside
+     * folders had notes that looked filed and were not.
      */
     async listCollectionFolders(): Promise<string[]> {
-        const entries = await readdir(this.root, { withFileTypes: true });
+        const found: string[] = [];
 
-        return entries
-            .filter((entry) => entry.isDirectory() && !isIgnoredDir(entry.name))
-            .map((entry) => entry.name)
-            .sort((left, right) => left.localeCompare(right));
+        const walk = async (dirRel: string): Promise<void> => {
+            const entries = await readdir(dirRel ? this.path(dirRel) : this.root, {
+                withFileTypes: true,
+            });
+
+            for (const entry of entries) {
+                if (!entry.isDirectory() || isIgnoredDir(entry.name)) {
+                    continue;
+                }
+
+                const rel = dirRel ? `${dirRel}/${entry.name}` : entry.name;
+
+                found.push(rel);
+                await walk(rel);
+            }
+        };
+
+        await walk('');
+
+        return found.sort((left, right) => left.localeCompare(right));
     }
 
     /**

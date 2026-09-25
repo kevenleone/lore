@@ -154,14 +154,23 @@ export class VaultStore {
             this.db.run('DELETE FROM files WHERE path = ?', [row.path]);
         }
 
-        // rmdir refuses a non-empty directory, which is the behaviour we want:
+        // Deepest first, so a parent is empty by the time its own turn comes.
+        // `rmdir` refuses a non-empty directory, which is the behaviour we want:
         // anything unexpected still in there is left alone rather than deleted.
-        await rmdir(this.vault.path(id)).catch(() => {});
+        const folders = (await this.vault.listCollectionFolders())
+            .filter((folder) => folder === id || folder.startsWith(`${id}/`))
+            .sort((left, right) => right.length - left.length);
+
+        for (const folder of folders) {
+            await rmdir(this.vault.path(folder)).catch(() => {});
+        }
 
         const collections = await this.vault.listCollections();
 
         await this.vault.writeCollectionsFile(
-            collections.filter((collection) => collection.id !== id),
+            collections.filter(
+                (collection) => collection.id !== id && !collection.id.startsWith(`${id}/`),
+            ),
         );
         await this.reconcile();
     }
@@ -529,8 +538,23 @@ export class VaultStore {
 
         const next = { color: patch.color ?? current.color, id: nextId, name: nextId };
 
+        // Renaming a parent renames every id beneath it, because an id *is* the
+        // path. Without rekeying, each child's stored colour would be orphaned
+        // under the old name and reattach to the next folder to take it.
         await this.vault.writeCollectionsFile(
-            collections.map((collection) => (collection.id === id ? next : collection)),
+            collections.map((collection) => {
+                if (collection.id === id) {
+                    return next;
+                }
+
+                if (!collection.id.startsWith(`${id}/`)) {
+                    return collection;
+                }
+
+                const moved = `${nextId}${collection.id.slice(id.length)}`;
+
+                return { ...collection, id: moved, name: moved };
+            }),
         );
         await this.reconcile();
 
