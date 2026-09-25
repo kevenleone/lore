@@ -5,6 +5,7 @@
 import type { BoardViewMode, TaskView } from '../../store/types';
 
 import { cn } from '../../lib/cn';
+import { leafName, parentOf } from '../../lib/collectionPath';
 import { boardFor, boardTasks, dayKey, filterBoardTasks } from '../../store/tasks';
 import { UNFILED_BOARD } from '../../store/types';
 import { useStore } from '../../store/useStore';
@@ -68,10 +69,12 @@ export function TasksView() {
     // The Board tab has two states: every board at once, and one of them.
     // `boardId` is which — null is the overview.
     const board = boardId === null ? null : boardFor(boards, boardId);
-    const boardName =
+    const boardPath =
         boardId === UNFILED_BOARD
             ? 'Unfiled'
             : (collections.find((collection) => collection.id === boardId)?.name ?? 'Project');
+    const boardName = leafName(boardPath);
+    const boardParent = parentOf(boardPath);
 
     // The filter narrows what the columns show; `onBoard` is what the filter
     // bar offers its tag chips from, so a tag cannot vanish from the list the
@@ -88,7 +91,7 @@ export function TasksView() {
             <div className="flex min-w-0 flex-1 flex-col">
                 <div className="flex h-[46px] flex-none items-center gap-3 border-b border-border px-[14px]">
                     {board ? (
-                        <Breadcrumb name={boardName} onBack={closeBoard} />
+                        <Breadcrumb name={boardName} onBack={closeBoard} parent={boardParent} />
                     ) : (
                         <span className="text-title-lg font-[680] tracking-[-.01em]">Tasks</span>
                     )}
@@ -209,7 +212,15 @@ function boardSubtitle(boardId: null | string): string {
  * `Board / Work`, with the first half the way back. One board is the detail of
  * the overview, not a place of its own, so the header says so.
  */
-function Breadcrumb({ name, onBack }: { name: string; onBack: () => void }) {
+function Breadcrumb({
+    name,
+    onBack,
+    parent,
+}: {
+    name: string;
+    onBack: () => void;
+    parent: string;
+}) {
     return (
         <span className="flex min-w-0 items-center gap-2">
             <button
@@ -223,7 +234,10 @@ function Breadcrumb({ name, onBack }: { name: string; onBack: () => void }) {
                 Board
             </button>
             <span className="text-title-lg text-faint">/</span>
-            <span className="truncate text-title-lg font-[680] tracking-[-.01em]">{name}</span>
+            <span className="truncate text-title-lg font-[680] tracking-[-.01em]">
+                {parent && <span className="font-[440] text-text3">{parent}/</span>}
+                {name}
+            </span>
         </span>
     );
 }

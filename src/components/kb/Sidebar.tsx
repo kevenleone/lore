@@ -311,7 +311,20 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                                     // The collection's own colour, which the user picks.
                                     style={{ background: project.color }}
                                 />
-                                <span className="flex-1 truncate">{project.name}</span>
+                                <span
+                                    className="flex-1 truncate"
+                                    // A nested board shows its own name; the
+                                    // folders above it are too long for the
+                                    // sidebar and would truncate away the part
+                                    // that identifies it.
+                                    title={
+                                        project.parent
+                                            ? `${project.parent}/${project.name}`
+                                            : undefined
+                                    }
+                                >
+                                    {project.name}
+                                </span>
                                 {showCounts && <span className={COUNT}>{project.open}</span>}
                             </button>
                         );
