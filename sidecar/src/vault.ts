@@ -25,7 +25,14 @@ index.db-wal
 index.db-shm
 cache/
 trash/
+# Which Lore opened this folder, on this machine. Not part of the vault.
+owner.json
 `;
+
+/** The patterns above, without the comments, for topping up an older vault. */
+const GITIGNORE_ENTRIES = GITIGNORE.split('\n').filter(
+    (line) => line.trim() !== '' && !line.startsWith('#'),
+);
 
 /** The parts of `.lore/workspace.json` this version of Lore owns. */
 export interface WorkspaceFile {
@@ -44,9 +51,24 @@ export class Vault {
         await mkdir(this.path(TEMPLATES_DIR), { recursive: true });
 
         const ignorePath = this.path(`${LORE_DIR}/.gitignore`);
+        const ignoreFile = Bun.file(ignorePath);
 
-        if (!(await Bun.file(ignorePath).exists())) {
+        if (!(await ignoreFile.exists())) {
             await writeFile(ignorePath, GITIGNORE, 'utf8');
+
+            return;
+        }
+
+        // A vault made by an older Lore has the file already, so a name added
+        // to the list since then has to be appended rather than written — the
+        // alternative is every existing vault committing it.
+        const existing = await ignoreFile.text();
+        const missing = GITIGNORE_ENTRIES.filter((entry) => !ignoreLists(existing, entry));
+
+        if (missing.length > 0) {
+            const separator = existing.endsWith('\n') ? '' : '\n';
+
+            await writeFile(ignorePath, `${existing}${separator}${missing.join('\n')}\n`, 'utf8');
         }
     }
 
@@ -300,6 +322,11 @@ export class Vault {
             return {};
         }
     }
+}
+
+/** Whether the file already lists this pattern, on a line of its own. */
+function ignoreLists(contents: string, entry: string): boolean {
+    return contents.split('\n').some((line) => line.trim() === entry);
 }
 
 const FILTER_LISTS = ['categories', 'collectionIds', 'tags'] as const;
