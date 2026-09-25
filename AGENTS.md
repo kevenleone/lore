@@ -4,20 +4,128 @@ This file is the single source of truth for agent instructions in this repositor
 
 ## What This Is
 
-XXX
+Lore is an offline-first personal knowledge base: a Tauri 2 desktop app over a
+folder of Markdown files. The files _are_ the data — there is no database to
+export from. A global hotkey opens a capture panel; the library browses,
+searches and links what you captured.
+
+The principles that decide arguments, in the order they usually come up:
+
+- **The filesystem is the database.** A folder is a collection, a file is an
+  item, and a collection id _is_ its path. Move a file in Finder and it is
+  refiled. Never write a `collection:` key into frontmatter — it would be a
+  second source of truth for something the path already says.
+- **Never lose what the user typed.** Unknown frontmatter keys, unknown
+  `.lore/workspace.json` keys and unresolved `[[wikilinks]]` all survive a
+  round-trip byte-for-byte. Any change to the Markdown pipeline needs a fixture
+  proving it.
+- **Derived state is disposable.** `.lore/index.db` is rebuilt from the files
+  and is never migrated — bump `SCHEMA_VERSION` and it is thrown away.
+- **The renderer is not trusted.** It gets no shell permission. The data engine
+  is spawned by Rust and reached over a loopback port with a bearer token passed
+  by environment variable, never argv.
+- **No surprise renames.** Retitling an item does not rename its file.
+- **Lore never runs git.** The vault is a folder; committing it is the user's.
+
+The README is user-facing and current; read it for what the app does. This file
+is for how to work on it.
 
 ## Commands
 
-XXX
+`pnpm` only — the repo is a pnpm workspace (root plus `sidecar/`).
+
+| Command                          | What it does                                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `pnpm test`                      | Both suites: Vitest for the renderer, then `bun test` for the engine. **This is the one to run.** |
+| `pnpm test:sidecar`              | The engine suite alone. It runs against real temporary vaults on disk.                            |
+| `npx vitest run <path>`          | One renderer test file, while iterating.                                                          |
+| `pnpm lint`                      | ESLint. It does **not** pass clean — see below.                                                   |
+| `pnpm format`                    | Prettier over everything. Required before committing.                                             |
+| `npx tsc --noEmit`               | Typecheck the renderer. `pnpm --filter @lore/sidecar typecheck` for the engine.                   |
+| `LORE_MODE=agent pnpm tauri dev` | Run the app. **Always use `agent`** — see the next section.                                       |
+
+`pnpm lint` reports a standing count of pre-existing errors, nearly all
+`no-restricted-syntax` on single-letter parameters in older files. Treat the
+count as the baseline: note it before you start and make sure you have not added
+to it. Do not "fix" unrelated ones in a feature branch.
+
+Three guard tests fail the build on their own terms, by design:
+
+- `src/store/switches.test.ts` — a settings switch with no reader outside
+  `src/components/settings/` is a toggle that does nothing.
+- `src/theme/palette.test.ts` — a token missing from any of the theme maps.
+- `src/components/kb/sidebarRails.test.tsx` — the sidebar's two indented
+  sections drifting out of alignment.
 
 ## Architecture
 
-XXX
+Three processes, four windows.
+
+**Renderer** (`src/`) — React 19, Zustand, TipTap 3, Tailwind v4, Vite 7. Four
+window entries, each its own HTML file and root: `main`, `capture`, `focus`,
+`print` (`vite.config.ts`, `src-tauri/src/lib.rs`).
+
+**Data engine** (`sidecar/`) — a Bun + Elysia HTTP server that owns the vault:
+reading and writing Markdown, the SQLite FTS5 index, the file watcher, link
+resolution. It is the source of truth. Rust spawns it, and it announces its
+ephemeral port back over stdout as a handshake (`src-tauri/src/sidecar.rs`).
+
+**Host** (`src-tauri/`) — Rust: windows, tray, global shortcut, menus, PDF
+printing, and spawning the engine.
+
+Two seams matter more than the rest:
+
+- **`src/data/repository.ts`** — every store and UI interaction goes through
+  `KnowledgeRepository`. `src/data/index.ts` picks `VaultRepository` inside
+  Tauri and `MemoryRepository` everywhere else, which is why the UI runs in a
+  browser and in jsdom with no vault at all. Keep the interface narrow.
+- **`src/store/views.ts`** and **`src/store/tasks.ts`** — pure selectors over
+  plain item lists. Rules belong here, where they are testable without a DOM,
+  not in a component.
+
+### Build modes
+
+`lore.modes.json` defines `prod`, `dev` and `agent`, and is read by `build.rs`,
+`vite.config.ts` and the sidecar alike, so a port or a name is never written
+twice. Each mode has its own bundle identifier — and therefore **its own vault**,
+because Tauri derives the data directory from the identifier.
+
+| Mode    | Identifier           | Vite | Engine dev port | Capture shortcut (macOS) |
+| ------- | -------------------- | ---- | --------------- | ------------------------ |
+| `prod`  | `com.lore.app`       | 1420 | 51789           | ⌥Space                   |
+| `dev`   | `com.lore.app.dev`   | 1430 | 51799           | ⌥⇧Space                  |
+| `agent` | `com.lore.app.agent` | 1440 | 51809           | ⌥⌃Space                  |
+
+**Run the app as `LORE_MODE=agent pnpm tauri dev`, always.** It opens a separate
+vault with a violet accent and an `AGENT` badge, so an experiment cannot touch
+the library the installed app is using. Nothing currently stops two builds
+opening the _same_ vault if pointed there by hand, and doing so has already cost
+a real evening: a schema bump plus an interrupted rebuild left the vault
+unopenable.
+
+### The vault on disk
+
+```
+Work/                    a collection — the folder name is the id
+  Work/Projects/         nested: the id is `Work/Projects`
+    note.md              an item: YAML frontmatter + Markdown body
+attachments/             reserved; never a collection
+.lore/
+  collections.json       colours and order — never the membership
+  boards.json            per-collection board columns
+  workspace.json         per-vault settings, committed, hand-editable
+  templates/*.md         user templates
+  index.db               derived, disposable, gitignored
+  trash/                 deletes move here
+```
+
+Anything hand-editable is validated on read and keeps the keys this version does
+not own (`sidecar/src/markdown.ts` carries them through an `extra` bag).
 
 ## Styling
 
 Tailwind CSS v4 is the only styling system. `src/theme/tailwind.css` is the
-single stylesheet, imported by all three window entries. Two things differ from
+single stylesheet, imported by all four window entries. Two things differ from
 a stock Tailwind setup, both deliberately:
 
 - **Every length is px, not rem.** `--spacing` is `4px`, so the numbers are
