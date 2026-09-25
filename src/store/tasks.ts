@@ -20,7 +20,6 @@ import type {
     Priority,
 } from './types';
 
-import { leafName, parentOf } from '../lib/collectionPath';
 import { formatDueDay } from '../lib/format';
 import { DEFAULT_BOARD, UNFILED_BOARD } from './types';
 import { localDateKey } from './views';
@@ -56,13 +55,6 @@ export interface BoardRollup {
     /** Earliest due day among the open tasks, or null. */
     nextDue: null | string;
     open: number;
-    /**
-     * The folders above it, or '' at the vault root. Boards deliberately do not
-     * roll up, so a nested board can show without its parent's row beside it —
-     * which is why the parent travels as its own field instead of being printed
-     * into `name`.
-     */
-    parent: string;
     /** Completed share, 0–100, rounded. */
     percent: number;
 }
@@ -171,7 +163,6 @@ export function boardRollups(items: Item[], collections: Collection[]): BoardRol
                 collection.id,
                 collection.name,
                 collection.color,
-
                 tasks.filter((task) => task.collectionId === collection.id),
             ),
         )
@@ -401,7 +392,7 @@ function rankOf(item: Item): number {
 
 function rollup(
     collectionId: null | string,
-    path: string,
+    name: string,
     color: string,
     tasks: Item[],
 ): BoardRollup | null {
@@ -419,10 +410,9 @@ function rollup(
         collectionId,
         color,
         done,
-        name: leafName(path),
+        name,
         nextDue: dueDays[0] ?? null,
         open: tasks.length - done,
-        parent: parentOf(path),
         percent: Math.round((done / tasks.length) * 100),
     };
 }

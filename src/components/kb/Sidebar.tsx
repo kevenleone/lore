@@ -313,15 +313,11 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                                 />
                                 <span
                                     className="flex-1 truncate"
-                                    // A nested board shows its own name; the
-                                    // folders above it are too long for the
-                                    // sidebar and would truncate away the part
-                                    // that identifies it.
-                                    title={
-                                        project.parent
-                                            ? `${project.parent}/${project.name}`
-                                            : undefined
-                                    }
+                                    // A board is named by its whole path, so two
+                                    // folders called `Notes` read apart — but the
+                                    // sidebar is narrow enough to truncate away
+                                    // the end that says which one it is.
+                                    title={project.name}
                                 >
                                     {project.name}
                                 </span>
