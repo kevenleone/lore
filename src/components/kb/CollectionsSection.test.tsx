@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { Item } from '../../store/types';
@@ -56,7 +56,9 @@ describe('CollectionsSection', () => {
         // what pushed every count inboard of the shortcuts above it.
         const { container } = mount();
 
-        const actions = container.querySelector('[aria-label="Rename emitsignal"]')?.parentElement;
+        const actions = container.querySelector(
+            '[aria-label="Actions for emitsignal"]',
+        )?.parentElement;
 
         expect(actions?.className).toContain('absolute');
     });
@@ -66,7 +68,44 @@ describe('CollectionsSection', () => {
 
         // Present in the DOM rather than rendered only on hover: a keyboard
         // user has no hover to give.
-        expect(screen.getByRole('button', { name: 'Rename emitsignal' })).toBeTruthy();
-        expect(screen.getByRole('button', { name: 'Delete emitsignal' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Actions for emitsignal' })).toBeTruthy();
+    });
+});
+
+describe('the row actions menu', () => {
+    // Three icons laid over the count ran straight into a long collection name,
+    // which is the whole reason they fold into one control.
+    const openMenu = (label: string) => {
+        mount();
+        fireEvent.click(screen.getByRole('button', { name: `Actions for ${label}` }));
+    };
+
+    it('puts one control on each row, not three', () => {
+        const { container } = mount();
+
+        // Two collections, so two triggers — and nothing else in the overlay.
+        expect(container.querySelectorAll('.absolute button')).toHaveLength(COLLECTIONS.length);
+    });
+
+    it('offers rename, add and delete once it is open', () => {
+        openMenu('emitsignal');
+
+        expect(screen.getByRole('menuitem', { name: 'Rename…' })).toBeTruthy();
+        expect(screen.getByRole('menuitem', { name: 'New collection inside' })).toBeTruthy();
+        expect(screen.getByRole('menuitem', { name: 'Delete…' })).toBeTruthy();
+    });
+
+    it('opens the rename field for the row it was opened from', () => {
+        openMenu('guidelines');
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Rename…' }));
+
+        expect(screen.getByDisplayValue('guidelines')).toBeTruthy();
+    });
+
+    it('asks before deleting, rather than deleting on the click', () => {
+        openMenu('emitsignal');
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Delete…' }));
+
+        expect(screen.getByText('Delete “emitsignal”?')).toBeTruthy();
     });
 });
