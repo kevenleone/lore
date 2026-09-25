@@ -4,8 +4,11 @@
 
 import type { Item } from '@lore/types';
 
+import type { VaultOwner } from './owner';
+
 import { hashContent } from './index/db';
 import { VaultStore } from './index/store';
+import { claimVault } from './owner';
 import { type Watcher, watchVault } from './watch';
 
 type Subscriber = (paths: string[]) => void;
@@ -18,6 +21,7 @@ export class Workspace {
 
         return this.store;
     }
+
     get isOpen(): boolean {
         return this.store !== null;
     }
@@ -31,12 +35,17 @@ export class Workspace {
      * by the first and the rest leak through.
      */
     private selfWrites = new Map<string, { at: number; hash: string }>();
-
     private store: null | VaultStore = null;
 
     private subscribers = new Set<Subscriber>();
 
     private watcher: null | Watcher = null;
+
+    /**
+     * Which build this is. Passed in rather than read from the environment so a
+     * test can open a vault as one Lore and then as another.
+     */
+    constructor(private readonly owner: null | VaultOwner = null) {}
 
     async close(): Promise<void> {
         this.watcher?.close();
@@ -53,6 +62,11 @@ export class Workspace {
     /* ---------------- change notification ---------------- */
 
     async open(root: string): Promise<{ itemCount: number; path: string }> {
+        // Before the close, and before the store: opening is what rebuilds the
+        // index, so a refusal afterwards would come after the damage — and
+        // would have shut the vault the user still had open.
+        await claimVault(root, this.owner);
+
         await this.close();
         this.store = await VaultStore.open(root);
         // Without this the watcher fires on every save Lore makes, so each edit

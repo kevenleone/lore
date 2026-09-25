@@ -11,13 +11,20 @@ import { Workspace } from './workspace';
 
 async function main(): Promise<void> {
     const config = loadConfig();
-    const workspace = new Workspace();
+    const workspace = new Workspace(config.owner);
     const app = createApp(config, workspace);
 
     // The host may already know which vault to open; otherwise the renderer calls
     // POST /workspace/open once it has resolved the path.
     if (config.vault) {
-        await workspace.open(config.vault);
+        try {
+            await workspace.open(config.vault);
+        } catch (error) {
+            // Never fatal: the handshake below is how the host learns we exist
+            // at all, so exiting here would read as "the engine is broken"
+            // rather than "that folder is not this Lore's to open".
+            console.error(`lore-sidecar: ${error instanceof Error ? error.message : error}`);
+        }
     }
 
     // Bind 127.0.0.1 explicitly — never 0.0.0.0, which would expose the vault to

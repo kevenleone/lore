@@ -1,6 +1,8 @@
 // How the sidecar learns who it is. Everything arrives through the environment
 // rather than argv: argv is world-readable via `ps`, and the token must not be.
 
+import type { VaultOwner } from './owner';
+
 import modes from '../../lore.modes.json';
 
 /** Fixed token for `bun --watch` during development. */
@@ -8,6 +10,11 @@ export const DEV_TOKEN = 'lore-dev-token';
 
 export interface Config {
     dev: boolean;
+    /**
+     * Which build this is, for the vault's ownership marker. Null when the host
+     * did not say — the guard then stands down rather than guessing.
+     */
+    owner: null | VaultOwner;
     /** Exit when this pid disappears; see `watchParent`. */
     parentPid: null | number;
     /** 0 means "pick an ephemeral port", which is what production does. */
@@ -33,6 +40,7 @@ export function loadConfig(env: Record<string, string | undefined> = Bun.env): C
 
     return {
         dev,
+        owner: ownerFor(env.LORE_MODE),
         parentPid: env.LORE_PARENT_PID ? Number(env.LORE_PARENT_PID) : null,
         port: env.LORE_PORT ? Number(env.LORE_PORT) : dev ? devPort(env.LORE_MODE) : 0,
         // Only development is allowed to fall back to a known token — production
@@ -40,6 +48,17 @@ export function loadConfig(env: Record<string, string | undefined> = Bun.env): C
         token: token ?? DEV_TOKEN,
         vault: env.LORE_VAULT || null,
     };
+}
+
+/** The identity a build claims a vault with, or null for a mode we don't know. */
+export function ownerFor(mode: string | undefined): null | VaultOwner {
+    if (!mode || !(mode in modes)) {
+        return null;
+    }
+
+    const { identifier, productName } = modes[mode as keyof typeof modes];
+
+    return { identifier, productName };
 }
 
 /**

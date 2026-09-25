@@ -98,10 +98,14 @@ because Tauri derives the data directory from the identifier.
 
 **Run the app as `LORE_MODE=agent pnpm tauri dev`, always.** It opens a separate
 vault with a violet accent and an `AGENT` badge, so an experiment cannot touch
-the library the installed app is using. Nothing currently stops two builds
-opening the _same_ vault if pointed there by hand, and doing so has already cost
-a real evening: a schema bump plus an interrupted rebuild left the vault
-unopenable.
+the library the installed app is using.
+
+A vault also records which build claimed it, in `.lore/owner.json`, and a dev or
+agent build refuses to open one that belongs to another Lore — two builds
+rebuilding one index over each other has already cost a real evening. Production
+is never refused and takes ownership back, because locking someone out of their
+own library is the worse failure. Delete the file to hand a vault over
+deliberately.
 
 ### The vault on disk
 
@@ -116,6 +120,7 @@ attachments/             reserved; never a collection
   workspace.json         per-vault settings, committed, hand-editable
   templates/*.md         user templates
   index.db               derived, disposable, gitignored
+  owner.json             which build claimed this folder; local, gitignored
   trash/                 deletes move here
 ```
 

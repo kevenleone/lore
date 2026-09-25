@@ -70,7 +70,12 @@ export function WorkspaceSwitcher() {
 
             {error && (
                 <div className="px-[9px] pt-1 text-label leading-[1.45] text-danger">
-                    Could not open that folder — staying on {label}.
+                    {/*
+                     * The engine's own words when it has any: "that folder could
+                     * not be opened" is no help when the reason is that another
+                     * Lore is holding it and the fix is to quit that one.
+                     */}
+                    {sentence(error)} Staying on {label}.
                 </div>
             )}
 
@@ -147,4 +152,21 @@ function Row({
             )}
         </button>
     );
+}
+
+/**
+ * The engine's message, punctuated to sit in front of the sentence that
+ * follows. It reaches here from a thrown error, so nothing guarantees it starts
+ * with a capital or ends with a full stop.
+ */
+function sentence(text: string): string {
+    const trimmed = text.trim();
+
+    if (!trimmed) {
+        return 'That folder could not be opened.';
+    }
+
+    const capitalised = trimmed[0]!.toUpperCase() + trimmed.slice(1);
+
+    return /[.!?]$/.test(capitalised) ? capitalised : `${capitalised}.`;
 }

@@ -125,6 +125,9 @@ fn spawn(app: &AppHandle, attempt: u32) -> Result<(), String> {
         // world-readable through `ps`.
         .env("LORE_TOKEN", token.clone())
         .env("LORE_VAULT", vault)
+        // Which Lore this is, so the engine can tell whether a folder already
+        // belongs to another one.
+        .env("LORE_MODE", crate::mode::MODE)
         .env("LORE_PARENT_PID", std::process::id().to_string());
 
     let (mut rx, child) = command

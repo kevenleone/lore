@@ -112,7 +112,7 @@ async function attempt<T>(path: string, init: RequestInit): Promise<T> {
     if (!res.ok) {
         const detail = await res.text().catch(() => '');
 
-        throw new HttpError(res.status, detail || res.statusText);
+        throw new HttpError(res.status, messageFrom(detail) || res.statusText);
     }
 
     if (res.status === 204) {
@@ -126,4 +126,24 @@ async function discover(): Promise<Endpoint> {
     const { invoke } = await import('@tauri-apps/api/core');
 
     return invoke<Endpoint>('sidecar_endpoint');
+}
+
+/**
+ * The engine answers a failure as `{"error": "..."}`, and that string is written
+ * for the person reading it. Anything else is passed through as it came.
+ */
+function messageFrom(body: string): string {
+    try {
+        const parsed: unknown = JSON.parse(body);
+
+        if (typeof parsed === 'object' && parsed !== null && 'error' in parsed) {
+            const { error } = parsed as { error: unknown };
+
+            return typeof error === 'string' ? error : body;
+        }
+    } catch {
+        // Not JSON, which is fine: plain text is already the message.
+    }
+
+    return body;
 }
