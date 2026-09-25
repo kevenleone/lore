@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.25.0](https://github.com/kevenleone/lore/compare/v1.24.0...v1.25.0) (2026-09-25)
+
+
+### Features
+
+* **settings:** list the collections flat or structured, as a preference ([c4e368a](https://github.com/kevenleone/lore/commit/c4e368ae84f638249d08f237a46b04f30f304872))
+
+
+### Bug Fixes
+
+* **sidebar:** drop the disclosure column when nothing in the vault nests ([9e41861](https://github.com/kevenleone/lore/commit/9e41861a8692f2b079a4945a77676b97bf1ad569))
+* **sidebar:** fold a collection's row actions into one menu, off the name ([d23215e](https://github.com/kevenleone/lore/commit/d23215e3a9c639ea60028f183396a39bee36df3b))
+* **sidebar:** indent the collections by the same construction as the boards ([db0a8d4](https://github.com/kevenleone/lore/commit/db0a8d485b7c7bd6b43b28b2f6d4fab521eb0081))
+* **tasks:** keep the whole path on a board, and show it on hover when it truncates ([d7b6a71](https://github.com/kevenleone/lore/commit/d7b6a71b4c918399047476daa94abbed8ab91b21))
+* **tasks:** name a nested board after its own folder, not its whole path ([4fa8e28](https://github.com/kevenleone/lore/commit/4fa8e285c452d712df97db300294e6ad25199d66))
+
+
+### Refactoring
+
+* **collections:** share the path split between the sidebar and the task selectors ([da6bac5](https://github.com/kevenleone/lore/commit/da6bac5343d5ec5132fe314fa6584a514fe76120))
+
+
+### Documentation
+
+* **agents:** fill in what Lore is, how to run it, and how it is built ([3351a05](https://github.com/kevenleone/lore/commit/3351a0552d4d849ccefa17c5ea792acd96f9a5fe))
+
 ## [1.24.0](https://github.com/kevenleone/lore/compare/v1.23.0...v1.24.0) (2026-09-25)
 
 
