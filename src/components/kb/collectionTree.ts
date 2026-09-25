@@ -7,6 +7,8 @@
 
 import type { Collection } from '../../store/types';
 
+import { leafName, parentOf } from '../../lib/collectionPath';
+
 export interface CollectionRow {
     collection: Collection;
     /** 0 for a folder at the vault root. */
@@ -36,18 +38,6 @@ export function collectionRows(
             // from the name, which is what the collection is called.
             name: leafName(collection.name),
         }));
-}
-
-/** The folder's own name — `Projects` out of `Work/Projects`. */
-export function leafName(id: string): string {
-    return id.slice(id.lastIndexOf('/') + 1);
-}
-
-/** The path of the folder it sits in, or '' at the vault root. */
-export function parentOf(id: string): string {
-    const slash = id.lastIndexOf('/');
-
-    return slash === -1 ? '' : id.slice(0, slash);
 }
 
 /**

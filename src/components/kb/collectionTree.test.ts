@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import type { Collection } from '../../store/types';
 
-import { collectionRows, leafName, parentOf, renamedTo, toggleCollapsed } from './collectionTree';
+import { leafName, parentOf } from '../../lib/collectionPath';
+import { collectionRows, renamedTo, toggleCollapsed } from './collectionTree';
 
 const make = (...ids: string[]): Collection[] => ids.map((id) => ({ color: '#888', id, name: id }));
 
