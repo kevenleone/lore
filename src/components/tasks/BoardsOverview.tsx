@@ -36,7 +36,12 @@ export function BoardsOverview({ today }: { today: string }) {
                             // The collection's own colour, which the user picks.
                             style={{ background: project.color }}
                         />
-                        <span className="text-title-lg font-[640]">{project.name}</span>
+                        <span className="min-w-0 truncate text-title-lg font-[640]">
+                            {project.parent && (
+                                <span className="font-[440] text-text3">{project.parent}/</span>
+                            )}
+                            {project.name}
+                        </span>
                         <span className="ml-auto text-body text-text3 tabular-nums">
                             {project.open} open · {project.done} done
                         </span>
