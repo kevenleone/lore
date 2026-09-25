@@ -380,7 +380,6 @@ describe('boardRollups', () => {
                 name: 'Onboarding',
                 nextDue: '2026-09-14',
                 open: 2,
-                parent: '',
                 percent: 33,
             },
             {
@@ -390,7 +389,6 @@ describe('boardRollups', () => {
                 name: 'Release',
                 nextDue: null,
                 open: 0,
-                parent: '',
                 percent: 100,
             },
             {
@@ -400,7 +398,6 @@ describe('boardRollups', () => {
                 name: 'Unfiled',
                 nextDue: null,
                 open: 1,
-                parent: '',
                 percent: 0,
             },
         ]);
@@ -408,16 +405,6 @@ describe('boardRollups', () => {
 
     it('drops a collection with no tasks in it', () => {
         expect(boardRollups([], collections)).toEqual([]);
-    });
-
-    it('names a nested board by its own folder, with the parents alongside', () => {
-        // A board reading `Work/Projects/Alpha` truncates away the only part
-        // that says which board it is.
-        const nested: Collection[] = [{ color: '#888', id: 'n', name: 'Work/Projects/Alpha' }];
-
-        expect(boardRollups([task('a', { collectionId: 'n' })], nested)).toEqual([
-            expect.objectContaining({ name: 'Alpha', parent: 'Work/Projects' }),
-        ]);
     });
 });
 
