@@ -14,7 +14,7 @@ import { type LayoutNode, seed, step, stepsFor } from '../../lib/forceLayout';
 import { useStore } from '../../store/useStore';
 import { DetailPane } from '../kb/DetailPane';
 import { labelDetailFor, shortTitle, showsLabel } from './labels';
-import { IDENTITY, panBy, toWorld, type Viewport, zoomAt } from './viewport';
+import { IDENTITY, panBy, toFramePoint, toWorld, type Viewport, zoomAt } from './viewport';
 
 /** Node radius by how many links touch it, so hubs read as hubs. */
 const RADIUS = { base: 4, max: 13, perDegree: 1 };
@@ -238,12 +238,21 @@ export function GraphView() {
         return () => window.removeEventListener('resize', onResize);
     }, [draw, ready]);
 
+    /**
+     * Pointer position in the frame's own pixels — see `toFramePoint`, which
+     * does the conversion the tree's CSS `zoom` makes necessary.
+     */
     const pointIn = (event: { clientX: number; clientY: number }) => {
-        const bounds = canvasRef.current?.getBoundingClientRect();
+        const box = canvasRef.current?.parentElement;
 
-        return bounds
-            ? { x: event.clientX - bounds.left, y: event.clientY - bounds.top }
-            : { x: 0, y: 0 };
+        if (!box) {
+            return { x: 0, y: 0 };
+        }
+
+        return toFramePoint({ x: event.clientX, y: event.clientY }, box.getBoundingClientRect(), {
+            height: box.clientHeight,
+            width: box.clientWidth,
+        });
     };
 
     const nodeAt = (point: { x: number; y: number }): GraphNode | null => {

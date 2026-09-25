@@ -28,6 +28,30 @@ export function panBy(viewport: Viewport, deltaX: number, deltaY: number): Viewp
     return { ...viewport, panX: viewport.panX + deltaX, panY: viewport.panY + deltaY };
 }
 
+/**
+ * A pointer event's position inside the frame, in the frame's own pixels.
+ *
+ * `clientX` and a bounding rect are both in visual pixels — after the CSS
+ * `zoom` App puts on the whole tree for the Text size preference — while the
+ * frame is measured with `clientWidth`, which is in layout pixels and ignores
+ * that zoom. At a text size of 1.2 the two disagree by a sixth, growing with
+ * the distance from the corner: near the top left a click landed on the dot,
+ * and further out it missed by more and more.
+ *
+ * The ratio is measured rather than read from the preference, so it stays right
+ * whatever else scales this subtree.
+ */
+export function toFramePoint(
+    client: { x: number; y: number },
+    rect: { height: number; left: number; top: number; width: number },
+    layout: { height: number; width: number },
+): { x: number; y: number } {
+    const scaleX = rect.width > 0 ? layout.width / rect.width : 1;
+    const scaleY = rect.height > 0 ? layout.height / rect.height : 1;
+
+    return { x: (client.x - rect.left) * scaleX, y: (client.y - rect.top) * scaleY };
+}
+
 /** Screen point → graph coordinates. The inverse of what `draw` applies. */
 export function toWorld(
     point: { x: number; y: number },
