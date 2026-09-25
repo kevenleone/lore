@@ -70,6 +70,16 @@ describe('collection rails', () => {
         expect(container.textContent).toContain('Projects');
     });
 
+    it('rails the top level too, so the section reads like the boards do', () => {
+        setup(true);
+
+        const container = render(<CollectionsSection />).container;
+        // `Work` sits at the vault root and still carries one.
+        const first = container.querySelector('[aria-hidden="true"]');
+
+        expect(first?.className).toContain('border-l');
+    });
+
     it('keeps the indent when the rails are off, so the tree still reads', () => {
         setup(false);
 
