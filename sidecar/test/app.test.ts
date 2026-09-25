@@ -8,7 +8,14 @@ import { createApp } from '../src/app';
 import { HANDSHAKE_PREFIX, handshakeLine, loadConfig } from '../src/config';
 
 const TOKEN = 'test-token';
-const app = createApp({ dev: false, parentPid: null, port: 0, token: TOKEN, vault: null });
+const app = createApp({
+    dev: false,
+    owner: null,
+    parentPid: null,
+    port: 0,
+    token: TOKEN,
+    vault: null,
+});
 
 const WEBVIEW = 'tauri://localhost';
 

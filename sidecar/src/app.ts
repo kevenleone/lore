@@ -34,7 +34,7 @@ const ALLOWED_ORIGINS = new Set([
 
 export type App = ReturnType<typeof createApp>;
 
-export function createApp(config: Config, workspace = new Workspace()) {
+export function createApp(config: Config, workspace = new Workspace(config.owner)) {
     return (
         new Elysia()
             .onRequest(({ request, set }) => {

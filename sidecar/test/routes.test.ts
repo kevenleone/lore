@@ -20,7 +20,10 @@ let app: ReturnType<typeof createApp>;
 beforeEach(async () => {
     root = await mkdtemp(join(tmpdir(), 'lore-routes-'));
     workspace = new Workspace();
-    app = createApp({ dev: false, parentPid: null, port: 0, token: TOKEN, vault: null }, workspace);
+    app = createApp(
+        { dev: false, owner: null, parentPid: null, port: 0, token: TOKEN, vault: null },
+        workspace,
+    );
 });
 
 afterEach(async () => {
