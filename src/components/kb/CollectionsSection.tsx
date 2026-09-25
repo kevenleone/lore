@@ -57,7 +57,7 @@ export function CollectionsSection() {
 
     const setPref = useStore((state) => state.setPref);
     const collapsed = useStore((state) => state.prefs.collapsedCollections);
-    const rails = useStore((state) => state.prefs.switches.collectionRails);
+    const rails = useStore((state) => state.prefs.switches.sidebarRails);
 
     const [editingId, setEditingId] = useState<null | string>(null);
     /** The collection a new one is being created inside, or '' for the root. */

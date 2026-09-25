@@ -124,6 +124,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
     const selectView = useStore((state) => state.selectView);
     const setMainView = useStore((state) => state.setMainView);
     const setTaskView = useStore((state) => state.setTaskView);
+    const rails = useStore((state) => state.prefs.switches.sidebarRails);
     const showCounts = useStore((state) => state.prefs.switches.counts);
     const taskView = useStore((state) => state.taskView);
     const toggleChat = useStore((state) => state.toggleChat);
@@ -277,7 +278,15 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                  * above opens the overview, which lists these same boards with
                  * their progress; these are the shortcut straight into one.
                  */}
-                <div className="ml-[9px] flex flex-col border-l border-border pl-[10px]">
+                <div
+                    className={cn(
+                        'ml-[9px] flex flex-col pl-[10px]',
+                        // The same preference the nested collections read: one
+                        // rail switched off and the other still drawn would be
+                        // a sidebar arguing with itself.
+                        rails && 'border-l border-border',
+                    )}
+                >
                     {projects.map((project) => {
                         const id = project.collectionId ?? UNFILED_BOARD;
                         const active =

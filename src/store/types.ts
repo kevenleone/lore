@@ -440,12 +440,6 @@ export interface Switches {
     autoBreak: boolean;
     /** Edit note bodies in the block editor rather than a plain textarea. */
     blockEditor: boolean;
-    /**
-     * Hairlines down the left of nested collections, marking where a branch
-     * begins. A vault of flat folders never draws one either way, so this only
-     * ever matters once folders hold folders.
-     */
-    collectionRails: boolean;
     // Look & Feel
     counts: boolean;
     /**
@@ -478,6 +472,13 @@ export interface Switches {
     showFocus: boolean;
     // Calendar
     showTasks: boolean;
+    /**
+     * Hairlines down the left of anything the sidebar nests — collections
+     * inside collections, and the boards under Tasks — marking where a branch
+     * begins. One rail switched off while the other was still drawn would be a
+     * sidebar arguing with itself, so both read this.
+     */
+    sidebarRails: boolean;
     // Notifications
     sounds: boolean;
     statusBar: boolean;
@@ -501,7 +502,6 @@ export type WeekStart = 'Monday' | 'Sunday';
 export const DEFAULT_SWITCHES: Switches = {
     autoBreak: true,
     blockEditor: false,
-    collectionRails: true,
     counts: true,
     detailSections: true,
     focusEnd: true,
@@ -513,6 +513,7 @@ export const DEFAULT_SWITCHES: Switches = {
     rawMarkdownDefault: false,
     showFocus: true,
     showTasks: true,
+    sidebarRails: true,
     sounds: false,
     statusBar: true,
 };
