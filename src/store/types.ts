@@ -525,6 +525,8 @@ export interface Prefs {
     accent: Accent;
     appearance: Appearance;
     bannerPlacement: BannerPlacement;
+    /** Collections whose children are folded away in the sidebar, by path. */
+    collapsedCollections: string[];
     /**
      * Collection today's note is written into; null leaves it at the vault
      * root. Its own setting rather than `defaultCollection`: a journal is
@@ -571,6 +573,7 @@ export const DEFAULT_PREFS: Prefs = {
     accent: DEFAULT_ACCENT,
     appearance: 'light',
     bannerPlacement: 'inline',
+    collapsedCollections: [],
     dailyNoteCollection: null,
     dailyNoteTemplate: null,
     darkTheme: DEFAULT_DARK_THEME,
