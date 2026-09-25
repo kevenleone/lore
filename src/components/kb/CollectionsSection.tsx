@@ -248,18 +248,23 @@ export function CollectionsSection() {
                         key={collection.id}
                     >
                         {/*
-                         * One spacer per level above this row, each carrying the
-                         * indent and — when the preference is on — the rail that
-                         * says where its branch began. In the flow rather than
-                         * absolutely placed, so it cannot end up underneath the
-                         * row's own contents, and stretched to the full height so
-                         * consecutive rows join into one continuous line.
+                         * A spacer per level, carrying the indent and — when the
+                         * preference is on — the rail that says where its branch
+                         * began. In the flow rather than absolutely placed, so it
+                         * cannot end up under the row's own contents.
+                         *
+                         * One more than the depth, so the outermost rail runs
+                         * down the whole section the way the boards under Tasks
+                         * do, rather than appearing only once something is
+                         * nested. The negative margin cancels the row's vertical
+                         * padding, which `self-stretch` alone stops short of —
+                         * that gap is what left the line dashed between rows.
                          */}
-                        {Array.from({ length: depth }, (_unused, level) => (
+                        {Array.from({ length: depth + 1 }, (_unused, level) => (
                             <span
                                 aria-hidden="true"
                                 className={cn(
-                                    '-mr-[9px] flex-none self-stretch',
+                                    '-my-[6px] -mr-[9px] flex-none self-stretch',
                                     rails && 'border-l border-border',
                                 )}
                                 key={level}
