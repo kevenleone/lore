@@ -1,0 +1,87 @@
+// @vitest-environment jsdom
+
+// The rails are a preference, and a preference nothing reads is a toggle that
+// does nothing. These assert both places actually go dark together.
+
+import { cleanup, render } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import type { Collection, Item } from '../../store/types';
+
+import { DEFAULT_PREFS, DEFAULT_SWITCHES } from '../../store/types';
+import { useStore } from '../../store/useStore';
+import { CollectionsSection } from './CollectionsSection';
+import { Sidebar } from './Sidebar';
+
+afterEach(cleanup);
+
+const COLLECTIONS: Collection[] = [
+    { color: '#888', id: 'Work', name: 'Work' },
+    { color: '#888', id: 'Work/Projects', name: 'Work/Projects' },
+];
+
+const task = (id: string, collectionId: string): Item => ({
+    collectionId,
+    createdAt: '2026-09-01T00:00:00.000Z',
+    flags: {},
+    id,
+    related: [],
+    tags: [],
+    title: id,
+    type: 'task',
+    updatedAt: '2026-09-01T00:00:00.000Z',
+});
+
+const setup = (sidebarRails: boolean) => {
+    useStore.setState({
+        collections: COLLECTIONS,
+        items: [task('a', 'Work')],
+        prefs: {
+            ...DEFAULT_PREFS,
+            collapsedCollections: [],
+            switches: { ...DEFAULT_SWITCHES, sidebarRails },
+        },
+    });
+};
+
+const collectionRails = (root: HTMLElement) =>
+    root.querySelectorAll('[aria-hidden="true"].absolute.w-px').length;
+
+const boardRail = (root: HTMLElement) => root.querySelectorAll('.border-l').length;
+
+describe('collection rails', () => {
+    it('are drawn when the preference is on', () => {
+        setup(true);
+
+        expect(collectionRails(render(<CollectionsSection />).container)).toBeGreaterThan(0);
+    });
+
+    it('are gone when it is off', () => {
+        setup(false);
+
+        expect(collectionRails(render(<CollectionsSection />).container)).toBe(0);
+    });
+
+    it('leaves the rows themselves in place either way', () => {
+        setup(false);
+
+        const container = render(<CollectionsSection />).container;
+
+        expect(container.textContent).toContain('Projects');
+    });
+});
+
+describe('the board rail', () => {
+    it('follows the same preference, so the two cannot disagree', () => {
+        setup(true);
+
+        const on = boardRail(render(<Sidebar onCapture={vi.fn()} />).container);
+
+        cleanup();
+        setup(false);
+
+        const off = boardRail(render(<Sidebar onCapture={vi.fn()} />).container);
+
+        expect(on).toBeGreaterThan(off);
+    });
+});
