@@ -45,7 +45,7 @@ const setup = (sidebarRails: boolean) => {
 };
 
 const collectionRails = (root: HTMLElement) =>
-    root.querySelectorAll('[aria-hidden="true"].absolute.w-px').length;
+    root.querySelectorAll('[aria-hidden="true"].border-l').length;
 
 const boardRail = (root: HTMLElement) => root.querySelectorAll('.border-l').length;
 
@@ -68,6 +68,14 @@ describe('collection rails', () => {
         const container = render(<CollectionsSection />).container;
 
         expect(container.textContent).toContain('Projects');
+    });
+
+    it('keeps the indent when the rails are off, so the tree still reads', () => {
+        setup(false);
+
+        const container = render(<CollectionsSection />).container;
+
+        expect(container.querySelectorAll('[aria-hidden="true"]').length).toBeGreaterThan(0);
     });
 });
 

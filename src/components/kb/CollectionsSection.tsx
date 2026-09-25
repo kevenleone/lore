@@ -43,9 +43,6 @@ const ROW_ACTIONS =
 /** How far each level of nesting steps in, in pixels. */
 const INDENT = 11;
 
-/** Where the first guide sits: under the chevron column of the level above. */
-const GUIDE_X = 14;
-
 export function CollectionsSection() {
     const items = useStore((state) => state.items);
     const collections = useStore((state) => state.collections);
@@ -249,22 +246,24 @@ export function CollectionsSection() {
                                 : 'text-text2 hover:bg-hover',
                         )}
                         key={collection.id}
-                        // A computed indent: the depth is data, not a class.
-                        style={{ paddingLeft: 9 + depth * INDENT }}
                     >
                         {/*
-                         * One guide per level above this row, drawn the full
-                         * height so consecutive rows join into a continuous
-                         * line — the same rail the boards under Tasks have, and
-                         * the thing that says where a branch begins once a few
-                         * of them are open at once.
+                         * One spacer per level above this row, each carrying the
+                         * indent and — when the preference is on — the rail that
+                         * says where its branch began. In the flow rather than
+                         * absolutely placed, so it cannot end up underneath the
+                         * row's own contents, and stretched to the full height so
+                         * consecutive rows join into one continuous line.
                          */}
-                        {Array.from({ length: rails ? depth : 0 }, (_unused, level) => (
+                        {Array.from({ length: depth }, (_unused, level) => (
                             <span
                                 aria-hidden="true"
-                                className="pointer-events-none absolute top-0 bottom-0 w-px bg-border"
+                                className={cn(
+                                    '-mr-[9px] flex-none self-stretch',
+                                    rails && 'border-l border-border',
+                                )}
                                 key={level}
-                                style={{ left: GUIDE_X + level * INDENT }}
+                                style={{ width: INDENT }}
                             />
                         ))}
                         {hasChildren ? (
