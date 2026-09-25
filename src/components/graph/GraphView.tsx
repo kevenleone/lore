@@ -13,11 +13,14 @@ import { cn } from '../../lib/cn';
 import { type LayoutNode, seed, step, stepsFor } from '../../lib/forceLayout';
 import { useStore } from '../../store/useStore';
 import { DetailPane } from '../kb/DetailPane';
-import { labelDetailFor, shortTitle, showsLabel } from './labels';
+import { placeLabels, shortTitle } from './labels';
 import { IDENTITY, panBy, toFramePoint, toWorld, type Viewport, zoomAt } from './viewport';
 
 /** Node radius by how many links touch it, so hubs read as hubs. */
 const RADIUS = { base: 4, max: 13, perDegree: 1 };
+
+/** Label size in screen pixels; the packing measures against this. */
+const LABEL_SIZE = 11;
 
 /** Slack around a dot, so a link does not need the pointer on its centre. */
 const HIT_SLACK = 7;
@@ -130,12 +133,24 @@ export function GraphView() {
         // scan of the whole edge list for every dot, on every mouse move.
         const lit = new Set<string>();
 
+        const focusedLabels = new Set<string>();
+
         if (focus) {
             for (const edge of graph.edges) {
                 if (edge.source === focus) {
                     lit.add(edge.target);
                 } else if (edge.target === focus) {
                     lit.add(edge.source);
+                }
+            }
+        }
+
+        for (const node of nodesRef.current) {
+            if (node.id === focus || lit.has(node.id)) {
+                const meta = byId.get(node.id);
+
+                if (meta) {
+                    focusedLabels.add(shortTitle(meta.title));
                 }
             }
         }
@@ -194,31 +209,53 @@ export function GraphView() {
             }
         }
 
-        // Labels last, so no dot is drawn over a name.
-        const detail = labelDetailFor(scale);
+        context.restore();
 
+        // Labels last and unscaled, so no dot is drawn over a name and the
+        // packing works in the pixels a reader actually sees.
+        context.save();
+        context.translate(width / 2 + viewport.panX, height / 2 + viewport.panY);
+        context.font = `${LABEL_SIZE}px ui-sans-serif, system-ui, sans-serif`;
         context.textAlign = 'center';
         context.textBaseline = 'top';
-        context.font = `${12 / scale}px ui-sans-serif, system-ui, sans-serif`;
 
-        for (const node of nodesRef.current) {
+        const candidates = nodesRef.current.flatMap((node) => {
             const meta = byId.get(node.id);
-            const near = node.id === focus || lit.has(node.id);
 
-            if (!meta || !showsLabel(node, detail, near)) {
-                continue;
+            if (!meta) {
+                return [];
             }
 
-            const top = node.y + (radiusFor(node.degree) + 5) / scale;
+            const near = node.id === focus || lit.has(node.id);
 
-            context.globalAlpha = !focus || near ? 1 : 0.35;
+            return [
+                {
+                    // Whatever is in focus is named before anything else, then
+                    // the hubs: if two names cannot both fit, the one that
+                    // carries more of the picture should be the one kept.
+                    priority: (near ? 1e6 : 0) + node.degree,
+                    text: shortTitle(meta.title),
+                    x: node.x * scale,
+                    y: node.y * scale + radiusFor(node.degree) + 5,
+                },
+            ];
+        });
+
+        for (const label of placeLabels(
+            candidates,
+            (text) => context.measureText(text).width,
+            LABEL_SIZE,
+        )) {
+            const near = !focus || focusedLabels.has(label.text);
+
+            context.globalAlpha = near ? 1 : 0.4;
             context.fillStyle = token(near && focus ? '--color-text' : '--color-text2');
             // Drawn twice: the ground behind a label is whatever the graph put
             // there, and a name over an edge is unreadable without it.
-            context.lineWidth = 3 / scale;
+            context.lineWidth = 3;
             context.strokeStyle = token('--color-canvas');
-            context.strokeText(shortTitle(meta.title), node.x, top);
-            context.fillText(shortTitle(meta.title), node.x, top);
+            context.strokeText(label.text, label.x, label.y);
+            context.fillText(label.text, label.x, label.y);
         }
 
         context.restore();
