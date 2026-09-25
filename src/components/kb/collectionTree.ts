@@ -25,7 +25,20 @@ export interface CollectionRow {
 export function collectionRows(
     collections: readonly Collection[],
     collapsed: readonly string[],
+    flat = false,
 ): CollectionRow[] {
+    if (flat) {
+        // Nothing nests, so nothing collapses and nothing is hidden: the whole
+        // path is the label, which is the only thing telling two folders of the
+        // same name apart once the indent is gone.
+        return collections.map((collection) => ({
+            collection,
+            depth: 0,
+            hasChildren: false,
+            name: collection.name,
+        }));
+    }
+
     const shut = new Set(collapsed);
 
     return collections

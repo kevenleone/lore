@@ -130,3 +130,36 @@ describe('toggleCollapsed', () => {
         expect(collapsed).toEqual(['Work']);
     });
 });
+
+describe('flat', () => {
+    const flat = (ids: string[]) => collectionRows(make(...ids), [], true).map((row) => row.name);
+
+    it('labels every row with its whole path, the indent being gone', () => {
+        expect(flat(['Reading', 'Reading/Working', 'Reading/Working/MYoYo', 'Work'])).toEqual([
+            'Reading',
+            'Reading/Working',
+            'Reading/Working/MYoYo',
+            'Work',
+        ]);
+    });
+
+    it('lists them all at the root, so none of them indents', () => {
+        const rows = collectionRows(make('A', 'A/B', 'A/B/C'), [], true);
+
+        expect(rows.map((row) => row.depth)).toEqual([0, 0, 0]);
+    });
+
+    it('shows a child a collapsed parent would have hidden', () => {
+        // Nothing nests, so a collapsed parent has nothing to hide — leaving
+        // the filter on would make rows vanish with no control to bring back.
+        const rows = collectionRows(make('A', 'A/B'), ['A'], true);
+
+        expect(rows).toHaveLength(2);
+    });
+
+    it('offers no disclosure control, there being nothing to disclose', () => {
+        const rows = collectionRows(make('A', 'A/B'), [], true);
+
+        expect(rows.every((row) => !row.hasChildren)).toBe(true);
+    });
+});

@@ -483,6 +483,7 @@ export function LookPane() {
     const openMode = useStore((state) => state.prefs.openMode);
     const setOpenMode = useStore((state) => state.setOpenMode);
     const bannerPlacement = useStore((state) => state.prefs.bannerPlacement);
+    const flatCollections = useSwitch('flatCollections');
     const sidebarRails = useSwitch('sidebarRails');
     const counts = useSwitch('counts');
     const statusBar = useSwitch('statusBar');
@@ -652,6 +653,22 @@ export function LookPane() {
                     label="Show counts in the sidebar"
                     on={counts.on}
                     onChange={counts.onChange}
+                />
+            </Row>
+            <Row
+                desc="Structured nests a collection inside its parent. Flat lists them all at the top level, each one labelled with its whole path."
+                title="Collections in the sidebar"
+            >
+                <Segmented
+                    onChange={(choice) => {
+                        // The switch is a toggle, so picking the segment that is
+                        // already on must not flip it off.
+                        if ((choice === 'Flat') !== flatCollections.on) {
+                            flatCollections.onChange();
+                        }
+                    }}
+                    options={['Structured', 'Flat'] as const}
+                    value={flatCollections.on ? 'Flat' : 'Structured'}
                 />
             </Row>
             <Row
