@@ -71,6 +71,12 @@ export function CollectionsSection() {
     }, [editingId]);
 
     const rows = collectionRows(collections, collapsed);
+    /*
+     * A disclosure column only where something discloses. With nothing nested
+     * every row would otherwise reserve room for a chevron none of them has,
+     * which is what put the collections one notch right of the boards.
+     */
+    const anyChildren = rows.some((row) => row.hasChildren);
 
     const startAdd = (under = '') => {
         setConfirmId(null);
@@ -303,9 +309,10 @@ export function CollectionsSection() {
                                     />
                                 </button>
                             ) : (
-                                // Keeps a childless row's swatch in line with the
-                                // ones that carry a chevron.
-                                <span className="w-[12px] flex-none" />
+                                // Keeps a childless row's swatch in line with
+                                // the ones that carry a chevron — but only while
+                                // some row actually carries one.
+                                anyChildren && <span className="w-[12px] flex-none" />
                             )}
                             <span
                                 className="h-[10px] w-[10px] flex-none rounded-[3px]"

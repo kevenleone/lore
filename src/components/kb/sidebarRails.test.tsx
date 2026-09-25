@@ -121,3 +121,30 @@ describe('the board rail', () => {
         expect(on).toBeGreaterThan(off);
     });
 });
+
+describe('a vault with nothing nested', () => {
+    // The disclosure column is reserved per row, so a flat vault used to hold
+    // room for a chevron no row had — which is what put every collection one
+    // notch to the right of the boards above it.
+    const flatSetup = (collections: Collection[]) => {
+        useStore.setState({
+            collections,
+            items: [task('a', collections[0]!.id)],
+            prefs: { ...DEFAULT_PREFS, collapsedCollections: [] },
+        });
+    };
+
+    const chevronColumn = (root: HTMLElement) => root.querySelectorAll('.w-\\[12px\\]').length;
+
+    it('reserves no disclosure column', () => {
+        flatSetup([{ color: '#888', id: 'Work', name: 'Work' }]);
+
+        expect(chevronColumn(render(<CollectionsSection />).container)).toBe(0);
+    });
+
+    it('still reserves one where something does nest', () => {
+        flatSetup(COLLECTIONS);
+
+        expect(chevronColumn(render(<CollectionsSection />).container)).toBeGreaterThan(0);
+    });
+});
