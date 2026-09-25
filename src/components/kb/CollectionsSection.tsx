@@ -6,7 +6,13 @@ import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../lib/cn';
 import { useStore } from '../../store/useStore';
 import { collectionCount, isViewActive } from '../../store/views';
-import { Check, ChevronRight, Close, Pencil, Plus, Trash } from '../common/glyphs';
+import {
+    ContextMenu,
+    ContextMenuItem,
+    ContextMenuSeparator,
+    useContextMenu,
+} from '../common/ContextMenu';
+import { Check, ChevronRight, Close, MoreDots, Pencil, Plus, Trash } from '../common/glyphs';
 import { collectionRows, renamedTo, toggleCollapsed } from './collectionTree';
 
 const NEW = '__new__';
@@ -57,6 +63,7 @@ export function CollectionsSection() {
     const rails = useStore((state) => state.prefs.switches.sidebarRails);
     const flat = useStore((state) => state.prefs.switches.flatCollections);
 
+    const menu = useContextMenu();
     const [editingId, setEditingId] = useState<null | string>(null);
     /** The collection a new one is being created inside, or '' for the root. */
     const [addingUnder, setAddingUnder] = useState('');
@@ -78,6 +85,9 @@ export function CollectionsSection() {
      * which is what put the collections one notch right of the boards.
      */
     const anyChildren = rows.some((row) => row.hasChildren);
+    const menuRow = menu.target
+        ? rows.find((row) => row.collection.id === menu.target!.id)
+        : undefined;
 
     const startAdd = (under = '') => {
         setConfirmId(null);
@@ -333,28 +343,13 @@ export function CollectionsSection() {
                             </span>
                             <span className={ROW_ACTIONS}>
                                 <button
-                                    aria-label={`Rename ${name}`}
-                                    className={cn(BARE_BUTTON, 'flex text-text3')}
-                                    onClick={() => startEdit(collection.id, name, collection.color)}
+                                    aria-haspopup="menu"
+                                    aria-label={`Actions for ${name}`}
+                                    className={cn(BARE_BUTTON, 'flex text-text3 hover:text-text')}
+                                    onClick={(event) => menu.openAt(event, collection.id)}
                                     type="button"
                                 >
-                                    <Pencil size={13} />
-                                </button>
-                                <button
-                                    aria-label={`New collection inside ${name}`}
-                                    className={cn(BARE_BUTTON, 'flex text-text3')}
-                                    onClick={() => startAdd(collection.id)}
-                                    type="button"
-                                >
-                                    <Plus size={13} sw={2} />
-                                </button>
-                                <button
-                                    aria-label={`Delete ${name}`}
-                                    className={cn(BARE_BUTTON, 'flex text-danger')}
-                                    onClick={() => setConfirmId(collection.id)}
-                                    type="button"
-                                >
-                                    <Trash size={13} />
+                                    <MoreDots size={14} />
                                 </button>
                             </span>
                         </div>
@@ -363,6 +358,49 @@ export function CollectionsSection() {
             </div>
 
             {editingId === NEW && renderEditor(NEW)}
+
+            {/*
+             * One menu for the whole section rather than one per row: the row's
+             * actions used to be three icons laid over the count, which a long
+             * collection name ran straight into.
+             */}
+            {menuRow && (
+                <ContextMenu onClose={menu.close} x={menu.target!.x} y={menu.target!.y}>
+                    <ContextMenuItem
+                        onClick={() => {
+                            menu.close();
+                            startEdit(
+                                menuRow.collection.id,
+                                menuRow.name,
+                                menuRow.collection.color,
+                            );
+                        }}
+                    >
+                        <Pencil size={14} />
+                        Rename…
+                    </ContextMenuItem>
+                    <ContextMenuItem
+                        onClick={() => {
+                            menu.close();
+                            startAdd(menuRow.collection.id);
+                        }}
+                    >
+                        <Plus size={14} sw={2} />
+                        New collection inside
+                    </ContextMenuItem>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem
+                        danger
+                        onClick={() => {
+                            menu.close();
+                            setConfirmId(menuRow.collection.id);
+                        }}
+                    >
+                        <Trash size={14} />
+                        Delete…
+                    </ContextMenuItem>
+                </ContextMenu>
+            )}
         </nav>
     );
 }

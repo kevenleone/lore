@@ -78,6 +78,7 @@ export function ContextMenu({
         <div
             className="fixed z-[70] min-w-[196px] rounded-9 border border-border bg-surface p-[5px] shadow-float"
             ref={ref}
+            role="menu"
             // A measured position at the pointer — no class can carry it.
             style={placement}
         >

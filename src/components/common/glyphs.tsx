@@ -215,6 +215,17 @@ export function Moon({ className, size = 13, style, sw = 1.8 }: GlyphProps) {
     );
 }
 
+/** Three dots: the row's other actions, folded into one control. */
+export function MoreDots({ className, size = 14, style, sw = 2.4 }: GlyphProps) {
+    return (
+        <Stroke className={className} size={size} style={style} sw={sw}>
+            <line x1="5" x2="5.01" y1="12" y2="12" />
+            <line x1="12" x2="12.01" y1="12" y2="12" />
+            <line x1="19" x2="19.01" y1="12" y2="12" />
+        </Stroke>
+    );
+}
+
 /** Filled pause bars — the transport button in both focus surfaces. */
 export function OpenDrawer({ className, size = 14, style, sw = 1.8 }: GlyphProps) {
     return (
