@@ -483,6 +483,7 @@ export function LookPane() {
     const openMode = useStore((state) => state.prefs.openMode);
     const setOpenMode = useStore((state) => state.setOpenMode);
     const bannerPlacement = useStore((state) => state.prefs.bannerPlacement);
+    const collectionRails = useSwitch('collectionRails');
     const counts = useSwitch('counts');
     const statusBar = useSwitch('statusBar');
     const blockEditor = useSwitch('blockEditor');
@@ -651,6 +652,16 @@ export function LookPane() {
                     label="Show counts in the sidebar"
                     on={counts.on}
                     onChange={counts.onChange}
+                />
+            </Row>
+            <Row
+                desc="Hairlines down the left of collections inside collections, marking where a branch begins."
+                title="Guide lines in the sidebar"
+            >
+                <Toggle
+                    label="Guide lines in the sidebar"
+                    on={collectionRails.on}
+                    onChange={collectionRails.onChange}
                 />
             </Row>
             <Row

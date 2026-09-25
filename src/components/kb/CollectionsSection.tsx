@@ -57,6 +57,7 @@ export function CollectionsSection() {
 
     const setPref = useStore((state) => state.setPref);
     const collapsed = useStore((state) => state.prefs.collapsedCollections);
+    const rails = useStore((state) => state.prefs.switches.collectionRails);
 
     const [editingId, setEditingId] = useState<null | string>(null);
     /** The collection a new one is being created inside, or '' for the root. */
@@ -258,7 +259,7 @@ export function CollectionsSection() {
                          * the thing that says where a branch begins once a few
                          * of them are open at once.
                          */}
-                        {Array.from({ length: depth }, (_unused, level) => (
+                        {Array.from({ length: rails ? depth : 0 }, (_unused, level) => (
                             <span
                                 aria-hidden="true"
                                 className="pointer-events-none absolute top-0 bottom-0 w-px bg-border"
