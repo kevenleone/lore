@@ -53,10 +53,33 @@ export function GraphView() {
     const previewOpen = openId !== null && openAs === 'drawer';
     const [hovered, setHovered] = useState<{ node: GraphNode; x: number; y: number } | null>(null);
     const [ready, setReady] = useState(false);
+    /** Bumped whenever the painted theme changes; see the observer below. */
+    const [redrawKey, setRedrawKey] = useState(0);
 
     useEffect(() => {
         void loadGraph();
     }, [loadGraph]);
+
+    /*
+     * Every colour on the canvas is read from a theme token when it is drawn, so
+     * a canvas drawn under one theme keeps that theme's colours until something
+     * else happens to redraw it — which is why switching left the dots and the
+     * halos behind each label in the old palette until you panned or zoomed.
+     *
+     * Watching the painted tokens rather than the preference: `paintTheme`
+     * writes them onto the root element, and with Appearance set to Auto the
+     * system changing under the app repaints them without any preference moving.
+     */
+    useEffect(() => {
+        const observer = new MutationObserver(() => setRedrawKey((key) => key + 1));
+
+        observer.observe(document.documentElement, {
+            attributeFilter: ['style'],
+            attributes: true,
+        });
+
+        return () => observer.disconnect();
+    }, []);
 
     const byId = useMemo(
         () => new Map((graph?.nodes ?? []).map((node) => [node.id, node])),
@@ -259,7 +282,7 @@ export function GraphView() {
         }
 
         context.restore();
-    }, [byId, frameOf, graph, hovered, selectedId, viewport]);
+    }, [byId, frameOf, graph, hovered, redrawKey, selectedId, viewport]);
 
     useEffect(() => {
         if (!ready) {
