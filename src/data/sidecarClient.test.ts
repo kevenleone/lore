@@ -133,3 +133,52 @@ describe('eventsUrl', () => {
         await expect(eventsUrl()).resolves.toContain('token=a%20b%26c');
     });
 });
+
+describe('the message on a failure', () => {
+    // The engine answers `{"error": "..."}`, and that string is the one written
+    // for the person reading it. Passing the body through showed them JSON.
+    const failWith = async (body: string, status = 500): Promise<Error> => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body, { status })));
+
+        try {
+            await request('/workspace/open');
+        } catch (error) {
+            return error as Error;
+        }
+
+        throw new Error('the request was expected to fail, and did not');
+    };
+
+    it('is the engine’s sentence, not the envelope around it', async () => {
+        const error = await failWith(JSON.stringify({ error: 'That folder is not readable.' }));
+
+        expect(error.message).toBe('That folder is not readable.');
+    });
+
+    it('keeps the status on the error for callers that branch on it', async () => {
+        const error = await failWith(JSON.stringify({ error: 'Nope.' }), 404);
+
+        expect(error).toBeInstanceOf(HttpError);
+        expect((error as InstanceType<typeof HttpError>).status).toBe(404);
+    });
+
+    it('passes plain text through, being already the message', async () => {
+        expect((await failWith('something went wrong')).message).toBe('something went wrong');
+    });
+
+    it('falls back to the body when the error field is not a string', async () => {
+        const body = JSON.stringify({ error: { code: 7 } });
+
+        expect((await failWith(body)).message).toBe(body);
+    });
+
+    it('leaves a JSON body that is not an envelope alone', async () => {
+        const body = JSON.stringify({ detail: 'nope' });
+
+        expect((await failWith(body)).message).toBe(body);
+    });
+
+    it('does not fall over on a body that is not JSON at all', async () => {
+        expect((await failWith('{ broken')).message).toBe('{ broken');
+    });
+});
