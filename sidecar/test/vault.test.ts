@@ -12,7 +12,7 @@ import { VaultStore } from '../src/index/store';
 import { parseWikilink, rewriteRelated } from '../src/links';
 import { parseFile, serializeFile, splitFrontmatter, toItem } from '../src/markdown';
 import { slugify, uniqueStem } from '../src/slug';
-import { collectionOf, hashColor, safeJoin, stemOf } from '../src/vault';
+import { collectionOf, hashColor, LORE_DIR, safeJoin, stemOf, Vault } from '../src/vault';
 
 let root: string;
 let store: VaultStore;
@@ -1088,5 +1088,54 @@ describe('completion dates', () => {
         const item = s.listItems().find((item) => item.title === 'Reopened')!;
 
         expect(item.completedAt).toBeUndefined();
+    });
+});
+
+describe('the gitignore the scaffold writes', () => {
+    const ignorePath = () => join(root, LORE_DIR, '.gitignore');
+    const scaffold = () => new Vault(root).ensureScaffold();
+
+    it('covers every build’s index, not just production’s', async () => {
+        await scaffold();
+
+        const contents = await readFile(ignorePath(), 'utf8');
+
+        expect(contents).toContain('index*.db');
+        expect(contents).toContain('index*.db-wal');
+    });
+
+    it('tops up a vault an older Lore scaffolded', async () => {
+        // Written once and never revisited, every existing vault would start
+        // committing the index a dev build leaves in it.
+        await scaffold();
+        await writeFile(ignorePath(), 'index.db\n', 'utf8');
+        await scaffold();
+
+        expect(await readFile(ignorePath(), 'utf8')).toContain('index*.db');
+    });
+
+    it('leaves what the user added alone', async () => {
+        await scaffold();
+        await writeFile(ignorePath(), 'index.db\nscratch/\n', 'utf8');
+        await scaffold();
+
+        expect(await readFile(ignorePath(), 'utf8')).toContain('scratch/');
+    });
+
+    it('does not list a pattern twice when it runs again', async () => {
+        await scaffold();
+        await scaffold();
+
+        const lines = (await readFile(ignorePath(), 'utf8')).split('\n');
+
+        expect(lines.filter((line) => line.trim() === 'index*.db')).toHaveLength(1);
+    });
+
+    it('copes with a file that does not end in a newline', async () => {
+        await scaffold();
+        await writeFile(ignorePath(), 'cache/', 'utf8');
+        await scaffold();
+
+        expect(await readFile(ignorePath(), 'utf8')).toContain('\nindex*.db');
     });
 });

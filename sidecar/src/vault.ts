@@ -14,18 +14,37 @@ export const COLLECTIONS_FILE = `${LORE_DIR}/collections.json`;
 export const BOARDS_FILE = `${LORE_DIR}/boards.json`;
 export const WORKSPACE_FILE = `${LORE_DIR}/workspace.json`;
 export const TEMPLATES_DIR = `${LORE_DIR}/templates`;
-export const INDEX_FILE = `${LORE_DIR}/index.db`;
+
+/**
+ * The index this build uses. Each mode gets its own file, so a dev build and
+ * the installed app can sit on the same vault — which is a folder of Markdown
+ * and belongs to whoever opens it — without rebuilding one derived database
+ * over each other. Production keeps the plain name, so no existing vault
+ * reindexes on upgrade.
+ */
+export function indexFileFor(mode: string | undefined): string {
+    return !mode || mode === 'prod'
+        ? `${LORE_DIR}/index.db`
+        : `${LORE_DIR}/index-${mode.replace(/[^a-z0-9-]/gi, '')}.db`;
+}
+
+export const INDEX_FILE = indexFileFor(Bun.env.LORE_MODE);
 
 /** Never a collection: reserved for pasted files. */
 export const ATTACHMENTS_DIR = 'attachments';
 
 const GITIGNORE = `# Derived from the Markdown files — safe to delete, rebuilt on next open.
-index.db
-index.db-wal
-index.db-shm
+index*.db
+index*.db-wal
+index*.db-shm
 cache/
 trash/
 `;
+
+/** The patterns above, without the comments, for topping up an older vault. */
+const GITIGNORE_ENTRIES = GITIGNORE.split('\n').filter(
+    (line) => line.trim() !== '' && !line.startsWith('#'),
+);
 
 /** The parts of `.lore/workspace.json` this version of Lore owns. */
 export interface WorkspaceFile {
@@ -44,9 +63,26 @@ export class Vault {
         await mkdir(this.path(TEMPLATES_DIR), { recursive: true });
 
         const ignorePath = this.path(`${LORE_DIR}/.gitignore`);
+        const ignoreFile = Bun.file(ignorePath);
 
-        if (!(await Bun.file(ignorePath).exists())) {
+        if (!(await ignoreFile.exists())) {
             await writeFile(ignorePath, GITIGNORE, 'utf8');
+
+            return;
+        }
+
+        // A vault scaffolded by an older Lore has the file already, so a pattern
+        // added since then has to be appended — otherwise every existing vault
+        // starts committing whatever the new one covers.
+        const existing = await ignoreFile.text();
+        const missing = GITIGNORE_ENTRIES.filter(
+            (entry) => !existing.split('\n').some((line) => line.trim() === entry),
+        );
+
+        if (missing.length > 0) {
+            const separator = existing.endsWith('\n') ? '' : '\n';
+
+            await writeFile(ignorePath, `${existing}${separator}${missing.join('\n')}\n`, 'utf8');
         }
     }
 
