@@ -27,7 +27,18 @@ import {
 import { parseFile, serializeFile, toItem } from '../markdown';
 import { newId, uniqueStem } from '../slug';
 import { collectionOf, INDEX_FILE, joinPath, stemOf, TRASH_DIR, Vault } from '../vault';
-import { type FileRow, hashContent, IndexVersionMismatch, openIndex } from './db';
+import { type FileRow, hashContent, openIndex } from './db';
+
+/**
+ * Removes the index and the journal files that belong to it. The sidecars are
+ * part of the same database: leaving one behind a deleted `.db` is how a fresh
+ * index inherits the corruption it was made to escape.
+ */
+async function discardIndex(dbPath: string): Promise<void> {
+    await Promise.all(
+        ['', '-wal', '-shm'].map((suffix) => rm(`${dbPath}${suffix}`, { force: true })),
+    );
+}
 
 /** How long a virtual document is trusted before it is checked again. */
 const REFRESH_TTL_MS = 6 * 60 * 60 * 1000;
@@ -79,13 +90,17 @@ export class VaultStore {
 
         try {
             db = openIndex(dbPath);
-        } catch (e) {
-            if (!(e instanceof IndexVersionMismatch)) {
-                throw e;
-            }
-
-            // Stale schema: throw the index away rather than migrating it.
-            await rm(dbPath, { force: true });
+        } catch {
+            /*
+             * The index is derived from the files, so every way it can be
+             * unusable has the same answer: throw it away and build it again.
+             *
+             * A stale schema was already handled here. Corruption was not, and
+             * it rethrew — which is how an interrupted rebuild turned into a
+             * vault that would not open at all, when the fix the README gives
+             * for it by hand is exactly this.
+             */
+            await discardIndex(dbPath);
             db = openIndex(dbPath);
         }
 
