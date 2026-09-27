@@ -98,10 +98,13 @@ because Tauri derives the data directory from the identifier.
 
 **Run the app as `LORE_MODE=agent pnpm tauri dev`, always.** It opens a separate
 vault with a violet accent and an `AGENT` badge, so an experiment cannot touch
-the library the installed app is using. Nothing currently stops two builds
-opening the _same_ vault if pointed there by hand, and doing so has already cost
-a real evening: a schema bump plus an interrupted rebuild left the vault
-unopenable.
+the library the installed app is using.
+
+Pointing two builds at one vault is allowed, though — a vault is a folder of
+Markdown and any Lore may open it. What they must not share is the derived
+index, so each mode keeps its own (`index.db`, `index-dev.db`,
+`index-agent.db`). Production keeps the plain name, so no existing vault
+reindexes on upgrade.
 
 ### The vault on disk
 
@@ -115,7 +118,7 @@ attachments/             reserved; never a collection
   boards.json            per-collection board columns
   workspace.json         per-vault settings, committed, hand-editable
   templates/*.md         user templates
-  index.db               derived, disposable, gitignored
+  index*.db              derived, disposable, gitignored — one per build mode
   trash/                 deletes move here
 ```
 
