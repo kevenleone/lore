@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.25.1](https://github.com/kevenleone/lore/compare/v1.25.0...v1.25.1) (2026-09-30)
+
+
+### Bug Fixes
+
+* **sidecar:** say why the data engine is not reachable ([32c3256](https://github.com/kevenleone/lore/commit/32c3256f95b536b1a14d075fc57872089d380dc1))
+* **sidecar:** wait out a slow engine start instead of abandoning it ([648a895](https://github.com/kevenleone/lore/commit/648a895c18a52d7c410b9379f95130877dbaf21c))
+* **site:** link the universal build, and the Intel one by its real name ([3c3d227](https://github.com/kevenleone/lore/commit/3c3d227dda30dfdf0ca7ce2b52a9a3f7cd957b3f))
+
+
+### Build System
+
+* **release:** ship one universal macOS build ([79a18d1](https://github.com/kevenleone/lore/commit/79a18d1dffe5878c1767b9eedd058a6a4793057c))
+
 ## [1.25.0](https://github.com/kevenleone/lore/compare/v1.24.0...v1.25.0) (2026-09-27)
 
 
