@@ -25,7 +25,13 @@ export class HttpError extends Error {
 
 export class SidecarUnavailable extends Error {
     constructor(readonly reason: unknown) {
-        super('the data engine is not reachable');
+        // Tauri rejects a command with the Rust error as a bare string, which is
+        // the only place the host's reason for a dead engine reaches the user.
+        super(
+            typeof reason === 'string' && reason.trim()
+                ? `the data engine is not reachable: ${reason.trim()}`
+                : 'the data engine is not reachable',
+        );
         this.name = 'SidecarUnavailable';
     }
 }
