@@ -83,12 +83,10 @@ pub fn run() {
             }
         })
         .setup(|app| {
-            // Start the data engine before anything asks for it. A failure here
-            // must not stop the app booting — the UI reports the engine as
-            // unavailable rather than showing a blank window.
-            if let Err(e) = sidecar::start(app.handle()) {
-                eprintln!("lore: data engine unavailable: {e}");
-            }
+            // Start the data engine before anything asks for it. It does not
+            // wait for the handshake: `sidecar_endpoint` does, so a slow first
+            // start never holds the window back or leaves the app without one.
+            sidecar::start(app.handle());
 
             // A labelled build says so in the window list too — the windows are
             // `decorations: false`, so this is what Mission Control and the
