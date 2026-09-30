@@ -26,12 +26,14 @@ async function linkLatestRelease(): Promise<void> {
     const findDmg = (arch: string): ReleaseAsset | undefined =>
         release.assets.find((asset) => asset.name.endsWith(`_${arch}.dmg`));
 
-    const appleSilicon = findDmg('aarch64');
-    const intel = findDmg('x86_64');
+    const universal = findDmg('universal');
+    const primary = universal ?? findDmg('aarch64');
+    // Tauri names the Intel bundle `x64`, not the Rust triple's `x86_64`.
+    const intel = universal ? undefined : findDmg('x64');
 
-    if (appleSilicon) {
+    if (primary) {
         for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-download]')) {
-            link.href = appleSilicon.browser_download_url;
+            link.href = primary.browser_download_url;
         }
     }
 
@@ -44,8 +46,10 @@ async function linkLatestRelease(): Promise<void> {
 
     const note = document.querySelector('[data-release-note]');
 
-    if (note && appleSilicon) {
-        note.textContent = `Version ${release.tag_name.replace(/^v/, '')} for Apple silicon.`;
+    if (note && primary) {
+        const platforms = universal ? 'Apple silicon and Intel' : 'Apple silicon';
+
+        note.textContent = `Version ${release.tag_name.replace(/^v/, '')} for ${platforms}.`;
     }
 }
 
