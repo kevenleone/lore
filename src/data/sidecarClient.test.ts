@@ -123,6 +123,23 @@ describe('request', () => {
     });
 });
 
+describe('SidecarUnavailable', () => {
+    it('carries the host’s reason when discovery was refused', async () => {
+        invoke.mockRejectedValue('the data engine did not start within 30 seconds');
+        vi.stubGlobal('fetch', vi.fn());
+
+        await expect(request('/items')).rejects.toThrow(
+            'the data engine is not reachable: the data engine did not start within 30 seconds',
+        );
+    });
+
+    it('keeps the plain message when the failure is a network error', () => {
+        expect(new SidecarUnavailable(new TypeError('Failed to fetch')).message).toBe(
+            'the data engine is not reachable',
+        );
+    });
+});
+
 describe('eventsUrl', () => {
     it('carries the token as a query param, since EventSource cannot set headers', async () => {
         await expect(eventsUrl()).resolves.toBe('http://127.0.0.1:5000/events?token=tok');
