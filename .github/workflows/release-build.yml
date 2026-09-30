@@ -30,17 +30,13 @@ env:
     NODE_OPTIONS: --max-old-space-size=4096
 
 jobs:
+    # One universal build rather than one per arch: an Apple Silicon user who
+    # picks an Intel-only download runs everything under Rosetta.
     macos:
-        name: macOS (${{ matrix.arch }})
+        name: macOS (universal)
         runs-on: macos-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                include:
-                    - arch: aarch64
-                      target: aarch64-apple-darwin
-                    - arch: x86_64
-                      target: x86_64-apple-darwin
+        env:
+            TARGET: universal-apple-darwin
         steps:
             - uses: actions/checkout@v4
               with:
@@ -61,18 +57,18 @@ jobs:
 
             - uses: dtolnay/rust-toolchain@stable
               with:
-                  targets: ${{ matrix.target }}
+                  targets: aarch64-apple-darwin,x86_64-apple-darwin
 
             - uses: swatinem/rust-cache@v2
               with:
-                  key: ${{ matrix.target }}
+                  key: universal-apple-darwin
                   workspaces: src-tauri -> target
 
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
 
-            - name: Build sidecar for ${{ matrix.target }}
-              run: cd sidecar && bun scripts/build.ts ${{ matrix.target }}
+            - name: Build sidecar for ${{ env.TARGET }}
+              run: cd sidecar && bun scripts/build.ts ${{ env.TARGET }}
 
             # The bundler signs whenever APPLE_CERTIFICATE is *present*, so
             # the variable cannot be set at all on the unsigned path: an unset
@@ -98,20 +94,20 @@ jobs:
                   APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
                   APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
                   APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-              run: pnpm tauri build --target ${{ matrix.target }} --bundles app,dmg --config src-tauri/tauri.ci.conf.json
+              run: pnpm tauri build --target ${{ env.TARGET }} --bundles app,dmg --config src-tauri/tauri.ci.conf.json
 
             # Ad-hoc signed, so Gatekeeper shows the unidentified-developer
             # prompt; adding the six repository secrets is the only step needed
             # to take the signed path instead.
             - name: Build Tauri bundles (unsigned)
               if: steps.signing.outputs.enabled == 'false'
-              run: pnpm tauri build --target ${{ matrix.target }} --bundles app,dmg --config src-tauri/tauri.ci.conf.json
+              run: pnpm tauri build --target ${{ env.TARGET }} --bundles app,dmg --config src-tauri/tauri.ci.conf.json
 
             - name: Upload to release
               uses: softprops/action-gh-release@v2
               with:
                   fail_on_unmatched_files: true
-                  files: src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+                  files: src-tauri/target/${{ env.TARGET }}/release/bundle/dmg/*.dmg
                   tag_name: ${{ inputs.tag_name }}
 
     linux:

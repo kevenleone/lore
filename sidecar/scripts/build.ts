@@ -6,6 +6,7 @@
 //   bun scripts/build.ts                          # host triple only — what `tauri dev` needs
 //   bun scripts/build.ts --all                    # every target, for a release build
 //   bun scripts/build.ts aarch64-apple-darwin     # one named target, for CI
+//   bun scripts/build.ts universal-apple-darwin   # both macOS arches, lipo'd into one
 
 import { $ } from 'bun';
 import { mkdir } from 'node:fs/promises';
@@ -26,6 +27,10 @@ const TARGETS: Target[] = [
     { bun: 'bun-linux-x64', triple: 'x86_64-unknown-linux-gnu' },
 ];
 
+/** Tauri's `--target universal-apple-darwin` looks for a fat binary under this triple. */
+const UNIVERSAL_DARWIN = 'universal-apple-darwin';
+const DARWIN_TRIPLES = ['aarch64-apple-darwin', 'x86_64-apple-darwin'];
+
 const OUT_DIR = fileURLToPath(new URL('../../src-tauri/binaries/', import.meta.url));
 
 /** The triple of the machine running this script, so a dev build is one target. */
@@ -45,12 +50,18 @@ function hostTriple(): string {
 
 const args = process.argv.slice(2);
 const all = args.includes('--all');
-const requested = args.filter((argument) => !argument.startsWith('--'));
+const named = args.filter((argument) => !argument.startsWith('--'));
+const universal = named.includes(UNIVERSAL_DARWIN);
+const requested = universal
+    ? [...named.filter((triple) => triple !== UNIVERSAL_DARWIN), ...DARWIN_TRIPLES]
+    : named;
 
 for (const triple of requested) {
     if (!TARGETS.some((target) => target.triple === triple)) {
         console.error(`Unknown target: ${triple}`);
-        console.error(`Known targets: ${TARGETS.map((target) => target.triple).join(', ')}`);
+        console.error(
+            `Known targets: ${[...TARGETS.map((target) => target.triple), UNIVERSAL_DARWIN].join(', ')}`,
+        );
         process.exit(1);
     }
 }
@@ -76,8 +87,16 @@ if (wanted.length === 0) {
 
 await mkdir(OUT_DIR, { recursive: true });
 
+const outputFor = (triple: string, ext = ''): string => `${OUT_DIR}lore-sidecar-${triple}${ext}`;
+
+async function report(out: string): Promise<void> {
+    const size = (await Bun.file(out).stat()).size;
+
+    console.log(`  ${(size / 1024 / 1024).toFixed(1)} MB  ${out}`);
+}
+
 for (const t of wanted) {
-    const out = `${OUT_DIR}lore-sidecar-${t.triple}${t.ext ?? ''}`;
+    const out = outputFor(t.triple, t.ext);
 
     console.log(`→ ${t.triple}`);
     // --bytecode trims startup time and size; both matter because this binary is
@@ -91,7 +110,19 @@ for (const t of wanted) {
         await $`codesign --force --sign - ${out}`;
     }
 
-    const size = (await Bun.file(out).stat()).size;
+    await report(out);
+}
 
-    console.log(`  ${(size / 1024 / 1024).toFixed(1)} MB  ${out}`);
+if (universal) {
+    if (process.platform !== 'darwin') {
+        console.error(`${UNIVERSAL_DARWIN} needs lipo and codesign, so it only builds on macOS.`);
+        process.exit(1);
+    }
+
+    const out = outputFor(UNIVERSAL_DARWIN);
+
+    console.log(`→ ${UNIVERSAL_DARWIN}`);
+    await $`lipo -create ${DARWIN_TRIPLES.map((triple) => outputFor(triple))} -output ${out}`;
+    await $`codesign --force --sign - ${out}`;
+    await report(out);
 }
