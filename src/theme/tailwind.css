@@ -450,10 +450,13 @@
         font-size: 14px;
     }
 
-    /* Tiptap renders a task item as `<li><label><input></label><div>`. */
+    /* Tiptap renders a task item as `<li><label><input></label><div>`. The label
+     * is as tall as the paragraph's first line, so the box centres on it. */
     .lore-editor .ProseMirror li[data-checked] > label {
+        align-items: center;
+        display: flex;
         flex: none;
-        margin-top: 3px;
+        height: calc(var(--text-title-lg) * 1.65);
         -webkit-user-select: none;
         user-select: none;
     }
