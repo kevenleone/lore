@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.25.2](https://github.com/kevenleone/lore/compare/v1.25.1...v1.25.2) (2026-10-08)
+
+
+### Bug Fixes
+
+* **editor:** centre a task checkbox on its first line ([adb47df](https://github.com/kevenleone/lore/commit/adb47dfc61884ea895978bce399160b9dd4a2eb5))
+
 ## [1.25.1](https://github.com/kevenleone/lore/compare/v1.25.0...v1.25.1) (2026-09-30)
 
 
