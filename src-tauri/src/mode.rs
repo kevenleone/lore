@@ -8,6 +8,8 @@
 
 pub const MODE: &str = env!("LORE_MODE");
 pub const PRODUCT_NAME: &str = env!("LORE_PRODUCT_NAME");
+#[cfg(target_os = "macos")]
+pub const CLI_NAME: &str = env!("LORE_CLI_NAME");
 pub const CAPTURE_SHORTCUT: &str = env!("LORE_CAPTURE_SHORTCUT");
 pub const SIDECAR_DEV_PORT: &str = env!("LORE_SIDECAR_DEV_PORT");
 

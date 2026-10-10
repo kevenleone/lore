@@ -69,6 +69,21 @@
     "bundle": {
         "active": true,
         "externalBin": ["binaries/lore-sidecar"],
+        "fileAssociations": [
+            {
+                "ext": ["md", "markdown"],
+                "name": "Markdown Document",
+                "rank": "Alternate",
+                "role": "Editor"
+            },
+            {
+                "contentTypes": ["public.folder"],
+                "ext": [],
+                "name": "Folder",
+                "rank": "None",
+                "role": "Viewer"
+            }
+        ],
         "icon": [
             "icons/32x32.png",
             "icons/128x128.png",
@@ -76,6 +91,7 @@
             "icons/icon.icns",
             "icons/icon.ico"
         ],
+        "resources": ["resources/lore"],
         "targets": "all"
     },
     "identifier": "com.lore.app",

@@ -1,0 +1,15 @@
+{
+    "$schema": "../gen/schemas/desktop-schema.json",
+    "description": "Capability for a standalone document window: its own frame and nothing else",
+    "identifier": "document",
+    "permissions": [
+        "core:default",
+        "core:window:allow-close",
+        "core:window:allow-minimize",
+        "core:window:allow-toggle-maximize",
+        "core:window:allow-start-dragging",
+        "core:event:default",
+        "opener:default"
+    ],
+    "windows": ["document-*"]
+}

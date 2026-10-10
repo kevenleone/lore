@@ -126,8 +126,9 @@ pub fn set_tray_visible(app: AppHandle, visible: bool) {
 
 /// macOS only: `Accessory` keeps Lore in the menu bar but out of the Dock and
 /// the Cmd-Tab switcher; `Regular` puts it back. The quick-capture overlay
-/// stays Accessory on purpose — only the main window earns a Dock entry.
-fn set_app_visible_in_switcher(app: &AppHandle, visible: bool) {
+/// stays Accessory on purpose — only the main window and a document window
+/// earn a Dock entry.
+pub fn set_app_visible_in_switcher(app: &AppHandle, visible: bool) {
     #[cfg(target_os = "macos")]
     {
         use tauri::ActivationPolicy;
@@ -181,8 +182,22 @@ pub fn hide_main(app: &AppHandle) {
         let _ = win.hide();
     }
 
+    settle_switcher(app);
+}
+
+/// Drops the Dock entry once nothing that earns one is left on screen. Called
+/// after a window goes away, never before: the main window is counted as gone.
+pub fn settle_switcher(app: &AppHandle) {
+    let main = app
+        .get_webview_window("main")
+        .and_then(|win| win.is_visible().ok())
+        .unwrap_or(false);
     let tray = app.state::<TrayVisible>().get();
-    set_app_visible_in_switcher(app, !tray);
+
+    set_app_visible_in_switcher(
+        app,
+        main || !tray || crate::document_window::any_open(app),
+    );
 }
 
 /// System-tray icon. Left-clicking it opens the focus popover under the icon —
