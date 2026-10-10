@@ -10,6 +10,9 @@ import type { WorkspaceRef } from '../store/persisted';
 /** How many recent workspaces to remember. */
 const MAX_RECENTS = 8;
 
+/** Sent by the host; the id is `open_paths.rs`'s. */
+const WORKSPACE_REQUESTED = 'workspace:open';
+
 /** Broadcast so other windows abandon their repository too. */
 export const WORKSPACE_CHANGED = 'workspace:changed';
 
@@ -59,6 +62,20 @@ export async function onWorkspaceChanged(
     }
 }
 
+/**
+ * Listens for a folder handed to Lore from outside — `lore .`, or a folder
+ * dropped on the Dock icon.
+ */
+export async function onWorkspaceRequested(handler: (path: string) => void): Promise<() => void> {
+    try {
+        const { listen } = await import('@tauri-apps/api/event');
+
+        return await listen<string>(WORKSPACE_REQUESTED, (event) => handler(event.payload));
+    } catch {
+        return () => {};
+    }
+}
+
 /** Opens the native folder picker for an export destination. */
 export async function pickExportFolder(): Promise<null | string> {
     const { open } = await import('@tauri-apps/plugin-dialog');
@@ -102,6 +119,21 @@ export async function suggestedVaultPath(): Promise<null | string> {
         const { documentDir, join } = await import('@tauri-apps/api/path');
 
         return await join(await documentDir(), 'Lore Vault');
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * The folder Lore was launched with, once. The host holds it because a cold
+ * start asks before this window is listening; taking it clears it, so a reload
+ * does not switch vaults a second time.
+ */
+export async function takeRequestedWorkspace(): Promise<null | string> {
+    try {
+        const { invoke } = await import('@tauri-apps/api/core');
+
+        return (await invoke<null | string>('take_pending_workspace')) ?? null;
     } catch {
         return null;
     }
