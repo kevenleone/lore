@@ -28,12 +28,14 @@ export default defineConfig(async ({ command }) => {
     const mode = resolveMode(command);
 
     return {
-        // Four HTML entry points: the main KB window, the quick-capture window,
-        // the menu-bar focus popover, and the offscreen print surface.
+        // Five HTML entry points: the main KB window, the quick-capture window,
+        // the standalone document window, the menu-bar focus popover, and the
+        // offscreen print surface.
         build: {
             rollupOptions: {
                 input: {
                     capture: 'windows/capture.html',
+                    document: 'windows/document.html',
                     focus: 'windows/focus.html',
                     main: 'windows/main.html',
                     print: 'windows/print.html',
