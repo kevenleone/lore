@@ -19,6 +19,9 @@ use crate::mode;
 /// the drawer here and the floating panel there, which closed the drawer again.
 const MENU_PREFIX: &str = "menu:";
 
+/// Answered here rather than sent to the window: only the host may link a file.
+const INSTALL_CLI: &str = "install-cli";
+
 /// A command the menu sends to the window, by id.
 struct Command {
     accelerator: &'static str,
@@ -140,6 +143,13 @@ pub fn install<R: Runtime>(app: &App<R>) -> tauri::Result<()> {
         .about(Some(about))
         .separator()
         .item(&command_item(app, &settings_command())?)
+        .item(
+            &MenuItemBuilder::with_id(
+                INSTALL_CLI,
+                format!("Install '{}' Command in PATH", mode::CLI_NAME),
+            )
+            .build(app)?,
+        )
         .separator()
         .services()
         .separator()
@@ -202,6 +212,11 @@ pub fn install<R: Runtime>(app: &App<R>) -> tauri::Result<()> {
 
     app.set_menu(menu)?;
     app.on_menu_event(|app, event| {
+        if event.id().0 == INSTALL_CLI {
+            crate::cli::install(app);
+            return;
+        }
+
         // The tray's items arrive here too; they are `commands.rs`'s to answer.
         let Some(command) = event.id().0.strip_prefix(MENU_PREFIX) else {
             return;

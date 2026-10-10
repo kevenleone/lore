@@ -39,6 +39,7 @@ fn emit_mode() {
     println!("cargo:rustc-env=LORE_MODE={mode}");
     println!("cargo:rustc-env=LORE_MODE_LABEL={}", string("label"));
     println!("cargo:rustc-env=LORE_PRODUCT_NAME={}", string("productName"));
+    println!("cargo:rustc-env=LORE_CLI_NAME={}", string("cliName"));
     println!(
         "cargo:rustc-env=LORE_CAPTURE_SHORTCUT={}",
         entry["captureShortcut"][platform].as_str().unwrap_or_default()

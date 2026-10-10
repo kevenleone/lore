@@ -17,9 +17,13 @@
 
 #[cfg(target_os = "macos")]
 mod app_menu;
+#[cfg(target_os = "macos")]
+mod cli;
 mod commands;
+mod document_window;
 mod focus_tray;
 mod mode;
+mod open_paths;
 mod print_pdf;
 mod sidecar;
 #[cfg(target_os = "macos")]
@@ -29,7 +33,16 @@ mod window_frame;
 pub fn run() {
     use tauri::Manager;
 
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+
+    // First, so a second launch is forwarded before anything else starts: the
+    // paths it was given open in the Lore that is already running.
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+        open_paths::handle(app, argv.into_iter().skip(1), std::path::Path::new(&cwd));
+    }));
+
+    builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
@@ -40,6 +53,7 @@ pub fn run() {
         .plugin(
             tauri_plugin_window_state::Builder::default()
                 .with_denylist(&["capture", "focus", "print"])
+                .with_filter(|label| !document_window::is_document(label))
                 .build(),
         )
         .manage(sidecar::SidecarState::default())
@@ -51,11 +65,16 @@ pub fn run() {
             }
         })
         .manage(commands::TrayVisible::default())
+        .manage(document_window::Documents::default())
+        .manage(open_paths::PendingWorkspace::default())
         .invoke_handler(tauri::generate_handler![
             commands::hide_capture,
             commands::open_focus_mode,
             commands::set_tray_visible,
             commands::trash_path,
+            document_window::read_document,
+            document_window::write_document,
+            open_paths::take_pending_workspace,
             print_pdf::export_webview_pdf,
             focus_tray::focus_snapshot,
             focus_tray::sync_focus,
@@ -78,6 +97,9 @@ pub fn run() {
                 // A menu-bar popover goes away as soon as you look elsewhere.
                 tauri::WindowEvent::Focused(false) if window.label() == focus_tray::PANEL_LABEL => {
                     let _ = window.hide();
+                }
+                tauri::WindowEvent::Destroyed if document_window::is_document(window.label()) => {
+                    document_window::closed(window.app_handle(), window.label());
                 }
                 _ => {}
             }
@@ -153,6 +175,8 @@ pub fn run() {
                 // The tray has to exist before anything tries to paint it.
                 focus_tray::start_painter(app.handle());
             }
+
+            open_paths::handle_launch(app.handle());
             Ok(())
         })
         .build(tauri::generate_context!())
@@ -164,6 +188,15 @@ pub fn run() {
             // Clicking the Dock icon while the window is hidden.
             #[cfg(target_os = "macos")]
             tauri::RunEvent::Reopen { .. } => commands::reopen_main(app),
+            // Finder's "Open With", a double-click, and `open -a`.
+            #[cfg(target_os = "macos")]
+            tauri::RunEvent::Opened { urls } => {
+                let paths = urls
+                    .iter()
+                    .filter_map(|url| url.to_file_path().ok())
+                    .map(|path| path.to_string_lossy().into_owned());
+                open_paths::handle(app, paths, std::path::Path::new("/"));
+            }
             _ => {}
         });
 }

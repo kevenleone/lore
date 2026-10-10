@@ -1,0 +1,29 @@
+#!/bin/sh
+# The `lore` command: hands folders and Markdown files to the Lore this script
+# ships inside. It goes through `open`, so the app receives them the same way
+# it does from Finder whether or not it is already running.
+
+self="$0"
+while [ -L "$self" ]; do
+    target="$(readlink "$self")"
+    case "$target" in
+        /*) self="$target" ;;
+        *) self="$(dirname "$self")/$target" ;;
+    esac
+done
+
+# Lore.app/Contents/Resources/resources/lore
+app="$(cd "$(dirname "$self")/../../.." && pwd)"
+
+if [ $# -eq 0 ]; then
+    exec open -a "$app"
+fi
+
+for argument in "$@"; do
+    if [ ! -e "$argument" ]; then
+        echo "$(basename "$0"): $argument: no such file or directory" >&2
+        exit 1
+    fi
+done
+
+exec open -a "$app" "$@"
