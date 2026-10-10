@@ -32,6 +32,7 @@ import { IS_MAC } from './lib/platform';
 import { isTypingTarget } from './lib/typingTarget';
 import { useMountTransition } from './lib/useMountTransition';
 import { useStartupPrefs } from './lib/useStartupPrefs';
+import { onWorkspaceRequested, takeRequestedWorkspace } from './lib/workspace';
 import { useStore } from './store/useStore';
 import { effectiveTheme, paintTheme } from './theme/tokens';
 
@@ -92,6 +93,7 @@ export default function App() {
     const toggleCapture = useStore((state) => state.toggleCapture);
     const openDailyNote = useStore((state) => state.openDailyNote);
     const toggleCommandMenu = useStore((state) => state.toggleCommandMenu);
+    const switchWorkspace = useStore((state) => state.switchWorkspace);
     const toggleFocus = useStore((state) => state.toggleFocus);
     const toggleProperties = useStore((state) => state.toggleProperties);
     const toggleSidebar = useStore((state) => state.toggleSidebar);
@@ -100,8 +102,41 @@ export default function App() {
     useFocusTimer();
 
     useEffect(() => {
-        void hydrate();
-    }, [hydrate]);
+        void (async () => {
+            const requested = await takeRequestedWorkspace();
+
+            if (requested) {
+                await switchWorkspace(requested);
+            }
+
+            // The switch hydrates, unless the folder asked for is already open.
+            if (!useStore.getState().hydrated) {
+                await hydrate();
+            }
+        })();
+    }, [hydrate, switchWorkspace]);
+
+    useEffect(() => {
+        let live = true;
+
+        let unlisten = (): void => {};
+
+        void onWorkspaceRequested((path) => {
+            void takeRequestedWorkspace();
+            void switchWorkspace(path);
+        }).then((off) => {
+            if (live) {
+                unlisten = off;
+            } else {
+                off();
+            }
+        });
+
+        return () => {
+            live = false;
+            unlisten();
+        };
+    }, [switchWorkspace]);
 
     useStartupPrefs();
 
