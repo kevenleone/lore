@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '../../lib/cn';
 import { formatHotkey, hotkeyFor } from '../../lib/hotkeys';
-import { IS_MAC } from '../../lib/platform';
+import { IS_MAC, WINDOW_CONTROLS_WIDTH } from '../../lib/platform';
 import { useStore } from '../../store/useStore';
 import { Close, Plus, Search, SidebarToggle, Sparkle } from '../common/glyphs';
 import { ModeAccentBar, ModeBadge } from '../common/ModeBadge';
@@ -19,9 +19,6 @@ import { FocusChip } from '../focus/FocusChip';
  * a frameless window has no controls at all, so the drawn ones stand in.
  */
 const NATIVE_WINDOW_CONTROLS = IS_MAC;
-
-/** The width the system's three buttons take, so the bar starts clear of them. */
-const WINDOW_CONTROLS_WIDTH = 52;
 
 /** The round chrome button beside the Capture button. */
 const CHROME_BUTTON =
