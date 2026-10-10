@@ -59,11 +59,16 @@ Three guard tests fail the build on their own terms, by design:
 
 ## Architecture
 
-Three processes, four windows.
+Three processes, five kinds of window.
 
-**Renderer** (`src/`) — React 19, Zustand, TipTap 3, Tailwind v4, Vite 7. Four
-window entries, each its own HTML file and root: `main`, `capture`, `focus`,
-`print` (`vite.config.ts`, `src-tauri/src/lib.rs`).
+**Renderer** (`src/`) — React 19, Zustand, TipTap 3, Tailwind v4, Vite 7. Five
+window entries, each its own HTML file and root: `main`, `capture`, `document`,
+`focus`, `print` (`vite.config.ts`, `src-tauri/src/lib.rs`). `document` is the
+only one created at runtime — one window per Markdown file handed to Lore from
+outside (`src-tauri/src/open_paths.rs`). That file is not a vault item and never
+reaches the engine: the host maps the window's label to its path and resolves
+every read and write from the calling window, so the renderer never names a
+path. Keep it that way.
 
 **Data engine** (`sidecar/`) — a Bun + Elysia HTTP server that owns the vault:
 reading and writing Markdown, the SQLite FTS5 index, the file watcher, link

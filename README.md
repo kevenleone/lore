@@ -61,6 +61,33 @@ tags it and files it.
 
 ⌥Space toggles between them, and files can be dragged straight onto the panel.
 
+## Open from Finder or the terminal
+
+Lore opens what it is handed, the way an editor does.
+
+```sh
+lore .            # open this folder as the vault, in the main window
+lore notes.md     # open one file in a window of its own
+```
+
+A **folder** switches the main window to that vault. A **Markdown file** opens
+in a standalone window with nothing but the text: no sidebar, no list, no
+properties. It is edited in place and saved as you type, and it does not have
+to live in a vault. Frontmatter is kept byte-for-byte, and if the file changes
+on disk under unsaved edits Lore asks which copy to keep. ⌘/ flips to the
+Markdown source. Finder's **Open With → Lore** and dropping a file on the Dock
+icon do the same thing.
+
+Install the command from the app menu: **Lore → Install 'lore' Command in
+PATH**. It links `/usr/local/bin/lore` to a script inside the app; where that
+folder is not writable, Lore shows the `sudo` line to run rather than asking
+for a password. A dev build installs `lore-dev` and an agent build
+`lore-agent`, so each command opens its own Lore.
+
+Not there yet: relative images in a standalone file show as source rather than
+pictures, and the command and the file association are macOS-only — on Linux
+and Windows, passing a path to the executable works but nothing installs it.
+
 ## Views
 
 The list pane renders three ways. **Table** puts collection, tags, type and age
@@ -342,6 +369,11 @@ editing it never triggers a Rust rebuild.
 - `main` — the three-pane knowledge base (sidebar · list · detail/chat).
 - `capture` — the frameless Quick Capture panel toggled by **⌥Space** (registered
   in `src-tauri/src/lib.rs`; window control in `commands.rs`).
+
+- `document-*` — one per Markdown file opened from outside the app
+  (`document_window.rs`). The host maps each window to its file and resolves
+  every read and write from the calling window, so the webview never names a
+  path.
 
 The capture window is a separate webview with its own repository instance, so it
 follows a `workspace:changed` broadcast — otherwise the next capture after a
