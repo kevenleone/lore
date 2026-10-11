@@ -88,6 +88,25 @@ describe('AskLoreChat', () => {
         expect(useStore.getState().selectedId).toBe('oven');
     });
 
+    it('renders the answer as Markdown, citations included', async () => {
+        const { container } = render(<AskLoreChat />);
+
+        ask('summarize');
+
+        await act(async () => {
+            ai.delta('**Kitchen**\n\n- The oven runs hot [[oven-notes]].\n- Use `230C`.');
+            ai.done();
+        });
+
+        expect(container.querySelector('strong')?.textContent).toBe('Kitchen');
+        expect(container.querySelectorAll('li')).toHaveLength(2);
+        expect(container.querySelector('code')?.textContent).toBe('230C');
+        expect(container.textContent).not.toContain('**');
+        expect(container.querySelector('li')?.querySelector('button')?.textContent).toBe(
+            'Oven notes',
+        );
+    });
+
     it('says why an answer failed', async () => {
         render(<AskLoreChat />);
         ask('anything');

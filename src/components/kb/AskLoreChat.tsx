@@ -15,6 +15,7 @@ import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
 import { Close, Send, Sparkle } from '../common/glyphs';
 import { Icon } from '../common/Icon';
+import { MarkdownView } from '../common/MarkdownView';
 
 const WIKILINK = /\[\[([^[\]\n]+)\]\]/g;
 
@@ -172,9 +173,11 @@ function Answer({
     return (
         <div className="max-w-[88%] self-start">
             {message.text && (
-                <div className="rounded-[15px_15px_15px_4px] bg-sel p-4 py-3 text-title leading-[1.55] whitespace-pre-wrap text-text select-text">
-                    <AnswerText byStem={byStem} onOpen={onOpen} text={message.text} />
-                </div>
+                <MarkdownView
+                    className="rounded-[15px_15px_15px_4px] bg-sel p-4 py-3 text-title leading-[1.55] text-text"
+                    markdown={message.text}
+                    renderText={(text) => withCitations(text, byStem, onOpen)}
+                />
             )}
             {message.pending && (
                 <div
@@ -225,16 +228,18 @@ function Answer({
     );
 }
 
-/** The answer's text, with each `[[stem]]` it cites turned into the item it names. */
-function AnswerText({
-    byStem,
-    onOpen,
-    text,
-}: {
-    byStem: Map<string, Item>;
-    onOpen: (id: string) => void;
-    text: string;
-}) {
+function stemOf(item: Item): string {
+    const name = item.path?.slice(item.path.lastIndexOf('/') + 1) ?? '';
+
+    return name.replace(/\.md$/, '').toLowerCase();
+}
+
+/** A run of the answer's text, with each `[[stem]]` it cites turned into the item it names. */
+function withCitations(
+    text: string,
+    byStem: Map<string, Item>,
+    onOpen: (id: string) => void,
+): ReactNode[] {
     const parts: ReactNode[] = [];
     let cursor = 0;
 
@@ -253,7 +258,7 @@ function AnswerText({
 
         parts.push(
             <button
-                className="inline border-none bg-transparent p-0 font-[inherit] text-accent underline decoration-accent-border underline-offset-2 hover:decoration-accent"
+                className="inline border-none bg-transparent p-0 text-left font-[inherit] text-accent underline decoration-accent-border underline-offset-2 hover:decoration-accent"
                 key={match.index}
                 onClick={() => onOpen(item.id)}
                 type="button"
@@ -265,11 +270,5 @@ function AnswerText({
 
     parts.push(text.slice(cursor));
 
-    return <>{parts}</>;
-}
-
-function stemOf(item: Item): string {
-    const name = item.path?.slice(item.path.lastIndexOf('/') + 1) ?? '';
-
-    return name.replace(/\.md$/, '').toLowerCase();
+    return parts;
 }
