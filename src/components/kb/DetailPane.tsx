@@ -51,6 +51,7 @@ import { DocumentView } from '../editor/DocumentView';
 import { AiSummaryCard } from './AiSummaryCard';
 import { ItemBanner } from './ItemBanner';
 import { RelatedCards } from './RelatedCards';
+import { SummarySuggestion } from './SummarySuggestion';
 import { VideoPlayer } from './VideoPlayer';
 
 /** The pane's own section headings (Tags, Related). */
@@ -737,6 +738,10 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                             showPoints={flags.showPoints}
                             summary={sel.summary}
                         />
+                    )}
+
+                    {flags.offerSummary && !standalone && (
+                        <SummarySuggestion item={sel} key={sel.id} />
                     )}
 
                     {/* tags */}

@@ -1,9 +1,9 @@
 // The summary block in the detail pane.
 //
 // Its text is the file's own `summary` frontmatter, so the card says where it
-// came from rather than crediting a generator. Nothing in Lore writes that
-// field yet — `AiProvider.summarize` has no caller — and when something does,
-// this is the badge that has to change with it.
+// came from rather than crediting a generator: a model's proposal only gets
+// here by being accepted in `SummarySuggestion`, and from then on it is the
+// user's text like any other line of the file.
 
 import { Sparkle } from '../common/glyphs';
 
