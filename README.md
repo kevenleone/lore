@@ -457,6 +457,12 @@ What it powers:
 
 - **Ask Lore** — answers streamed from the vault, citing items as `[[stem]]`,
   which the engine resolves into the Sources chips.
+- **Conversations** — each one is saved from its first answer as
+  `.lore/chats/<id>.json` and can be reopened from the chat's history. They are
+  the user's, not derived, and are gitignored by default; delete that line in
+  `.lore/.gitignore` to keep them with the vault. An answer can be copied, asked
+  for again, or filed as a note with its citations intact; a question can be
+  edited and asked again.
 - **Suggestions** — tags while capturing, and a summary with key points in the
   detail pane. A suggestion is shown first and written to the file only when
   accepted.

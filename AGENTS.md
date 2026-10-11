@@ -133,6 +133,7 @@ attachments/             reserved; never a collection
   boards.json            per-collection board columns
   workspace.json         per-vault settings, committed, hand-editable
   templates/*.md         user templates
+  chats/*.json           saved Ask Lore conversations — the user's, gitignored by default
   index*.db              derived, disposable, gitignored — one per build mode
   trash/                 deletes move here
 ```
