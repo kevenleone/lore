@@ -76,6 +76,8 @@ export function openIndex(path: string): Database {
 
     db.exec('PRAGMA journal_mode = WAL');
     db.exec('PRAGMA synchronous = NORMAL');
+    // Several MCP servers may sit on one index at once, one per agent session.
+    db.exec('PRAGMA busy_timeout = 5000');
     db.exec('PRAGMA foreign_keys = ON');
     db.run(SCHEMA);
 

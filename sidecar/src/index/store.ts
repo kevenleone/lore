@@ -80,12 +80,12 @@ export class VaultStore {
         this.db = db;
     }
 
-    static async open(root: string): Promise<VaultStore> {
+    static async open(root: string, indexFile = INDEX_FILE): Promise<VaultStore> {
         const vault = new Vault(root);
 
         await vault.ensureScaffold();
 
-        const dbPath = vault.path(INDEX_FILE);
+        const dbPath = vault.path(indexFile);
         let db: Database;
 
         try {
@@ -257,6 +257,12 @@ export class VaultStore {
                 type: item.type,
             })),
         };
+    }
+
+    itemByStem(stem: string): Item | null {
+        const id = this.resolver().idForStem(stem);
+
+        return id ? this.getItem(id) : null;
     }
 
     /** The per-file facts the Properties panel shows. Null when the id is unknown. */
