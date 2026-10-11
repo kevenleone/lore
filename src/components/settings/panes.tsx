@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { VaultSize } from '../../data/repository';
 import type { Appearance } from '../../theme/tokens';
 
+import { getAi } from '../../ai';
 import { getRepository } from '../../data';
 import { APP_LINKS, APP_VERSION, openExternal } from '../../lib/appInfo';
 import { APP_MODE, captureShortcutKeys } from '../../lib/appMode';
@@ -29,6 +30,7 @@ import {
     type Accent,
     ACCENT_NAMES,
     ACCENTS,
+    type AiBackendStatus,
     type BannerPlacement,
     type Density,
     type ItemType,
@@ -812,15 +814,21 @@ export function CapturePane() {
     return (
         <>
             <p className="mt-0 mb-4 text-body leading-[1.5] text-text3">
-                Lore does not summarize or tag anything for you yet. Quick capture guesses a type
-                from what you typed, and that guess is made on this Mac by a placeholder — no key,
-                no account, nothing sent anywhere. The Unsplash key below is the one exception, and
-                only while you are searching for a thumbnail.
+                Lore sends nothing to a model until you choose one below. Quick capture guesses a
+                type from what you typed, and that guess is always made on this Mac.
             </p>
 
-            <SectionLabel first>In the detail pane</SectionLabel>
+            <SectionLabel first>Assistant</SectionLabel>
+            <AssistantRows />
             <SwitchRow
-                desc="A note can carry a summary, key points and links in its own frontmatter. This is whether they are shown."
+                desc="Asks the chosen model for tags while you type a capture, which sends it what you are typing. They are saved with the capture unless you click them away."
+                name="aiSuggest"
+                title="Suggest tags while capturing"
+            />
+
+            <SectionLabel>In the detail pane</SectionLabel>
+            <SwitchRow
+                desc="A note can carry a summary, key points and links in its own frontmatter. This is whether they are shown, and whether a note without a summary offers to have one written."
                 name="detailSections"
                 title="Show a note’s summary and links"
             />
@@ -830,6 +838,9 @@ export function CapturePane() {
         </>
     );
 }
+
+const TEXT_FIELD =
+    'w-[210px] flex-none rounded-lg border border-border bg-surface px-[9px] py-[6px] text-right font-mono text-body text-text outline-none focus:border-accent';
 
 export function KeysPane() {
     const [filter, setFilter] = useState('');
@@ -930,6 +941,227 @@ export function NotifPane() {
             />
         </>
     );
+}
+
+/**
+ * Unlike the Unsplash key, this one is never held here: it is handed to the
+ * engine, which keeps it in the system keychain, and all that comes back is
+ * whether one is stored. So the field is for replacing a key, not showing it.
+ */
+function AiKeyRow({
+    backend,
+    onChange,
+    optional,
+}: {
+    backend: AiBackendStatus;
+    onChange: () => void;
+    optional?: boolean;
+}) {
+    const [draft, setDraft] = useState('');
+    const [failure, setFailure] = useState<null | string>(null);
+
+    const run = (work: Promise<void>) => {
+        setFailure(null);
+        work.then(() => {
+            setDraft('');
+            onChange();
+        }).catch((error: unknown) => {
+            setFailure(error instanceof Error ? error.message : 'The key could not be saved.');
+        });
+    };
+
+    const save = () => {
+        if (draft.trim()) {
+            run(getAi().setKey(backend.id, draft.trim()));
+        }
+    };
+
+    return (
+        <Row
+            desc={
+                failure ??
+                (optional
+                    ? 'Only if the endpoint asks for one. Kept in the system keychain, never in the vault.'
+                    : 'Kept in the system keychain on this Mac, never in the vault and never shown again.')
+            }
+            title="API key"
+        >
+            <div className="flex w-[210px] flex-none flex-col items-end gap-[6px]">
+                <input
+                    aria-label={`${backend.label} API key`}
+                    className={cn(TEXT_FIELD, 'w-full')}
+                    onBlur={save}
+                    onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                            save();
+                        }
+                    }}
+                    placeholder={backend.hasKey ? 'Saved. Paste to replace' : 'Paste a key'}
+                    spellCheck={false}
+                    type="password"
+                    value={draft}
+                />
+                {backend.hasKey && (
+                    <button
+                        className="border-none bg-transparent p-0 font-[inherit] text-body text-text3 underline"
+                        onClick={() => run(getAi().clearKey(backend.id))}
+                        type="button"
+                    >
+                        Remove key
+                    </button>
+                )}
+            </div>
+        </Row>
+    );
+}
+
+function AssistantRows() {
+    const chosen = useStore((state) => state.prefs.aiBackend);
+    const setPref = useStore((state) => state.setPref);
+    const [backends, setBackends] = useState<AiBackendStatus[]>([]);
+    const [revision, setRevision] = useState(0);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        getAi()
+            .status()
+            .then((status) => {
+                if (!cancelled) {
+                    setBackends(status);
+                }
+            })
+            .catch(() => undefined);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [revision]);
+
+    const current = backends.find((backend) => backend.id === chosen);
+    // An agent that is not installed cannot be picked, but one that was picked
+    // and has since been removed still has to show as the choice it is.
+    const options: ChoiceOption<string>[] = [
+        { label: 'Off', value: '' },
+        ...backends
+            .filter((backend) => backend.available || backend.id === chosen)
+            .map((backend) => ({
+                label: backend.available ? backend.label : `${backend.label} (not installed)`,
+                value: backend.id,
+            })),
+    ];
+
+    return (
+        <>
+            <Row desc={privacyNote(current)} title="Model">
+                <Chooser
+                    label="Model"
+                    onChange={(value) => {
+                        setPref('aiBackend', value || null);
+                        setPref('aiModel', '');
+                    }}
+                    options={options}
+                    value={chosen ?? ''}
+                />
+            </Row>
+            {current?.kind === 'api' && current.id !== 'openai-compatible' && (
+                <AiKeyRow backend={current} onChange={() => setRevision((count) => count + 1)} />
+            )}
+            {current?.id === 'openai-compatible' && (
+                <>
+                    <PrefTextRow
+                        desc="Where the endpoint listens, up to and including /v1. Ollama’s is http://localhost:11434/v1."
+                        name="aiBaseUrl"
+                        placeholder="http://localhost:11434/v1"
+                        title="Endpoint URL"
+                    />
+                    <AiKeyRow
+                        backend={current}
+                        onChange={() => setRevision((count) => count + 1)}
+                        optional
+                    />
+                </>
+            )}
+            {current && (
+                <PrefTextRow
+                    desc={
+                        current.kind === 'harness'
+                            ? `Leave empty to use ${current.label}’s own default.`
+                            : current.defaultModel
+                              ? `Leave empty to use ${current.defaultModel}.`
+                              : 'The model’s id, exactly as the provider names it.'
+                    }
+                    name="aiModel"
+                    placeholder={
+                        current.defaultModel ??
+                        (current.kind === 'harness' ? 'Default' : 'Model id')
+                    }
+                    title="Model name"
+                />
+            )}
+        </>
+    );
+}
+
+function PrefTextRow({
+    desc,
+    name,
+    placeholder,
+    title,
+}: {
+    desc: string;
+    name: 'aiBaseUrl' | 'aiModel';
+    placeholder: string;
+    title: string;
+}) {
+    const saved = useStore((state) => state.prefs[name]);
+    const setPref = useStore((state) => state.setPref);
+    const [draft, setDraft] = useState(saved);
+
+    useEffect(() => setDraft(saved), [saved]);
+
+    const commit = () => {
+        if (draft.trim() !== saved) {
+            setPref(name, draft.trim());
+        }
+    };
+
+    return (
+        <Row desc={desc} title={title}>
+            <input
+                aria-label={title}
+                className={TEXT_FIELD}
+                onBlur={commit}
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                        commit();
+                    }
+                }}
+                placeholder={placeholder}
+                spellCheck={false}
+                value={draft}
+            />
+        </Row>
+    );
+}
+
+/** What choosing a backend means for where the user's notes go. */
+function privacyNote(backend: AiBackendStatus | undefined): string {
+    if (!backend) {
+        return 'Off. Ask Lore and suggestions are unavailable, and nothing leaves this Mac.';
+    }
+
+    if (backend.kind === 'harness') {
+        return `Runs ${backend.label} on this Mac with its own sign-in. Your question, and the notes it reads to answer, go to whichever provider ${backend.label} is set up with. It can only read the vault, never change it.`;
+    }
+
+    if (backend.id === 'openai-compatible') {
+        return 'Your question, and the notes read to answer it, go to the endpoint below. Point it at a model running on this Mac and nothing leaves it.';
+    }
+
+    return `Your question, and the notes read to answer it, go to ${backend.label} under your own API key.`;
 }
 
 function shortcutRows(group: HotkeyCommand['group']): { keys: string[]; label: string }[] {
