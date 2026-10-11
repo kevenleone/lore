@@ -5,11 +5,19 @@
 // `bun build --bytecode` — which is what keeps the shipped binary's startup
 // fast — cannot compile top-level await.
 
+import { serveMcp } from './ai/mcp';
 import { createApp } from './app';
 import { handshakeLine, loadConfig, watchParent } from './config';
 import { Workspace } from './workspace';
 
 async function main(): Promise<void> {
+    // stdout belongs to the protocol in this mode, so nothing below may run.
+    if (process.argv[2] === 'mcp') {
+        await serveMcp();
+
+        return;
+    }
+
     const config = loadConfig();
     const workspace = new Workspace();
     const app = createApp(config, workspace);
