@@ -327,8 +327,8 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                             : 'px-[34px] py-7',
                     )}
                 >
-                    {/* header row */}
-                    <div className="relative flex items-center gap-3">
+                    {/* header row: wraps, so a narrow pane never pushes Close out of reach */}
+                    <div className="relative flex flex-wrap items-center gap-x-3 gap-y-2">
                         <span
                             className={cn(
                                 'inline-flex items-center gap-[6px] rounded-md px-[9px] py-[3px] text-label font-semibold',

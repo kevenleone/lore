@@ -153,6 +153,11 @@ interface StoreState {
     chat: ChatMessage[];
 
     chatBusy: boolean;
+    /**
+     * The item opened from an answer, shown beside the chat rather than in
+     * place of it: following a citation is part of reading the answer.
+     */
+    chatItemId: null | string;
     chatOpen: boolean;
     /** Ticks every item handed in — whatever the list is currently showing. */
     checkAll: (ids: string[]) => void;
@@ -170,8 +175,9 @@ interface StoreState {
     /** Back to the list of projects, from one project's board. */
     closeBoard: () => void;
     closeCapture: () => void;
-    closeCommandMenu: () => void;
     /** Puts an item opened from Cards or Table away again. */
+    closeChatItem: () => void;
+    closeCommandMenu: () => void;
     closeOpenItem: () => void;
     closePhotoPicker: () => void;
     closeSettings: () => void;
@@ -268,6 +274,8 @@ interface StoreState {
     openCapture: () => void;
     /** Opens the capture drawer with a column's board and status already set. */
     openCaptureIn: (collectionId: null | string, column: BoardColumnConfig) => void;
+    /** Opens an item beside Ask Lore, whatever `openMode` says. */
+    openChatItem: (id: string) => void;
     /** Opens the photo picker against an item, to choose its thumbnail. */
     openCommandMenu: () => void;
     /**
@@ -1056,6 +1064,7 @@ export const useStore = create<StoreState>((set, get) => ({
     capturePreset: null,
     chat: [],
     chatBusy: false,
+    chatItemId: null,
     chatOpen: false,
     checkAll(ids) {
         set({ checkedIds: [...ids], selecting: true });
@@ -1107,10 +1116,13 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ captureOpen: false });
     },
 
+    closeChatItem() {
+        set({ chatItemId: null });
+    },
+
     closeCommandMenu() {
         set({ commandMenuOpen: false });
     },
-
     closeOpenItem() {
         set({ openAs: null, openId: null });
     },
@@ -1478,6 +1490,14 @@ export const useStore = create<StoreState>((set, get) => ({
         });
     },
 
+    openChatItem(id) {
+        // Unlike `selectItem`, the chat stays and `openMode` is not consulted:
+        // a page or a drawer over the answer would hide what cited the item.
+        set({ chatItemId: id, detail: null, itemMeta: null, selectedId: id });
+        get().recordRecentItem(id);
+        void get().loadDetail(id);
+    },
+
     openCommandMenu() {
         set({ commandMenuOpen: true });
         // `.lore/` is outside what the watcher reports, so a template written
@@ -1519,8 +1539,8 @@ export const useStore = create<StoreState>((set, get) => ({
             get().pushToast(e instanceof Error ? e.message : "Today's note could not be created.");
         }
     },
-
     openId: null,
+
     /**
      * Opens an item in a drawer without leaving the surface asking for it.
      *
@@ -1548,9 +1568,12 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     openLinkedItem(id) {
-        const { openAs, openId } = get();
+        const { chatItemId, chatOpen, openAs, openId } = get();
 
-        if (openAs === 'page' && openId !== null) {
+        // A link followed inside the pane beside the chat stays in that pane.
+        if (chatOpen && chatItemId !== null) {
+            get().openChatItem(id);
+        } else if (openAs === 'page' && openId !== null) {
             get().openItemPage(id);
         } else {
             get().selectItem(id);
@@ -2179,7 +2202,7 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     toggleChat() {
-        set((state) => ({ chatOpen: !state.chatOpen }));
+        set((state) => ({ chatItemId: null, chatOpen: !state.chatOpen }));
     },
 
     toggleChecked(id) {

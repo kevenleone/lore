@@ -16,6 +16,7 @@ import { useStore } from '../../store/useStore';
 import { Close, Send, Sparkle } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 import { MarkdownView } from '../common/MarkdownView';
+import { ItemHoverCard } from './ItemHoverCard';
 
 const WIKILINK = /\[\[([^[\]\n]+)\]\]/g;
 
@@ -27,7 +28,7 @@ export function AskLoreChat() {
     const toggleChat = useStore((state) => state.toggleChat);
     const sendChat = useStore((state) => state.sendChat);
     const stopChat = useStore((state) => state.stopChat);
-    const selectItem = useStore((state) => state.selectItem);
+    const openChatItem = useStore((state) => state.openChatItem);
     const openSettings = useStore((state) => state.openSettings);
     const [draft, setDraft] = useState('');
     const end = useRef<HTMLDivElement>(null);
@@ -50,7 +51,7 @@ export function AskLoreChat() {
     };
 
     return (
-        <div className="flex h-full flex-col">
+        <div className="relative flex h-full flex-col" data-hover-bounds="">
             {/* header */}
             <div className="flex flex-none items-center gap-[11px] border-b border-border px-5 py-[15px]">
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-tint text-accent">
@@ -109,7 +110,7 @@ export function AskLoreChat() {
                             items={items}
                             key={message.id}
                             message={message}
-                            onOpen={selectItem}
+                            onOpen={openChatItem}
                         />
                     ),
                 )}
@@ -205,22 +206,23 @@ function Answer({
                         Sources
                     </span>
                     {sources.map((item) => (
-                        <button
-                            className="inline-flex items-center gap-[6px] rounded-lg border border-border bg-surface px-[9px] py-1 font-[inherit] text-body-sm text-text2 hover:bg-surface2"
-                            key={item.id}
-                            onClick={() => onOpen(item.id)}
-                            type="button"
-                        >
-                            <span
-                                className={cn(
-                                    'flex h-[18px] w-[18px] flex-none items-center justify-center rounded-5',
-                                    typeMeta(item.type).chip,
-                                )}
+                        <ItemHoverCard item={item} key={item.id}>
+                            <button
+                                className="inline-flex items-center gap-[6px] rounded-lg border border-border bg-surface px-[9px] py-1 font-[inherit] text-body-sm text-text2 hover:bg-surface2"
+                                onClick={() => onOpen(item.id)}
+                                type="button"
                             >
-                                <Icon name={item.type} size={13} />
-                            </span>
-                            {item.title}
-                        </button>
+                                <span
+                                    className={cn(
+                                        'flex h-[18px] w-[18px] flex-none items-center justify-center rounded-5',
+                                        typeMeta(item.type).chip,
+                                    )}
+                                >
+                                    <Icon name={item.type} size={13} />
+                                </span>
+                                {item.title}
+                            </button>
+                        </ItemHoverCard>
                     ))}
                 </div>
             )}
@@ -257,14 +259,15 @@ function withCitations(
         }
 
         parts.push(
-            <button
-                className="inline border-none bg-transparent p-0 text-left font-[inherit] text-accent underline decoration-accent-border underline-offset-2 hover:decoration-accent"
-                key={match.index}
-                onClick={() => onOpen(item.id)}
-                type="button"
-            >
-                {item.title}
-            </button>,
+            <ItemHoverCard item={item} key={match.index}>
+                <button
+                    className="inline border-none bg-transparent p-0 text-left font-[inherit] text-accent underline decoration-accent-border underline-offset-2 hover:decoration-accent"
+                    onClick={() => onOpen(item.id)}
+                    type="button"
+                >
+                    {item.title}
+                </button>
+            </ItemHoverCard>,
         );
     }
 
