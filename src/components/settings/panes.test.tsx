@@ -1,14 +1,19 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_PREFS } from '../../store/types';
 import { useStore } from '../../store/useStore';
 import { GeneralPane, LookPane } from './panes';
 
+const invoke = vi.fn();
+
+vi.mock('@tauri-apps/api/core', () => ({ invoke: (...args: unknown[]) => invoke(...args) }));
+
 afterEach(() => {
     cleanup();
+    invoke.mockReset();
     useStore.setState({ collections: [], prefs: DEFAULT_PREFS });
 });
 
@@ -64,6 +69,52 @@ describe('GeneralPane', () => {
         expect(
             screen.getByRole('button', { name: 'File new captures into' }).textContent,
         ).toContain('Inbox');
+    });
+});
+
+describe('the terminal command', () => {
+    const TITLE = "Install 'lore' command in PATH";
+
+    it('is not offered where the host has none to install', async () => {
+        invoke.mockRejectedValue('no such command');
+        render(<GeneralPane />);
+
+        await waitFor(() => expect(invoke).toHaveBeenCalledWith('cli_status'));
+        expect(screen.queryByText('Terminal')).toBeNull();
+    });
+
+    it('shows what is on disk, and what the host says after a change', async () => {
+        invoke.mockImplementation(async (command: string, args?: { installed: boolean }) => ({
+            installed: command === 'set_cli_installed' && args?.installed === true,
+            name: 'lore',
+        }));
+        render(<GeneralPane />);
+
+        const toggle = await screen.findByRole('switch', { name: TITLE });
+
+        expect(toggle.getAttribute('aria-checked')).toBe('false');
+        fireEvent.click(toggle);
+
+        await waitFor(() => expect(toggle.getAttribute('aria-checked')).toBe('true'));
+        expect(invoke).toHaveBeenLastCalledWith('set_cli_installed', { installed: true });
+    });
+
+    it('stays off and says why when the host refuses', async () => {
+        invoke.mockImplementation(async (command: string) => {
+            if (command === 'set_cli_installed') {
+                throw '/usr/local/bin/lore already exists and is not a link Lore made.';
+            }
+
+            return { installed: false, name: 'lore' };
+        });
+        render(<GeneralPane />);
+
+        const toggle = await screen.findByRole('switch', { name: TITLE });
+
+        fireEvent.click(toggle);
+
+        expect((await screen.findByRole('alert')).textContent).toContain('already exists');
+        expect(toggle.getAttribute('aria-checked')).toBe('false');
     });
 });
 
