@@ -1,6 +1,7 @@
 // Single place that decides which repository backs the app:
 //   - inside Tauri  → VaultRepository (Markdown files, via the data engine)
 //   - elsewhere     → MemoryRepository (Vite browser preview, unit tests)
+//   - a window over one file provides its own (see `provideRepository`)
 
 import type { KnowledgeRepository } from './repository';
 
@@ -12,6 +13,7 @@ function isTauri(): boolean {
 }
 
 let instance: KnowledgeRepository | null = null;
+let provided: KnowledgeRepository | null = null;
 let workspacePath: null | string = null;
 
 export function getRepository(): KnowledgeRepository {
@@ -23,6 +25,16 @@ export function getRepository(): KnowledgeRepository {
 }
 
 /**
+ * Backs this window with a repository of its own choosing, for one that is not
+ * looking at a vault. It outlives `resetRepository`: the window it serves does
+ * not change what it is looking at.
+ */
+export function provideRepository(repository: KnowledgeRepository | null): void {
+    provided = repository;
+    instance = repository;
+}
+
+/**
  * Tears the singleton down so the next `getRepository()` builds a fresh one.
  *
  * Opening a different workspace has to abandon the current store completely —
@@ -30,6 +42,10 @@ export function getRepository(): KnowledgeRepository {
  * would hand back a repository still pointing at the previous vault.
  */
 export async function resetRepository(): Promise<void> {
+    if (provided) {
+        return;
+    }
+
     const current = instance;
 
     instance = null;

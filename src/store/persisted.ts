@@ -50,8 +50,19 @@ export const DEFAULT_PERSISTED: Persisted = {
     workspacePath: null,
 };
 
+let frozen = false;
+
 /** Sessions older than this are dropped — the calendar only looks back weeks. */
 const MAX_SESSIONS = 500;
+
+/**
+ * For a window that reads the preferences but does not own them. Every window
+ * shares one stored blob and writes it whole, so a second writer would put back
+ * its own stale copy of the vault path, the recents and the focus log.
+ */
+export function freezePersisted(): void {
+    frozen = true;
+}
 
 export function loadPersisted(): Persisted {
     try {
@@ -88,6 +99,10 @@ export function loadPersisted(): Persisted {
 }
 
 export function savePersisted(state: Persisted): void {
+    if (frozen) {
+        return;
+    }
+
     try {
         const trimmed: Persisted = {
             ...state,

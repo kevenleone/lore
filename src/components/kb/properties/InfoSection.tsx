@@ -7,11 +7,14 @@ import { useState } from 'react';
 import type { Item, ItemMeta } from '../../../store/types';
 
 import { formatBytes, formatSavedDate } from '../../../lib/format';
+import { revealDocument } from '../../../lib/standaloneDocument';
 import { useStore } from '../../../store/useStore';
 import { External, Info } from '../../common/glyphs';
+import { useStandalone } from '../../document/standalone';
 import { ReadOnly, Row, Section } from './controls';
 
 export function InfoSection({ item, meta }: { item: Item; meta: ItemMeta | null }) {
+    const standalone = useStandalone();
     const renameItemFile = useStore((state) => state.renameItemFile);
     const revealItemFile = useStore((state) => state.revealItemFile);
     const [editingName, setEditingName] = useState(false);
@@ -21,7 +24,8 @@ export function InfoSection({ item, meta }: { item: Item; meta: ItemMeta | null 
     const words = meta ? meta.words : body ? body.split(/\s+/).length : 0;
 
     const path = meta?.path ?? item.path;
-    const stem = (path ?? '').split('/').pop()?.replace(/\.md$/, '') ?? '';
+    const fileName = (path ?? '').split('/').pop() ?? '';
+    const stem = fileName.replace(/\.md$/, '');
 
     const commitName = () => {
         const next = nameDraft.trim();
@@ -72,22 +76,26 @@ export function InfoSection({ item, meta }: { item: Item; meta: ItemMeta | null 
                         <span
                             className="min-w-0 cursor-text truncate font-mono select-text"
                             onClick={() => {
-                                if (!path) {
+                                // A rename rewrites the links pointing at the
+                                // file, and outside a vault none are known.
+                                if (!path || standalone) {
                                     return;
                                 }
 
                                 setNameDraft(stem);
                                 setEditingName(true);
                             }}
-                            title={path ? `${path} — click to rename` : undefined}
+                            title={renameTitle(path, standalone)}
                         >
-                            <ReadOnly>{path ? `${stem}.md` : null}</ReadOnly>
+                            <ReadOnly>{path ? fileName : null}</ReadOnly>
                         </span>
                         {path && (
                             <button
                                 aria-label="Show in Finder"
                                 className="flex h-[22px] w-[22px] flex-none items-center justify-center rounded-7 border-none bg-transparent p-0 font-[inherit] text-faint hover:bg-hover hover:text-text2"
-                                onClick={() => void revealItemFile(item.id)}
+                                onClick={() =>
+                                    void (standalone ? revealDocument() : revealItemFile(item.id))
+                                }
                                 title="Show in Finder"
                                 type="button"
                             >
@@ -99,4 +107,12 @@ export function InfoSection({ item, meta }: { item: Item; meta: ItemMeta | null 
             </Row>
         </Section>
     );
+}
+
+function renameTitle(path: string | undefined, standalone: boolean): string | undefined {
+    if (!path) {
+        return undefined;
+    }
+
+    return standalone ? path : `${path} — click to rename`;
 }

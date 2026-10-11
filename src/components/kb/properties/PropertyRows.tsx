@@ -18,6 +18,7 @@ import { PRIORITIES } from '../../../store/types';
 import { useStore } from '../../../store/useStore';
 import { Calendar, Globe, Link, Timer } from '../../common/glyphs';
 import { Icon } from '../../common/Icon';
+import { useStandalone } from '../../document/standalone';
 import { MenuItem, Picker, ReadOnly, Row } from './controls';
 
 const TYPES = Object.keys(TYPE_META) as ItemType[];
@@ -30,6 +31,7 @@ const FLAGS: { key: keyof ItemFlags; label: string }[] = [
 ];
 
 export function PropertyRows({ item }: { item: Item }) {
+    const standalone = useStandalone();
     const collections = useStore((state) => state.collections);
     const updateItem = useStore((state) => state.updateItem);
     const unsplashKey = useStore((state) => state.prefs.unsplashKey);
@@ -102,58 +104,61 @@ export function PropertyRows({ item }: { item: Item }) {
                 </Picker>
             </Row>
 
-            <Row icon={<Icon name="layers" size={13} />} label="Collection">
-                <Picker
-                    trigger={
-                        <>
-                            <span
-                                className="h-2 w-2 flex-none rounded-xs"
-                                // The collection's own colour, which the user picks.
-                                style={{ background: collection?.color ?? '#c4c4cc' }}
-                            />
-                            <span className="truncate">{collection?.name ?? 'Unfiled'}</span>
-                        </>
-                    }
-                >
-                    {(close) => (
-                        <>
-                            <MenuItem
-                                onClick={() => {
-                                    close();
-
-                                    if (item.collectionId) {
-                                        void updateItem(item.id, { collectionId: undefined });
-                                    }
-                                }}
-                                selected={!item.collectionId}
-                            >
-                                Unfiled
-                            </MenuItem>
-                            {collections.map((collection) => (
+            {/* Filing is a move between a vault's folders; this file is in none. */}
+            {!standalone && (
+                <Row icon={<Icon name="layers" size={13} />} label="Collection">
+                    <Picker
+                        trigger={
+                            <>
+                                <span
+                                    className="h-2 w-2 flex-none rounded-xs"
+                                    // The collection's own colour, which the user picks.
+                                    style={{ background: collection?.color ?? '#c4c4cc' }}
+                                />
+                                <span className="truncate">{collection?.name ?? 'Unfiled'}</span>
+                            </>
+                        }
+                    >
+                        {(close) => (
+                            <>
                                 <MenuItem
-                                    key={collection.id}
                                     onClick={() => {
                                         close();
 
-                                        if (collection.id !== item.collectionId) {
-                                            void updateItem(item.id, {
-                                                collectionId: collection.id,
-                                            });
+                                        if (item.collectionId) {
+                                            void updateItem(item.id, { collectionId: undefined });
                                         }
                                     }}
-                                    selected={collection.id === item.collectionId}
+                                    selected={!item.collectionId}
                                 >
-                                    <span
-                                        className="h-2 w-2 flex-none rounded-xs"
-                                        style={{ background: collection.color }}
-                                    />
-                                    {collection.name}
+                                    Unfiled
                                 </MenuItem>
-                            ))}
-                        </>
-                    )}
-                </Picker>
-            </Row>
+                                {collections.map((collection) => (
+                                    <MenuItem
+                                        key={collection.id}
+                                        onClick={() => {
+                                            close();
+
+                                            if (collection.id !== item.collectionId) {
+                                                void updateItem(item.id, {
+                                                    collectionId: collection.id,
+                                                });
+                                            }
+                                        }}
+                                        selected={collection.id === item.collectionId}
+                                    >
+                                        <span
+                                            className="h-2 w-2 flex-none rounded-xs"
+                                            style={{ background: collection.color }}
+                                        />
+                                        {collection.name}
+                                    </MenuItem>
+                                ))}
+                            </>
+                        )}
+                    </Picker>
+                </Row>
+            )}
 
             {/*
              * Due and Priority are a task's own fields, and until they were here
@@ -267,19 +272,22 @@ export function PropertyRows({ item }: { item: Item }) {
                                 >
                                     Use an image URL…
                                 </MenuItem>
-                                <MenuItem
-                                    onClick={() => {
-                                        close();
-                                        fileInput.current?.click();
-                                    }}
-                                    selected={false}
-                                >
-                                    Choose a file…
-                                </MenuItem>
+                                {/* A picked file is copied into a vault's attachments. */}
+                                {!standalone && (
+                                    <MenuItem
+                                        onClick={() => {
+                                            close();
+                                            fileInput.current?.click();
+                                        }}
+                                        selected={false}
+                                    >
+                                        Choose a file…
+                                    </MenuItem>
+                                )}
                                 {/* Absent rather than disabled without a key:
                                     a menu entry that cannot do anything is
                                     worse than one that is not offered. */}
-                                {unsplashKey && (
+                                {unsplashKey && !standalone && (
                                     <MenuItem
                                         onClick={() => {
                                             close();

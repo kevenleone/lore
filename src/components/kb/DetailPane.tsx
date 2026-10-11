@@ -45,6 +45,7 @@ import {
     Trash,
 } from '../common/glyphs';
 import { Icon } from '../common/Icon';
+import { useStandalone } from '../document/standalone';
 import { BodyEditor } from '../editor/BodyEditor';
 import { DocumentView } from '../editor/DocumentView';
 import { AiSummaryCard } from './AiSummaryCard';
@@ -71,6 +72,7 @@ interface DetailPaneProps {
 }
 
 export function DetailPane({ chrome, onClose }: DetailPaneProps) {
+    const standalone = useStandalone();
     const items = useStore((state) => state.items);
     const collections = useStore((state) => state.collections);
     const view = useStore((state) => state.view);
@@ -319,7 +321,9 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                     className={cn(
                         // A page fills the window, so its column is centred and capped
                         // rather than run out to a 1200px measure.
-                        asPage ? 'px-[max(48px,calc((100%-700px)/2))] py-[34px]' : 'px-[34px] py-7',
+                        asPage || standalone
+                            ? 'px-[max(48px,calc((100%-700px)/2))] py-[34px]'
+                            : 'px-[34px] py-7',
                     )}
                 >
                     {/* header row */}
@@ -388,14 +392,17 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                     style={sel.flags.starred ? { fill: 'var(--ac)' } : undefined}
                                 />
                             </button>
-                            <button
-                                className="inline-flex border-none bg-none p-1 text-faint"
-                                onClick={() => setConfirmDelete(true)}
-                                title="Delete"
-                                type="button"
-                            >
-                                <Trash />
-                            </button>
+                            {/* The file is the window: deleting it leaves an editor over nothing. */}
+                            {!standalone && (
+                                <button
+                                    className="inline-flex border-none bg-none p-1 text-faint"
+                                    onClick={() => setConfirmDelete(true)}
+                                    title="Delete"
+                                    type="button"
+                                >
+                                    <Trash />
+                                </button>
+                            )}
                             {onClose && (
                                 <button
                                     aria-label="Close"
@@ -472,13 +479,18 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                     )}
 
                     <div className="mt-[9px] flex items-center gap-[7px] text-body text-text3">
-                        <span
-                            className="h-[9px] w-[9px] rounded-xs"
-                            // The collection's own colour, which the user picks.
-                            style={{ background: coll?.color ?? '#c4c4cc' }}
-                        />
-                        {coll?.name ?? 'Unfiled'}
-                        <span className="opacity-50">·</span>
+                        {/* A collection is a folder of a vault, and this file is in none. */}
+                        {!standalone && (
+                            <>
+                                <span
+                                    className="h-[9px] w-[9px] rounded-xs"
+                                    // The collection's own colour, which the user picks.
+                                    style={{ background: coll?.color ?? '#c4c4cc' }}
+                                />
+                                {coll?.name ?? 'Unfiled'}
+                                <span className="opacity-50">·</span>
+                            </>
+                        )}
                         Saved {formatSavedDate(sel.createdAt)}
                     </div>
 

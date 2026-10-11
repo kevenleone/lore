@@ -7,6 +7,7 @@
 
 import { useStore } from '../../store/useStore';
 import { Close, History, Settings } from '../common/glyphs';
+import { useStandalone } from '../document/standalone';
 import { CommentsSection } from './properties/CommentsSection';
 import { Section } from './properties/controls';
 import { InfoSection } from './properties/InfoSection';
@@ -17,6 +18,7 @@ import { RelationshipsSection } from './properties/RelationshipsSection';
 export const PROPERTIES_WIDTH = 316;
 
 export function PropertiesPanel() {
+    const standalone = useStandalone();
     const items = useStore((state) => state.items);
     const selectedId = useStore((state) => state.selectedId);
     const detail = useStore((state) => state.detail);
@@ -51,7 +53,8 @@ export function PropertiesPanel() {
                 {item ? (
                     <>
                         <PropertyRows item={item} />
-                        <RelationshipsSection item={item} />
+                        {/* Both directions of a link are answered by a vault's index. */}
+                        {!standalone && <RelationshipsSection item={item} />}
                         <CommentsSection item={item} />
                         <InfoSection item={item} meta={itemMeta} />
                         <Section icon={<History size={12} />} title="History">
