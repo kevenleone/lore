@@ -30,6 +30,10 @@ export function indexFileFor(mode: string | undefined): string {
 
 export const INDEX_FILE = indexFileFor(Bun.env.LORE_MODE);
 
+// An agent's MCP server runs beside whichever Lore has the vault open, so it
+// must not share that build's index either.
+export const MCP_INDEX_FILE = indexFileFor('mcp');
+
 /** Never a collection: reserved for pasted files. */
 export const ATTACHMENTS_DIR = 'attachments';
 

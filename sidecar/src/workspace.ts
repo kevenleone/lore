@@ -52,9 +52,9 @@ export class Workspace {
 
     /* ---------------- change notification ---------------- */
 
-    async open(root: string): Promise<{ itemCount: number; path: string }> {
+    async open(root: string, indexFile?: string): Promise<{ itemCount: number; path: string }> {
         await this.close();
-        this.store = await VaultStore.open(root);
+        this.store = await VaultStore.open(root, indexFile);
         // Without this the watcher fires on every save Lore makes, so each edit
         // costs a needless reconcile and a refresh round-trip back to the UI.
         this.store.onWrite = (rel, text) => this.markSelfWrite(rel, text);
