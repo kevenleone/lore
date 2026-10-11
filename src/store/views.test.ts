@@ -205,6 +205,19 @@ describe('detailFlags', () => {
         expect(detailFlags(link, false, 0, 1).showBacklinks).toBe(false);
     });
 
+    it('offers a summary only where there is none and there is something to read', () => {
+        const unsummarized = { ...link, snippet: 'A page about colour.', summary: undefined };
+
+        expect(detailFlags(unsummarized, true, 0).offerSummary).toBe(true);
+        expect(detailFlags({ ...unsummarized, summary: 'Done.' }, true, 0).offerSummary).toBe(
+            false,
+        );
+        expect(detailFlags({ ...unsummarized, snippet: undefined }, true, 0).offerSummary).toBe(
+            false,
+        );
+        expect(detailFlags(unsummarized, false, 0).offerSummary).toBe(false);
+    });
+
     it('shows backlinks only when something links here', () => {
         expect(detailFlags(link, true, 0, 1).showBacklinks).toBe(true);
         expect(detailFlags(link, true, 2, 0).showBacklinks).toBe(false);

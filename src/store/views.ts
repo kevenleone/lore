@@ -258,6 +258,8 @@ export const SORT_LABELS: Record<SortOrder, string> = {
 export interface DetailFlags {
     detIsCode: boolean;
     detIsText: boolean;
+    /** Whether a summary could be proposed: there is none, and there is text to read. */
+    offerSummary: boolean;
     showBacklinks: boolean;
     showPoints: boolean;
     showPreview: boolean;
@@ -302,6 +304,7 @@ export function detailFlags(
     return {
         detIsCode: item.type === 'code',
         detIsText: item.type === 'note' || item.type === 'task',
+        offerSummary: showAI && !item.summary && !!item.snippet,
         showBacklinks: showAI && backlinkCount > 0,
         showPoints: showAI && !!item.points && item.points.length > 0,
         // Only show a preview when we actually have an image to show.
