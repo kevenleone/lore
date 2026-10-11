@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { Item } from '../../store/types';
@@ -17,6 +17,7 @@ const OVEN: Item = {
     id: 'oven',
     path: 'Kitchen/oven-notes.md',
     related: [],
+    snippet: 'Runs hot; drop to 230C.',
     tags: [],
     title: 'Oven notes',
     type: 'note',
@@ -31,6 +32,8 @@ beforeEach(() => {
     useStore.setState({
         chat: [],
         chatBusy: false,
+        chatItemId: null,
+        chatOpen: true,
         items: [OVEN],
         prefs: { ...DEFAULT_PREFS, aiBackend: 'claude-cli' },
         selectedId: null,
@@ -85,7 +88,37 @@ describe('AskLoreChat', () => {
 
         fireEvent.click(links[0]);
 
-        expect(useStore.getState().selectedId).toBe('oven');
+        // Beside the chat, not instead of it.
+        expect(useStore.getState()).toMatchObject({
+            chatItemId: 'oven',
+            chatOpen: true,
+            selectedId: 'oven',
+        });
+    });
+
+    it('previews a cited item on hover, and puts the preview away on leaving', async () => {
+        render(<AskLoreChat />);
+        ask('what about the oven?');
+
+        await act(async () => {
+            ai.delta('See [[oven-notes]].');
+            ai.done();
+        });
+
+        const link = screen.getByRole('button', { name: 'Oven notes' });
+
+        expect(screen.queryByRole('tooltip')).toBeNull();
+
+        fireEvent.mouseEnter(link);
+
+        const card = await screen.findByRole('tooltip');
+
+        expect(card.textContent).toContain('Oven notes');
+        expect(card.textContent).toContain('Runs hot; drop to 230C.');
+
+        fireEvent.mouseLeave(link);
+
+        await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
     });
 
     it('renders the answer as Markdown, citations included', async () => {

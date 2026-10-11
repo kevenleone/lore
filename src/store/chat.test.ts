@@ -101,3 +101,47 @@ describe('sendChat', () => {
         expect(ai.asked).toHaveLength(1);
     });
 });
+
+describe('an item opened from an answer', () => {
+    beforeEach(() => {
+        useStore.setState({
+            chatItemId: null,
+            chatOpen: true,
+            openAs: null,
+            openId: null,
+            prefs: { ...DEFAULT_PREFS, openMode: 'page', viewMode: 'cards' },
+        });
+    });
+
+    it('opens beside the chat, whatever the open mode is set to', () => {
+        useStore.getState().openChatItem('i1');
+
+        expect(useStore.getState()).toMatchObject({
+            chatItemId: 'i1',
+            chatOpen: true,
+            openAs: null,
+            openId: null,
+            selectedId: 'i1',
+        });
+    });
+
+    it('keeps a link followed inside that pane in that pane', () => {
+        useStore.getState().openChatItem('i1');
+        useStore.getState().openLinkedItem('i2');
+
+        expect(useStore.getState()).toMatchObject({ chatItemId: 'i2', chatOpen: true });
+    });
+
+    it('closes without closing the chat, and does not come back with it', () => {
+        useStore.getState().openChatItem('i1');
+        useStore.getState().closeChatItem();
+
+        expect(useStore.getState()).toMatchObject({ chatItemId: null, chatOpen: true });
+
+        useStore.getState().openChatItem('i1');
+        useStore.getState().toggleChat();
+        useStore.getState().toggleChat();
+
+        expect(useStore.getState()).toMatchObject({ chatItemId: null, chatOpen: true });
+    });
+});

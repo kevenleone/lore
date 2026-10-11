@@ -66,6 +66,8 @@ export default function App() {
     const reduceMotion = useStore((state) => state.prefs.switches.motion);
     const captureOpen = useStore((state) => state.captureOpen);
     const chatOpen = useStore((state) => state.chatOpen);
+    const chatItemId = useStore((state) => state.chatItemId);
+    const closeChatItem = useStore((state) => state.closeChatItem);
     const closeCapture = useStore((state) => state.closeCapture);
     const closeCommandMenu = useStore((state) => state.closeCommandMenu);
     const commandMenuOpen = useStore((state) => state.commandMenuOpen);
@@ -397,6 +399,17 @@ export default function App() {
                             {((listMode && !asPage) || (chatOpen && !listMode)) && (
                                 <div className="flex min-w-0 flex-1 flex-col bg-surface">
                                     {chatOpen ? <AskLoreChat /> : <DetailPane />}
+                                </div>
+                            )}
+                            {/*
+                             * A column, not a drawer: it sits beside the answer
+                             * that cited it instead of over it. It shares the
+                             * room evenly up to a reading width, so a narrow
+                             * window squeezes both rather than only the chat.
+                             */}
+                            {chatOpen && chatItemId !== null && (
+                                <div className="flex min-h-0 max-w-[496px] min-w-0 flex-1 flex-col border-l border-border bg-surface">
+                                    <DetailPane onClose={closeChatItem} />
                                 </div>
                             )}
                             {asPage && !chatOpen && (
