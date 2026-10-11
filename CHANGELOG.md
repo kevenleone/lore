@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.26.0](https://github.com/kevenleone/lore/compare/v1.25.2...v1.26.0) (2026-10-11)
+
+
+### Features
+
+* **document:** add the standalone document window ([eb70fad](https://github.com/kevenleone/lore/commit/eb70fadd9247023cbc4af1a44bb220177042b166))
+* **document:** show the detail pane and properties in the standalone window ([1e08b38](https://github.com/kevenleone/lore/commit/1e08b38412dd1522a74f08fe81d6a0bdd484ea91))
+* **engine:** patch one frontmatter key of a standalone document ([a63d10e](https://github.com/kevenleone/lore/commit/a63d10eacfbb01b912e94b501b0bda73bceaad66))
+* **host:** open folders and Markdown files handed to Lore ([5b8aed5](https://github.com/kevenleone/lore/commit/5b8aed5cae91d20bfeb43d64aa3eb1d15cb9d467))
+* **host:** report a document's birth time and reveal it in Finder ([822724b](https://github.com/kevenleone/lore/commit/822724b203f8287150a4fd6f2174767d6361f772))
+* **workspace:** switch to a vault requested from outside the app ([f13d92b](https://github.com/kevenleone/lore/commit/f13d92b2b7f8e790c0dec57e92d38bd31dee9156))
+
+
+### Documentation
+
+* describe opening files and folders with Lore ([475e47a](https://github.com/kevenleone/lore/commit/475e47a54d73e92bcafe660079ce6c8c863e8274))
+* describe the standalone window's detail view and minimal writes ([2691a92](https://github.com/kevenleone/lore/commit/2691a92b31537eb80ec472da95f333ffe1879fec))
+
 ## [1.25.2](https://github.com/kevenleone/lore/compare/v1.25.1...v1.25.2) (2026-10-08)
 
 
