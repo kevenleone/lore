@@ -12,6 +12,7 @@ import type { Appearance } from '../../theme/tokens';
 import { getRepository } from '../../data';
 import { APP_LINKS, APP_VERSION, openExternal } from '../../lib/appInfo';
 import { APP_MODE, captureShortcutKeys } from '../../lib/appMode';
+import { type CliStatus, cliStatus, setCliInstalled } from '../../lib/cli';
 import { cn } from '../../lib/cn';
 import { formatBytes } from '../../lib/format';
 import {
@@ -182,6 +183,72 @@ export function GeneralPane() {
                     value={journalTemplate}
                 />
             </Row>
+
+            <CommandLineSection />
+        </>
+    );
+}
+
+function CommandLineSection() {
+    const [status, setStatus] = useState<CliStatus | null>(null);
+    const [error, setError] = useState<null | string>(null);
+    const [busy, setBusy] = useState(false);
+
+    useEffect(() => {
+        let live = true;
+
+        void cliStatus().then((found) => {
+            if (live) {
+                setStatus(found);
+            }
+        });
+
+        return () => {
+            live = false;
+        };
+    }, []);
+
+    if (!status) {
+        return null;
+    }
+
+    const title = `Install '${status.name}' command in PATH`;
+
+    const toggle = async (): Promise<void> => {
+        if (busy) {
+            return;
+        }
+
+        setBusy(true);
+        setError(null);
+
+        try {
+            setStatus(await setCliInstalled(!status.installed));
+        } catch (reason) {
+            setError(reason instanceof Error ? reason.message : String(reason));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <>
+            <SectionLabel>Terminal</SectionLabel>
+            <Row
+                desc={`Run “${status.name} .” to open a folder as the vault, or “${status.name} note.md” to open one file. macOS may ask for your password.`}
+                last
+                title={title}
+            >
+                <Toggle label={title} on={status.installed} onChange={() => void toggle()} />
+            </Row>
+            {error && (
+                <div
+                    className="pb-[13px] text-body leading-[1.5] whitespace-pre-wrap text-danger select-text"
+                    role="alert"
+                >
+                    {error}
+                </div>
+            )}
         </>
     );
 }
