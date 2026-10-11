@@ -229,6 +229,26 @@ describe('saved conversations', () => {
         expect((await getRepository().getChat?.(thread.id))?.messages).toHaveLength(2);
     });
 
+    it('renames a conversation, and keeps the name as it grows', async () => {
+        await ask('first', 'one');
+
+        const { id } = useStore.getState().chatThreads[0];
+
+        await useStore.getState().renameChatThread(id, '  Kitchen   notes ');
+
+        expect(useStore.getState().chatThreads[0].title).toBe('Kitchen notes');
+        expect((await getRepository().getChat?.(id))?.title).toBe('Kitchen notes');
+
+        await ask('second', 'two');
+
+        expect(useStore.getState().chatThreads[0].title).toBe('Kitchen notes');
+        expect((await getRepository().getChat?.(id))?.title).toBe('Kitchen notes');
+
+        await useStore.getState().renameChatThread(id, '   ');
+
+        expect(useStore.getState().chatThreads[0].title).toBe('Kitchen notes');
+    });
+
     it('deletes a conversation, leaving it if it was the one on screen', async () => {
         await ask('first', 'one');
 

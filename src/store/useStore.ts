@@ -112,7 +112,10 @@ async function saveChatThread(
     const summary: ChatThreadSummary = {
         createdAt: known?.createdAt ?? now,
         id,
-        title: opening.text.replace(/\s+/g, ' ').trim().slice(0, NOTE_TITLE_CHARACTERS),
+        // A thread that has been renamed keeps its name as it grows.
+        title:
+            known?.title ??
+            opening.text.replace(/\s+/g, ' ').trim().slice(0, NOTE_TITLE_CHARACTERS),
         updatedAt: now,
     };
 
@@ -393,6 +396,7 @@ interface StoreState {
     removeTag: (id: string, tag: string) => Promise<void>;
     /** Renames a column in place. The cards do not move — `status` holds the id. */
     renameBoardColumn: (columnId: string, name: string) => Promise<void>;
+    renameChatThread: (id: string, title: string) => Promise<void>;
     renameItemFile: (id: string, stem: string) => Promise<void>;
     /** Moves a column one place left or right. */
     reorderBoardColumn: (columnId: string, direction: -1 | 1) => Promise<void>;
@@ -1850,6 +1854,34 @@ export const useStore = create<StoreState>((set, get) => ({
                 column.id === columnId ? { ...column, name: label } : column,
             ),
         }));
+    },
+
+    async renameChatThread(id, title) {
+        const name = title.replace(/\s+/g, ' ').trim().slice(0, NOTE_TITLE_CHARACTERS);
+        const previous = get().chatThreads;
+
+        if (!name || previous.find((thread) => thread.id === id)?.title === name) {
+            return;
+        }
+
+        // Renaming is not activity: the thread keeps its place in the list.
+        set({
+            chatThreads: previous.map((thread) =>
+                thread.id === id ? { ...thread, title: name } : thread,
+            ),
+        });
+
+        try {
+            const repo = getRepository();
+            const thread = await repo.getChat?.(id);
+
+            if (thread) {
+                await repo.saveChat?.({ ...thread, title: name });
+            }
+        } catch (e) {
+            set({ chatThreads: previous });
+            get().pushToast(e instanceof Error ? e.message : 'The conversation was not renamed.');
+        }
     },
 
     async renameItemFile(id, stem) {
