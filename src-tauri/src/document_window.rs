@@ -1,15 +1,16 @@
 // A window over one Markdown file, opened from outside the app.
 //
 // The file is not a vault item and need not be inside a vault, so the engine
-// never sees it. The renderer never names a path either: each command resolves
-// the file from the window that called it, so a document window can read and
-// write the one file the host opened for it and nothing else.
+// is never told where it is. The renderer never names a path either: each
+// command resolves the file from the window that called it, so a document
+// window can read and write the one file the host opened for it and nothing
+// else.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Mutex;
-use std::time::UNIX_EPOCH;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
@@ -46,7 +47,10 @@ impl Documents {
 
 #[derive(Serialize)]
 pub struct Document {
-    /// Milliseconds since the epoch; `None` when the file has gone.
+    /// Milliseconds since the epoch, like `modified`; `None` where the
+    /// filesystem keeps no birth time.
+    created: Option<u64>,
+    /// `None` when the file has gone.
     modified: Option<u64>,
     name: String,
     path: String,
@@ -122,6 +126,7 @@ pub fn read_document(
         .map_err(|error| format!("could not read {}: {error}", path.display()))?;
 
     Ok(Document {
+        created: created(&path),
         modified: modified(&path),
         name: file_name(&path),
         path: path.to_string_lossy().into_owned(),
@@ -156,6 +161,16 @@ pub fn write_document(
     Ok(modified(&path))
 }
 
+#[tauri::command]
+pub fn reveal_document(
+    window: WebviewWindow,
+    documents: State<'_, Documents>,
+) -> Result<(), String> {
+    let path = documents.path_of(window.label())?;
+
+    tauri_plugin_opener::reveal_item_in_dir(&path).map_err(|error| error.to_string())
+}
+
 /// A sibling temporary file renamed over the original, so a crash mid-write
 /// leaves the old note rather than half of the new one.
 fn write_atomically(path: &Path, text: &str) -> std::io::Result<()> {
@@ -173,9 +188,15 @@ fn write_atomically(path: &Path, text: &str) -> std::io::Result<()> {
 }
 
 fn modified(path: &Path) -> Option<u64> {
-    let modified = std::fs::metadata(path).ok()?.modified().ok()?;
+    milliseconds(std::fs::metadata(path).ok()?.modified().ok()?)
+}
 
-    Some(modified.duration_since(UNIX_EPOCH).ok()?.as_millis() as u64)
+fn created(path: &Path) -> Option<u64> {
+    milliseconds(std::fs::metadata(path).ok()?.created().ok()?)
+}
+
+fn milliseconds(time: SystemTime) -> Option<u64> {
+    Some(time.duration_since(UNIX_EPOCH).ok()?.as_millis() as u64)
 }
 
 fn file_name(path: &Path) -> String {

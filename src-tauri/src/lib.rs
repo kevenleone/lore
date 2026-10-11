@@ -73,6 +73,7 @@ pub fn run() {
             commands::set_tray_visible,
             commands::trash_path,
             document_window::read_document,
+            document_window::reveal_document,
             document_window::write_document,
             open_paths::take_pending_workspace,
             print_pdf::export_webview_pdf,
