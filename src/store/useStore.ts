@@ -4,14 +4,14 @@
 
 import { create } from 'zustand';
 
-import type { AiProvider } from '../ai/aiProvider';
 import type { CollectionPatch, ItemPatch, NewCollection, NewItem } from '../data/repository';
 import type { ThemeId } from '../theme/themes';
 import type { Appearance } from '../theme/tokens';
 import type { WorkspaceRef } from './persisted';
 import type { BoardFilter } from './tasks';
 
-import { MockAiProvider } from '../ai/mockAiProvider';
+import { getAi } from '../ai';
+import { aiSelection } from '../ai/selection';
 import { getRepository } from '../data';
 import { setWorkspace } from '../data';
 import { defaultVaultPath } from '../data/vaultRepository';
@@ -71,7 +71,11 @@ import {
 } from './types';
 import { queueItems, visibleItems } from './views';
 
-const ai: AiProvider = new MockAiProvider();
+let chatAbort: AbortController | null = null;
+
+function answerFailure(error: unknown): string {
+    return error instanceof Error && error.message ? error.message : 'The model could not answer.';
+}
 
 const persisted = loadPersisted();
 
@@ -148,6 +152,7 @@ interface StoreState {
 
     chat: ChatMessage[];
 
+    chatBusy: boolean;
     chatOpen: boolean;
     /** Ticks every item handed in — whatever the list is currently showing. */
     checkAll: (ids: string[]) => void;
@@ -370,14 +375,14 @@ interface StoreState {
     setAppearance: (appearance: Appearance) => void;
     /** Marks which column completes a task, or none when it is already set. */
     setBoardDoneColumn: (columnId: string) => Promise<void>;
-
     /** Narrows the open board. Passing null clears every facet. */
     setBoardFilter: (patch: null | Partial<BoardFilter>) => void;
+
     /** Switches the open board between cards and a list. */
     setBoardView: (view: BoardViewMode) => Promise<void>;
     setEditorDirty: (id: null | string) => void;
-
     setFilters: (patch: Partial<Filters>) => void;
+
     setFocusTask: (id: null | string) => void;
     setMainView: (view: MainView) => void;
     // onboarding actions
@@ -397,9 +402,11 @@ interface StoreState {
     /** Ends the current interval early and moves to the next one. */
     skipFocusInterval: () => void;
     sort: SortOrder;
-
     /** Enters selection mode with nothing ticked yet. */
     startSelecting: () => void;
+
+    /** Ends the answer in progress, keeping what has already arrived. */
+    stopChat: () => void;
     /**
      * Ends the session: back to a fresh first interval, which is also what
      * clears the countdown from the menu bar.
@@ -1048,6 +1055,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     capturePreset: null,
     chat: [],
+    chatBusy: false,
     chatOpen: false,
     checkAll(ids) {
         set({ checkedIds: [...ids], selecting: true });
@@ -1885,24 +1893,60 @@ export const useStore = create<StoreState>((set, get) => ({
     },
     async sendChat(question) {
         const text = question.trim();
+        const ai = getAi();
+        const selection = aiSelection(get().prefs);
 
-        if (!text) {
+        if (!text || get().chatBusy || (ai.needsSetup && !selection)) {
             return;
         }
 
-        const userMsg: ChatMessage = { id: `u_${Date.now()}`, role: 'user', text };
+        const stamp = Date.now();
+        const asked: ChatMessage = { id: `u_${stamp}`, role: 'user', text };
+        const answer: ChatMessage = { id: `a_${stamp}`, pending: true, role: 'ai', text: '' };
+        // A failed or empty turn is not something the model said.
+        const history = [...get().chat, asked]
+            .filter((message) => message.text && !message.error)
+            .map(({ role, text: said }) => ({ role, text: said }));
+        const abort = new AbortController();
 
-        set((state) => ({ chat: [...state.chat, userMsg] }));
-
-        const result = await ai.chat(text, get().items);
-        const aiMsg: ChatMessage = {
-            id: `a_${Date.now()}`,
-            role: 'ai',
-            sources: result.sources,
-            text: result.text,
+        const revise = (change: (current: ChatMessage) => Partial<ChatMessage>) => {
+            set((state) => ({
+                chat: state.chat.map((message) =>
+                    message.id === answer.id ? { ...message, ...change(message) } : message,
+                ),
+            }));
         };
 
-        set((state) => ({ chat: [...state.chat, aiMsg] }));
+        chatAbort = abort;
+        set((state) => ({ chat: [...state.chat, asked, answer], chatBusy: true }));
+
+        try {
+            const sources = await ai.chat(
+                history,
+                selection ?? { backend: '' },
+                {
+                    onActivity: (activity) => revise(() => ({ activity })),
+                    onDelta: (delta) =>
+                        revise((current) => ({ activity: undefined, text: current.text + delta })),
+                },
+                abort.signal,
+            );
+
+            revise(() => ({ activity: undefined, pending: false, sources }));
+        } catch (error) {
+            revise(() => ({
+                activity: undefined,
+                // Stopping is the user's doing, not something that went wrong.
+                error: abort.signal.aborted ? undefined : answerFailure(error),
+                pending: false,
+            }));
+        } finally {
+            if (chatAbort === abort) {
+                chatAbort = null;
+            }
+
+            set({ chatBusy: false });
+        }
     },
     setAccent(accent) {
         get().setPref('accent', accent);
@@ -2009,6 +2053,10 @@ export const useStore = create<StoreState>((set, get) => ({
 
     startSelecting() {
         set({ selecting: true });
+    },
+
+    stopChat() {
+        chatAbort?.abort();
     },
 
     /**

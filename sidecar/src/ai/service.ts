@@ -1,4 +1,4 @@
-import type { HarnessId } from './harness/types';
+import type { AiBackendStatus } from '@lore/types';
 
 import { type AiBackend, AiError } from './backend';
 import { keychain, type SecretStore } from './credentials';
@@ -24,26 +24,14 @@ export interface AiService {
     backend(selection: BackendSelection): Promise<AiBackend>;
     clearKey(provider: string): Promise<void>;
     setKey(provider: string, key: string): Promise<void>;
-    status(): Promise<BackendStatus[]>;
+    status(): Promise<AiBackendStatus[]>;
 }
-
-export type BackendId = ApiProvider | HarnessId;
 
 export interface BackendSelection {
     /** Only for `openai-compatible`: Ollama, LM Studio, a gateway. */
     baseUrl?: string;
     id: string;
     model?: string;
-}
-
-export interface BackendStatus {
-    /** A harness that is installed. Always true for an API provider. */
-    available: boolean;
-    defaultModel?: string;
-    hasKey: boolean;
-    id: BackendId;
-    kind: 'api' | 'harness';
-    label: string;
 }
 
 export function createAiService(
@@ -96,7 +84,7 @@ export function createAiService(
         },
         async status() {
             const harnesses = await Promise.all(
-                HARNESSES.map(async (harness): Promise<BackendStatus> => ({
+                HARNESSES.map(async (harness): Promise<AiBackendStatus> => ({
                     available: (await locate(harness.binary)) !== null,
                     hasKey: false,
                     id: harness.id,
@@ -105,7 +93,7 @@ export function createAiService(
                 })),
             );
             const providers = await Promise.all(
-                API_PROVIDERS.map(async (provider): Promise<BackendStatus> => ({
+                API_PROVIDERS.map(async (provider): Promise<AiBackendStatus> => ({
                     available: true,
                     defaultModel: provider.defaultModel,
                     hasKey: (await secrets.get(provider.id)) !== null,

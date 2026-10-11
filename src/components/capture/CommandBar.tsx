@@ -1,15 +1,19 @@
-// Direction A — Command bar. Type anything; the AI detects what it is (unless
-// Settings pins a capture type), fetches link metadata (title/description/image),
-// suggests tags, and files it. Enter saves, Esc closes.
+// Direction A — Command bar. Type anything; Lore works out what it is (unless
+// Settings pins a capture type), fetches link metadata (title/description/image)
+// and files it. With a model chosen and suggestions switched on, it also
+// proposes tags. Enter saves, Esc closes.
 
 import { useEffect, useState } from 'react';
 
+import type { AiSelection } from '../../ai/aiProvider';
 import type { NewItem } from '../../data/repository';
 import type { ItemType } from '../../store/types';
 
+import { getAi } from '../../ai';
+import { detectType } from '../../ai/detectType';
 import { getRepository } from '../../data';
 import { deriveTitle } from '../../data/plainText';
-import { captureAi, hideCapture, hostOf, saveCapture } from '../../lib/captureActions';
+import { hideCapture, hostOf, saveCapture } from '../../lib/captureActions';
 import { cn } from '../../lib/cn';
 import { documentTitle, type GithubDocument, resolveGithubDocument } from '../../lib/github';
 import { useImageFallback } from '../../lib/imageFallback';
@@ -23,9 +27,15 @@ interface CommandBarProps {
     collectionId: null | string;
     /** Settings' default capture type. `'auto'` leaves detection in charge. */
     defaultType: 'auto' | ItemType;
+    /** The model to ask for tags; null sends what is typed nowhere. */
+    suggest: AiSelection | null;
 }
 
-export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
+/** Long enough that a model is asked about a thought, not about each word of it. */
+const SUGGEST_DELAY_MS = 900;
+const SUGGEST_MIN_CHARACTERS = 12;
+
+export function CommandBar({ collectionId, defaultType, suggest }: CommandBarProps) {
     const pinned = defaultType === 'auto' ? null : defaultType;
     const [collectionName, setCollectionName] = useState<null | string>(null);
     const [text, setText] = useState('');
@@ -65,7 +75,7 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
         };
     }, [collectionId]);
 
-    // Detect type, suggest tags, and (for links) fetch metadata as input settles.
+    // Detect type and (for links) fetch metadata as input settles.
     useEffect(() => {
         const value = text.trim();
 
@@ -80,28 +90,9 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
 
         let cancelled = false;
         const id = setTimeout(async () => {
-            const detected = pinned ?? (await captureAi.detectType(value));
-
-            if (cancelled) {
-                return;
-            }
+            const detected = pinned ?? detectType(value);
 
             setType(detected);
-
-            const suggested = await captureAi.suggestTags({
-                createdAt: '',
-                flags: {},
-                id: '',
-                related: [],
-                tags: [],
-                title: value,
-                type: detected,
-                updatedAt: '',
-            });
-
-            if (!cancelled) {
-                setTags(suggested.slice(0, 2));
-            }
 
             if (detected === 'link') {
                 setFetching(true);
@@ -139,6 +130,37 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
             clearTimeout(id);
         };
     }, [pinned, text]);
+
+    // Best effort, and never in the way: Enter saves at once whether or not the
+    // model has answered, and a failure simply leaves the capture untagged.
+    useEffect(() => {
+        const value = text.trim();
+
+        setTags([]);
+
+        if (!suggest || value.length < SUGGEST_MIN_CHARACTERS) {
+            return;
+        }
+
+        const abort = new AbortController();
+        const id = setTimeout(() => {
+            const described = [value, meta?.title, meta?.description].filter(Boolean).join('\n');
+
+            getAi()
+                .enrich({ text: described, want: ['tags'] }, suggest, abort.signal)
+                .then((suggested) => {
+                    if (!abort.signal.aborted) {
+                        setTags(suggested.tags ?? []);
+                    }
+                })
+                .catch(() => undefined);
+        }, SUGGEST_DELAY_MS);
+
+        return () => {
+            abort.abort();
+            clearTimeout(id);
+        };
+    }, [meta?.description, meta?.title, suggest, text]);
 
     const meta_ = typeMeta(type);
     const filedTo = collectionName ?? 'Inbox';
@@ -247,22 +269,28 @@ export function CommandBar({ collectionId, defaultType }: CommandBarProps) {
                 </>
             )}
 
-            {/* AI tags */}
+            {/* suggested tags: saved with the capture unless clicked away */}
             {tags.length > 0 && (
                 <>
                     <div className="h-px bg-hover" />
                     <div className="flex flex-wrap items-center gap-[7px] px-[18px] py-3">
                         <span className="inline-flex items-center gap-1 text-micro font-semibold tracking-[.05em] text-faint uppercase">
                             <Sparkle className="text-accent" size={11} />
-                            AI tags
+                            Suggested
                         </span>
                         {tags.map((tag) => (
-                            <span
-                                className="rounded-md bg-accent-tint px-[7px] py-[2px] font-mono text-caption text-accent"
+                            <button
+                                aria-label={`Remove tag ${tag}`}
+                                className="rounded-md border-none bg-accent-tint px-[7px] py-[2px] font-mono text-caption text-accent hover:line-through"
                                 key={tag}
+                                onClick={() =>
+                                    setTags((current) => current.filter((kept) => kept !== tag))
+                                }
+                                title="Click to leave this tag off"
+                                type="button"
                             >
                                 #{tag}
-                            </span>
+                            </button>
                         ))}
                     </div>
                 </>

@@ -61,7 +61,8 @@ export function routes(workspace: Workspace, ai: AiService = createAiService()) 
                 if (error instanceof AiError) {
                     set.status = error.code === 'not_configured' ? 409 : 502;
 
-                    return { error: `ai_${error.code}`, message: error.message };
+                    // `error` is the sentence the user reads, as it is for every other route.
+                    return { code: `ai_${error.code}`, error: error.message };
                 }
 
                 set.status = 500;

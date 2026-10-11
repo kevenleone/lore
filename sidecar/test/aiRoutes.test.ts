@@ -1,10 +1,11 @@
+import type { AiBackendStatus } from '@lore/types';
+
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import type { AiBackend, ChatRequest } from '../src/ai/backend';
-import type { BackendStatus } from '../src/ai/service';
 
 import { memorySecrets } from '../src/ai/credentials';
 import { type AiService, createAiService } from '../src/ai/service';
@@ -130,8 +131,8 @@ describe('POST /ai/chat', () => {
 
         expect(missingKey.status).toBe(409);
         expect(await missingKey.json()).toEqual({
-            error: 'ai_not_configured',
-            message: 'Add an Anthropic API key in Settings.',
+            code: 'ai_not_configured',
+            error: 'Add an Anthropic API key in Settings.',
         });
         expect(missingTool.status).toBe(409);
     });
@@ -168,13 +169,13 @@ describe('credentials', () => {
 
         await send('DELETE', '/ai/credentials/anthropic');
 
-        const after = (await (await send('GET', '/ai/status')).json()) as BackendStatus[];
+        const after = (await (await send('GET', '/ai/status')).json()) as AiBackendStatus[];
 
         expect(after.find((backend) => backend.id === 'anthropic')?.hasKey).toBe(false);
     });
 
     it('lists a harness that is not installed as unavailable', async () => {
-        const status = (await (await call('GET', '/ai/status')).json()) as BackendStatus[];
+        const status = (await (await call('GET', '/ai/status')).json()) as AiBackendStatus[];
 
         expect(status.find((backend) => backend.id === 'codex-cli')).toMatchObject({
             available: false,

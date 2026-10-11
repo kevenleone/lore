@@ -1,91 +1,63 @@
-// Deterministic, offline Ai provider. Exercises the full AI UI (summaries,
-// suggested tags, Ask Lore with Sources chips) without any API key or
-// network. A real claudeAiProvider drops in behind the same interface later.
+import type { AiBackendStatus, AiEnrichment, ChatSource, Item } from '../store/types';
+import type { AiProvider } from './aiProvider';
 
-import type { Item, ItemType } from '../store/types';
-import type { AiProvider, ChatResult, SummaryResult } from './aiProvider';
-
-const URL_RE = /^https?:\/\/\S+$/i;
-const FENCE_RE = /```|^\s{4}\S|;\s*$|=>|function\s|const\s|=\s*\(/m;
-const TASK_RE = /^\s*(\[ \]|- \[ \]|todo:|follow up|remind|review|send|call|email)\b/i;
-const IMAGE_RE = /\.(png|jpe?g|gif|webp|heic|svg)(\?|$)/i;
-
+// What backs the UI where there is no data engine: the browser preview and the
+// tests. It names the saved items a question's words appear in, and proposes
+// nothing, so nothing it says can be mistaken for a model's judgement.
 export class MockAiProvider implements AiProvider {
-    async chat(question: string, kb: Item[]): Promise<ChatResult> {
+    readonly needsSetup = false;
+
+    constructor(private readonly items: () => Item[] | Promise<Item[]>) {}
+
+    async chat(...[messages, , handlers]: Parameters<AiProvider['chat']>): Promise<ChatSource[]> {
+        const question = messages[messages.length - 1]?.text ?? '';
         const words = question
             .toLowerCase()
             .split(/\W+/)
-            .filter((w) => w.length > 3);
-
-        const scored = kb
+            .filter((word) => word.length > 3);
+        const scored = (await this.items())
             .map((item) => {
-                const hay =
+                const haystack =
                     `${item.title} ${item.tags.join(' ')} ${item.summary ?? ''}`.toLowerCase();
-                const score = words.reduce((n, word) => (hay.includes(word) ? n + 1 : n), 0);
 
-                return { item, score };
+                return {
+                    item,
+                    score: words.filter((word) => haystack.includes(word)).length,
+                };
             })
-            .filter((s) => s.score > 0)
+            .filter((entry) => entry.score > 0)
             .sort((left, right) => right.score - left.score)
             .slice(0, 3);
 
         if (scored.length === 0) {
-            return {
-                sources: [],
-                text: "I couldn't find anything in your knowledge base about that yet. Try capturing a few related links or notes.",
-            };
+            handlers.onDelta(
+                "I couldn't find anything in your knowledge base about that yet. Try capturing a few related links or notes.",
+            );
+
+            return [];
         }
 
-        const titles = scored.map((s) => `“${s.item.title}”`);
+        const titles = scored.map((entry) => `“${entry.item.title}”`);
         const list =
             titles.length === 1
                 ? titles[0]
                 : `${titles.slice(0, -1).join(', ')} and ${titles[titles.length - 1]}`;
+        const verb = scored.length === 1 ? 'is' : 'are';
 
-        return {
-            sources: scored.map((s) => ({ itemId: s.item.id })),
-            text: `Based on what you've saved, ${list} ${scored.length === 1 ? 'is' : 'are'} most relevant here.`,
-        };
+        handlers.onDelta(`Based on what you've saved, ${list} ${verb} most relevant here.`);
+
+        return scored.map((entry) => ({ itemId: entry.item.id }));
     }
 
-    async detectType(input: string): Promise<ItemType> {
-        const text = input.trim();
+    async clearKey(): Promise<void> {}
 
-        if (IMAGE_RE.test(text)) {
-            return 'image';
-        }
-
-        if (URL_RE.test(text)) {
-            return 'link';
-        }
-
-        if (TASK_RE.test(text)) {
-            return 'task';
-        }
-
-        if (FENCE_RE.test(text)) {
-            return 'code';
-        }
-
-        return 'note';
+    async enrich(): Promise<AiEnrichment> {
+        return {};
     }
 
-    async suggestTags(_item: Item): Promise<string[]> {
-        // The stub provider can't infer meaningful tags, so it suggests none.
-        // A real Claude-backed provider would return relevant tags here.
+    async setKey(): Promise<void> {}
+
+    async status(): Promise<AiBackendStatus[]> {
         return [];
-    }
-
-    async summarize(item: Item): Promise<SummaryResult> {
-        if (item.summary) {
-            return { points: item.points ?? [], summary: item.summary };
-        }
-
-        const subject = item.title || item.domain || 'this item';
-
-        return {
-            points: [],
-            summary: `A saved ${item.type} about ${subject}.`,
-        };
     }
 }
