@@ -5,7 +5,7 @@
 // conversation the user had already had, in a vault where its cited items did
 // not exist.
 
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { ChatMessage, Item } from '../../store/types';
 
@@ -13,12 +13,17 @@ import { getAi } from '../../ai';
 import { cn } from '../../lib/cn';
 import { typeMeta } from '../../store/typeMeta';
 import { useStore } from '../../store/useStore';
-import { Close, Send, Sparkle } from '../common/glyphs';
+import { Close, FileGlyph, History, Pencil, Plus, Restart, Send, Sparkle } from '../common/glyphs';
 import { Icon } from '../common/Icon';
 import { MarkdownView } from '../common/MarkdownView';
+import { ChatAction, ChatActions, CopyAction } from './ChatActions';
+import { ChatHistory } from './ChatHistory';
 import { ItemHoverCard } from './ItemHoverCard';
 
 const WIKILINK = /\[\[([^[\]\n]+)\]\]/g;
+
+const HEADER_BUTTON =
+    'flex h-7 w-7 flex-none items-center justify-center rounded-7 border-none bg-transparent p-0 text-faint hover:bg-hover hover:text-text2 disabled:opacity-40 disabled:hover:bg-transparent';
 
 export function AskLoreChat() {
     const messages = useStore((state) => state.chat);
@@ -30,7 +35,13 @@ export function AskLoreChat() {
     const stopChat = useStore((state) => state.stopChat);
     const openChatItem = useStore((state) => state.openChatItem);
     const openSettings = useStore((state) => state.openSettings);
+    const newChat = useStore((state) => state.newChat);
+    const resendChat = useStore((state) => state.resendChat);
+    const saveAnswerAsNote = useStore((state) => state.saveAnswerAsNote);
     const [draft, setDraft] = useState('');
+    const [historyOpen, setHistoryOpen] = useState(false);
+    const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
+    const closeHistory = useCallback(() => setHistoryOpen(false), []);
     const end = useRef<HTMLDivElement>(null);
     const needsSetup = getAi().needsSetup && !configured;
     const byStem = useMemo(() => new Map(items.map((item) => [stemOf(item), item])), [items]);
@@ -64,14 +75,38 @@ export function AskLoreChat() {
                     </div>
                 </div>
                 <button
+                    aria-label="New conversation"
+                    className={HEADER_BUTTON}
+                    disabled={messages.length === 0}
+                    onClick={newChat}
+                    title="New conversation"
+                    type="button"
+                >
+                    <Plus size={15} />
+                </button>
+                <button
+                    aria-expanded={historyOpen}
+                    aria-label="Conversations"
+                    className={cn(HEADER_BUTTON, historyOpen && 'bg-hover text-text2')}
+                    // The menu closes on any press outside it, this button
+                    // included, so the press must not also reopen it.
+                    onClick={() => setHistoryOpen((open) => !open)}
+                    onMouseDown={(event) => event.stopPropagation()}
+                    title="Conversations"
+                    type="button"
+                >
+                    <History size={15} />
+                </button>
+                <button
                     aria-label="Close Ask Lore"
-                    className="flex border-none bg-transparent p-0 text-faint hover:text-text2"
+                    className={HEADER_BUTTON}
                     onClick={toggleChat}
                     type="button"
                 >
                     <Close />
                 </button>
             </div>
+            {historyOpen && <ChatHistory onClose={closeHistory} />}
 
             {/* messages */}
             <div className="flex flex-1 flex-col gap-4 overflow-auto px-6 py-[22px]">
@@ -96,24 +131,101 @@ export function AskLoreChat() {
                         citing the ones it used.
                     </p>
                 )}
-                {messages.map((message) =>
-                    message.role === 'user' ? (
-                        <div
-                            className="max-w-[78%] self-end rounded-[15px_15px_4px_15px] bg-accent px-[15px] py-[10px] text-title leading-[1.5] text-white select-text"
-                            key={message.id}
-                        >
-                            {message.text}
+                {messages.map((message, index) => {
+                    const latest = index >= messages.length - 2;
+
+                    if (message.role === 'ai') {
+                        return (
+                            <Answer
+                                byStem={byStem}
+                                items={items}
+                                key={message.id}
+                                message={message}
+                                onOpen={openChatItem}
+                                onRegenerate={
+                                    index === messages.length - 1 && !busy
+                                        ? () => void resendChat(messages[index - 1]?.id ?? '')
+                                        : undefined
+                                }
+                                onSave={() => void saveAnswerAsNote(message.id)}
+                                pinned={latest}
+                            />
+                        );
+                    }
+
+                    if (editing?.id === message.id) {
+                        const resend = () => {
+                            const text = editing.text.trim();
+
+                            if (text) {
+                                setEditing(null);
+                                void resendChat(message.id, text);
+                            }
+                        };
+
+                        return (
+                            <div className="flex w-[78%] flex-col gap-2 self-end" key={message.id}>
+                                <textarea
+                                    aria-label="Edit your question"
+                                    autoFocus
+                                    className="min-h-[72px] w-full resize-y rounded-[15px] border border-accent bg-surface px-[15px] py-[10px] font-[inherit] text-title leading-[1.5] text-text outline-none"
+                                    onChange={(event) =>
+                                        setEditing({ id: message.id, text: event.target.value })
+                                    }
+                                    onKeyDown={(event) => {
+                                        if (event.key === 'Enter' && !event.shiftKey) {
+                                            event.preventDefault();
+                                            resend();
+                                        }
+
+                                        if (event.key === 'Escape') {
+                                            event.stopPropagation();
+                                            setEditing(null);
+                                        }
+                                    }}
+                                    value={editing.text}
+                                />
+                                <div className="flex justify-end gap-2">
+                                    <button
+                                        className="rounded-lg border border-border bg-surface px-[10px] py-[5px] font-[inherit] text-body font-semibold text-text2 hover:bg-surface2"
+                                        onClick={() => setEditing(null)}
+                                        type="button"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        className="rounded-lg border-none bg-accent px-3 py-[5px] font-[inherit] text-body font-semibold text-white"
+                                        onClick={resend}
+                                        type="button"
+                                    >
+                                        Ask again
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    }
+
+                    return (
+                        <div className="group flex max-w-[78%] flex-col self-end" key={message.id}>
+                            <div className="self-end rounded-[15px_15px_4px_15px] bg-accent px-[15px] py-[10px] text-title leading-[1.5] whitespace-pre-wrap text-white select-text">
+                                {message.text}
+                            </div>
+                            <ChatActions align="end" pinned={latest}>
+                                <CopyAction text={message.text} />
+                                {!busy && (
+                                    <ChatAction
+                                        label="Edit and ask again"
+                                        onClick={() =>
+                                            setEditing({ id: message.id, text: message.text })
+                                        }
+                                    >
+                                        <Pencil size={15} />
+                                    </ChatAction>
+                                )}
+                            </ChatActions>
                         </div>
-                    ) : (
-                        <Answer
-                            byStem={byStem}
-                            items={items}
-                            key={message.id}
-                            message={message}
-                            onOpen={openChatItem}
-                        />
-                    ),
-                )}
+                    );
+                })}
                 <div ref={end} />
             </div>
 
@@ -161,18 +273,23 @@ function Answer({
     items,
     message,
     onOpen,
+    onRegenerate,
+    onSave,
+    pinned,
 }: {
     byStem: Map<string, Item>;
     items: Item[];
     message: ChatMessage;
     onOpen: (id: string) => void;
+    /** Absent for any answer but the last, and while one is being written. */
+    onRegenerate?: () => void;
+    onSave: () => void;
+    pinned: boolean;
 }) {
-    const sources = (message.sources ?? [])
-        .map((source) => items.find((item) => item.id === source.itemId))
-        .filter((item): item is Item => !!item);
+    const sources = sourcesOf(message, items, byStem);
 
     return (
-        <div className="max-w-[88%] self-start">
+        <div className="group max-w-[88%] self-start">
             {message.text && (
                 <MarkdownView
                     className="rounded-[15px_15px_15px_4px] bg-sel p-4 py-3 text-title leading-[1.55] text-text"
@@ -226,8 +343,48 @@ function Answer({
                     ))}
                 </div>
             )}
+            {!message.pending && message.text && (
+                <ChatActions align="start" pinned={pinned}>
+                    <CopyAction text={message.text} />
+                    <ChatAction label="Save as a note" onClick={onSave}>
+                        <FileGlyph size={15} />
+                    </ChatAction>
+                    {onRegenerate && (
+                        <ChatAction label="Answer again" onClick={onRegenerate}>
+                            <Restart size={14} />
+                        </ChatAction>
+                    )}
+                </ChatActions>
+            )}
         </div>
     );
+}
+
+/**
+ * The items an answer rests on. The ids it was saved with come first; where
+ * none of them is in the vault any more, the answer's own citations are read
+ * instead, since an item written by hand has no id that survives a reindex.
+ */
+function sourcesOf(message: ChatMessage, items: Item[], byStem: Map<string, Item>): Item[] {
+    const stored = (message.sources ?? [])
+        .map((source) => items.find((item) => item.id === source.itemId))
+        .filter((item): item is Item => !!item);
+
+    if (stored.length > 0) {
+        return stored;
+    }
+
+    const cited: Item[] = [];
+
+    for (const match of message.text.matchAll(WIKILINK)) {
+        const item = byStem.get(match[1].split('|')[0].trim().toLowerCase());
+
+        if (item && !cited.includes(item)) {
+            cited.push(item);
+        }
+    }
+
+    return cited;
 }
 
 function stemOf(item: Item): string {

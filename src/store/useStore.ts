@@ -41,6 +41,7 @@ import {
     type BoardViewMode,
     type CapturePreset,
     type ChatMessage,
+    type ChatThreadSummary,
     type Collection,
     DEFAULT_PREFS,
     type Durations,
@@ -73,8 +74,58 @@ import { queueItems, visibleItems } from './views';
 
 let chatAbort: AbortController | null = null;
 
+/**
+ * Which conversation is on screen, counted rather than named: a thread has no
+ * id until its first turn is saved, and a turn that outlives the conversation
+ * it was asked in must not be written into the one that replaced it.
+ */
+let chatEpoch = 0;
+
+const NOTE_TITLE_CHARACTERS = 80;
+
 function answerFailure(error: unknown): string {
     return error instanceof Error && error.message ? error.message : 'The model could not answer.';
+}
+
+function newThreadId(): string {
+    return `c_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** Writes the conversation on screen, giving it an id the first time. */
+async function saveChatThread(
+    get: () => StoreState,
+    set: (partial: Partial<StoreState>) => void,
+): Promise<void> {
+    const repo = getRepository();
+    const messages = get()
+        .chat.filter((message) => !message.pending && message.text)
+        .map(({ id, role, sources, text }) => ({ id, role, sources, text }));
+    const opening = messages.find((message) => message.role === 'user');
+
+    if (!repo.saveChat || !opening) {
+        return;
+    }
+
+    const id = get().chatThreadId ?? newThreadId();
+    const now = new Date().toISOString();
+    const known = get().chatThreads.find((thread) => thread.id === id);
+    const summary: ChatThreadSummary = {
+        createdAt: known?.createdAt ?? now,
+        id,
+        title: opening.text.replace(/\s+/g, ' ').trim().slice(0, NOTE_TITLE_CHARACTERS),
+        updatedAt: now,
+    };
+
+    set({
+        chatThreadId: id,
+        chatThreads: [summary, ...get().chatThreads.filter((thread) => thread.id !== id)],
+    });
+
+    try {
+        await repo.saveChat({ ...summary, messages });
+    } catch (e) {
+        get().pushToast(e instanceof Error ? e.message : 'The conversation was not saved.');
+    }
 }
 
 const persisted = loadPersisted();
@@ -159,6 +210,9 @@ interface StoreState {
      */
     chatItemId: null | string;
     chatOpen: boolean;
+    /** The saved thread on screen; null for a conversation not yet written. */
+    chatThreadId: null | string;
+    chatThreads: ChatThreadSummary[];
     /** Ticks every item handed in — whatever the list is currently showing. */
     checkAll: (ids: string[]) => void;
     /**
@@ -191,6 +245,7 @@ interface StoreState {
     createItem: (input: NewItem) => Promise<Item>;
     /** Steps "Working on" to the next item in the queue. */
     cycleFocusTask: () => void;
+    deleteChatThread: (id: string) => Promise<void>;
     deleteCollection: (id: string) => Promise<void>;
     deleteItem: (id: string) => Promise<void>;
     deleteSavedSearch: (id: string) => Promise<void>;
@@ -241,8 +296,8 @@ interface StoreState {
     graph: Graph | null;
     // lifecycle
     hydrate: () => Promise<void>;
-    hydrated: boolean;
 
+    hydrated: boolean;
     /**
      * Per-file facts for the Properties panel — size, mtime, word count and
      * backlinks. Null until the panel is open and a response has landed.
@@ -256,13 +311,16 @@ interface StoreState {
     loadItemMeta: (id: string) => Promise<void>;
     /** Re-reads `.lore/templates/`, which the file watcher deliberately ignores. */
     loadTemplates: () => Promise<void>;
+
     /** Which surface the window's main area shows: the library or the calendar. */
     mainView: MainView;
-
     /** Drops a column onto another's place, from a drag of its handle. */
     moveBoardColumn: (columnId: string, targetId: string) => Promise<void>;
+    /** Leaves the current conversation, which stays in the history. */
+    newChat: () => void;
     onboarded: boolean;
     onboardingStep: OnboardingStep;
+
     /**
      * Overrides `prefs.openMode` for the item currently open, or null to follow
      * the preference. Cleared with `openId`, so it never outlives its item.
@@ -270,12 +328,12 @@ interface StoreState {
     openAs: null | OpenMode;
     /** Opens a collection's board. `UNFILED_BOARD` is the one for loose tasks. */
     openBoard: (boardId: string) => void;
-
     openCapture: () => void;
     /** Opens the capture drawer with a column's board and status already set. */
     openCaptureIn: (collectionId: null | string, column: BoardColumnConfig) => void;
     /** Opens an item beside Ask Lore, whatever `openMode` says. */
     openChatItem: (id: string) => void;
+    openChatThread: (id: string) => Promise<void>;
     /** Opens the photo picker against an item, to choose its thumbnail. */
     openCommandMenu: () => void;
     /**
@@ -338,15 +396,22 @@ interface StoreState {
     renameItemFile: (id: string, stem: string) => Promise<void>;
     /** Moves a column one place left or right. */
     reorderBoardColumn: (columnId: string, direction: -1 | 1) => Promise<void>;
+    /**
+     * Asks a question again, in its own words or new ones. Everything after it
+     * is dropped: the answers that followed were answers to the old question.
+     */
+    resendChat: (messageId: string, text?: string) => Promise<void>;
     /** Puts the current interval back to its full length, still paused. */
     resetFocusInterval: () => void;
     /** Puts every preference back to its default. */
     restoreDefaultPrefs: () => void;
     /** Shows the item's file in the OS file manager. */
     revealItemFile: (id: string) => Promise<void>;
+
+    /** Files an answer as a note, its citations intact as links. */
+    saveAnswerAsNote: (messageId: string) => Promise<void>;
     /** The vault's named searches, in the order they were saved. */
     savedSearches: SavedSearch[];
-
     /** Names the current view, filters and query, and records them in the vault. */
     saveSearch: (name: string) => Promise<void>;
     /** Item id → ISO time it sits at on the calendar. */
@@ -354,13 +419,13 @@ interface StoreState {
     /** Places an item on the calendar, or clears it when `at` is null. */
     scheduleItem: (id: string, at: Date | null) => void;
     search: string;
+
     searching: boolean;
     /**
      * Ids the index matched, or null when the query is too short to run one and
      * the client-side filter is doing the work instead.
      */
     searchResults: null | string[];
-
     selectedId: null | string;
     /**
      * Whether the list is in selection mode: the header is the selection bar
@@ -648,7 +713,9 @@ async function hydrateOnce(
     // not worth failing the whole hydrate over.
     const savedSearches = await (repo.listSavedSearches?.() ?? Promise.resolve([])).catch(() => []);
 
-    set({ collections, hydrated: true, items, savedSearches, selectedId });
+    const chatThreads = await (repo.listChats?.() ?? Promise.resolve([])).catch(() => []);
+
+    set({ chatThreads, collections, hydrated: true, items, savedSearches, selectedId });
 
     void get().loadTemplates();
 
@@ -1066,6 +1133,8 @@ export const useStore = create<StoreState>((set, get) => ({
     chatBusy: false,
     chatItemId: null,
     chatOpen: false,
+    chatThreadId: null,
+    chatThreads: [],
     checkAll(ids) {
         set({ checkedIds: [...ids], selecting: true });
     },
@@ -1119,17 +1188,16 @@ export const useStore = create<StoreState>((set, get) => ({
     closeChatItem() {
         set({ chatItemId: null });
     },
-
     closeCommandMenu() {
         set({ commandMenuOpen: false });
     },
+
     closeOpenItem() {
         set({ openAs: null, openId: null });
     },
     closePhotoPicker() {
         set({ photoPickerItemId: null });
     },
-
     closeSettings() {
         set({ settingsOpen: false });
     },
@@ -1140,6 +1208,7 @@ export const useStore = create<StoreState>((set, get) => ({
         // unmounting, so it has to keep drawing the task on the way out.
         set({ taskRailOpen: false });
     },
+
     collections: [],
     commandMenuOpen: false,
     async createCollection(input) {
@@ -1181,6 +1250,19 @@ export const useStore = create<StoreState>((set, get) => ({
         const current = queue.findIndex((item) => item.id === get().focus.taskId);
 
         get().setFocusTask(queue[(current + 1) % queue.length].id);
+    },
+    async deleteChatThread(id) {
+        if (get().chatThreadId === id) {
+            get().newChat();
+        }
+
+        set({ chatThreads: get().chatThreads.filter((thread) => thread.id !== id) });
+
+        try {
+            await getRepository().deleteChat?.(id);
+        } catch (e) {
+            get().pushToast(e instanceof Error ? e.message : 'The conversation was not deleted.');
+        }
     },
     async deleteCollection(id) {
         await getRepository().deleteCollection(id);
@@ -1462,17 +1544,23 @@ export const useStore = create<StoreState>((set, get) => ({
             return { ...board, columns };
         });
     },
+    newChat() {
+        chatEpoch += 1;
+        chatAbort?.abort();
+        set({ chat: [], chatBusy: false, chatItemId: null, chatThreadId: null });
+    },
     onboarded: persisted.onboarded,
+
     onboardingStep: 'pick',
 
     openAs: null,
-
     openBoard(boardId) {
         // The filter belongs to the board being looked at, not to the surface:
         // carrying one board's filter onto the next hides cards for no reason
         // the user can see.
         set({ boardFilter: EMPTY_BOARD_FILTER, boardId, mainView: 'tasks', taskView: 'board' });
     },
+
     openCapture() {
         set({ captureOpen: true, capturePreset: null, focusPopoverOpen: false });
     },
@@ -1496,6 +1584,21 @@ export const useStore = create<StoreState>((set, get) => ({
         set({ chatItemId: id, detail: null, itemMeta: null, selectedId: id });
         get().recordRecentItem(id);
         void get().loadDetail(id);
+    },
+
+    async openChatThread(id) {
+        const thread = await getRepository().getChat?.(id);
+
+        if (!thread) {
+            set({ chatThreads: get().chatThreads.filter((entry) => entry.id !== id) });
+            get().pushToast('That conversation is no longer in the vault.');
+
+            return;
+        }
+
+        chatEpoch += 1;
+        chatAbort?.abort();
+        set({ chat: thread.messages, chatBusy: false, chatItemId: null, chatThreadId: id });
     },
 
     openCommandMenu() {
@@ -1777,6 +1880,19 @@ export const useStore = create<StoreState>((set, get) => ({
         });
     },
 
+    async resendChat(messageId, text) {
+        const { chat, chatBusy } = get();
+        const index = chat.findIndex((message) => message.id === messageId);
+        const asked = chat[index];
+
+        if (chatBusy || asked?.role !== 'user') {
+            return;
+        }
+
+        set({ chat: chat.slice(0, index) });
+        await get().sendChat(text ?? asked.text);
+    },
+
     resetFocusInterval() {
         set((state) => ({
             focus: {
@@ -1806,6 +1922,43 @@ export const useStore = create<StoreState>((set, get) => ({
 
         if (!shown) {
             get().pushToast('Could not show the file.');
+        }
+    },
+
+    async saveAnswerAsNote(messageId) {
+        const { chat, prefs } = get();
+        const index = chat.findIndex((message) => message.id === messageId);
+        const answer = chat[index];
+
+        if (answer?.role !== 'ai' || !answer.text) {
+            return;
+        }
+
+        const question = chat
+            .slice(0, index)
+            .reverse()
+            .find((message) => message.role === 'user');
+        const title = (question?.text ?? 'Ask Lore answer')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, NOTE_TITLE_CHARACTERS);
+
+        try {
+            const item = await get().createItem({
+                body: answer.text,
+                collectionId: prefs.defaultCollection ?? undefined,
+                flags: prefs.defaultCollection ? {} : { inbox: true },
+                related: [],
+                tags: [],
+                title,
+                type: 'note',
+            });
+
+            // Beside the answer it came from, where it can be read and retitled.
+            set({ chatItemId: item.id });
+            get().pushToast(`Saved as “${title}”.`);
+        } catch (e) {
+            get().pushToast(e instanceof Error ? e.message : 'The answer could not be saved.');
         }
     },
 
@@ -1848,13 +2001,12 @@ export const useStore = create<StoreState>((set, get) => ({
     },
 
     search: '',
-
     searching: false,
-
     searchResults: null,
-    selectedId: 'i1',
-    selecting: false,
 
+    selectedId: 'i1',
+
+    selecting: false,
     selectItem(id) {
         // Opening an item always means the library — the calendar and the chat
         // are both places you leave to look at one.
@@ -1875,7 +2027,6 @@ export const useStore = create<StoreState>((set, get) => ({
         get().recordRecentItem(id);
         void get().loadDetail(id);
     },
-
     selectTask(id) {
         set({
             chatOpen: false,
@@ -1889,6 +2040,7 @@ export const useStore = create<StoreState>((set, get) => ({
         get().recordRecentItem(id);
         void get().loadDetail(id);
     },
+
     selectView(kind, val = null) {
         const leaving = get().activeSavedSearchId !== null;
 
@@ -1914,6 +2066,7 @@ export const useStore = create<StoreState>((set, get) => ({
             get().setSearch('');
         }
     },
+
     async sendChat(question) {
         const text = question.trim();
         const ai = getAi();
@@ -1923,7 +2076,8 @@ export const useStore = create<StoreState>((set, get) => ({
             return;
         }
 
-        const stamp = Date.now();
+        // Actions address a message by id, so a clock that can repeat will not do.
+        const stamp = crypto.randomUUID();
         const asked: ChatMessage = { id: `u_${stamp}`, role: 'user', text };
         const answer: ChatMessage = { id: `a_${stamp}`, pending: true, role: 'ai', text: '' };
         // A failed or empty turn is not something the model said.
@@ -1931,6 +2085,7 @@ export const useStore = create<StoreState>((set, get) => ({
             .filter((message) => message.text && !message.error)
             .map(({ role, text: said }) => ({ role, text: said }));
         const abort = new AbortController();
+        const epoch = chatEpoch;
 
         const revise = (change: (current: ChatMessage) => Partial<ChatMessage>) => {
             set((state) => ({
@@ -1968,7 +2123,12 @@ export const useStore = create<StoreState>((set, get) => ({
                 chatAbort = null;
             }
 
-            set({ chatBusy: false });
+            // A conversation left mid-answer was left; its busy flag and its
+            // file belong to whatever replaced it.
+            if (chatEpoch === epoch) {
+                set({ chatBusy: false });
+                await saveChatThread(get, set);
+            }
         }
     },
     setAccent(accent) {
@@ -2115,9 +2275,16 @@ export const useStore = create<StoreState>((set, get) => ({
             return;
         }
 
+        chatEpoch += 1;
+        chatAbort?.abort();
         set({
             activeSavedSearchId: null,
+            chat: [],
+            chatBusy: false,
+            chatItemId: null,
             chatOpen: false,
+            chatThreadId: null,
+            chatThreads: [],
             checkedIds: [],
             collections: [],
             detail: null,

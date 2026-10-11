@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { Item } from '../../store/types';
@@ -34,6 +34,8 @@ beforeEach(() => {
         chatBusy: false,
         chatItemId: null,
         chatOpen: true,
+        chatThreadId: null,
+        chatThreads: [],
         items: [OVEN],
         prefs: { ...DEFAULT_PREFS, aiBackend: 'claude-cli' },
         selectedId: null,
@@ -105,7 +107,7 @@ describe('AskLoreChat', () => {
             ai.done();
         });
 
-        const link = screen.getByRole('button', { name: 'Oven notes' });
+        const [link] = screen.getAllByRole('button', { name: 'Oven notes' });
 
         expect(screen.queryByRole('tooltip')).toBeNull();
 
@@ -138,6 +140,100 @@ describe('AskLoreChat', () => {
         expect(container.querySelector('li')?.querySelector('button')?.textContent).toBe(
             'Oven notes',
         );
+    });
+
+    it('offers the actions that fit each message', async () => {
+        render(<AskLoreChat />);
+        ask('first');
+
+        // Nothing to act on while the answer is still being written.
+        expect(screen.queryByRole('button', { name: 'Save as a note' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Edit and ask again' })).toBeNull();
+
+        await act(async () => {
+            ai.delta('one');
+            ai.done();
+        });
+
+        ask('second');
+
+        await act(async () => {
+            ai.delta('two');
+            ai.done();
+        });
+
+        expect(screen.getAllByRole('button', { name: 'Copy' })).toHaveLength(4);
+        expect(screen.getAllByRole('button', { name: 'Save as a note' })).toHaveLength(2);
+        // Only the last answer can be asked for again.
+        expect(screen.getAllByRole('button', { name: 'Answer again' })).toHaveLength(1);
+    });
+
+    it('edits a question in place and asks it again', async () => {
+        render(<AskLoreChat />);
+        ask('what abuot the oven?');
+
+        await act(async () => {
+            ai.delta('Unclear.');
+            ai.done();
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Edit and ask again' }));
+
+        const field = screen.getByLabelText('Edit your question');
+
+        fireEvent.change(field, { target: { value: 'what about the oven?' } });
+        fireEvent.keyDown(field, { key: 'Enter' });
+
+        await act(async () => {
+            ai.delta('It runs hot.');
+            ai.done();
+        });
+
+        expect(ai.asked[1].messages).toEqual([{ role: 'user', text: 'what about the oven?' }]);
+        expect(screen.queryByText('Unclear.')).toBeNull();
+        expect(screen.getByText('It runs hot.')).toBeTruthy();
+    });
+
+    it('lists saved conversations, reopens one, and starts a new one', async () => {
+        render(<AskLoreChat />);
+        ask('what about the oven?');
+
+        await act(async () => {
+            ai.delta('It runs hot.');
+            ai.done();
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'New conversation' }));
+
+        expect(screen.queryByText('It runs hot.')).toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Conversations' }));
+        fireEvent.click(
+            within(screen.getByRole('dialog', { name: 'Conversations' })).getByText(
+                'what about the oven?',
+            ),
+        );
+
+        expect(await screen.findByText('It runs hot.')).toBeTruthy();
+        expect(screen.queryByRole('dialog', { name: 'Conversations' })).toBeNull();
+    });
+
+    it('shows the sources an answer cites when its saved ids no longer resolve', async () => {
+        useStore.setState({
+            chat: [
+                { id: 'u', role: 'user', text: 'oven?' },
+                {
+                    id: 'a',
+                    role: 'ai',
+                    sources: [{ itemId: 'gone-after-reindex' }],
+                    text: 'It runs hot. [[oven-notes]]',
+                },
+            ],
+        });
+        render(<AskLoreChat />);
+
+        // Once in the sentence, once as the Sources chip read from the citation.
+        expect(screen.getAllByRole('button', { name: 'Oven notes' })).toHaveLength(2);
     });
 
     it('says why an answer failed', async () => {
