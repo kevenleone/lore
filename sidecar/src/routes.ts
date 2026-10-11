@@ -5,6 +5,7 @@ import type { BoardConfig, Item, SavedSearch } from '@lore/types';
 
 import { Elysia } from 'elysia';
 
+import { type DocumentFacts, documentItem, FrontmatterUnreadable, patchDocument } from './document';
 import { gitStatus, initGit } from './git';
 import { parseGithubTarget, resolveDocument } from './github';
 import { fetchLinkMetadata } from './linkMetadata';
@@ -13,6 +14,12 @@ import { searchPhotos, triggerDownload, UnsplashError } from './unsplash';
 import { ATTACHMENTS_DIR, hashColor } from './vault';
 import { exportVault, measureVault } from './vaultSize';
 import { Workspace, WorkspaceNotOpen } from './workspace';
+
+interface DocumentBody {
+    facts?: DocumentFacts;
+    patch?: Partial<Item>;
+    text?: unknown;
+}
 
 type NewItemBody = Omit<Item, 'createdAt' | 'id' | 'updatedAt'>;
 
@@ -408,6 +415,49 @@ export function routes(workspace: Workspace) {
                     string,
                     unknown
                 >;
+            })
+
+            /* ---------------- documents ---------------- */
+
+            /*
+             * A Markdown file opened in a window of its own. Text in, an item or
+             * text out: no path is named and nothing is read or written here, so
+             * these sit outside the workspace guard and never touch a vault.
+             */
+            .post('/documents/parse', ({ body, set }) => {
+                const { facts, text } = body as DocumentBody;
+
+                if (typeof text !== 'string' || !facts) {
+                    set.status = 400;
+
+                    return { error: 'text_required' };
+                }
+
+                return documentItem(text, facts);
+            })
+
+            .post('/documents/patch', ({ body, set }) => {
+                const { facts, patch, text } = body as DocumentBody;
+
+                if (typeof text !== 'string' || !facts) {
+                    set.status = 400;
+
+                    return { error: 'text_required' };
+                }
+
+                try {
+                    const patched = patchDocument(text, facts, patch ?? {});
+
+                    return { item: documentItem(patched, facts), text: patched };
+                } catch (error) {
+                    if (!(error instanceof FrontmatterUnreadable)) {
+                        throw error;
+                    }
+
+                    set.status = 422;
+
+                    return { error: error.message };
+                }
             })
 
             /* ---------------- unsplash ---------------- */

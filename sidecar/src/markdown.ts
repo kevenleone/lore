@@ -257,14 +257,13 @@ export interface ToItemContext {
 }
 
 /**
- * The domain object → file text. Key order is fixed so an unrelated edit never
- * reshuffles the frontmatter and produces a noisy diff.
+ * The frontmatter Lore writes for an item: which keys, in which order, and
+ * which are left out because their absence already says it.
  */
-export function serializeFile(
+export function frontmatterOf(
     item: Item,
-    relatedLinks: readonly string[],
-    extra: Record<string, unknown> = {},
-): string {
+    relatedLinks: readonly string[] = [],
+): Record<string, unknown> {
     // Key order here is the on-disk frontmatter order; sorting it would rewrite
     // every file in the vault the next time it is saved.
 
@@ -359,7 +358,19 @@ export function serializeFile(
 
     // `collectionId` is deliberately absent: the parent folder is the collection,
     // so writing it too would give us two sources of truth that could disagree.
-    Object.assign(fm, extra);
+    return fm;
+}
+
+/**
+ * The domain object → file text. Key order is fixed so an unrelated edit never
+ * reshuffles the frontmatter and produces a noisy diff.
+ */
+export function serializeFile(
+    item: Item,
+    relatedLinks: readonly string[],
+    extra: Record<string, unknown> = {},
+): string {
+    const fm = { ...frontmatterOf(item, relatedLinks), ...extra };
 
     const yaml = stringifyYaml(fm, { lineWidth: 0 }).trimEnd();
     const body = item.body?.trim() ?? '';
