@@ -92,11 +92,12 @@ What only a vault can answer is left out there: the collection, links in both
 directions, renaming the file and picking a thumbnail from disk. There is no
 delete either: the window never removes the file it is showing.
 
-Install the command from the app menu: **Lore → Install 'lore' Command in
-PATH**. It links `/usr/local/bin/lore` to a script inside the app; where that
-folder is not writable, Lore shows the `sudo` line to run rather than asking
-for a password. A dev build installs `lore-dev` and an agent build
-`lore-agent`, so each command opens its own Lore.
+Install the command from **Settings → General → Terminal**, or from the app
+menu: **Lore → Install 'lore' Command in PATH**. It links `/usr/local/bin/lore`
+to a script inside the app; where that folder is not writable, macOS asks for
+your password. Switching the setting off removes the link again. A dev build
+installs `lore-dev` and an agent build `lore-agent`, so each command opens its
+own Lore.
 
 Not there yet: relative images in a standalone file show as source rather than
 pictures, and the command and the file association are macOS-only — on Linux
