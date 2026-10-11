@@ -83,6 +83,10 @@ pub fn run() {
             sidecar::default_vault_path,
             sidecar::backup_legacy_db,
             #[cfg(target_os = "macos")]
+            cli::cli_status,
+            #[cfg(target_os = "macos")]
+            cli::set_cli_installed,
+            #[cfg(target_os = "macos")]
             window_frame::set_title_bar_height
         ])
         .on_window_event(|window, event| {
