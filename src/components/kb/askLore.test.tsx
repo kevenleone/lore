@@ -218,6 +218,36 @@ describe('AskLoreChat', () => {
         expect(screen.queryByRole('dialog', { name: 'Conversations' })).toBeNull();
     });
 
+    it('renames a conversation from the history, and Escape leaves the name alone', async () => {
+        render(<AskLoreChat />);
+        ask('what about the oven?');
+
+        await act(async () => {
+            ai.delta('It runs hot.');
+            ai.done();
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Conversations' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Rename “what about the oven?”' }));
+
+        const field = screen.getByLabelText('Conversation name');
+
+        fireEvent.change(field, { target: { value: 'Kitchen' } });
+        fireEvent.keyDown(field, { key: 'Escape' });
+
+        expect(screen.getByRole('dialog', { name: 'Conversations' })).toBeTruthy();
+        expect(screen.getByText('what about the oven?', { selector: 'span' })).toBeTruthy();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Rename “what about the oven?”' }));
+        fireEvent.change(screen.getByLabelText('Conversation name'), {
+            target: { value: 'Kitchen' },
+        });
+        fireEvent.keyDown(screen.getByLabelText('Conversation name'), { key: 'Enter' });
+
+        expect(await screen.findByText('Kitchen')).toBeTruthy();
+        expect(useStore.getState().chatThreads[0].title).toBe('Kitchen');
+    });
+
     it('shows the sources an answer cites when its saved ids no longer resolve', async () => {
         useStore.setState({
             chat: [
