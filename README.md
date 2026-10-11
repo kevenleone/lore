@@ -103,6 +103,41 @@ Not there yet: relative images in a standalone file show as source rather than
 pictures, and the command and the file association are macOS-only — on Linux
 and Windows, passing a path to the executable works but nothing installs it.
 
+## Use the vault from an agent
+
+`lore mcp` serves a vault over the [Model Context Protocol](https://modelcontextprotocol.io),
+so Claude Code, Claude Desktop, Cursor, Codex or any other MCP client can search
+it, read it and write to it.
+
+```sh
+lore mcp                  # this Lore's default vault
+lore mcp ~/Notes          # any other folder
+```
+
+```sh
+claude mcp add lore -- lore mcp ~/Notes
+```
+
+```json
+{ "mcpServers": { "lore": { "args": ["mcp", "/Users/you/Notes"], "command": "lore" } } }
+```
+
+| Tool               | What it does                                              |
+| ------------------ | --------------------------------------------------------- |
+| `search`           | Full-text search; answers with each item's id and stem    |
+| `read_item`        | One item in full, by id or by filename stem               |
+| `list_collections` | The vault's folders                                       |
+| `list_tags`        | Every tag in use, with its count                          |
+| `backlinks`        | What links to an item                                     |
+| `create_item`      | A new Markdown file, named from its title                 |
+| `update_item`      | Changes the fields passed and keeps every other key as is |
+
+It talks over stdio and opens no port. Lore does not need to be running: the
+server reads and writes the same files, and an open Lore picks the changes up
+live. It keeps an index of its own (`.lore/index-mcp.db`), so it never rebuilds
+the one the app is using. Set `LORE_MCP_READONLY=1` to leave out the two writing
+tools.
+
 ## Views
 
 The list pane renders three ways. **Table** puts collection, tags, type and age
