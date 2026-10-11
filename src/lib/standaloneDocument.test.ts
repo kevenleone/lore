@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { joinFrontmatter, splitFrontmatter } from './standaloneDocument';
+import { joinFrontmatter, splitBody, splitFrontmatter } from './standaloneDocument';
 
 const FIXTURES: Record<string, { body: string; text: string }> = {
     'a body that opens with a thematic break': {
@@ -20,6 +20,10 @@ const FIXTURES: Record<string, { body: string; text: string }> = {
         text: '---\ntitle: Rules\n---\nOne\n\n---\n\nTwo\n',
     },
     'an empty file': { body: '', text: '' },
+    'an opening fence with trailing spaces, which the engine reads as body': {
+        body: '--- \ntitle: Not frontmatter\n---\nBody\n',
+        text: '--- \ntitle: Not frontmatter\n---\nBody\n',
+    },
     'CRLF line endings': {
         body: 'Body\r\n',
         text: '---\r\ntitle: Windows\r\n---\r\nBody\r\n',
@@ -42,4 +46,31 @@ describe('splitFrontmatter', () => {
             expect(joinFrontmatter(split.prefix, split.body)).toBe(text);
         });
     }
+});
+
+describe('splitBody', () => {
+    const bodies = [
+        '',
+        'Text',
+        'Text\n',
+        '\n\nText\n\n\n',
+        '\r\n# Heading\r\n\r\nText\r\n',
+        '\n    indented code\n',
+        '  \n\t\n',
+        'One\n\nTwo  \n',
+    ];
+
+    for (const body of bodies) {
+        it(`adds back up to ${JSON.stringify(body)}`, () => {
+            const { core, lead, tail } = splitBody(body);
+
+            expect(lead + core + tail).toBe(body);
+            expect(core).toBe(core.trimEnd());
+            expect(core.startsWith('\n')).toBe(false);
+        });
+    }
+
+    it('keeps the first line of text indented as it was', () => {
+        expect(splitBody('\n    code\n')).toEqual({ core: '    code', lead: '\n', tail: '\n' });
+    });
 });

@@ -318,13 +318,6 @@ export class VaultRepository implements KnowledgeRepository {
     }
 }
 
-/** The vault the host keeps alongside the app's own data. */
-export async function defaultVaultPath(): Promise<string> {
-    const { invoke } = await import('@tauri-apps/api/core');
-
-    return invoke<string>('default_vault_path');
-}
-
 /**
  * Turns a cleared field into something JSON can carry.
  *
@@ -336,6 +329,13 @@ export async function defaultVaultPath(): Promise<string> {
  * `null` survives the wire, and the engine already treats it the way it treats
  * an absent value: falsy, so the key is simply not written back to the file.
  */
-function clearable(patch: ItemPatch): Record<string, unknown> {
+export function clearable(patch: ItemPatch): Record<string, unknown> {
     return Object.fromEntries(Object.entries(patch).map(([key, value]) => [key, value ?? null]));
+}
+
+/** The vault the host keeps alongside the app's own data. */
+export async function defaultVaultPath(): Promise<string> {
+    const { invoke } = await import('@tauri-apps/api/core');
+
+    return invoke<string>('default_vault_path');
 }
