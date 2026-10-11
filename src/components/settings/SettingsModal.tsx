@@ -83,7 +83,7 @@ const PANES: PaneDef[] = [
         icon: 'sparkle',
         id: 'capture',
         label: 'Capture & AI',
-        terms: 'ai summary summarize automatic unsplash photo thumbnail image access key stock',
+        terms: 'ai assistant model ask lore claude codex opencode anthropic openai gemini ollama api key summary summarize suggest tags unsplash photo thumbnail image access stock',
     },
     {
         Body: FocusPane,
