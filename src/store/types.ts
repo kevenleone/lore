@@ -89,6 +89,22 @@ export interface ChatSource {
     itemId: string;
 }
 
+/** A saved Ask Lore conversation, as `.lore/chats/<id>.json` holds it. */
+export interface ChatThread extends ChatThreadSummary {
+    messages: ChatMessage[];
+}
+
+/** What the history list needs of a thread, without its messages. */
+export interface ChatThreadSummary {
+    /** ISO 8601. */
+    createdAt: string;
+    id: string;
+    /** The question it opened with. */
+    title: string;
+    /** ISO 8601. */
+    updatedAt: string;
+}
+
 export interface Collection {
     color: string;
     id: string;

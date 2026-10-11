@@ -6,6 +6,8 @@
 
 import type {
     BoardConfig,
+    ChatThread,
+    ChatThreadSummary,
     Collection,
     Graph,
     Item,
@@ -56,6 +58,10 @@ export class VaultRepository implements KnowledgeRepository {
         );
     }
 
+    async deleteChat(id: string): Promise<void> {
+        await this.call(() => request(`/chats/${encodeURIComponent(id)}`, { method: 'DELETE' }));
+    }
+
     async deleteCollection(id: string): Promise<void> {
         await this.call(() =>
             request<void>(`/collections/${encodeURIComponent(id)}`, { method: 'DELETE' }),
@@ -74,6 +80,8 @@ export class VaultRepository implements KnowledgeRepository {
         this.opening = null;
     }
 
+    /* ---------------- items ---------------- */
+
     /**
      * Opens the workspace without reading anything.
      *
@@ -85,8 +93,6 @@ export class VaultRepository implements KnowledgeRepository {
         await this.ready();
     }
 
-    /* ---------------- items ---------------- */
-
     async exportTo(path: string): Promise<{ files: number; path: string }> {
         return this.call(() =>
             request<{ files: number; path: string }>('/workspace/export', {
@@ -94,6 +100,18 @@ export class VaultRepository implements KnowledgeRepository {
                 method: 'POST',
             }),
         );
+    }
+
+    async getChat(id: string): Promise<ChatThread | null> {
+        try {
+            return await this.call(() => request<ChatThread>(`/chats/${encodeURIComponent(id)}`));
+        } catch (error) {
+            if (error instanceof HttpError && error.status === 404) {
+                return null;
+            }
+
+            throw error;
+        }
     }
 
     async getItem(id: string): Promise<Item | null> {
@@ -130,6 +148,10 @@ export class VaultRepository implements KnowledgeRepository {
         return this.call(() => request<Record<string, BoardConfig>>('/boards'));
     }
 
+    listChats(): Promise<ChatThreadSummary[]> {
+        return this.call(() => request<ChatThreadSummary[]>('/chats'));
+    }
+
     async listCollections(): Promise<Collection[]> {
         return this.call(() => request<Collection[]>('/collections'));
     }
@@ -156,13 +178,13 @@ export class VaultRepository implements KnowledgeRepository {
         return this.call(() => request<Template[]>('/templates'));
     }
 
-    /* ---------------- collections ---------------- */
-
     async refreshItem(id: string): Promise<Item> {
         return this.call(() =>
             request<Item>(`/items/${encodeURIComponent(id)}/refresh`, { method: 'POST' }),
         );
     }
+
+    /* ---------------- collections ---------------- */
 
     async reindex(): Promise<ReindexResult> {
         return this.call(() => request<ReindexResult>('/workspace/reindex', { method: 'POST' }));
@@ -181,6 +203,15 @@ export class VaultRepository implements KnowledgeRepository {
         await this.call(() =>
             request<{ ok: true }>('/boards', {
                 body: JSON.stringify({ board, id }),
+                method: 'POST',
+            }),
+        );
+    }
+
+    async saveChat(thread: ChatThread): Promise<void> {
+        await this.call(() =>
+            request(`/chats/${encodeURIComponent(thread.id)}`, {
+                body: JSON.stringify(thread),
                 method: 'POST',
             }),
         );

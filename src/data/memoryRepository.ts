@@ -2,7 +2,15 @@
 // and unit tests; the Markdown-backed vaultRepository replaces it as the real
 // source of truth inside Tauri.
 
-import type { BoardConfig, Collection, Item, TagCount, View } from '../store/types';
+import type {
+    BoardConfig,
+    ChatThread,
+    ChatThreadSummary,
+    Collection,
+    Item,
+    TagCount,
+    View,
+} from '../store/types';
 
 import { SEED_COLLECTIONS, SEED_ITEMS } from '../store/seed';
 import { matchesView } from '../store/views';
@@ -17,6 +25,7 @@ import {
 
 export class MemoryRepository implements KnowledgeRepository {
     private boards: Record<string, BoardConfig> = {};
+    private chats = new Map<string, ChatThread>();
     private collections: Collection[];
     private items: Item[];
     private seq = 0;
@@ -50,6 +59,10 @@ export class MemoryRepository implements KnowledgeRepository {
         return withDerived(item);
     }
 
+    async deleteChat(id: string): Promise<void> {
+        this.chats.delete(id);
+    }
+
     async deleteCollection(id: string): Promise<void> {
         this.collections = this.collections.filter((collection) => collection.id !== id);
 
@@ -68,12 +81,22 @@ export class MemoryRepository implements KnowledgeRepository {
         }
     }
 
+    async getChat(id: string): Promise<ChatThread | null> {
+        return this.chats.get(id) ?? null;
+    }
+
     async getItem(id: string): Promise<Item | null> {
         return this.live().find((item) => item.id === id) ?? null;
     }
 
     async listBoards(): Promise<Record<string, BoardConfig>> {
         return structuredClone(this.boards);
+    }
+
+    async listChats(): Promise<ChatThreadSummary[]> {
+        return [...this.chats.values()]
+            .map(({ createdAt, id, title, updatedAt }) => ({ createdAt, id, title, updatedAt }))
+            .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
     }
 
     async listCollections(): Promise<Collection[]> {
@@ -115,6 +138,10 @@ export class MemoryRepository implements KnowledgeRepository {
         } else {
             delete this.boards[id];
         }
+    }
+
+    async saveChat(thread: ChatThread): Promise<void> {
+        this.chats.set(thread.id, thread);
     }
 
     async search(query: string): Promise<Item[]> {

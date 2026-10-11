@@ -14,6 +14,7 @@ export const COLLECTIONS_FILE = `${LORE_DIR}/collections.json`;
 export const BOARDS_FILE = `${LORE_DIR}/boards.json`;
 export const WORKSPACE_FILE = `${LORE_DIR}/workspace.json`;
 export const TEMPLATES_DIR = `${LORE_DIR}/templates`;
+export const CHATS_DIR = `${LORE_DIR}/chats`;
 
 /**
  * The index this build uses. Each mode gets its own file, so a dev build and
@@ -43,6 +44,9 @@ index*.db-wal
 index*.db-shm
 cache/
 trash/
+
+# Conversations with Ask Lore. Delete this line to keep them with the vault.
+chats/
 `;
 
 /** The patterns above, without the comments, for topping up an older vault. */

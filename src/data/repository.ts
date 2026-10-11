@@ -11,6 +11,8 @@
 
 import type {
     BoardConfig,
+    ChatThread,
+    ChatThreadSummary,
     Collection,
     Graph,
     Item,
@@ -27,6 +29,11 @@ export interface KnowledgeRepository {
     createCollection(input: NewCollection): Promise<Collection>;
     createItem(input: NewItem): Promise<Item>;
     /** Removes the collection and unfiles any items that referenced it. */
+    /**
+     * Saved Ask Lore conversations. Optional as a set: a store with nowhere to
+     * keep them answers with nothing, and the chat simply has no history.
+     */
+    deleteChat?(id: string): Promise<void>;
     deleteCollection(id: string): Promise<void>;
     deleteItem(id: string): Promise<void>;
 
@@ -38,6 +45,7 @@ export interface KnowledgeRepository {
      * to export.
      */
     exportTo?(path: string): Promise<{ files: number; path: string }>;
+    getChat?(id: string): Promise<ChatThread | null>;
     getItem(id: string): Promise<Item | null>;
 
     /**
@@ -60,6 +68,8 @@ export interface KnowledgeRepository {
      * back to the default columns.
      */
     listBoards?(): Promise<Record<string, BoardConfig>>;
+    /** Newest first, without the messages. */
+    listChats?(): Promise<ChatThreadSummary[]>;
     listCollections(): Promise<Collection[]>;
     listItems(view?: View): Promise<Item[]>;
 
@@ -98,6 +108,8 @@ export interface KnowledgeRepository {
 
     /** Replaces one board; null drops it back to `DEFAULT_BOARD`. Optional. */
     saveBoard?(id: string, board: BoardConfig | null): Promise<void>;
+
+    saveChat?(thread: ChatThread): Promise<void>;
 
     /**
      * Replaces the whole list. They are renamed and reordered as a set, so
