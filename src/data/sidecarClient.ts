@@ -101,7 +101,11 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     }
 }
 
-async function attempt<T>(path: string, init: RequestInit): Promise<T> {
+/**
+ * The response itself, for a body that is read as it arrives. No retry: a
+ * stream that failed halfway cannot be resumed by asking again.
+ */
+export async function send(path: string, init: RequestInit = {}): Promise<Response> {
     const { token, url } = await endpoint();
     // FormData sets its own Content-Type, boundary included; forcing JSON on it
     // would make the body unparseable on the other end.
@@ -120,6 +124,12 @@ async function attempt<T>(path: string, init: RequestInit): Promise<T> {
 
         throw new HttpError(res.status, messageFrom(detail) || res.statusText);
     }
+
+    return res;
+}
+
+async function attempt<T>(path: string, init: RequestInit): Promise<T> {
+    const res = await send(path, init);
 
     if (res.status === 204) {
         return undefined as T;

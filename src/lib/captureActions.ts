@@ -3,10 +3,7 @@
 
 import type { NewItem } from '../data/repository';
 
-import { MockAiProvider } from '../ai/mockAiProvider';
 import { getRepository } from '../data';
-
-export const captureAi = new MockAiProvider();
 
 /**
  * The collection the last capture was filed into.

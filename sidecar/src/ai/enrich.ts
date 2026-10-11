@@ -1,16 +1,16 @@
-import type { Item } from '@lore/types';
+import type { AiEnrichField, AiEnrichment, Item } from '@lore/types';
 
 import { z } from 'zod';
 
 import type { VaultStore } from '../index/store';
 import type { AiBackend } from './backend';
 
-import { ENRICH_SYSTEM, type EnrichField, enrichPrompt } from './prompts';
+import { ENRICH_SYSTEM, enrichPrompt } from './prompts';
 
 const MAX_TEXT_CHARACTERS = 12_000;
 const MAX_TAGS = 4;
 const MAX_POINTS = 4;
-const FIELDS: readonly EnrichField[] = ['summary', 'tags', 'title'];
+const FIELDS: readonly AiEnrichField[] = ['summary', 'tags', 'title'];
 
 const REPLY = z.object({
     points: z.array(z.string()).optional(),
@@ -22,7 +22,7 @@ const REPLY = z.object({
 export interface EnrichInput {
     item?: Item;
     text: string;
-    want: EnrichField[];
+    want: AiEnrichField[];
 }
 
 export interface Enrichment {
@@ -38,14 +38,14 @@ export async function enrich(
     store: VaultStore,
     { item, text, want }: EnrichInput,
     signal: AbortSignal,
-): Promise<Enrichment> {
+): Promise<AiEnrichment> {
     const reply = await backend.object({
         prompt: enrichPrompt(text.slice(0, MAX_TEXT_CHARACTERS), want, store.listTags()),
         schema: REPLY,
         signal,
         system: ENRICH_SYSTEM,
     });
-    const result: Enrichment = {};
+    const result: AiEnrichment = {};
 
     if (want.includes('title') && reply.title?.trim()) {
         result.title = reply.title.trim();
@@ -77,7 +77,7 @@ export function itemText(item: Item): string {
         .join('\n\n');
 }
 
-export function parseWant(value: unknown): EnrichField[] {
+export function parseWant(value: unknown): AiEnrichField[] {
     return FIELDS.filter((field) => Array.isArray(value) && value.includes(field));
 }
 

@@ -6,6 +6,30 @@ import type { ThemeId } from '../theme/themes';
 
 import { DEFAULT_DARK_THEME, DEFAULT_LIGHT_THEME } from '../theme/themes';
 
+/** One way of reaching a model, as the engine reports it. */
+export interface AiBackendStatus {
+    /** A command-line agent that is installed. Always true for an API provider. */
+    available: boolean;
+    /** Absent where no model id is safe to assume; the user names one. */
+    defaultModel?: string;
+    /** Whether a key is stored. The key itself never leaves the engine. */
+    hasKey: boolean;
+    id: string;
+    kind: 'api' | 'harness';
+    label: string;
+}
+
+export type AiEnrichField = 'summary' | 'tags' | 'title';
+
+/** What a model proposes for an item. Nothing here is written until accepted. */
+export interface AiEnrichment {
+    points?: string[];
+    summary?: string;
+    /** Never one the item already carries. */
+    tags?: string[];
+    title?: string;
+}
+
 /**
  * A board column. The `id` is what a task's `status` holds, so renaming a
  * column leaves every card where it is.
@@ -51,7 +75,11 @@ export interface CapturePreset {
 }
 
 export interface ChatMessage {
+    /** What the model is doing while the answer is still on its way. */
+    activity?: string;
+    error?: string;
     id: string;
+    pending?: boolean;
     role: 'ai' | 'user';
     sources?: ChatSource[];
     text: string;
@@ -437,6 +465,11 @@ export type SortOrder = 'newest' | 'oldest' | 'title';
  * decoration again.
  */
 export interface Switches {
+    /**
+     * Ask the chosen model for tags and a title while a capture is being typed.
+     * Off by default: it sends what is being typed to that model.
+     */
+    aiSuggest: boolean;
     autoBreak: boolean;
     /** Edit note bodies in the block editor rather than a plain textarea. */
     blockEditor: boolean;
@@ -507,6 +540,7 @@ export type ViewMode = 'cards' | 'list' | 'table';
 export type WeekStart = 'Monday' | 'Sunday';
 
 export const DEFAULT_SWITCHES: Switches = {
+    aiSuggest: false,
     autoBreak: true,
     blockEditor: false,
     counts: true,
@@ -539,6 +573,15 @@ export interface Durations {
  */
 export interface Prefs {
     accent: Accent;
+    /**
+     * Which model answers: an `AiBackendStatus` id, or null for none. Null is
+     * the default, and with it nothing is ever sent anywhere.
+     */
+    aiBackend: null | string;
+    /** Only for an OpenAI-compatible endpoint: Ollama, LM Studio, a gateway. */
+    aiBaseUrl: string;
+    /** Empty leaves the choice to the backend's own default. */
+    aiModel: string;
     appearance: Appearance;
     bannerPlacement: BannerPlacement;
     /** Collections whose children are folded away in the sidebar, by path. */
@@ -587,6 +630,9 @@ export interface Prefs {
 
 export const DEFAULT_PREFS: Prefs = {
     accent: DEFAULT_ACCENT,
+    aiBackend: null,
+    aiBaseUrl: '',
+    aiModel: '',
     appearance: 'light',
     bannerPlacement: 'inline',
     collapsedCollections: [],

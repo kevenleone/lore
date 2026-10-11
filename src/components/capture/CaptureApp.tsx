@@ -7,8 +7,9 @@
 // Lore is not the frontmost window. With Lore in front, the shortcut opens
 // `CaptureDrawer` in the main window instead.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
+import { aiSelection } from '../../ai/selection';
 import { setWorkspace } from '../../data';
 import { hideCapture, isCaptureDismissHeld, releaseCaptureDismiss } from '../../lib/captureActions';
 import { cn } from '../../lib/cn';
@@ -100,6 +101,7 @@ export function CaptureApp() {
     }, []);
 
     const theme = effectiveTheme(prefs.appearance);
+    const suggest = useMemo(() => (prefs.switches.aiSuggest ? aiSelection(prefs) : null), [prefs]);
 
     useEffect(() => {
         paintTheme({
@@ -135,6 +137,7 @@ export function CaptureApp() {
                         collectionId={prefs.defaultCollection}
                         defaultType={prefs.defaultCaptureType}
                         key={sessionKey}
+                        suggest={suggest}
                     />
                 ) : (
                     <Composer
