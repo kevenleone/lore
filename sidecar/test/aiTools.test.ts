@@ -112,7 +112,9 @@ describe('vault tools', () => {
     });
 
     it('reports a bad argument as something the model can correct', async () => {
-        expect(tool('read_item').run(store, { id: 'nowhere' })).rejects.toBeInstanceOf(ToolError);
-        expect(tool('create_item').run(store, {})).rejects.toBeInstanceOf(ToolError);
+        await expect(tool('read_item').run(store, { id: 'nowhere' })).rejects.toBeInstanceOf(
+            ToolError,
+        );
+        await expect(tool('create_item').run(store, {})).rejects.toBeInstanceOf(ToolError);
     });
 });
