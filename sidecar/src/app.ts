@@ -6,6 +6,7 @@
 
 import { Elysia } from 'elysia';
 
+import type { AiService } from './ai/service';
 import type { Config } from './config';
 
 import modes from '../../lore.modes.json';
@@ -34,7 +35,7 @@ const ALLOWED_ORIGINS = new Set([
 
 export type App = ReturnType<typeof createApp>;
 
-export function createApp(config: Config, workspace = new Workspace()) {
+export function createApp(config: Config, workspace = new Workspace(), ai?: AiService) {
     return (
         new Elysia()
             .onRequest(({ request, set }) => {
@@ -81,7 +82,7 @@ export function createApp(config: Config, workspace = new Workspace()) {
                 workspace: workspace.path,
             }))
 
-            .use(routes(workspace))
+            .use(routes(workspace, ai))
     );
 }
 
