@@ -9,6 +9,7 @@ import { AiError } from './ai/backend';
 import { chatResponse, parseMessages } from './ai/chat';
 import { enrich, itemText, parseWant } from './ai/enrich';
 import { type AiService, type BackendSelection, createAiService } from './ai/service';
+import { deleteChat, isThreadId, listChats, parseThread, readChat, writeChat } from './chats';
 import { type DocumentFacts, documentItem, FrontmatterUnreadable, patchDocument } from './document';
 import { gitStatus, initGit } from './git';
 import { parseGithubTarget, resolveDocument } from './github';
@@ -614,6 +615,50 @@ export function routes(workspace: Workspace, ai: AiService = createAiService()) 
                     { item: item ?? undefined, text, want },
                     request.signal,
                 );
+            })
+
+            /* ---------------- saved conversations ---------------- */
+
+            .get('/chats', () => listChats(workspace.current.vault))
+
+            .get('/chats/:id', async ({ params, set }) => {
+                const thread = isThreadId(params.id)
+                    ? await readChat(workspace.current.vault, params.id)
+                    : null;
+
+                if (!thread) {
+                    set.status = 404;
+
+                    return { error: 'not_found' };
+                }
+
+                return thread;
+            })
+
+            .post('/chats/:id', async ({ body, params, set }) => {
+                const thread = isThreadId(params.id) ? parseThread(params.id, body) : null;
+
+                if (!thread) {
+                    set.status = 400;
+
+                    return { error: 'a conversation needs an id and at least one message' };
+                }
+
+                await writeChat(workspace.current.vault, thread);
+
+                return thread;
+            })
+
+            .delete('/chats/:id', async ({ params, set }) => {
+                if (!isThreadId(params.id)) {
+                    set.status = 400;
+
+                    return { error: 'bad id' };
+                }
+
+                await deleteChat(workspace.current.vault, params.id);
+
+                return { ok: true };
             })
 
             /* ---------------- live updates ---------------- */
