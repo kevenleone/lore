@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.27.0](https://github.com/kevenleone/lore/compare/v1.26.0...v1.27.0) (2026-10-11)
+
+
+### Features
+
+* **host:** install and remove the lore command behind the system password prompt ([d838855](https://github.com/kevenleone/lore/commit/d838855f3c94190f326f6ffd0903db4e2f8a1c31))
+* **settings:** install the lore command from the General pane ([5b1c9a8](https://github.com/kevenleone/lore/commit/5b1c9a8a4faf4bcbf2601fdba7fdb51b8d7113c9))
+
+
+### Documentation
+
+* describe installing the lore command from Settings ([bc6612d](https://github.com/kevenleone/lore/commit/bc6612dfe0976d48cc5514eff334790d514af912))
+
 ## [1.26.0](https://github.com/kevenleone/lore/compare/v1.25.2...v1.26.0) (2026-10-11)
 
 
