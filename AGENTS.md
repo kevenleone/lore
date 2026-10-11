@@ -81,7 +81,7 @@ ephemeral port back over stdout as a handshake (`src-tauri/src/sidecar.rs`).
 **Host** (`src-tauri/`) — Rust: windows, tray, global shortcut, menus, PDF
 printing, and spawning the engine.
 
-Two seams matter more than the rest:
+Three seams matter more than the rest:
 
 - **`src/data/repository.ts`** — every store and UI interaction goes through
   `KnowledgeRepository`. `src/data/index.ts` picks `VaultRepository` inside
@@ -91,6 +91,12 @@ Two seams matter more than the rest:
 - **`src/store/views.ts`** and **`src/store/tasks.ts`** — pure selectors over
   plain item lists. Rules belong here, where they are testable without a DOM,
   not in a component.
+- **`sidecar/src/ai/`** — the model seam. `AiBackend` is implemented once for
+  API keys (the Vercel AI SDK) and once for an installed agent CLI
+  (`harness/`), and both reach the vault only through `tools.ts`, which is also
+  what `lore mcp` serves. A key is stored by the engine in the system keychain
+  and never returned over HTTP. Chat gets the reading tools only, and anything
+  a model proposes is shown before it is written. Keep all three true.
 
 ### Build modes
 

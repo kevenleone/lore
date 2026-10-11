@@ -33,7 +33,8 @@ _are_ the data. Point Lore at a git repo, edit a note in Obsidian or vim,
   own; a `[[wikilink]]` to a note that does not exist yet is preserved
   byte-for-byte and heals itself when the target appears.
 - 🔌 **Offline first, network never required.** No account, no sync service, no
-  telemetry. AI is a pluggable provider and ships as a deterministic mock.
+  telemetry. AI is off until you choose a model, and then it is the one you
+  chose: an agent already on your machine, a key of your own, or a local model.
 - 🔒 **The renderer is not trusted.** The webview gets no shell permission; the
   data engine is spawned by Rust and reached over a loopback port with a bearer
   token passed by environment variable, never argv.
@@ -50,8 +51,9 @@ _are_ the data. Point Lore at a git repo, edit a note in Obsidian or vim,
 
 The capture window is frameless, always on top, and offers both directions.
 
-**Direction A — Command bar.** Type anything; AI detects what it is, titles it,
-tags it and files it.
+**Direction A — Command bar.** Type anything; Lore works out what it is, titles
+it and files it. With a model chosen and suggestions switched on, it proposes
+tags too.
 
 ![Quick capture command bar detecting a link](docs/images/capture-command-bar.png)
 
@@ -433,13 +435,39 @@ workspace switch would land in the folder you just left.
 
 ### AI, settings, styling
 
-**AI is pluggable** (`src/ai/aiProvider.ts`). The deterministic `MockAiProvider`
-powers summaries, tag suggestions, type detection and the "Ask Lore" chat with
-zero network or keys. A real provider belongs in the data engine, so the API key
-never reaches the renderer — not yet built.
+**AI is pluggable, and lives in the data engine** (`sidecar/src/ai/`), so a
+key never reaches the renderer. One interface, `AiBackend`, has two families
+behind it:
+
+- **an installed agent** — `claude`, `codex` or `opencode`, run headless with
+  its own sign-in. Nothing to configure, and no key for Lore to hold.
+- **an API key** — Anthropic, OpenAI, Google, or any OpenAI-compatible endpoint
+  (Ollama, LM Studio, a gateway) through the Vercel AI SDK. The key is kept in
+  the system keychain by the engine; the renderer can store one and ask whether
+  one exists, never read it back.
+
+Both reach the vault through the same tools (`sidecar/src/ai/tools.ts`) that
+`lore mcp` serves to outside agents: an API model calls them in-process, and an
+agent is handed this engine as a read-only MCP server. Ask Lore can therefore
+search and read but never write, and an agent runs with its own tools switched
+off, in an empty directory, so a web page saved into the vault cannot talk the
+model into running or changing anything.
+
+What it powers:
+
+- **Ask Lore** — answers streamed from the vault, citing items as `[[stem]]`,
+  which the engine resolves into the Sources chips.
+- **Suggestions** — tags while capturing, and a summary with key points in the
+  detail pane. A suggestion is shown first and written to the file only when
+  accepted.
+
+Guessing a capture's type stays a local heuristic (`src/ai/detectType.ts`): it
+runs on every keystroke, before you have decided to keep what you typed. The
+renderer's side is `src/ai/aiProvider.ts`: `EngineAiProvider` inside Tauri, and
+a `MockAiProvider` that only matches words wherever there is no engine.
 
 **Settings is a modal sheet** (`components/settings/`) with the design's ten
-panes. Colour mode, theme style, accent, list density, text size, AI location
+panes. Colour mode, theme style, accent, list density, text size, the AI model
 and the full switch set write through the store and persist; panes that need a backend
 (devices, billing, calendar accounts) render the design's copy against
 placeholder figures.
@@ -471,7 +499,7 @@ src/
                              sidecarClient, derive
   store/                     types, seed, typeMeta, views (selectors), useStore,
                              persisted (prefs, auth, workspaces)
-  ai/                        AiProvider + MockAiProvider
+  ai/                        AiProvider: EngineAiProvider + MockAiProvider
   lib/                       format, capture helpers, workspace, linkMetadata, cn
   theme/                     tailwind.css, tokens, bootstrap
 sidecar/                     the data engine (Bun + Elysia)
