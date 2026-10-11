@@ -71,12 +71,26 @@ lore notes.md     # open one file in a window of its own
 ```
 
 A **folder** switches the main window to that vault. A **Markdown file** opens
-in a standalone window with nothing but the text: no sidebar, no list, no
-properties. It is edited in place and saved as you type, and it does not have
-to live in a vault. Frontmatter is kept byte-for-byte, and if the file changes
-on disk under unsaved edits Lore asks which copy to keep. ⌘/ flips to the
-Markdown source. Finder's **Open With → Lore** and dropping a file on the Dock
-icon do the same thing.
+in a window of its own, with no sidebar and no list: the same detail view the
+library shows for an item — title, tags, star, the rendered editor and its
+Markdown source — and the Properties panel behind its button or ⌘L. It is edited
+in place and saved as you type, and it does not have to live in a vault.
+Finder's **Open With → Lore** and dropping a file on the Dock icon do the same
+thing.
+
+The file may be anybody's, so Lore writes as little into it as it can:
+
+- Typing in the body leaves the frontmatter, and the blank lines around the
+  body, byte-for-byte as they were.
+- Changing a property writes that one key. Star a `README.md` and it gains
+  `starred: true` — not an id, dates or a title — and every other line keeps its
+  comments, order and quoting. Unstar it and the file is back as it was.
+- Frontmatter Lore cannot read is never rewritten; the edit is refused instead.
+- If the file changes on disk under unsaved edits, Lore asks which copy to keep.
+
+What only a vault can answer is left out there: the collection, links in both
+directions, renaming the file and picking a thumbnail from disk. There is no
+delete either: the window never removes the file it is showing.
 
 Install the command from the app menu: **Lore → Install 'lore' Command in
 PATH**. It links `/usr/local/bin/lore` to a script inside the app; where that
@@ -369,11 +383,13 @@ editing it never triggers a Rust rebuild.
 - `main` — the three-pane knowledge base (sidebar · list · detail/chat).
 - `capture` — the frameless Quick Capture panel toggled by **⌥Space** (registered
   in `src-tauri/src/lib.rs`; window control in `commands.rs`).
-
 - `document-*` — one per Markdown file opened from outside the app
   (`document_window.rs`). The host maps each window to its file and resolves
   every read and write from the calling window, so the webview never names a
-  path.
+  path. The window is backed by `DocumentRepository`, so it renders the
+  library's own `DetailPane` and `PropertiesPanel`; the engine converts the
+  file's text to an item and a property edit back to text
+  (`sidecar/src/document.ts`) without ever being given the path.
 
 The capture window is a separate webview with its own repository instance, so it
 follows a `workspace:changed` broadcast — otherwise the next capture after a

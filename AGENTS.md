@@ -65,10 +65,13 @@ Three processes, five kinds of window.
 window entries, each its own HTML file and root: `main`, `capture`, `document`,
 `focus`, `print` (`vite.config.ts`, `src-tauri/src/lib.rs`). `document` is the
 only one created at runtime — one window per Markdown file handed to Lore from
-outside (`src-tauri/src/open_paths.rs`). That file is not a vault item and never
-reaches the engine: the host maps the window's label to its path and resolves
-every read and write from the calling window, so the renderer never names a
-path. Keep it that way.
+outside (`src-tauri/src/open_paths.rs`). That file is not a vault item: the host
+maps the window's label to its path and resolves every read and write from the
+calling window, so the renderer never names a path, and the engine only ever
+sees the file's text (`sidecar/src/document.ts`: text in, an item or patched
+text out, nothing read or written). Keep it that way. A property edit there
+splices the one changed key into the frontmatter rather than re-serialising it,
+because the file may be anybody's.
 
 **Data engine** (`sidecar/`) — a Bun + Elysia HTTP server that owns the vault:
 reading and writing Markdown, the SQLite FTS5 index, the file watcher, link
@@ -83,7 +86,8 @@ Two seams matter more than the rest:
 - **`src/data/repository.ts`** — every store and UI interaction goes through
   `KnowledgeRepository`. `src/data/index.ts` picks `VaultRepository` inside
   Tauri and `MemoryRepository` everywhere else, which is why the UI runs in a
-  browser and in jsdom with no vault at all. Keep the interface narrow.
+  browser and in jsdom with no vault at all. A document window provides its own
+  `DocumentRepository` over its one file. Keep the interface narrow.
 - **`src/store/views.ts`** and **`src/store/tasks.ts`** — pure selectors over
   plain item lists. Rules belong here, where they are testable without a DOM,
   not in a component.
