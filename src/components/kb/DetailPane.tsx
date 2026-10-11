@@ -527,7 +527,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
 
                     {video && (
                         <VideoPlayer
-                            key={sel.id}
+                            key={`video-${sel.id}`}
                             thumbnail={previewSrc ?? videoThumbnail(video)}
                             title={sel.title}
                             video={video}
@@ -741,7 +741,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                     )}
 
                     {flags.offerSummary && !standalone && (
-                        <SummarySuggestion item={sel} key={sel.id} />
+                        <SummarySuggestion item={sel} key={`summary-${sel.id}`} />
                     )}
 
                     {/* tags */}
