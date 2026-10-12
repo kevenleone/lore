@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.28.0](https://github.com/kevenleone/lore/compare/v1.27.0...v1.28.0) (2026-10-12)
+
+
+### Features
+
+* **ai:** answer Ask Lore and suggest capture tags through the engine ([e5a3fca](https://github.com/kevenleone/lore/commit/e5a3fca8fe6acd12fcd9877f2448e16256738b3a))
+* **chat:** open cited items beside Ask Lore and preview them on hover ([5763e99](https://github.com/kevenleone/lore/commit/5763e996f9d16ab84c048d0b010bb5a8f01e9f75))
+* **chat:** rename a saved conversation ([e5ed349](https://github.com/kevenleone/lore/commit/e5ed3496008da1a2da2c266d49a60d1a22dbb0ab))
+* **chat:** render Ask Lore answers as Markdown ([9b8bc88](https://github.com/kevenleone/lore/commit/9b8bc886c602d261ab0c7fb9ab77635ce35550f6))
+* **chat:** saved conversations and per-message actions ([70995bb](https://github.com/kevenleone/lore/commit/70995bbc90a2a7362ef1f4aea986f3a71363df89))
+* **detail:** propose a summary, saved only when accepted ([23ce245](https://github.com/kevenleone/lore/commit/23ce24566b2a35c5dc0a971cfb0b9e36dd0725f5))
+* **engine:** chat and enrichment routes ([f55cd89](https://github.com/kevenleone/lore/commit/f55cd89d0759793c0cb89c63d9c12090911aabc4))
+* **engine:** expose the vault as a set of agent tools ([7c29d83](https://github.com/kevenleone/lore/commit/7c29d83f96c016b6b2dce407f6f6d03bc44a8a3b))
+* **engine:** keep Ask Lore conversations in the vault ([557c9a4](https://github.com/kevenleone/lore/commit/557c9a408c3310cecc09ea9dcc3a9e89093cb5b9))
+* **engine:** model backends for API keys and installed agent CLIs ([5cc8a02](https://github.com/kevenleone/lore/commit/5cc8a02b1dea7ce2a1a8d33d2102f6b4f8900bd5))
+* **mcp:** serve a vault over stdio with lore mcp ([2295029](https://github.com/kevenleone/lore/commit/2295029e273df21f8d93b1a1773ce1895961c288))
+* **settings:** choose the model Lore answers with ([9bb4fcb](https://github.com/kevenleone/lore/commit/9bb4fcbd105aaa4ae36e8f35c6b01d7b67226728))
+
+
+### Bug Fixes
+
+* **ai:** send an endpoint's key to that endpoint only ([afcdffb](https://github.com/kevenleone/lore/commit/afcdffb9b0bacdaee783b59ce2c599f18ad7ffbc))
+* **detail:** stop a video link stacking a player per selection ([4698e8c](https://github.com/kevenleone/lore/commit/4698e8c13b4f8a86b06bc6f88b4cb2e370f2a5ed))
+* **engine:** leave Codex and opencode nothing but the vault tools ([cf56b18](https://github.com/kevenleone/lore/commit/cf56b186fd331da556a07d2c0f4a30db0e3c8968))
+* **mcp:** refuse a collection outside the folders a user files into ([dc2a063](https://github.com/kevenleone/lore/commit/dc2a063526431f53d880e2c0d1d11e4c44851fe4))
+
+
+### Documentation
+
+* describe saved conversations ([987b63e](https://github.com/kevenleone/lore/commit/987b63eb2404338968570981f1ab394ee9df9cc4))
+* describe the model backends and what they power ([87e53aa](https://github.com/kevenleone/lore/commit/87e53aa762771b2a47a24d4aaba4beb9941e5d00))
+* describe using the vault from an agent ([5fbb8fd](https://github.com/kevenleone/lore/commit/5fbb8fd3d7bdaf4d27751d59a7b23cbbe48c71a2))
+
 ## [1.27.0](https://github.com/kevenleone/lore/compare/v1.26.0...v1.27.0) (2026-10-11)
 
 
