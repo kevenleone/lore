@@ -20,10 +20,13 @@ const API_PROVIDERS: readonly ApiDefinition[] = [
     { id: 'openai-compatible', label: 'OpenAI-compatible endpoint' },
 ];
 
+const COMPATIBLE_ENDPOINT = 'openai-compatible.endpoint';
+
 export interface AiService {
     backend(selection: BackendSelection): Promise<AiBackend>;
     clearKey(provider: string): Promise<void>;
-    setKey(provider: string, key: string): Promise<void>;
+    /** `baseUrl` is the endpoint an `openai-compatible` key is for, and required with one. */
+    setKey(provider: string, key: string, baseUrl?: string): Promise<void>;
     status(): Promise<AiBackendStatus[]>;
 }
 
@@ -63,6 +66,19 @@ export function createAiService(
                 throw new AiError('not_configured', 'Set the endpoint URL in Settings.');
             }
 
+            // The endpoint is named by the renderer on every request, and the key
+            // must not follow it to whatever address a request names.
+            if (
+                provider.id === 'openai-compatible' &&
+                apiKey &&
+                originOf(baseUrl) !== (await secrets.get(COMPATIBLE_ENDPOINT))
+            ) {
+                throw new AiError(
+                    'not_configured',
+                    'The saved API key is for another endpoint. Save it again in Settings to use it with this one.',
+                );
+            }
+
             if (provider.id !== 'openai-compatible' && !apiKey) {
                 throw new AiError(
                     'not_configured',
@@ -77,10 +93,31 @@ export function createAiService(
             return sdkBackend({ apiKey, baseUrl, model: chosen, provider: provider.id });
         },
         async clearKey(provider) {
-            await secrets.delete(apiProvider(provider).id);
+            const { id } = apiProvider(provider);
+
+            await secrets.delete(id);
+
+            if (id === 'openai-compatible') {
+                await secrets.delete(COMPATIBLE_ENDPOINT);
+            }
         },
-        async setKey(provider, key) {
-            await secrets.set(apiProvider(provider).id, key);
+        async setKey(provider, key, baseUrl) {
+            const { id } = apiProvider(provider);
+
+            if (id === 'openai-compatible') {
+                const endpoint = originOf(baseUrl);
+
+                if (!endpoint) {
+                    throw new AiError(
+                        'not_configured',
+                        'Set the endpoint URL before saving a key for it.',
+                    );
+                }
+
+                await secrets.set(COMPATIBLE_ENDPOINT, endpoint);
+            }
+
+            await secrets.set(id, key);
         },
         async status() {
             const harnesses = await Promise.all(
@@ -116,4 +153,14 @@ function apiProvider(id: string): ApiDefinition {
     }
 
     return provider;
+}
+
+function originOf(url: string | undefined): null | string {
+    try {
+        const { origin, protocol } = new URL(url ?? '');
+
+        return protocol === 'http:' || protocol === 'https:' ? origin : null;
+    } catch {
+        return null;
+    }
 }

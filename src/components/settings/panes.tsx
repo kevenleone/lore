@@ -957,6 +957,7 @@ function AiKeyRow({
     onChange: () => void;
     optional?: boolean;
 }) {
+    const baseUrl = useStore((state) => state.prefs.aiBaseUrl);
     const [draft, setDraft] = useState('');
     const [failure, setFailure] = useState<null | string>(null);
 
@@ -972,7 +973,13 @@ function AiKeyRow({
 
     const save = () => {
         if (draft.trim()) {
-            run(getAi().setKey(backend.id, draft.trim()));
+            run(
+                getAi().setKey(
+                    backend.id,
+                    draft.trim(),
+                    backend.id === 'openai-compatible' ? baseUrl : undefined,
+                ),
+            );
         }
     };
 
@@ -981,7 +988,7 @@ function AiKeyRow({
             desc={
                 failure ??
                 (optional
-                    ? 'Only if the endpoint asks for one. Kept in the system keychain, never in the vault.'
+                    ? 'Only if the endpoint asks for one, and only ever sent to the endpoint above. Kept in the system keychain, never in the vault.'
                     : 'Kept in the system keychain on this Mac, never in the vault and never shown again.')
             }
             title="API key"
