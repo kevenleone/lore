@@ -108,6 +108,20 @@ function find(store: VaultStore, reference: string): Item {
     return item;
 }
 
+// An agent names the folder, and what it read may have told it which one. Hidden
+// folders hold Lore's own files and the user's git data; `attachments` is not a collection.
+const collection = z
+    .string()
+    .refine(
+        (value) =>
+            value === '' ||
+            (!value.startsWith('/') &&
+                !value.includes('\\') &&
+                value.split('/').every((segment) => segment.trim() && !segment.startsWith('.')) &&
+                value.split('/')[0].toLowerCase() !== 'attachments'),
+        'A collection is a folder path inside the vault, like "Work/Projects".',
+    );
+
 const reference = z.string().min(1).describe("The item's id, or its filename stem.");
 
 export const VAULT_TOOLS: readonly VaultTool[] = [
@@ -183,7 +197,7 @@ export const VAULT_TOOLS: readonly VaultTool[] = [
         },
         input: {
             body: z.string().optional().describe('Markdown. Link other items with [[stem]].'),
-            collection: z.string().optional(),
+            collection: collection.optional(),
             dueAt: z
                 .string()
                 .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -235,7 +249,7 @@ export const VAULT_TOOLS: readonly VaultTool[] = [
         },
         input: {
             body: z.string().optional(),
-            collection: z.string().optional().describe('Moves the file. "" unfiles it.'),
+            collection: collection.optional().describe('Moves the file. "" unfiles it.'),
             id: reference,
             summary: z.string().optional(),
             tags: z.array(z.string()).optional(),

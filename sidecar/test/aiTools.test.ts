@@ -98,6 +98,22 @@ describe('vault tools', () => {
         expect(text).not.toContain('collection');
     });
 
+    it('refuses a collection outside the folders a user files into', async () => {
+        for (const collection of ['../elsewhere', '.lore/templates', '.git/hooks', 'attachments']) {
+            await expect(
+                tool('create_item').run(store, { collection, title: 'Planted' }),
+            ).rejects.toBeInstanceOf(ToolError);
+            await expect(
+                tool('update_item').run(store, { collection, id: 'sourdough-starter' }),
+            ).rejects.toBeInstanceOf(ToolError);
+        }
+
+        expect(store.search('Planted')).toEqual([]);
+        expect(await readFile(join(root, 'Kitchen', 'sourdough-starter.md'), 'utf8')).toContain(
+            'Feed it daily.',
+        );
+    });
+
     it('updates one field and keeps frontmatter it does not own', async () => {
         await tool('update_item').run(store, {
             id: 'sourdough-starter',
