@@ -45,8 +45,12 @@ export const opencode: Harness = {
     createParser,
     id: 'opencode-cli',
     invoke({ mcp, model, prompt, system, workdir }) {
+        // Later rules win, so this leaves the vault tools and nothing else: not
+        // the built-in ones, and not the MCP servers of the user's own config,
+        // which this is merged over.
         const config: Record<string, unknown> = {
-            permission: { bash: 'deny', edit: 'deny', webfetch: 'deny' },
+            permission: { '*': 'deny', 'lore_*': 'allow' },
+            share: 'disabled',
         };
 
         if (mcp) {
@@ -67,8 +71,9 @@ export const opencode: Harness = {
         }
 
         return {
-            args: [...args, `${system}\n\n${prompt}`],
+            args,
             env: { OPENCODE_CONFIG_CONTENT: JSON.stringify(config) },
+            stdin: `${system}\n\n${prompt}`,
         };
     },
     label: 'opencode',

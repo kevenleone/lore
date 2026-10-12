@@ -45,6 +45,21 @@ function createParser(): HarnessParser {
     };
 }
 
+// Read-only still leaves Codex a shell that can read any file and a web tool
+// that can send it anywhere, which is all a saved page would need. Written as
+// config keys because `--disable` rejects a name another version does not know.
+const WITHOUT = [
+    'apps',
+    'browser_use',
+    'code_mode_host',
+    'computer_use',
+    'image_generation',
+    'multi_agent',
+    'plugins',
+    'shell_tool',
+    'unified_exec',
+];
+
 export const codex: Harness = {
     binary: 'codex',
     createParser,
@@ -62,6 +77,9 @@ export const codex: Harness = {
             'read-only',
             '--cd',
             workdir,
+            '-c',
+            'web_search="disabled"',
+            ...WITHOUT.flatMap((feature) => ['-c', `features.${feature}=false`]),
         ];
 
         if (mcp) {

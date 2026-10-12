@@ -175,6 +175,9 @@ describe('codex', () => {
 
         expect(args[args.indexOf('--sandbox') + 1]).toBe('read-only');
         expect(args).toContain('--ignore-user-config');
+        expect(args).toContain('web_search="disabled"');
+        expect(args).toContain('features.shell_tool=false');
+        expect(args).toContain('features.unified_exec=false');
         expect(args).toContain('mcp_servers.lore.env={LORE_VAULT="/my vault"}');
         expect(args[args.length - 1]).toBe('-');
         expect(stdin).toBe('system\n\nquestion');
@@ -217,14 +220,26 @@ describe('opencode', () => {
         await expect(run).rejects.toThrow('free tier refused');
     });
 
-    it('denies its own editing, shell and fetch tools', () => {
+    it('allows the vault tools and denies every other one', () => {
         const { env } = opencode.invoke({ prompt: 'question', system: 'system', workdir: dir });
 
-        expect(JSON.parse(env?.OPENCODE_CONFIG_CONTENT ?? '{}').permission).toEqual({
-            bash: 'deny',
-            edit: 'deny',
-            webfetch: 'deny',
+        expect(Object.entries(JSON.parse(env?.OPENCODE_CONFIG_CONTENT ?? '{}').permission)).toEqual(
+            [
+                ['*', 'deny'],
+                ['lore_*', 'allow'],
+            ],
+        );
+    });
+
+    it('keeps the conversation out of the process list', () => {
+        const { args, stdin } = opencode.invoke({
+            prompt: 'what is my door code?',
+            system: 'system',
+            workdir: dir,
         });
+
+        expect(args.join(' ')).not.toContain('door code');
+        expect(stdin).toBe('system\n\nwhat is my door code?');
     });
 });
 
