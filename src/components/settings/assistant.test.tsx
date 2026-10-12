@@ -94,6 +94,29 @@ describe('the assistant settings', () => {
         await waitFor(() => expect(ai.keys.has('anthropic')).toBe(false));
     });
 
+    it('saves an endpoint’s key together with the endpoint it is for', async () => {
+        ai.backends = [
+            { ...ANTHROPIC, defaultModel: undefined, id: 'openai-compatible', label: 'Gateway' },
+        ];
+        useStore.setState({
+            prefs: {
+                ...DEFAULT_PREFS,
+                aiBackend: 'openai-compatible',
+                aiBaseUrl: 'https://gateway.example/v1',
+            },
+        });
+        render(<CapturePane />);
+
+        const field = await screen.findByLabelText('Gateway API key');
+
+        fireEvent.change(field, { target: { value: 'sk-secret' } });
+        fireEvent.keyDown(field, { key: 'Enter' });
+
+        await waitFor(() =>
+            expect(ai.endpoints.get('openai-compatible')).toBe('https://gateway.example/v1'),
+        );
+    });
+
     it('still names a chosen agent that has since been uninstalled', async () => {
         useStore.setState({ prefs: { ...DEFAULT_PREFS, aiBackend: 'codex-cli' } });
         render(<CapturePane />);

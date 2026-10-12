@@ -26,7 +26,7 @@ export interface AiProvider {
      */
     readonly needsSetup: boolean;
     /** The key is written and never read back: `status` says only that one is stored. */
-    setKey(provider: string, key: string): Promise<void>;
+    setKey(provider: string, key: string, baseUrl?: string): Promise<void>;
     status(): Promise<AiBackendStatus[]>;
 }
 

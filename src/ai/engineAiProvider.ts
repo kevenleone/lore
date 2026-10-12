@@ -61,9 +61,9 @@ export class EngineAiProvider implements AiProvider {
         });
     }
 
-    async setKey(provider: string, key: string): Promise<void> {
+    async setKey(provider: string, key: string, baseUrl?: string): Promise<void> {
         await request(`/ai/credentials/${encodeURIComponent(provider)}`, {
-            body: JSON.stringify({ key }),
+            body: JSON.stringify({ baseUrl, key }),
             method: 'POST',
         });
     }

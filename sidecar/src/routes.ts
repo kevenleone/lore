@@ -562,7 +562,7 @@ export function routes(workspace: Workspace, ai: AiService = createAiService()) 
             // The key goes in and never comes back out: `/ai/status` says only
             // whether one is stored.
             .post('/ai/credentials/:provider', async ({ body, params, set }) => {
-                const key = (body as AiBody | undefined)?.key;
+                const { baseUrl, key } = (body ?? {}) as AiBody;
 
                 if (typeof key !== 'string' || !key.trim()) {
                     set.status = 400;
@@ -570,7 +570,11 @@ export function routes(workspace: Workspace, ai: AiService = createAiService()) 
                     return { error: 'key required' };
                 }
 
-                await ai.setKey(params.provider, key.trim());
+                await ai.setKey(
+                    params.provider,
+                    key.trim(),
+                    typeof baseUrl === 'string' ? baseUrl : undefined,
+                );
 
                 return { ok: true };
             })

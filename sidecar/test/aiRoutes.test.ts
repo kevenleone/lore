@@ -174,6 +174,28 @@ describe('credentials', () => {
         expect(after.find((backend) => backend.id === 'anthropic')?.hasKey).toBe(false);
     });
 
+    it('sends an endpoint’s key to that endpoint and no other', async () => {
+        const service = createAiService(memorySecrets(), async () => null);
+        const choose = (baseUrl: string) =>
+            service.backend({ baseUrl, id: 'openai-compatible', model: 'local' });
+
+        await expect(service.setKey('openai-compatible', 'sk-secret')).rejects.toThrow(
+            'Set the endpoint URL',
+        );
+        expect((await service.status()).find(({ id }) => id === 'openai-compatible')?.hasKey).toBe(
+            false,
+        );
+
+        await service.setKey('openai-compatible', 'sk-secret', 'https://gateway.example/v1');
+
+        await expect(choose('https://gateway.example/v1/')).resolves.toBeDefined();
+        await expect(choose('https://elsewhere.example/v1')).rejects.toThrow('another endpoint');
+
+        await service.clearKey('openai-compatible');
+
+        await expect(choose('https://elsewhere.example/v1')).resolves.toBeDefined();
+    });
+
     it('lists a harness that is not installed as unavailable', async () => {
         const status = (await (await call('GET', '/ai/status')).json()) as AiBackendStatus[];
 

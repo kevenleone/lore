@@ -10,6 +10,7 @@ interface Asked {
 export class FakeAi implements AiProvider {
     asked: Asked[] = [];
     backends: AiBackendStatus[] = [];
+    endpoints = new Map<string, string | undefined>();
     enriched: EnrichRequest[] = [];
     keys = new Map<string, string>();
     readonly needsSetup = true;
@@ -61,7 +62,8 @@ export class FakeAi implements AiProvider {
         this.reject?.(new Error(message));
     }
 
-    async setKey(provider: string, key: string): Promise<void> {
+    async setKey(provider: string, key: string, baseUrl?: string): Promise<void> {
+        this.endpoints.set(provider, baseUrl);
         this.keys.set(provider, key);
         this.backends = this.backends.map((backend) =>
             backend.id === provider ? { ...backend, hasKey: true } : backend,
