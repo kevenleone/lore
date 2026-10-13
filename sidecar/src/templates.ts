@@ -6,14 +6,12 @@
 // and a template's folder is `.lore/templates`, so where its items land has to
 // be said outright.
 
-import type { ItemType, Template } from '@lore/types';
+import type { Template } from '@lore/types';
 
 import { readdir } from 'node:fs/promises';
 
-import { parseFile } from './markdown';
+import { itemTypeOf, parseFile } from './markdown';
 import { isIgnoredFile, TEMPLATES_DIR, type Vault } from './vault';
-
-const ITEM_TYPES: ItemType[] = ['link', 'note', 'task', 'code', 'image', 'canvas'];
 
 export async function listTemplates(vault: Vault): Promise<Template[]> {
     const files = await templateFiles(vault);
@@ -40,7 +38,6 @@ export async function readTemplate(vault: Vault, filename: string): Promise<null
     }
 
     const { body, data, extra } = parseFile(raw);
-    const rawType = data.type;
 
     return {
         body,
@@ -51,7 +48,7 @@ export async function readTemplate(vault: Vault, filename: string): Promise<null
             ? data.tags.filter((tag): tag is string => typeof tag === 'string' && !!tag.trim())
             : [],
         title: text(data.title),
-        type: (ITEM_TYPES as string[]).includes(String(rawType)) ? (rawType as ItemType) : 'note',
+        type: itemTypeOf(data.type),
     };
 }
 
