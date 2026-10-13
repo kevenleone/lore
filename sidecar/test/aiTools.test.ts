@@ -134,3 +134,61 @@ describe('vault tools', () => {
         await expect(tool('create_item').run(store, {})).rejects.toBeInstanceOf(ToolError);
     });
 });
+
+describe('a sketch', () => {
+    const SKETCH = `---
+title: System sketch
+type: canvas
+excalidraw-plugin: parsed
+---
+
+## Text
+
+- API gateway
+
+## Drawing
+
+\`\`\`json
+{ "elements": [{ "id": "a", "strokeColor": "#1e1e1e", "text": "API gateway", "type": "text" }] }
+\`\`\`
+`;
+
+    beforeEach(async () => {
+        await writeFile(join(root, 'system-sketch.md'), SKETCH);
+        await store.reconcile();
+    });
+
+    it('is found by a label and not by what the scene is made of', () => {
+        expect(store.search('gateway').map((item) => item.type)).toEqual(['canvas']);
+        expect(store.search('strokeColor')).toEqual([]);
+    });
+
+    it('is read as its labels, so the scene does not spend the body budget', async () => {
+        const read = (await tool('read_item').run(store, { id: 'system-sketch' })) as {
+            body: string;
+            snippet: string;
+        };
+
+        expect(read.body).toBe('API gateway');
+        expect(read.snippet).toBe('API gateway');
+    });
+
+    it('cannot be drawn or overwritten by a model', async () => {
+        await expect(
+            tool('create_item').run(store, { title: 'Drawn', type: 'canvas' }),
+        ).rejects.toBeInstanceOf(ToolError);
+        await expect(
+            tool('update_item').run(store, { body: 'A paragraph.', id: 'system-sketch' }),
+        ).rejects.toBeInstanceOf(ToolError);
+    });
+
+    it('keeps its drawing and its unknown keys through a retag', async () => {
+        await tool('update_item').run(store, { id: 'system-sketch', tags: ['architecture'] });
+
+        const text = await readFile(join(root, 'system-sketch.md'), 'utf8');
+
+        expect(text).toContain('excalidraw-plugin: parsed');
+        expect(text).toContain('type: canvas');
+        expect(text).toContain('"strokeColor": "#1e1e1e"');
+    });
+});

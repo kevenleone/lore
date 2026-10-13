@@ -1,5 +1,6 @@
 import type { Item } from '@lore/types';
 
+import { deriveSearchText } from '@lore/derive';
 import { z } from 'zod';
 
 import type { VaultStore } from '../index/store';
@@ -81,7 +82,7 @@ function defineTool<TShape extends z.ZodRawShape>(definition: ToolDefinition<TSh
 }
 
 function detail(item: Item): Record<string, unknown> {
-    const body = item.body ?? '';
+    const body = deriveSearchText(item);
 
     return {
         ...toSummary(item),
@@ -220,6 +221,11 @@ export const VAULT_TOOLS: readonly VaultTool[] = [
             const patch: Partial<Item> = {};
 
             if (changes.body !== undefined) {
+                // A sketch's body is its scene; a model's prose would replace the drawing.
+                if (item.type === 'canvas') {
+                    throw new ToolError('A canvas item is drawn in Lore; its body cannot be set.');
+                }
+
                 patch.body = changes.body;
             }
 
