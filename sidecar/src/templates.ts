@@ -13,7 +13,7 @@ import { readdir } from 'node:fs/promises';
 import { parseFile } from './markdown';
 import { isIgnoredFile, TEMPLATES_DIR, type Vault } from './vault';
 
-const ITEM_TYPES: ItemType[] = ['link', 'note', 'task', 'code', 'image'];
+const ITEM_TYPES: ItemType[] = ['link', 'note', 'task', 'code', 'image', 'canvas'];
 
 export async function listTemplates(vault: Vault): Promise<Template[]> {
     const files = await templateFiles(vault);

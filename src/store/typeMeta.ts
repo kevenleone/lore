@@ -17,6 +17,13 @@ export interface TypeMeta {
 }
 
 export const TYPE_META: Record<ItemType, TypeMeta> = {
+    canvas: {
+        bg: 'var(--type-canvas-bg)',
+        chip: 'bg-type-canvas-bg text-type-canvas-fg',
+        chipFg: 'text-type-canvas-fg',
+        fg: 'var(--type-canvas-fg)',
+        label: 'Canvas',
+    },
     code: {
         bg: 'var(--type-code-bg)',
         chip: 'bg-type-code-bg text-type-code-fg',

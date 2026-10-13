@@ -10,6 +10,7 @@ const PATHS: Record<IconName, string> = {
     board: '<path d="M4 4h5.2v16H4z"></path><path d="M14.8 4H20v10h-5.2z"></path>',
     calendar:
         '<rect x="3" y="5" width="18" height="16" rx="2.5"></rect><line x1="3" y1="9.5" x2="21" y2="9.5"></line><line x1="8" y1="3" x2="8" y2="7"></line><line x1="16" y1="3" x2="16" y2="7"></line>',
+    canvas: '<path d="M4 20c2.2 0 3.2-1.2 3.2-2.8 0-1.4 1-2.4 2.4-2.4s2.4 1 2.4 2.4"></path><path d="m12.6 13.4 6.8-8.6a1.5 1.5 0 0 1 2.3 1.9l-7 8.4"></path>',
     code: '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>',
     file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path>',
     globe: '<path d="M12 3.4a8.6 8.6 0 1 1 0 17.2 8.6 8.6 0 0 1 0-17.2z"></path><path d="M3.6 12h16.8"></path><path d="M12 3.4a13 13 0 0 1 0 17.2 13 13 0 0 1 0-17.2z"></path>',

@@ -292,7 +292,7 @@ export interface ItemSource {
     ref: string;
 }
 
-export type ItemType = 'code' | 'image' | 'link' | 'note' | 'task';
+export type ItemType = 'canvas' | 'code' | 'image' | 'link' | 'note' | 'task';
 
 /** A task's checklist tally, derived from its body and never persisted. */
 export interface SubtaskCount {
@@ -410,8 +410,11 @@ export interface View {
 export type ViewKind =
     'all' | 'collection' | 'files' | 'inbox' | 'links' | 'notes' | 'starred' | 'tag' | 'today';
 
+/** The order every type picker lists them in: Note first, then alphabetical. */
+export const ITEM_TYPES: ItemType[] = ['note', 'canvas', 'code', 'image', 'link', 'task'];
+
 /** The item types the `files` view gathers. */
-export const FILE_TYPES: ItemType[] = ['code', 'image'];
+export const FILE_TYPES: ItemType[] = ['canvas', 'code', 'image'];
 
 /**
  * Lore's accent palette (`Lore Settings.dc.html` → Look & Feel → Accent).

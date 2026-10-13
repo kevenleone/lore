@@ -91,7 +91,7 @@
     --color-alert-warning-fg: var(--alert-warning-fg);
     --color-alert-caution-fg: var(--alert-caution-fg);
 
-    /* Per-type chips (link / note / task / code / image). */
+    /* Per-type chips (link / note / task / code / image / canvas). */
     --color-type-link-bg: var(--type-link-bg);
     --color-type-link-fg: var(--type-link-fg);
     --color-type-note-bg: var(--type-note-bg);
@@ -102,6 +102,8 @@
     --color-type-code-fg: var(--type-code-fg);
     --color-type-image-bg: var(--type-image-bg);
     --color-type-image-fg: var(--type-image-fg);
+    --color-type-canvas-bg: var(--type-canvas-bg);
+    --color-type-canvas-fg: var(--type-canvas-fg);
 
     /* The token values are complete box-shadow strings. */
     --shadow-float: var(--float-shadow);
