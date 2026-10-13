@@ -13,4 +13,9 @@ if (!existsSync(from)) {
 }
 
 rmSync(to, { force: true, recursive: true });
-cpSync(from, to, { recursive: true });
+cpSync(from, to, {
+    // The CJK handwriting font is 12 MB of the 13; those labels fall back to a
+    // system font instead.
+    filter: (source) => !source.split(/[\\/]/).includes('Xiaolai'),
+    recursive: true,
+});
