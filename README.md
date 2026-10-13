@@ -369,6 +369,11 @@ drawing's labels, which is what search and the list preview read; the scene's
 JSON is never indexed. If the `json` block stops parsing, the sketch opens
 read-only and the file is not touched until you fix it.
 
+**Sharing one.** The canvas's **Share** button copies the drawing in the form
+excalidraw.com pastes, or saves it as a `.excalidraw` file or an SVG. Nothing is
+uploaded; what you hand over is a snapshot, and edits made to it elsewhere do
+not come back.
+
 Not there yet: images inside a sketch, a thumbnail in the list, and printing.
 
 ### Documents that live somewhere else
