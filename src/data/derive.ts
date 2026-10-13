@@ -4,6 +4,7 @@
 
 import type { Item, SubtaskCount } from '../store/types';
 
+import { canvasText } from '../lib/canvas-body';
 import { parseSubtasks, stripSubtasks } from '../lib/subtasks';
 import { firstPlainLine } from './plainText';
 
@@ -35,12 +36,28 @@ export function deriveProse(body: string | undefined): string | undefined {
 }
 
 /**
+ * What full-text search reads as the body. A sketch answers with its labels:
+ * the scene around them is JSON, and indexing it would match `strokeColor`.
+ */
+export function deriveSearchText(item: Pick<Item, 'body' | 'type'>): string {
+    if (item.type === 'canvas') {
+        return canvasText(item.body);
+    }
+
+    return item.body ?? '';
+}
+
+/**
  * The one-line preview the list pane shows. A link with no notes of its own
  * falls back to what the page says about itself, then the URL.
  */
 export function deriveSnippet(
     item: Pick<Item, 'body' | 'description' | 'type' | 'url'>,
 ): string | undefined {
+    if (item.type === 'canvas') {
+        return deriveSearchText(item).replace(/\n/g, ' · ').slice(0, SNIPPET_MAX) || undefined;
+    }
+
     const body = item.body?.trim();
 
     if (body) {

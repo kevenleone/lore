@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { deriveSnippet } from './derive';
+import { EMPTY_CANVAS_BODY, writeCanvasBody } from '../lib/canvas-body';
+import { deriveSearchText, deriveSnippet } from './derive';
 
 const task = (body: string) => deriveSnippet({ body, type: 'task' });
 
@@ -46,5 +47,26 @@ describe('deriveSnippet strips Markdown', () => {
 
     it('reads a wikilink as its target', () => {
         expect(snippet('Related to [[some note|that note]]')).toBe('Related to that note');
+    });
+});
+
+describe('a sketch', () => {
+    const body = writeCanvasBody(undefined, {
+        appState: {},
+        elements: [
+            { id: 'a', text: 'API gateway', type: 'text' },
+            { id: 'b', strokeColor: '#1e1e1e', type: 'rectangle' },
+            { id: 'c', text: 'Queue', type: 'text' },
+        ],
+    });
+
+    it('is previewed by its labels, never by its scene', () => {
+        expect(deriveSnippet({ body, type: 'canvas' })).toBe('API gateway · Queue');
+        expect(deriveSnippet({ body: EMPTY_CANVAS_BODY, type: 'canvas' })).toBeUndefined();
+    });
+
+    it('is searched by its labels alone', () => {
+        expect(deriveSearchText({ body, type: 'canvas' })).toBe('API gateway\nQueue');
+        expect(deriveSearchText({ body, type: 'note' })).toContain('strokeColor');
     });
 });
