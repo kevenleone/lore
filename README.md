@@ -124,21 +124,22 @@ claude mcp add lore -- lore mcp ~/Notes
 { "mcpServers": { "lore": { "args": ["mcp", "/Users/you/Notes"], "command": "lore" } } }
 ```
 
-| Tool               | What it does                                              |
-| ------------------ | --------------------------------------------------------- |
-| `search`           | Full-text search; answers with each item's id and stem    |
-| `read_item`        | One item in full, by id or by filename stem               |
-| `list_collections` | The vault's folders                                       |
-| `list_tags`        | Every tag in use, with its count                          |
-| `backlinks`        | What links to an item                                     |
-| `create_item`      | A new Markdown file, named from its title                 |
-| `update_item`      | Changes the fields passed and keeps every other key as is |
+| Tool               | What it does                                               |
+| ------------------ | ---------------------------------------------------------- |
+| `search`           | Full-text search; answers with each item's id and stem     |
+| `read_item`        | One item in full, by id or by filename stem                |
+| `list_collections` | The vault's folders                                        |
+| `list_tags`        | Every tag in use, with its count                           |
+| `backlinks`        | What links to an item                                      |
+| `create_item`      | A new Markdown file, named from its title                  |
+| `update_item`      | Changes the fields passed and keeps every other key as is  |
+| `add_to_canvas`    | Draws shapes and arrows into a sketch, below what is there |
 
 It talks over stdio and opens no port. Lore does not need to be running: the
 server reads and writes the same files, and an open Lore picks the changes up
 live. It keeps an index of its own (`.lore/index-mcp.db`), so it never rebuilds
-the one the app is using. Set `LORE_MCP_READONLY=1` to leave out the two writing
-tools.
+the one the app is using. Set `LORE_MCP_READONLY=1` to leave out the three
+writing tools.
 
 ## Views
 
