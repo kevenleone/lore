@@ -7,10 +7,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import type { FilterFacet, ItemType } from '../../store/types';
+import type { FilterFacet } from '../../store/types';
 
 import { cn } from '../../lib/cn';
 import { TYPE_META } from '../../store/typeMeta';
+import { ITEM_TYPES } from '../../store/types';
 import { useStore } from '../../store/useStore';
 import { activeFilterCount, tagCounts } from '../../store/views';
 import { ChevronDown } from '../common/glyphs';
@@ -18,7 +19,7 @@ import { ChevronDown } from '../common/glyphs';
 /** Which popover is open, or `date` for the two date inputs. */
 type MenuId = 'date' | FilterFacet;
 
-const CATEGORIES = Object.keys(TYPE_META) as ItemType[];
+const CATEGORIES = ITEM_TYPES;
 
 export function FilterBar() {
     const items = useStore((state) => state.items);
