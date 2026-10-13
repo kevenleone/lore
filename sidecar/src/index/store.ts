@@ -12,7 +12,13 @@ import type {
 } from '@lore/types';
 import type { Database } from 'bun:sqlite';
 
-import { deriveDomain, deriveProse, deriveSnippet, deriveSubtaskCounts } from '@lore/derive';
+import {
+    deriveDomain,
+    deriveProse,
+    deriveSearchText,
+    deriveSnippet,
+    deriveSubtaskCounts,
+} from '@lore/derive';
 import { mkdir, rm, rmdir, stat } from 'node:fs/promises';
 
 import { parseGithubTarget, resolveDocument } from '../github';
@@ -273,7 +279,8 @@ export class VaultStore {
             return null;
         }
 
-        const body = row.body.trim();
+        const type = this.getItem(id)?.type ?? 'note';
+        const body = deriveSearchText({ body: row.body, type }).trim();
 
         return {
             backlinks: this.inboundIds(id)
@@ -708,7 +715,7 @@ export class VaultStore {
             ],
         );
         this.writeLinks(id, parsed.data.related, ids, row.body);
-        this.writeFts(id, item, row.body);
+        this.writeFts(id, item, deriveSearchText({ body: row.body, type: item.type }));
 
         return row;
     }
