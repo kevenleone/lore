@@ -25,3 +25,6 @@ dist-ssr
 
 # Compiled sidecar binaries — rebuilt by `pnpm build:sidecar`, ~65 MB each.
 src-tauri/binaries/
+
+# Excalidraw's fonts, copied out of node_modules by scripts/excalidraw-fonts.mjs.
+public/excalidraw/
