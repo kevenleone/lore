@@ -14,7 +14,7 @@ import type {
 
 import { SEED_COLLECTIONS, SEED_ITEMS } from '../store/seed';
 import { matchesView } from '../store/views';
-import { withDerived, withoutBody } from './derive';
+import { deriveSearchText, withDerived, withoutBody } from './derive';
 import {
     type CollectionPatch,
     type ItemPatch,
@@ -155,7 +155,7 @@ export class MemoryRepository implements KnowledgeRepository {
             const haystack = [
                 item.title,
                 item.domain ?? '',
-                item.body ?? '',
+                deriveSearchText(item),
                 item.url ?? '',
                 item.summary ?? '',
                 item.tags.join(' '),
