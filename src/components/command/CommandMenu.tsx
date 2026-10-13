@@ -362,6 +362,13 @@ function useCommands(): CommandEntry[] {
                 terms: 'new create add note link task',
             },
             {
+                icon: <Icon name="canvas" size={14} />,
+                id: 'new-sketch',
+                label: 'New sketch',
+                run: () => void store().createCanvas(),
+                terms: 'canvas draw drawing diagram whiteboard excalidraw',
+            },
+            {
                 icon: <Icon name="sun" size={14} />,
                 id: 'daily-note',
                 keys: formatHotkey(hotkeyFor('daily-note')),

@@ -16,6 +16,7 @@ import { getRepository } from '../data';
 import { setWorkspace } from '../data';
 import { defaultVaultPath } from '../data/vaultRepository';
 import { formatTime } from '../lib/calendar';
+import { EMPTY_CANVAS_BODY } from '../lib/canvas-body';
 import { exportPdf, pdfFileName, pickPdfPath } from '../lib/exportPdf';
 import { primeChime } from '../lib/focusChime';
 import { ensureNotificationPermission, notifyIntervalEnd } from '../lib/focusNotify';
@@ -242,6 +243,8 @@ interface StoreState {
     closeTask: () => void;
     collections: Collection[];
     commandMenuOpen: boolean;
+    /** Writes an empty sketch and opens it as a page, ready to draw on. */
+    createCanvas: () => Promise<void>;
     createCollection: (input: NewCollection) => Promise<void>;
     /** Writes the item a template describes and opens it for editing. */
     createFromTemplate: (name: string) => Promise<void>;
@@ -1215,6 +1218,22 @@ export const useStore = create<StoreState>((set, get) => ({
 
     collections: [],
     commandMenuOpen: false,
+    async createCanvas() {
+        try {
+            const item = await get().createItem({
+                body: EMPTY_CANVAS_BODY,
+                flags: {},
+                related: [],
+                tags: [],
+                title: `Sketch ${dayKey(new Date())}`,
+                type: 'canvas',
+            });
+
+            get().openItemPage(item.id);
+        } catch (e) {
+            get().pushToast(e instanceof Error ? e.message : 'The sketch could not be created.');
+        }
+    },
     async createCollection(input) {
         await getRepository().createCollection(input);
         await get().refresh();

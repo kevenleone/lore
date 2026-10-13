@@ -3,7 +3,7 @@
 // (note/task/code), the AI summary, editable tags, and related items.
 // Supports star (flag), delete-with-confirmation, edit, and add/remove tags.
 
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 
 import type { Subtask } from '../../lib/subtasks';
 import type { ImageCredit, Item, OpenMode } from '../../store/types';
@@ -53,6 +53,14 @@ import { ItemBanner } from './ItemBanner';
 import { RelatedCards } from './RelatedCards';
 import { SummarySuggestion } from './SummarySuggestion';
 import { VideoPlayer } from './VideoPlayer';
+
+// Its own chunk: Excalidraw is larger than the rest of the window put together.
+const CanvasEditor = lazy(() =>
+    import('../canvas/CanvasEditor').then((module) => ({ default: module.CanvasEditor })),
+);
+
+const CANVAS_BOX = 'mt-5 h-[520px]';
+const CANVAS_BOX_PAGE = 'h-[calc(100vh-260px)] min-h-[420px]';
 
 /** The pane's own section headings (Tags, Related). */
 const SECTION_LABEL = 'text-caption font-[680] tracking-[.06em] text-faint uppercase';
@@ -182,6 +190,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     // the page's own blurb, so it seeds that field until the first edit, which
     // writes the body and drops the scalar — the two never both hold text.
     const isLink = sel.type === 'link';
+    const isCanvas = sel.type === 'canvas' && !virtual;
     const bodyValue =
         bodyField === 'body'
             ? isTask
@@ -325,6 +334,8 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                         asPage || standalone
                             ? 'px-[max(48px,calc((100%-700px)/2))] py-[34px]'
                             : 'px-[34px] py-7',
+                        // A sketch wants the window's width, not a reading measure.
+                        isCanvas && (asPage || standalone) && 'px-12',
                     )}
                 >
                     {/* header row: wraps, so a narrow pane never pushes Close out of reach */}
@@ -569,7 +580,21 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                         sel.imageCredit && <PhotoCredit credit={sel.imageCredit} />}
 
                     {/* body: a virtual document reads, everything else edits */}
-                    {virtual ? (
+                    {isCanvas ? (
+                        bodyLoaded && (
+                            <Suspense fallback={<div className={CANVAS_BOX} />}>
+                                <CanvasEditor
+                                    body={sel.body}
+                                    className={cn(
+                                        CANVAS_BOX,
+                                        (asPage || standalone) && CANVAS_BOX_PAGE,
+                                    )}
+                                    key={sel.id}
+                                    onCommit={writeBody}
+                                />
+                            </Suspense>
+                        )
+                    ) : virtual ? (
                         <DocumentView className="mt-5" markdown={sel.body ?? ''} />
                     ) : useBlockEditor ? (
                         <BodyEditor
