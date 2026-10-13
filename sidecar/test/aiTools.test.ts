@@ -31,6 +31,12 @@ afterEach(async () => {
     await rm(root, { force: true, recursive: true });
 });
 
+function sceneOf(file: string): Record<string, unknown>[] {
+    const json = /```json\n([\s\S]*?)\n```/.exec(file)?.[1] ?? '';
+
+    return JSON.parse(json).elements;
+}
+
 function tool(name: string): VaultTool {
     const found = toolsFor('write').find((candidate) => candidate.name === name);
 
@@ -173,13 +179,118 @@ excalidraw-plugin: parsed
         expect(read.snippet).toBe('API gateway');
     });
 
-    it('cannot be drawn or overwritten by a model', async () => {
-        await expect(
-            tool('create_item').run(store, { title: 'Drawn', type: 'canvas' }),
-        ).rejects.toBeInstanceOf(ToolError);
+    it('cannot have its drawing overwritten with a body', async () => {
         await expect(
             tool('update_item').run(store, { body: 'A paragraph.', id: 'system-sketch' }),
         ).rejects.toBeInstanceOf(ToolError);
+        await expect(
+            tool('create_item').run(store, { body: 'Boxes.', title: 'Drawn', type: 'canvas' }),
+        ).rejects.toBeInstanceOf(ToolError);
+    });
+
+    it('is created empty and then drawn into', async () => {
+        await tool('create_item').run(store, { title: 'Pipeline', type: 'canvas' });
+
+        const drawn = (await tool('add_to_canvas').run(store, {
+            arrows: [{ from: 'in', label: 'push', to: 'out' }],
+            id: 'pipeline',
+            shapes: [
+                { key: 'in', label: 'Ingest' },
+                { color: 'blue', key: 'out', kind: 'ellipse', label: 'Queue' },
+            ],
+        })) as { added: unknown; body: string };
+
+        expect(drawn.added).toEqual({ arrows: 1, shapes: 2 });
+        expect(drawn.body).toBe('Ingest\nQueue\npush');
+
+        const elements = sceneOf(await readFile(join(root, 'pipeline.md'), 'utf8'));
+        const [box, , ellipse, , arrow, arrowLabel] = elements;
+
+        expect(elements.map((element) => element.type)).toEqual([
+            'rectangle',
+            'text',
+            'ellipse',
+            'text',
+            'arrow',
+            'text',
+        ]);
+        expect(ellipse.backgroundColor).toBe('#a5d8ff');
+        expect(arrow.startBinding).toMatchObject({ elementId: box.id });
+        expect(arrow.endBinding).toMatchObject({ elementId: ellipse.id });
+        expect(arrowLabel.containerId).toBe(arrow.id);
+        expect(box.boundElements).toContainEqual({ id: arrow.id, type: 'arrow' });
+        expect(Number(ellipse.x)).toBeGreaterThan(Number(box.x) + Number(box.width));
+    });
+
+    it('adds below what is drawn and leaves it as it was', async () => {
+        await tool('create_item').run(store, { title: 'Pipeline', type: 'canvas' });
+        await tool('add_to_canvas').run(store, {
+            id: 'pipeline',
+            shapes: [{ key: 'in', label: 'Ingest' }],
+        });
+
+        const before = sceneOf(await readFile(join(root, 'pipeline.md'), 'utf8'));
+
+        await tool('add_to_canvas').run(store, {
+            arrows: [{ from: 'ingest', to: 'store' }],
+            id: 'pipeline',
+            shapes: [{ key: 'store', kind: 'diamond', label: 'Store' }],
+        });
+
+        const after = sceneOf(await readFile(join(root, 'pipeline.md'), 'utf8'));
+        const [box, label, diamond] = after;
+
+        expect(label).toEqual(before[1]);
+        expect({ ...box, boundElements: 0, version: 0, versionNonce: 0 }).toEqual({
+            ...before[0],
+            boundElements: 0,
+            version: 0,
+            versionNonce: 0,
+        });
+        expect(Number(diamond.y)).toBeGreaterThan(Number(box.y) + Number(box.height));
+        expect(after[4].startBinding).toMatchObject({ elementId: box.id });
+    });
+
+    it('refuses what it cannot place, and writes nothing', async () => {
+        const untouched = await readFile(join(root, 'system-sketch.md'), 'utf8');
+        const draw = (input: object): Promise<unknown> =>
+            tool('add_to_canvas').run(store, { id: 'system-sketch', ...input });
+
+        await expect(draw({})).rejects.toBeInstanceOf(ToolError);
+        await expect(draw({ arrows: [{ from: 'nowhere', to: 'API gateway' }] })).rejects.toThrow(
+            'No shape with the key or label "nowhere"',
+        );
+        await expect(
+            draw({
+                shapes: [
+                    { column: 1, key: 'a', label: 'One', row: 1 },
+                    { column: 1, key: 'b', label: 'Two', row: 1 },
+                ],
+            }),
+        ).rejects.toThrow('column 1, row 1');
+        await expect(
+            tool('add_to_canvas').run(store, {
+                id: 'oven-notes',
+                shapes: [{ key: 'a', label: 'One' }],
+            }),
+        ).rejects.toThrow('not a canvas');
+
+        expect(await readFile(join(root, 'system-sketch.md'), 'utf8')).toBe(untouched);
+    });
+
+    it('is left alone when its drawing cannot be read', async () => {
+        const broken = SKETCH.replace('{ "elements"', '{ "elements');
+
+        await writeFile(join(root, 'system-sketch.md'), broken);
+        await store.reconcile();
+
+        await expect(
+            tool('add_to_canvas').run(store, {
+                id: 'system-sketch',
+                shapes: [{ key: 'a', label: 'One' }],
+            }),
+        ).rejects.toThrow('cannot be read');
+        expect(await readFile(join(root, 'system-sketch.md'), 'utf8')).toBe(broken);
     });
 
     it('keeps its drawing and its unknown keys through a retag', async () => {
