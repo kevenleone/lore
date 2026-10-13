@@ -21,6 +21,7 @@ mod app_menu;
 mod cli;
 mod commands;
 mod document_window;
+mod export_file;
 mod focus_tray;
 mod mode;
 mod open_paths;
@@ -75,6 +76,7 @@ pub fn run() {
             document_window::read_document,
             document_window::reveal_document,
             document_window::write_document,
+            export_file::write_export,
             open_paths::take_pending_workspace,
             print_pdf::export_webview_pdf,
             focus_tray::focus_snapshot,

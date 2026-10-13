@@ -61,6 +61,10 @@ export async function exportPdf(payload: PrintPayload, destination: string): Pro
     }
 }
 
+export function exportStem(item: { path?: string; title: string }): string {
+    return item.path ? fileStem(item.path) : slugify(item.title);
+}
+
 /**
  * What the save panel offers.
  *
@@ -70,9 +74,7 @@ export async function exportPdf(payload: PrintPayload, destination: string): Pro
  * files behind it has to fall back to slugging the title here.
  */
 export function pdfFileName(item: { path?: string; title: string }): string {
-    const stem = item.path ? fileStem(item.path) : slugify(item.title);
-
-    return `${stem || 'untitled'}.pdf`;
+    return `${exportStem(item) || 'untitled'}.pdf`;
 }
 
 /** Opens the native save panel. Resolves to null when the user cancels. */
