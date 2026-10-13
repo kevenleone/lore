@@ -11,6 +11,7 @@ import type { ImageCredit, Item, OpenMode } from '../../store/types';
 import { openExternal } from '../../lib/appInfo';
 import { useAssetSrc } from '../../lib/assetSrc';
 import { cn } from '../../lib/cn';
+import { exportStem } from '../../lib/exportPdf';
 import { formatRelative, formatSavedDate } from '../../lib/format';
 import { formatHotkey, hotkeyFor } from '../../lib/hotkeys';
 import { useImageFallback } from '../../lib/imageFallback';
@@ -589,6 +590,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                         CANVAS_BOX,
                                         (asPage || standalone) && CANVAS_BOX_PAGE,
                                     )}
+                                    exportName={exportStem(sel)}
                                     key={sel.id}
                                     onCommit={writeBody}
                                 />
