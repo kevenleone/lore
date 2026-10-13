@@ -1,13 +1,18 @@
 import type { Item } from '@lore/types';
 
+import { EMPTY_CANVAS_BODY, parseCanvasBody, writeCanvasBody } from '@lore/canvas';
 import { deriveSearchText } from '@lore/derive';
 import { z } from 'zod';
 
 import type { VaultStore } from '../index/store';
 
 import { stemOf } from '../vault';
+import { DrawError, drawOnto, SHAPE_COLORS, SHAPE_KINDS } from './draw';
 
-const ITEM_TYPES = ['note', 'link', 'task', 'code', 'image'] as const;
+const ITEM_TYPES = ['note', 'canvas', 'code', 'image', 'link', 'task'] as const;
+const MAX_SHAPES = 40;
+const MAX_ARROWS = 60;
+const MAX_LABEL_CHARACTERS = 200;
 const DEFAULT_RESULTS = 10;
 const MAX_RESULTS = 50;
 const MAX_BODY_CHARACTERS = 40_000;
@@ -179,10 +184,16 @@ export const VAULT_TOOLS: readonly VaultTool[] = [
     }),
     defineTool({
         description:
-            'Creates an item as a Markdown file. The filename is derived from the title. Put it in a collection by passing that folder path; a folder that does not exist yet is created.',
+            'Creates an item as a Markdown file. The filename is derived from the title. Put it in a collection by passing that folder path; a folder that does not exist yet is created. A "canvas" starts as an empty sketch: pass no body, then draw with add_to_canvas.',
         async handler(store, input) {
+            const sketch = input.type === 'canvas';
+
+            if (sketch && input.body !== undefined) {
+                throw new ToolError('A canvas takes no body. Create it, then use add_to_canvas.');
+            }
+
             const item = await store.createItem({
-                body: input.body,
+                body: sketch ? EMPTY_CANVAS_BODY : input.body,
                 collectionId: input.collection || undefined,
                 dueAt: input.dueAt,
                 flags: {},
@@ -223,7 +234,9 @@ export const VAULT_TOOLS: readonly VaultTool[] = [
             if (changes.body !== undefined) {
                 // A sketch's body is its scene; a model's prose would replace the drawing.
                 if (item.type === 'canvas') {
-                    throw new ToolError('A canvas item is drawn in Lore; its body cannot be set.');
+                    throw new ToolError(
+                        'A canvas body is its drawing and cannot be set. Use add_to_canvas.',
+                    );
                 }
 
                 patch.body = changes.body;
@@ -262,6 +275,80 @@ export const VAULT_TOOLS: readonly VaultTool[] = [
             title: z.string().min(1).optional(),
         },
         name: 'update_item',
+        writes: true,
+    }),
+    defineTool({
+        description:
+            'Draws shapes and arrows into a canvas item. It only adds: nothing already in the sketch is moved, restyled or removed, and the new shapes land below what is there. Shapes sit on a grid by `column` and `row` (from 0); leave both out and they run left to right. An arrow joins two shapes named by their `key` in this call, or by the exact label of a shape already in the sketch.',
+        async handler(store, { arrows = [], id, shapes = [] }) {
+            const item = find(store, id);
+
+            if (item.type !== 'canvas') {
+                throw new ToolError(`"${id}" is a ${item.type}, not a canvas.`);
+            }
+
+            if (!shapes.length && !arrows.length) {
+                throw new ToolError('Nothing to draw: pass `shapes`, `arrows` or both.');
+            }
+
+            const { error, scene } = parseCanvasBody(item.body);
+
+            if (!scene) {
+                throw new ToolError(`This sketch cannot be read, so it was left alone: ${error}`);
+            }
+
+            let elements;
+
+            try {
+                elements = drawOnto(scene.elements, { arrows, shapes });
+            } catch (failure) {
+                if (failure instanceof DrawError) {
+                    throw new ToolError(failure.message);
+                }
+
+                throw failure;
+            }
+
+            const updated = await store.updateItem(item.id, {
+                body: writeCanvasBody(item.body, { ...scene, elements }),
+            });
+
+            if (!updated) {
+                throw new ToolError(`Item "${id}" disappeared while it was being drawn on.`);
+            }
+
+            return { ...detail(updated), added: { arrows: arrows.length, shapes: shapes.length } };
+        },
+        input: {
+            arrows: z
+                .array(
+                    z.object({
+                        from: z.string().min(1),
+                        label: z.string().max(MAX_LABEL_CHARACTERS).optional(),
+                        to: z.string().min(1),
+                    }),
+                )
+                .max(MAX_ARROWS)
+                .optional(),
+            id: reference,
+            shapes: z
+                .array(
+                    z.object({
+                        color: z.enum(SHAPE_COLORS).optional().describe('A fill. None by default.'),
+                        column: z.number().int().min(0).max(MAX_SHAPES).optional(),
+                        key: z.string().min(1).describe('A name of your own, for arrows.'),
+                        kind: z
+                            .enum(SHAPE_KINDS)
+                            .optional()
+                            .describe('Defaults to "rectangle". "text" is a label with no box.'),
+                        label: z.string().trim().min(1).max(MAX_LABEL_CHARACTERS),
+                        row: z.number().int().min(0).max(MAX_SHAPES).optional(),
+                    }),
+                )
+                .max(MAX_SHAPES)
+                .optional(),
+        },
+        name: 'add_to_canvas',
         writes: true,
     }),
 ];

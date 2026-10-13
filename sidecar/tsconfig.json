@@ -10,10 +10,11 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         /* Shared with the renderer by path rather than by package. `@lore/types` is
-       type-only and erased at build; `@lore/derive` is real code, shared on
-       purpose so the rule "snippet is derived, never stored" has exactly one
-       definition on both sides of the wire. */
+       type-only and erased at build; `@lore/derive` and `@lore/canvas` are real
+       code, shared on purpose so a derived snippet and a sketch's body each have
+       exactly one definition on both sides of the wire. */
         "paths": {
+            "@lore/canvas": ["../src/lib/canvas-body.ts"],
             "@lore/derive": ["../src/data/derive.ts"],
             "@lore/types": ["../src/store/types.ts"]
         },

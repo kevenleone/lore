@@ -8,12 +8,13 @@ import { MCP_INDEX_FILE } from '../vault';
 import { Workspace } from '../workspace';
 import { ToolError, toolsFor } from './tools';
 
-const INSTRUCTIONS = `Lore is a personal knowledge base: a folder of Markdown files, where a file is an item (note, link, task, code or image) and its folder is its collection.
+const INSTRUCTIONS = `Lore is a personal knowledge base: a folder of Markdown files, where a file is an item (note, canvas, code, image, link or task) and its folder is its collection.
 
 - Search before answering a question about what the user has saved, and read an item before quoting or changing it.
 - Refer to an item as [[stem]], using the "stem" a tool returned. That is how items link to each other, and Lore renders it as a link.
 - Write through create_item and update_item rather than editing files, so filenames, frontmatter and links stay consistent.
-- update_item replaces "body" and "tags" whole. Read first, then send the full new value.`;
+- update_item replaces "body" and "tags" whole. Read first, then send the full new value.
+- A canvas is a sketch. read_item gives its labels, not its shapes, and add_to_canvas is the only way to draw into one.`;
 
 export function createMcpServer(store: () => VaultStore, access: 'read' | 'write'): McpServer {
     const server = new McpServer({ name: 'lore', version }, { instructions: INSTRUCTIONS });
