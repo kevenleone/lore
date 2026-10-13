@@ -19,7 +19,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { newId } from './slug';
 
 const FENCE = '---';
-const ITEM_TYPES: ItemType[] = ['link', 'note', 'task', 'code', 'image', 'canvas'];
+const ITEM_TYPES: ItemType[] = ['note', 'canvas', 'code', 'image', 'link', 'task'];
 const PRIORITIES: Priority[] = ['low', 'normal', 'high', 'urgent'];
 
 /** Frontmatter keys Lore owns. Anything else is passed through untouched. */
@@ -55,6 +55,11 @@ export interface ParsedFile {
     data: Record<string, unknown>;
     /** Keys we do not own, preserved so an external tool's fields survive. */
     extra: Record<string, unknown>;
+}
+
+/** A `type:` Lore does not know reads as a note rather than hiding the file. */
+export function itemTypeOf(value: unknown): ItemType {
+    return (ITEM_TYPES as unknown[]).includes(value) ? (value as ItemType) : 'note';
 }
 
 export function parseFile(raw: string): ParsedFile {
@@ -381,9 +386,6 @@ export function serializeFile(
 /** Frontmatter + location → the domain object, minus derived fields. */
 export function toItem(parsed: ParsedFile, ctx: ToItemContext): Item {
     const { body, data } = parsed;
-    const rawType = str(data.type);
-    const type = (ITEM_TYPES as string[]).includes(rawType ?? '') ? (rawType as ItemType) : 'note';
-
     const flags: ItemFlags = {};
 
     if (data.inbox === true) {
@@ -429,7 +431,7 @@ export function toItem(parsed: ParsedFile, ctx: ToItemContext): Item {
         // A file written by hand has no `title`; its first heading, then its
         // filename, are the next best things.
         title: str(data.title) ?? firstHeading(body) ?? ctx.stem,
-        type,
+        type: itemTypeOf(data.type),
         updatedAt: iso(data.updated, created),
         url: str(data.url),
     };
