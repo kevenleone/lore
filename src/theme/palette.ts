@@ -23,6 +23,7 @@ interface LaneHues {
 }
 
 interface TypeHues {
+    canvas: string;
     code: string;
     image: string;
     link: string;
@@ -133,6 +134,8 @@ export function buildTokens(seed: ThemeSeed): Record<string, string> {
         '--text3': seed.text3,
         '--titlebar': alpha(mix(seed.surface, seed.surface2, 0.5), 0.86),
         '--track-off': mix(seed.border, seed.text3, 0.75),
+        '--type-canvas-bg': tint(seed.types.canvas),
+        '--type-canvas-fg': seed.types.canvas,
         '--type-code-bg': tint(seed.types.code),
         '--type-code-fg': seed.types.code,
         '--type-image-bg': tint(seed.types.image),

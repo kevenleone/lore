@@ -19,7 +19,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { newId } from './slug';
 
 const FENCE = '---';
-const ITEM_TYPES: ItemType[] = ['link', 'note', 'task', 'code', 'image'];
+const ITEM_TYPES: ItemType[] = ['link', 'note', 'task', 'code', 'image', 'canvas'];
 const PRIORITIES: Priority[] = ['low', 'normal', 'high', 'urgent'];
 
 /** Frontmatter keys Lore owns. Anything else is passed through untouched. */

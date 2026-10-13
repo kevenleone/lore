@@ -45,6 +45,8 @@ const twMerge = extendTailwindMerge({
                 'type-code-fg',
                 'type-image-bg',
                 'type-image-fg',
+                'type-canvas-bg',
+                'type-canvas-fg',
             ],
             radius: ['5', '7', '9', '10', '11'],
             shadow: ['float', 'sheet', 'seg'],

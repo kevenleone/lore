@@ -26,6 +26,7 @@ const LABEL_SIZE = 11;
 const HIT_SLACK = 7;
 
 const TYPE_TOKEN: Record<ItemType, string> = {
+    canvas: '--color-type-canvas-fg',
     code: '--color-type-code-fg',
     image: '--color-type-image-fg',
     link: '--color-type-link-fg',

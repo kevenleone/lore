@@ -70,6 +70,8 @@ export const LIGHT_TOKENS: Record<string, string> = {
     '--text3': '#9a9aa5',
     '--titlebar': 'rgba(252,252,253,.86)',
     '--track-off': '#d9d9e0',
+    '--type-canvas-bg': '#efecf8',
+    '--type-canvas-fg': '#7a62b8',
     '--type-code-bg': '#eef0f3',
     '--type-code-fg': '#5b6472',
     '--type-image-bg': '#f7ecef',
@@ -123,6 +125,8 @@ export const DARK_TOKENS: Record<string, string> = {
     '--text3': '#7a7a85',
     '--titlebar': 'rgba(33,33,40,.86)',
     '--track-off': '#3d3d47',
+    '--type-canvas-bg': 'rgba(160,140,220,.18)',
+    '--type-canvas-fg': '#b5a3e6',
     '--type-code-bg': 'rgba(139,152,173,.18)',
     '--type-code-fg': '#a9b4c4',
     '--type-image-bg': 'rgba(200,140,160,.16)',
@@ -151,6 +155,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#6c6f85',
             text3: '#9ca0b0',
             types: {
+                canvas: '#8839ef',
                 code: '#179299',
                 image: '#ea76cb',
                 link: '#1e66f5',
@@ -174,6 +179,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#797593',
             text3: '#9893a5',
             types: {
+                canvas: '#b4637a',
                 code: '#907aa9',
                 image: '#d7827e',
                 link: '#286983',
@@ -197,6 +203,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#586e75',
             text3: '#93a1a1',
             types: {
+                canvas: '#6c71c5',
                 code: '#2aa198',
                 image: '#d33682',
                 link: '#268bd2',
@@ -220,6 +227,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#59636e',
             text3: '#818b98',
             types: {
+                canvas: '#8250df',
                 code: '#57606a',
                 image: '#bc4c00',
                 link: '#0969da',
@@ -243,6 +251,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#504945',
             text3: '#928374',
             types: {
+                canvas: '#af3a03',
                 code: '#427b58',
                 image: '#8f3f71',
                 link: '#076678',
@@ -266,6 +275,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#9a9aa6',
             text3: '#6a6a76',
             types: {
+                canvas: '#b9a3e0',
                 code: '#7fc7c0',
                 image: '#d08fa8',
                 link: '#8f9bf0',
@@ -289,6 +299,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#9c9ca4',
             text3: '#6e6e76',
             types: {
+                canvas: '#a894d4',
                 code: '#74b8b2',
                 image: '#c8869c',
                 link: '#7f95d8',
@@ -312,6 +323,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#b6b8c8',
             text3: '#6272a4',
             types: {
+                canvas: '#ffb86c',
                 code: '#8be9fd',
                 image: '#ff79c6',
                 link: '#bd93f9',
@@ -335,6 +347,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#a6adc8',
             text3: '#7f849c',
             types: {
+                canvas: '#cba6f7',
                 code: '#94e2d5',
                 image: '#f5c2e7',
                 link: '#89b4fa',
@@ -358,6 +371,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#a5adce',
             text3: '#838ba7',
             types: {
+                canvas: '#ca9ee6',
                 code: '#81c8be',
                 image: '#f4b8e4',
                 link: '#8caaee',
@@ -381,6 +395,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#908caa',
             text3: '#6e6a86',
             types: {
+                canvas: '#3e8fb0',
                 code: '#c4a7e7',
                 image: '#eb6f92',
                 link: '#9ccfd8',
@@ -404,6 +419,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#d8dee9',
             text3: '#7b8494',
             types: {
+                canvas: '#d08770',
                 code: '#8fbcbb',
                 image: '#b48ead',
                 link: '#88c0d0',
@@ -427,6 +443,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#abb2bf',
             text3: '#5c6370',
             types: {
+                canvas: '#c678dd',
                 code: '#56b6c2',
                 image: '#e06c75',
                 link: '#61afef',
@@ -450,6 +467,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#a9b1d6',
             text3: '#565f89',
             types: {
+                canvas: '#bb9af7',
                 code: '#7dcfff',
                 image: '#f7768e',
                 link: '#7aa2f7',
@@ -473,6 +491,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#93a1a1',
             text3: '#657b83',
             types: {
+                canvas: '#6c71c5',
                 code: '#2aa198',
                 image: '#d33682',
                 link: '#268bd2',
@@ -496,6 +515,7 @@ const SEEDS: { id: ThemeId; name: string; seed: ThemeSeed }[] = [
             text2: '#bdae93',
             text3: '#928374',
             types: {
+                canvas: '#fe8019',
                 code: '#8ec07c',
                 image: '#d3869b',
                 link: '#83a598',
