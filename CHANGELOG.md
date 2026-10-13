@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.29.0](https://github.com/kevenleone/lore/compare/v1.28.0...v1.29.0) (2026-10-13)
+
+
+### Features
+
+* **ai:** add_to_canvas draws shapes and arrows into a sketch ([cf18b0f](https://github.com/kevenleone/lore/commit/cf18b0fc1627226b97b4fb894102dc29d735058b))
+* **canvas:** add the canvas item type ([dad534c](https://github.com/kevenleone/lore/commit/dad534ce87179441ed4b1b19ed461c9dc46503f2))
+* **canvas:** draw sketches with Excalidraw ([dd172d3](https://github.com/kevenleone/lore/commit/dd172d3b465fdf7aa50e74b94f03830d3d929539))
+* **canvas:** keep a sketch's scene inside its Markdown file ([bb45606](https://github.com/kevenleone/lore/commit/bb4560659d5044901f9a061f70012845ef252030))
+* **canvas:** share a sketch as a copy, an .excalidraw file or an SVG ([1a4e725](https://github.com/kevenleone/lore/commit/1a4e7256104ec06caaaa5e5fcfca23de3ea330d7))
+* **capture:** add a Canvas tab, one type order and a floating collection menu ([3f26046](https://github.com/kevenleone/lore/commit/3f26046aa5a60b000dd3d0fd09bc16d66e0b392d))
+* **engine:** index and read a sketch by its labels ([f1b679a](https://github.com/kevenleone/lore/commit/f1b679a08fdddd054925cd197e2e8fc1fe1f081c))
+
+
+### Bug Fixes
+
+* **canvas:** open a sketch on its drawing ([4a56e3c](https://github.com/kevenleone/lore/commit/4a56e3c47f723005f703fc38fc8af60244179b55))
+
+
+### Refactoring
+
+* **sidecar:** read an item's type through one check ([fc6e4e8](https://github.com/kevenleone/lore/commit/fc6e4e8798b964087b5d0321a005f494d01b8679))
+
+
+### Documentation
+
+* describe sharing a sketch ([d877fd4](https://github.com/kevenleone/lore/commit/d877fd437544ad5317e9bdcd0b98edadd967c452))
+* describe sketches ([3a473b9](https://github.com/kevenleone/lore/commit/3a473b9855a517c07fd35a225a8ab7cdf838fe2c))
+* list add_to_canvas among the agent tools ([990a4ca](https://github.com/kevenleone/lore/commit/990a4cad3397368b80e571892d9f830fa1aafaa7))
+
+
+### Build System
+
+* **canvas:** leave out Excalidraw's 12 MB CJK handwriting font ([b180f03](https://github.com/kevenleone/lore/commit/b180f03764903f4ea98980b9631db8d9426de6f8))
+
 ## [1.28.0](https://github.com/kevenleone/lore/compare/v1.27.0...v1.28.0) (2026-10-12)
 
 
