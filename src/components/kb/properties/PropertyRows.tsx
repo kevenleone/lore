@@ -13,15 +13,15 @@ import { useAssetSrc } from '../../../lib/assetSrc';
 import { cn } from '../../../lib/cn';
 import { formatSavedDate } from '../../../lib/format';
 import { useImageFallback } from '../../../lib/imageFallback';
-import { TYPE_META, typeMeta } from '../../../store/typeMeta';
-import { PRIORITIES } from '../../../store/types';
+import { typeMeta } from '../../../store/typeMeta';
+import { ITEM_TYPES, PRIORITIES } from '../../../store/types';
 import { useStore } from '../../../store/useStore';
 import { Calendar, Globe, Link, Timer } from '../../common/glyphs';
 import { Icon } from '../../common/Icon';
 import { useStandalone } from '../../document/standalone';
 import { MenuItem, Picker, ReadOnly, Row } from './controls';
 
-const TYPES = Object.keys(TYPE_META) as ItemType[];
+const TYPES = ITEM_TYPES;
 
 const FLAGS: { key: keyof ItemFlags; label: string }[] = [
     { key: 'inbox', label: 'Inbox' },

@@ -26,6 +26,7 @@ import {
 import { revealPath, revealVaultFile } from '../../lib/reveal';
 import { availableBuiltins } from '../../lib/templates';
 import { workspaceName } from '../../lib/workspace';
+import { TYPE_META } from '../../store/typeMeta';
 import {
     type Accent,
     ACCENT_NAMES,
@@ -33,6 +34,7 @@ import {
     type AiBackendStatus,
     type BannerPlacement,
     type Density,
+    ITEM_TYPES,
     type ItemType,
     type NotificationStyle,
     type OpenMode,
@@ -67,11 +69,7 @@ const ABOUT_LINK =
 /** Options for "Default capture type", ahead of the collections list. */
 const CAPTURE_TYPES: ChoiceOption<'auto' | ItemType>[] = [
     { label: 'Detect automatically', value: 'auto' },
-    { label: 'Link', value: 'link' },
-    { label: 'Note', value: 'note' },
-    { label: 'Task', value: 'task' },
-    { label: 'Code', value: 'code' },
-    { label: 'Image', value: 'image' },
+    ...ITEM_TYPES.map((type) => ({ label: TYPE_META[type].label, value: type })),
 ];
 
 export function GeneralPane() {

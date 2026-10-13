@@ -6,7 +6,8 @@
 // it differs — the panel is a card that sizes to its content, the drawer fills
 // the height it is given and scrolls between fixed tabs and footer.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import type { NewItem } from '../../data/repository';
 import type { Subtask } from '../../lib/subtasks';
@@ -16,6 +17,7 @@ import { getRepository } from '../../data';
 import { deriveTitle } from '../../data/plainText';
 import { captureShortcut } from '../../lib/appMode';
 import { addDays } from '../../lib/calendar';
+import { EMPTY_CANVAS_BODY } from '../../lib/canvas-body';
 import {
     hideCapture,
     holdCaptureDismiss,
@@ -30,7 +32,8 @@ import { useImageFallback } from '../../lib/imageFallback';
 import { fetchLinkMetadata, type LinkMetadata } from '../../lib/linkMetadata';
 import { joinBody } from '../../lib/subtasks';
 import { linkVideo } from '../../lib/video';
-import { PRIORITIES } from '../../store/types';
+import { TYPE_META } from '../../store/typeMeta';
+import { ITEM_TYPES, PRIORITIES } from '../../store/types';
 import { localDateKey } from '../../store/views';
 import {
     Calendar,
@@ -77,13 +80,10 @@ export interface ComposerProps {
     onSave?: (input: NewItem) => Promise<void>;
 }
 
-const TABS: { label: string; type: ItemType }[] = [
-    { label: 'Link', type: 'link' },
-    { label: 'Note', type: 'note' },
-    { label: 'Task', type: 'task' },
-    { label: 'Code', type: 'code' },
-    { label: 'Image', type: 'image' },
-];
+const TABS: { label: string; type: ItemType }[] = ITEM_TYPES.map((type) => ({
+    label: TYPE_META[type].label,
+    type,
+}));
 
 const DEADLINES: { days: number; label: string }[] = [
     { days: 0, label: 'Today' },
@@ -120,7 +120,7 @@ export function Composer({
     onSave,
 }: ComposerProps) {
     const inDrawer = chrome === 'drawer';
-    const [tab, setTab] = useState<ItemType>(defaultType === 'auto' ? 'link' : defaultType);
+    const [tab, setTab] = useState<ItemType>(defaultType === 'auto' ? TABS[0].type : defaultType);
     const [value, setValue] = useState('');
     const [tags, setTags] = useState<string[]>([]);
     const [addingTag, setAddingTag] = useState(false);
@@ -272,6 +272,8 @@ export function Composer({
     const activeCollection =
         collections.find((collection) => collection.id === collectionId) ?? null;
     const collRef = useRef<HTMLDivElement>(null);
+    const collMenuRef = useRef<HTMLDivElement>(null);
+    const [collPlacement, setCollPlacement] = useState<CSSProperties | null>(null);
     const fieldRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
     // One ref for all five tabs: each renders its own field, so only ever one of
@@ -295,15 +297,32 @@ export function Composer({
             return;
         }
 
+        const inside = (target: EventTarget | null): boolean =>
+            target instanceof Node &&
+            (!!collRef.current?.contains(target) || !!collMenuRef.current?.contains(target));
+
         const onDown = (event: MouseEvent) => {
-            if (collRef.current && !collRef.current.contains(event.target as Node)) {
+            if (!inside(event.target)) {
+                setCollOpen(false);
+            }
+        };
+
+        // The menu is placed once, against where the button was when it opened.
+        const onMove = (event: Event) => {
+            if (!collMenuRef.current?.contains(event.target as Node)) {
                 setCollOpen(false);
             }
         };
 
         window.addEventListener('mousedown', onDown);
+        window.addEventListener('resize', onMove);
+        window.addEventListener('scroll', onMove, true);
 
-        return () => window.removeEventListener('mousedown', onDown);
+        return () => {
+            window.removeEventListener('mousedown', onDown);
+            window.removeEventListener('resize', onMove);
+            window.removeEventListener('scroll', onMove, true);
+        };
     }, [collOpen]);
 
     // An image capture *is* its file. The tab used to accept a bare title, which
@@ -405,6 +424,8 @@ export function Composer({
                 title: text || (source ? urlFileName(source) : file!.name),
                 url: source ?? undefined,
             };
+        } else if (tab === 'canvas') {
+            item = { ...item, body: EMPTY_CANVAS_BODY };
         } else {
             item = { ...item, body: text, title: deriveTitle(text) };
         }
@@ -428,7 +449,7 @@ export function Composer({
             )}
         >
             {/* type tabs */}
-            <div className="flex flex-none gap-[5px] overflow-hidden border-b border-border-soft px-[11px] py-[9px]">
+            <div className="flex flex-none gap-[3px] overflow-hidden border-b border-border-soft px-[11px] py-[9px]">
                 {TABS.map((t) => {
                     const active = tab === t.type;
 
@@ -436,7 +457,7 @@ export function Composer({
                         <button
                             aria-pressed={active}
                             className={cn(
-                                'flex items-center gap-[6px] rounded-lg border-none bg-transparent px-[11px] py-[7px] font-[inherit] text-body-lg whitespace-nowrap',
+                                'flex items-center gap-[6px] rounded-lg border-none bg-transparent px-[9px] py-[7px] font-[inherit] text-body-lg whitespace-nowrap',
                                 active ? 'bg-accent-tint font-[590] text-accent' : 'text-text2',
                             )}
                             key={t.type}
@@ -712,6 +733,26 @@ export function Composer({
                         value={value}
                     />
                 )}
+                {tab === 'canvas' && (
+                    <>
+                        <div className="flex items-center gap-[9px] rounded-10 border border-border px-3 py-[10px] text-title text-text">
+                            <span className="flex flex-none text-type-canvas-fg">
+                                <Icon name="canvas" size={16} />
+                            </span>
+                            <input
+                                className="min-w-0 flex-1 border-none bg-transparent font-[inherit] text-text outline-none"
+                                onChange={(event) => setValue(event.target.value)}
+                                onKeyDown={onFieldKeyDown}
+                                placeholder="Name the sketch…"
+                                ref={setFieldRef}
+                                value={value}
+                            />
+                        </div>
+                        <p className="mt-[10px] text-body text-text3">
+                            Saves an empty canvas to draw on in the library.
+                        </p>
+                    </>
+                )}
                 {tab === 'image' && (
                     <>
                         <div className="mb-3 flex items-center gap-[7px]">
@@ -899,7 +940,12 @@ export function Composer({
                             aria-expanded={collOpen}
                             aria-haspopup="listbox"
                             className="inline-flex items-center gap-[7px] rounded-lg border-none bg-sel px-[10px] py-[5px] font-[inherit] text-body-lg text-text2"
-                            onClick={() => setCollOpen((o) => !o)}
+                            onClick={(event) => {
+                                setCollPlacement(
+                                    menuPlacement(event.currentTarget, collections.length),
+                                );
+                                setCollOpen((open) => !open);
+                            }}
                             type="button"
                         >
                             <span
@@ -912,39 +958,48 @@ export function Composer({
                                 <ChevronDown />
                             </span>
                         </button>
-                        {collOpen && (
-                            <div className="absolute top-8 left-0 z-30 max-h-[220px] min-w-[180px] overflow-auto rounded-10 border border-border bg-surface p-[5px] shadow-[0_14px_34px_-10px_rgba(24,24,48,.32)]">
-                                {collections.length === 0 && (
-                                    <div className="px-[10px] py-[7px] text-body text-text3">
-                                        No collections yet
-                                    </div>
-                                )}
-                                {collections.map((collection) => (
-                                    <button
-                                        aria-selected={collection.id === collectionId}
-                                        className={cn(
-                                            'flex w-full items-center gap-2 rounded-7 border-none px-[10px] py-[7px] text-left font-[inherit] text-body-lg',
-                                            collection.id === collectionId
-                                                ? 'bg-accent-tint font-semibold text-accent'
-                                                : 'bg-transparent font-normal text-text2',
-                                        )}
-                                        key={collection.id}
-                                        onClick={() => {
-                                            setCollectionId(collection.id);
-                                            setCollOpen(false);
-                                        }}
-                                        role="option"
-                                        type="button"
-                                    >
-                                        <span
-                                            className="h-[9px] w-[9px] flex-none rounded-xs"
-                                            style={{ background: collection.color }}
-                                        />
-                                        {collection.name}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                        {collOpen &&
+                            collPlacement &&
+                            createPortal(
+                                <div
+                                    className="fixed z-50 min-w-[180px] overflow-auto rounded-10 border border-border bg-surface p-[5px] shadow-[0_14px_34px_-10px_rgba(24,24,48,.32)]"
+                                    ref={collMenuRef}
+                                    // Computed: measured from the button, so the menu can
+                                    // float over the body that would otherwise clip it.
+                                    style={collPlacement}
+                                >
+                                    {collections.length === 0 && (
+                                        <div className="px-[10px] py-[7px] text-body text-text3">
+                                            No collections yet
+                                        </div>
+                                    )}
+                                    {collections.map((collection) => (
+                                        <button
+                                            aria-selected={collection.id === collectionId}
+                                            className={cn(
+                                                'flex w-full items-center gap-2 rounded-7 border-none px-[10px] py-[7px] text-left font-[inherit] text-body-lg',
+                                                collection.id === collectionId
+                                                    ? 'bg-accent-tint font-semibold text-accent'
+                                                    : 'bg-transparent font-normal text-text2',
+                                            )}
+                                            key={collection.id}
+                                            onClick={() => {
+                                                setCollectionId(collection.id);
+                                                setCollOpen(false);
+                                            }}
+                                            role="option"
+                                            type="button"
+                                        >
+                                            <span
+                                                className="h-[9px] w-[9px] flex-none rounded-xs"
+                                                style={{ background: collection.color }}
+                                            />
+                                            {collection.name}
+                                        </button>
+                                    ))}
+                                </div>,
+                                document.body,
+                            )}
                     </div>
                 </div>
             </div>
@@ -999,4 +1054,39 @@ function urlFileName(raw: string): string {
     } catch {
         return raw;
     }
+}
+
+const MENU_EDGE = 12;
+const MENU_GAP = 4;
+const MENU_ROW = 34;
+
+/**
+ * Where the collection menu goes: under its button, or above it when the list
+ * does not fit below and there is more room there. It hangs off `document.body`, outside the Text size zoom, so
+ * it takes the button's zoom for itself and its lengths are divided by it.
+ */
+function menuPlacement(button: HTMLElement, rows: number): CSSProperties {
+    const rect = button.getBoundingClientRect();
+    const zoom = rect.width / button.offsetWidth || 1;
+    const below = window.innerHeight - rect.bottom - MENU_EDGE;
+    const above = rect.top - MENU_EDGE;
+    const left = rect.left / zoom;
+
+    const needed = (Math.max(rows, 1) * MENU_ROW + MENU_GAP * 4) * zoom;
+
+    if (below < needed && above > below) {
+        return {
+            bottom: (window.innerHeight - rect.top + MENU_GAP) / zoom,
+            left,
+            maxHeight: (above - MENU_GAP) / zoom,
+            zoom,
+        };
+    }
+
+    return {
+        left,
+        maxHeight: (below - MENU_GAP) / zoom,
+        top: (rect.bottom + MENU_GAP) / zoom,
+        zoom,
+    };
 }
