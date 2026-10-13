@@ -252,7 +252,7 @@ the vault root.
 ```markdown
 ---
 id: 01J8ZQ4F7K3M8YB2VNXR6TWDPA
-type: link # link | note | task | code | image
+type: link # link | note | task | code | image | canvas
 title: How Linear builds product
 url: https://linear.app/blog/how-linear-builds-product
 created: 2026-08-30T10:12:04.000Z
@@ -294,7 +294,7 @@ time it opens rather than waiting for a restart.
 
 ```markdown
 ---
-type: note # link | note | task | code | image — note if left out
+type: note # link | note | task | code | image | canvas — note if left out
 tags: [meeting, work]
 collection: Work # the folder its items land in
 title: Standup {{date}} # seeds the title; the filename is used if absent
@@ -335,6 +335,41 @@ rather than failing.
 
 Templates are committed with the vault, so they travel with it — clone the
 folder on another machine and your templates come too.
+
+### Sketches
+
+A `canvas` item is a freehand drawing — boxes, arrows, labels — made with
+[Excalidraw](https://github.com/excalidraw/excalidraw). ⌘K → **New sketch**
+opens an empty one; the Composer's Canvas tab files one for later.
+
+It is still one Markdown file, so it is filed, tagged, linked and trashed like
+anything else:
+
+````markdown
+---
+type: canvas
+title: System sketch
+---
+
+## Text
+
+- API gateway
+- Queue
+
+## Drawing
+
+```json
+{ "type": "excalidraw", "elements": [ … ] }
+```
+````
+
+Lore rewrites those two sections and nothing else — prose above them, or a
+heading of your own below, is left as you wrote it. `## Text` lists the
+drawing's labels, which is what search and the list preview read; the scene's
+JSON is never indexed. If the `json` block stops parsing, the sketch opens
+read-only and the file is not touched until you fix it.
+
+Not there yet: images inside a sketch, a thumbnail in the list, and printing.
 
 ### Documents that live somewhere else
 
