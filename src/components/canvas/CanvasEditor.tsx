@@ -97,6 +97,18 @@ export function CanvasEditor({
 
     useEffect(() => flush, []);
 
+    // The scroll position is not saved, so a sketch opens on its drawing. Deferred:
+    // Excalidraw measures its own box after it hands the API over.
+    useEffect(() => {
+        if (!api) {
+            return;
+        }
+
+        const timer = window.setTimeout(() => api.scrollToContent(), 0);
+
+        return () => window.clearTimeout(timer);
+    }, [api]);
+
     useEffect(() => {
         if (!api || timerRef.current !== null) {
             return;
@@ -108,6 +120,8 @@ export function CanvasEditor({
             return;
         }
 
+        const wasEmpty = !sceneRef.current?.elements.length;
+
         sceneRef.current = incoming;
         savedKeyRef.current = sceneKey(incoming);
         loadingRef.current = true;
@@ -116,6 +130,12 @@ export function CanvasEditor({
             captureUpdate: CaptureUpdateAction.NEVER,
             elements: restoreElements(incoming.elements as unknown as SceneElements, null),
         });
+
+        // A drawing that arrives in an empty sketch starts at the origin, under the
+        // toolbar. Deferred: Excalidraw has not laid the new scene out yet.
+        if (wasEmpty) {
+            window.setTimeout(() => api.scrollToContent(), 0);
+        }
     }, [api, body]);
 
     if (!initial.scene) {
