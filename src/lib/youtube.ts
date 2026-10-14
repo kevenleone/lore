@@ -1,4 +1,4 @@
-// Mirrors `sidecar/src/youtube.ts`: the renderer needs the id synchronously to
+// Mirrors `sidecar/src/services/youtube.ts`: the renderer needs the id synchronously to
 // pick the player, and cannot import from the engine's package.
 
 const VIDEO_ID = /^[\w-]{11}$/;

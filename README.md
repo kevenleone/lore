@@ -475,7 +475,7 @@ editing it never triggers a Rust rebuild.
   path. The window is backed by `DocumentRepository`, so it renders the
   library's own `DetailPane` and `PropertiesPanel`; the engine converts the
   file's text to an item and a property edit back to text
-  (`sidecar/src/document.ts`) without ever being given the path.
+  (`sidecar/src/services/document.ts`) without ever being given the path.
 
 The capture window is a separate webview with its own repository instance, so it
 follows a `workspace:changed` broadcast — otherwise the next capture after a

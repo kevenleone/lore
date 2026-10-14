@@ -68,7 +68,7 @@ only one created at runtime — one window per Markdown file handed to Lore from
 outside (`src-tauri/src/open_paths.rs`). That file is not a vault item: the host
 maps the window's label to its path and resolves every read and write from the
 calling window, so the renderer never names a path, and the engine only ever
-sees the file's text (`sidecar/src/document.ts`: text in, an item or patched
+sees the file's text (`sidecar/src/services/document.ts`: text in, an item or patched
 text out, nothing read or written). Keep it that way. A property edit there
 splices the one changed key into the frontmatter rather than re-serialising it,
 because the file may be anybody's.
@@ -77,6 +77,10 @@ because the file may be anybody's.
 reading and writing Markdown, the SQLite FTS5 index, the file watcher, link
 resolution. It is the source of truth. Rust spawns it, and it announces its
 ephemeral port back over stdout as a handshake (`src-tauri/src/sidecar.rs`).
+Its `src/` is layered: `routes/` holds one Elysia plugin per area, composed in
+`routes/index.ts` under the shared error handler; `services/` holds the vault
+and outbound integrations; `utils/` holds shared helpers (Markdown, links, slugs, the watcher); `index/` holds the
+SQLite store; and `ai/` is the model seam. `test/` mirrors that tree.
 
 **Host** (`src-tauri/`) — Rust: windows, tray, global shortcut, menus, PDF
 printing, and spawning the engine.
@@ -139,7 +143,7 @@ attachments/             reserved; never a collection
 ```
 
 Anything hand-editable is validated on read and keeps the keys this version does
-not own (`sidecar/src/markdown.ts` carries them through an `extra` bag).
+not own (`sidecar/src/utils/markdown.ts` carries them through an `extra` bag).
 
 ## Styling
 
