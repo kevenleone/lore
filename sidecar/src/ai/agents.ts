@@ -7,7 +7,7 @@ import type { AgentSetup, AgentStatus } from '@lore/types';
 
 import { mkdir, readFile, rm, rmdir, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 
 import type { McpLaunch } from './harness/types';
 
@@ -16,6 +16,7 @@ import modes from '../../../lore.modes.json';
 import { createLocator, type Locate } from './detect';
 import { childEnv } from './harness/run';
 import { engineLaunch } from './launch';
+import { type ProbeResult, probeServer } from './probe';
 
 export const SKILL_NAME = 'lore-docs';
 
@@ -32,6 +33,8 @@ export interface Agents {
     list(vault: string): Promise<AgentStatus[]>;
     setMcp(id: string, vault: string, on: boolean): Promise<AgentStatus>;
     setSkill(id: string, vault: string, on: boolean): Promise<AgentStatus>;
+    /** Starts the server the agent has registered, the way the agent would. */
+    test(id: string): Promise<ProbeResult>;
 }
 
 interface AgentDefinition {
@@ -124,7 +127,11 @@ export function createAgents(environment: AgentEnvironment = systemEnvironment()
             return 'off';
         }
 
-        return sameLaunch(found, engineLaunch(vault, { readOnly: false })) ? 'on' : 'stale';
+        const current =
+            sameLaunch(found, engineLaunch(vault, { readOnly: false })) ||
+            isCommandFor(found, name, vault);
+
+        return current ? 'on' : 'stale';
     };
 
     const skillSetup = async (agent: AgentDefinition): Promise<AgentSetup> => {
@@ -197,12 +204,34 @@ export function createAgents(environment: AgentEnvironment = systemEnvironment()
 
             return status(agent, vault);
         },
+
+        async test(id) {
+            const agent = find(id);
+            const launch = await agent.readServer(environment, name);
+
+            if (!launch) {
+                throw new AgentError(`${agent.label} has no “${name}” server to test.`);
+            }
+
+            return probeServer(launch);
+        },
     };
 }
 
 /** `lore`, or `lore-dev` / `lore-agent`, so each build's agents reach their own vault. */
 export function serverName(mode: string | undefined): string {
     return (mode && mode in modes ? modes[mode as keyof typeof modes] : modes.prod).cliName;
+}
+
+/** `lore mcp <vault>`, as the README says to set it up by hand, is as good as ours. */
+function isCommandFor(launch: McpLaunch, name: string, vault: string): boolean {
+    return (
+        basename(launch.command) === name &&
+        launch.args.length === 2 &&
+        launch.args[0] === 'mcp' &&
+        resolve(launch.args[1]) === resolve(vault) &&
+        !launch.env.LORE_MCP_READONLY
+    );
 }
 
 function launchOf(value: unknown): McpLaunch | null {
