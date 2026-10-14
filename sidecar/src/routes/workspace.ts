@@ -2,8 +2,9 @@ import type { SavedSearch } from '@lore/types';
 
 import { Elysia } from 'elysia';
 
-import { exportVault, measureVault } from '../services/vault-size';
 import type { Workspace } from '../services/workspace';
+
+import { exportVault, measureVault } from '../services/vault-size';
 
 export function workspaceRoutes(workspace: Workspace) {
     return (

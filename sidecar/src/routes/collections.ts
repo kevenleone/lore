@@ -1,7 +1,8 @@
 import { Elysia } from 'elysia';
 
-import { hashColor } from '../services/vault';
 import type { Workspace } from '../services/workspace';
+
+import { hashColor } from '../services/vault';
 
 export function collectionRoutes(workspace: Workspace) {
     return new Elysia()
@@ -16,7 +17,10 @@ export function collectionRoutes(workspace: Workspace) {
                 return { error: 'name_required' };
             }
 
-            const created = await workspace.current.createCollection(name, color ?? hashColor(name));
+            const created = await workspace.current.createCollection(
+                name,
+                color ?? hashColor(name),
+            );
 
             workspace.notify();
             set.status = 201;

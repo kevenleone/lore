@@ -23,6 +23,7 @@ import { constants } from 'node:fs';
 import { copyFile, mkdir, rm, rmdir, stat } from 'node:fs/promises';
 
 import { parseGithubTarget, resolveDocument } from '../services/github';
+import { collectionOf, INDEX_FILE, joinPath, stemOf, TRASH_DIR, Vault } from '../services/vault';
 import {
     bodyWikilinks,
     parseWikilink,
@@ -33,7 +34,6 @@ import {
 } from '../utils/links';
 import { parseFile, serializeFile, toItem } from '../utils/markdown';
 import { newId, uniqueStem } from '../utils/slug';
-import { collectionOf, INDEX_FILE, joinPath, stemOf, TRASH_DIR, Vault } from '../services/vault';
 import { type FileRow, hashContent, openIndex } from './db';
 
 /**
