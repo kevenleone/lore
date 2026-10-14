@@ -36,6 +36,7 @@ import {
     type AgentStatus,
     type AiBackendStatus,
     type BannerPlacement,
+    type ConnectionTest,
     type Density,
     ITEM_TYPES,
     type ItemType,
@@ -853,17 +854,37 @@ function AgentRows({
     onChange: (part: AgentPart, on: boolean) => void;
 }) {
     const vaultTitle = `Use this vault in ${agent.label}`;
+    const test = useConnectionTest(agent.mcp);
     const skillTitle = `Lore writing skill for ${agent.label}`;
 
     return (
         <>
-            <Row desc={AGENT_MCP_NOTES[agent.mcp](agent)} title={vaultTitle}>
-                <AgentSwitch
-                    busy={busy === `${agent.id}:mcp`}
-                    label={vaultTitle}
-                    onChange={(on) => onChange('mcp', on)}
-                    setup={agent.mcp}
-                />
+            <Row
+                desc={test.describe(
+                    AGENT_MCP_NOTES[agent.mcp](agent),
+                    `Starting ${agent.label}’s “${agent.server}” server…`,
+                    (result) =>
+                        `${agent.label}’s “${agent.server}” server started in ${seconds(result.ms)} and offers ${result.detail}.`,
+                )}
+                failed={test.failed}
+                title={vaultTitle}
+            >
+                <div className="flex flex-none items-center gap-[10px]">
+                    {agent.mcp !== 'off' && (
+                        <PillButton
+                            disabled={test.running}
+                            onClick={() => test.run(() => getAi().testAgent(agent.id))}
+                        >
+                            {test.running ? 'Testing…' : 'Test'}
+                        </PillButton>
+                    )}
+                    <AgentSwitch
+                        busy={busy === `${agent.id}:mcp`}
+                        label={vaultTitle}
+                        onChange={(on) => onChange('mcp', on)}
+                        setup={agent.mcp}
+                    />
+                </div>
             </Row>
             <Row desc={AGENT_SKILL_NOTES[agent.skill](agent)} last={last} title={skillTitle}>
                 <AgentSwitch
@@ -1001,6 +1022,13 @@ const AGENT_SKILL_NOTES: Record<AgentSetup, (agent: AgentStatus) => string> = {
 
 const TEXT_FIELD =
     'w-[210px] flex-none rounded-lg border border-border bg-surface px-[9px] py-[6px] text-right font-mono text-body text-text outline-none focus:border-accent';
+
+interface ConnectionTestState {
+    describe(idle: string, running: string, passed: (result: ConnectionTest) => string): string;
+    failed: boolean;
+    run(work: () => Promise<ConnectionTest>): void;
+    running: boolean;
+}
 
 export function KeysPane() {
     const [filter, setFilter] = useState('');
@@ -1267,7 +1295,41 @@ function AssistantRows() {
                     title="Model name"
                 />
             )}
+            {current && <ModelTestRow label={current.label} />}
         </>
+    );
+}
+
+/** Whether the chosen model answers, without opening Ask Lore to find out. */
+function ModelTestRow({ label }: { label: string }) {
+    const backend = useStore((state) => state.prefs.aiBackend);
+    const model = useStore((state) => state.prefs.aiModel);
+    const baseUrl = useStore((state) => state.prefs.aiBaseUrl);
+    const test = useConnectionTest(`${backend}\0${model}\0${baseUrl}`);
+
+    const run = (): void =>
+        test.run(() =>
+            getAi().testModel({
+                backend: backend ?? '',
+                baseUrl: baseUrl || undefined,
+                model: model || undefined,
+            }),
+        );
+
+    return (
+        <Row
+            desc={test.describe(
+                `Asks ${label} for a one-word answer, the way Ask Lore would.`,
+                `Waiting for ${label} to answer…`,
+                (result) => `${label} answered in ${seconds(result.ms)}: “${result.detail}”`,
+            )}
+            failed={test.failed}
+            title="Test the connection"
+        >
+            <PillButton disabled={test.running} onClick={run}>
+                {test.running ? 'Testing…' : 'Test'}
+            </PillButton>
+        </Row>
     );
 }
 
@@ -1329,6 +1391,10 @@ function privacyNote(backend: AiBackendStatus | undefined): string {
     }
 
     return `Your question, and the notes read to answer it, go to ${backend.label} under your own API key.`;
+}
+
+function seconds(ms: number): string {
+    return `${(ms / 1000).toFixed(1)} s`;
 }
 
 function shortcutRows(group: HotkeyCommand['group']): { keys: string[]; label: string }[] {
@@ -1394,6 +1460,49 @@ function UnsplashKeyRow() {
             </div>
         </Row>
     );
+}
+
+/** A result is forgotten when `subject` changes, since it was about something else. */
+function useConnectionTest(subject: string): ConnectionTestState {
+    const [running, setRunning] = useState(false);
+    const [result, setResult] = useState<ConnectionTest | null>(null);
+
+    useEffect(() => setResult(null), [subject]);
+
+    return {
+        describe(idle, waiting, passed) {
+            if (running) {
+                return waiting;
+            }
+
+            if (!result) {
+                return idle;
+            }
+
+            return result.ok
+                ? passed(result)
+                : `Failed after ${seconds(result.ms)}: ${result.detail}`;
+        },
+        failed: !running && result?.ok === false,
+        run(work) {
+            if (running) {
+                return;
+            }
+
+            setRunning(true);
+            work()
+                .catch((error: unknown): ConnectionTest => ({
+                    detail: error instanceof Error ? error.message : String(error),
+                    ms: 0,
+                    ok: false,
+                }))
+                .then((outcome) => {
+                    setResult(outcome);
+                    setRunning(false);
+                });
+        },
+        running,
+    };
 }
 
 /** How many focus intervals precede the long break. */

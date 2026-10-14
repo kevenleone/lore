@@ -1,4 +1,10 @@
-import type { AgentStatus, AiBackendStatus, AiEnrichment, ChatSource } from '../store/types';
+import type {
+    AgentStatus,
+    AiBackendStatus,
+    AiEnrichment,
+    ChatSource,
+    ConnectionTest,
+} from '../store/types';
 import type {
     AgentPart,
     AiProvider,
@@ -19,11 +25,13 @@ export class FakeAi implements AiProvider {
     agentRefusal: null | string = null;
     asked: Asked[] = [];
     backends: AiBackendStatus[] = [];
+    connection: ConnectionTest = { detail: 'OK', ms: 1200, ok: true };
     endpoints = new Map<string, string | undefined>();
     enriched: EnrichRequest[] = [];
     keys = new Map<string, string>();
     readonly needsSetup = true;
     proposal: AiEnrichment | Promise<AiEnrichment> = {};
+    tested: (AiSelection | string)[] = [];
 
     private finish: ((sources: ChatSource[]) => void) | null = null;
     private handlers: ChatHandlers | null = null;
@@ -98,5 +106,17 @@ export class FakeAi implements AiProvider {
 
     async status(): Promise<AiBackendStatus[]> {
         return this.backends;
+    }
+
+    async testAgent(id: string): Promise<ConnectionTest> {
+        this.tested.push(id);
+
+        return this.connection;
+    }
+
+    async testModel(selection: AiSelection): Promise<ConnectionTest> {
+        this.tested.push(selection);
+
+        return this.connection;
     }
 }

@@ -9,6 +9,7 @@ import { AgentError, type Agents, createAgents } from './ai/agents';
 import { AiError } from './ai/backend';
 import { chatResponse, parseMessages } from './ai/chat';
 import { enrich, itemText, parseWant } from './ai/enrich';
+import { probeModel } from './ai/probe';
 import { type AiService, type BackendSelection, createAiService } from './ai/service';
 import { deleteChat, isThreadId, listChats, parseThread, readChat, writeChat } from './chats';
 import { type DocumentFacts, documentItem, FrontmatterUnreadable, patchDocument } from './document';
@@ -592,19 +593,28 @@ export function routes(
 
             .get('/ai/agents', () => agents.list(workspace.current.vault.root))
 
+            .post('/ai/test', async ({ body }) => {
+                const input = (body ?? {}) as AiBody;
+
+                return probeModel(() => ai.backend(selection(input)), workspace.current);
+            })
+
             .post('/ai/agents/:id/:part', async ({ body, params, set }) => {
                 const { on } = (body ?? {}) as { on?: unknown };
-
-                if (typeof on !== 'boolean' || (params.part !== 'mcp' && params.part !== 'skill')) {
-                    set.status = 400;
-
-                    return { error: 'part must be mcp or skill, and on a boolean' };
-                }
+                const vault = workspace.current.vault.root;
 
                 try {
-                    return params.part === 'mcp'
-                        ? await agents.setMcp(params.id, workspace.current.vault.root, on)
-                        : await agents.setSkill(params.id, workspace.current.vault.root, on);
+                    if (params.part === 'test') {
+                        return await agents.test(params.id);
+                    }
+
+                    if (params.part === 'mcp' && typeof on === 'boolean') {
+                        return await agents.setMcp(params.id, vault, on);
+                    }
+
+                    if (params.part === 'skill' && typeof on === 'boolean') {
+                        return await agents.setSkill(params.id, vault, on);
+                    }
                 } catch (error) {
                     if (!(error instanceof AgentError)) {
                         throw error;
@@ -614,6 +624,12 @@ export function routes(
 
                     return { error: error.message };
                 }
+
+                set.status = 400;
+
+                return {
+                    error: 'part must be mcp, skill or test, with on a boolean for the first two',
+                };
             })
 
             .post('/ai/chat', async ({ body, set }) => {

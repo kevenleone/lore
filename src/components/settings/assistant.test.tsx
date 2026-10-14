@@ -185,3 +185,63 @@ describe('the agents settings', () => {
         expect((await screen.findByRole('alert')).textContent).toBe('config is locked');
     });
 });
+
+describe('testing the connection', () => {
+    beforeEach(() => {
+        useStore.setState({
+            prefs: { ...DEFAULT_PREFS, aiBackend: 'claude-cli', aiModel: 'opus' },
+        });
+    });
+
+    it('asks the chosen model and shows what it answered', async () => {
+        render(<AiPane />);
+        fireEvent.click(await screen.findByRole('button', { name: 'Test' }));
+
+        expect(await screen.findByText('Claude Code answered in 1.2 s: “OK”')).toBeTruthy();
+        expect(ai.tested).toEqual([{ backend: 'claude-cli', baseUrl: undefined, model: 'opus' }]);
+    });
+
+    it('says why it failed', async () => {
+        ai.connection = { detail: 'Not signed in.', ms: 800, ok: false };
+        render(<AiPane />);
+        fireEvent.click(await screen.findByRole('button', { name: 'Test' }));
+
+        expect((await screen.findByRole('alert')).textContent).toBe(
+            'Failed after 0.8 s: Not signed in.',
+        );
+    });
+
+    it('tests an agent’s server only once it is connected', async () => {
+        ai.agentList = [
+            {
+                available: true,
+                id: 'claude',
+                label: 'Claude Code',
+                mcp: 'on',
+                server: 'lore',
+                skill: 'on',
+            },
+            {
+                available: true,
+                id: 'codex',
+                label: 'Codex',
+                mcp: 'off',
+                server: 'lore',
+                skill: 'off',
+            },
+        ];
+        render(<AiPane />);
+
+        await screen.findByRole('switch', { name: 'Use this vault in Codex' });
+
+        const buttons = screen.getAllByRole('button', { name: 'Test' });
+
+        expect(buttons).toHaveLength(2);
+        fireEvent.click(buttons[1]);
+
+        expect(
+            await screen.findByText('Claude Code’s “lore” server started in 1.2 s and offers OK.'),
+        ).toBeTruthy();
+        expect(ai.tested).toEqual(['claude']);
+    });
+});

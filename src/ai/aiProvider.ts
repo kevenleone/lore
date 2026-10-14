@@ -5,6 +5,7 @@ import type {
     AiEnrichment,
     ChatMessage,
     ChatSource,
+    ConnectionTest,
 } from '../store/types';
 
 export type AgentPart = 'mcp' | 'skill';
@@ -35,6 +36,10 @@ export interface AiProvider {
     /** The key is written and never read back: `status` says only that one is stored. */
     setKey(provider: string, key: string, baseUrl?: string): Promise<void>;
     status(): Promise<AiBackendStatus[]>;
+    /** Starts the server an agent has registered for the vault, as the agent would. */
+    testAgent(id: string): Promise<ConnectionTest>;
+    /** Asks the selected model a one-word question through the same path a chat takes. */
+    testModel(selection: AiSelection): Promise<ConnectionTest>;
 }
 
 export interface AiSelection {

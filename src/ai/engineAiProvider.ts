@@ -1,5 +1,11 @@
-import type { AgentStatus, AiBackendStatus, AiEnrichment, ChatSource } from '../store/types';
-import type { AgentPart, AiProvider } from './aiProvider';
+import type {
+    AgentStatus,
+    AiBackendStatus,
+    AiEnrichment,
+    ChatSource,
+    ConnectionTest,
+} from '../store/types';
+import type { AgentPart, AiProvider, AiSelection } from './aiProvider';
 
 import { request, send } from '../data/sidecarClient';
 import { readServerEvents } from './sse';
@@ -81,6 +87,19 @@ export class EngineAiProvider implements AiProvider {
 
     status(): Promise<AiBackendStatus[]> {
         return request<AiBackendStatus[]>('/ai/status');
+    }
+
+    testAgent(id: string): Promise<ConnectionTest> {
+        return request<ConnectionTest>(`/ai/agents/${encodeURIComponent(id)}/test`, {
+            method: 'POST',
+        });
+    }
+
+    testModel(selection: AiSelection): Promise<ConnectionTest> {
+        return request<ConnectionTest>('/ai/test', {
+            body: JSON.stringify(selection),
+            method: 'POST',
+        });
     }
 }
 

@@ -1,4 +1,11 @@
-import type { AgentStatus, AiBackendStatus, AiEnrichment, ChatSource, Item } from '../store/types';
+import type {
+    AgentStatus,
+    AiBackendStatus,
+    AiEnrichment,
+    ChatSource,
+    ConnectionTest,
+    Item,
+} from '../store/types';
 import type { AiProvider } from './aiProvider';
 
 // What backs the UI where there is no data engine: the browser preview and the
@@ -67,5 +74,13 @@ export class MockAiProvider implements AiProvider {
 
     async status(): Promise<AiBackendStatus[]> {
         return [];
+    }
+
+    async testAgent(): Promise<ConnectionTest> {
+        throw new Error('Agents are connected from the desktop app.');
+    }
+
+    async testModel(): Promise<ConnectionTest> {
+        return { detail: 'This preview answers by itself.', ms: 0, ok: true };
     }
 }
