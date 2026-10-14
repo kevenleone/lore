@@ -31,7 +31,6 @@ const twMerge = extendTailwindMerge({
                 'danger',
                 'danger-tint',
                 'success',
-                'success-tint',
                 'knob',
                 'track-off',
                 'kbd-bg',
