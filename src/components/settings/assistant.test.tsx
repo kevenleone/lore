@@ -197,7 +197,9 @@ describe('testing the connection', () => {
         render(<AiPane />);
         fireEvent.click(await screen.findByRole('button', { name: 'Test' }));
 
-        expect(await screen.findByText('Claude Code answered in 1.2 s: “OK”')).toBeTruthy();
+        expect((await screen.findByRole('status')).textContent).toBe(
+            'WorksClaude Code answered in 1.2 s: “OK”',
+        );
         expect(ai.tested).toEqual([{ backend: 'claude-cli', baseUrl: undefined, model: 'opus' }]);
     });
 
@@ -206,9 +208,7 @@ describe('testing the connection', () => {
         render(<AiPane />);
         fireEvent.click(await screen.findByRole('button', { name: 'Test' }));
 
-        expect((await screen.findByRole('alert')).textContent).toBe(
-            'Failed after 0.8 s: Not signed in.',
-        );
+        expect((await screen.findByRole('alert')).textContent).toBe('FailedNot signed in. (0.8 s)');
     });
 
     it('tests an agent’s server only once it is connected', async () => {
