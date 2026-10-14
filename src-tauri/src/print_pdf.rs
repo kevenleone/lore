@@ -31,6 +31,12 @@ pub async fn export_webview_pdf(
     {
         use tauri::Manager;
 
+        // Before the capture, so a path nobody picked costs nothing.
+        let destination = crate::export_file::take(
+            &app.state::<crate::export_file::SaveTargets>(),
+            &destination,
+        )?;
+
         let window = app
             .get_webview_window(&label)
             .ok_or_else(|| "The print window is not available.".to_string())?;

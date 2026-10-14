@@ -79,12 +79,12 @@ export function pdfFileName(item: { path?: string; title: string }): string {
 
 /** Opens the native save panel. Resolves to null when the user cancels. */
 export async function pickPdfPath(item: { path?: string; title: string }): Promise<null | string> {
-    const { save } = await import('@tauri-apps/plugin-dialog');
-    const picked = await save({
-        // A bare filename, not a path, so macOS reuses the folder the user
-        // saved to last — which is what a second export expects.
-        defaultPath: pdfFileName(item),
-        filters: [{ extensions: ['pdf'], name: 'PDF' }],
+    const { invoke } = await import('@tauri-apps/api/core');
+    // The host shows the panel and remembers the answer: it writes the PDF only
+    // where the user picked. A bare filename, so macOS reuses the last folder.
+    const picked = await invoke<null | string>('pick_save_path', {
+        kind: 'pdf',
+        name: pdfFileName(item),
         title: 'Export as PDF',
     });
 

@@ -49,18 +49,16 @@ export async function saveExport(
         return true;
     }
 
-    const { save } = await import('@tauri-apps/plugin-dialog');
-    const destination = await save({
-        defaultPath: name,
-        filters: [{ extensions: [format.extension], name: format.label }],
+    const { invoke } = await import('@tauri-apps/api/core');
+    const destination = await invoke<null | string>('pick_save_path', {
+        kind: format.extension,
+        name,
         title: `Save as ${format.label}`,
     });
 
     if (typeof destination !== 'string') {
         return false;
     }
-
-    const { invoke } = await import('@tauri-apps/api/core');
 
     await invoke('write_export', { contents, destination });
 
