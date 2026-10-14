@@ -5,6 +5,7 @@ import type { BoardConfig, Item, SavedSearch } from '@lore/types';
 
 import { Elysia } from 'elysia';
 
+import { AgentError, type Agents, createAgents } from './ai/agents';
 import { AiError } from './ai/backend';
 import { chatResponse, parseMessages } from './ai/chat';
 import { enrich, itemText, parseWant } from './ai/enrich';
@@ -49,7 +50,11 @@ const MIME: Record<string, string> = {
     '.webp': 'image/webp',
 };
 
-export function routes(workspace: Workspace, ai: AiService = createAiService()) {
+export function routes(
+    workspace: Workspace,
+    ai: AiService = createAiService(),
+    agents: Agents = createAgents(),
+) {
     return (
         new Elysia()
             .onError(({ error, set }) => {
@@ -583,6 +588,32 @@ export function routes(workspace: Workspace, ai: AiService = createAiService()) 
                 await ai.clearKey(params.provider);
 
                 return { ok: true };
+            })
+
+            .get('/ai/agents', () => agents.list(workspace.current.vault.root))
+
+            .post('/ai/agents/:id/:part', async ({ body, params, set }) => {
+                const { on } = (body ?? {}) as { on?: unknown };
+
+                if (typeof on !== 'boolean' || (params.part !== 'mcp' && params.part !== 'skill')) {
+                    set.status = 400;
+
+                    return { error: 'part must be mcp or skill, and on a boolean' };
+                }
+
+                try {
+                    return params.part === 'mcp'
+                        ? await agents.setMcp(params.id, workspace.current.vault.root, on)
+                        : await agents.setSkill(params.id, workspace.current.vault.root, on);
+                } catch (error) {
+                    if (!(error instanceof AgentError)) {
+                        throw error;
+                    }
+
+                    set.status = 400;
+
+                    return { error: error.message };
+                }
             })
 
             .post('/ai/chat', async ({ body, set }) => {

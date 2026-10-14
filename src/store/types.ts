@@ -6,6 +6,20 @@ import type { ThemeId } from '../theme/themes';
 
 import { DEFAULT_DARK_THEME, DEFAULT_LIGHT_THEME } from '../theme/themes';
 
+/** `stale` is set up, but for another vault or an older Lore. */
+export type AgentSetup = 'off' | 'on' | 'stale';
+
+/** A command-line agent Lore can connect to the vault and teach its file format. */
+export interface AgentStatus {
+    available: boolean;
+    id: string;
+    label: string;
+    mcp: AgentSetup;
+    /** What the agent lists the vault's tools under. */
+    server: string;
+    skill: AgentSetup;
+}
+
 /** One way of reaching a model, as the engine reports it. */
 export interface AiBackendStatus {
     /** A command-line agent that is installed. Always true for an API provider. */
@@ -474,7 +488,7 @@ export type OnboardingStep = 'create' | 'open' | 'pick';
 export type OpenMode = 'drawer' | 'page';
 /** The panes in the settings sheet's rail, in order. */
 export type SettingsPane =
-    'about' | 'cal' | 'capture' | 'focus' | 'general' | 'keys' | 'look' | 'notif' | 'vault';
+    'about' | 'ai' | 'cal' | 'focus' | 'general' | 'keys' | 'look' | 'notif' | 'vault';
 /** List sort order. */
 export type SortOrder = 'newest' | 'oldest' | 'title';
 /**
@@ -500,7 +514,7 @@ export interface Switches {
      * switch called `autoSum` promising a summary after every capture was the
      * design's copy rather than the behaviour.
      */
-    // Capture & AI
+    // AI
     detailSections: boolean;
     /**
      * List every collection at the root, labelled with its whole path, rather

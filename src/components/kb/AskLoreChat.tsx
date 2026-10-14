@@ -118,7 +118,7 @@ export function AskLoreChat() {
                         </p>
                         <button
                             className="rounded-lg border border-border bg-surface px-3 py-[6px] font-[inherit] text-body font-semibold text-text hover:bg-surface2"
-                            onClick={() => openSettings('capture')}
+                            onClick={() => openSettings('ai')}
                             type="button"
                         >
                             Choose a model

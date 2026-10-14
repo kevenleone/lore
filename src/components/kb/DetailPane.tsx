@@ -90,7 +90,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
     const expandOpenItem = useStore((state) => state.expandOpenItem);
     const selectedId = useStore((state) => state.selectedId);
     const detail = useStore((state) => state.detail);
-    // The AI sections need both the pane toggle and the Capture & AI setting.
+    // The AI sections need both the pane toggle and the AI setting.
     const showSections = useStore((state) => state.prefs.switches.detailSections);
     const itemMeta = useStore((state) => state.itemMeta);
     const blockEditorEnabled = useStore((state) => state.prefs.switches.blockEditor);

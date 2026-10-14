@@ -15,8 +15,8 @@ import { SettingsIcon, type SettingsIconName } from '../common/settingsGlyphs';
 import { ICON_BUTTON } from './controls';
 import {
     AboutPane,
+    AiPane,
     CalendarPane,
-    CapturePane,
     FocusPane,
     GeneralPane,
     KeysPane,
@@ -62,7 +62,7 @@ const PANES: PaneDef[] = [
         icon: 'palette',
         id: 'look',
         label: 'Appearance',
-        terms: 'colour color mode light dark auto theme style accent layout list cards table drawer page density cozy compact roomy text size counts sidebar status bar motion block editor markdown thumbnail banner cover image placement',
+        terms: 'colour color mode light dark auto theme style accent layout list cards table drawer page density cozy compact roomy text size counts sidebar status bar motion block editor markdown thumbnail banner cover image placement unsplash photo stock access key',
     },
     {
         Body: KeysPane,
@@ -79,11 +79,11 @@ const PANES: PaneDef[] = [
         terms: 'alerts banner alert sound quiet hours focus session end',
     },
     {
-        Body: CapturePane,
+        Body: AiPane,
         icon: 'sparkle',
-        id: 'capture',
-        label: 'Capture & AI',
-        terms: 'ai assistant model ask lore claude codex opencode anthropic openai gemini ollama api key summary summarize suggest tags unsplash photo thumbnail image access stock',
+        id: 'ai',
+        label: 'AI',
+        terms: 'ai assistant model ask lore claude code codex opencode anthropic openai gemini ollama api key summary summarize suggest tags agent agents mcp skill connect vault',
     },
     {
         Body: FocusPane,

@@ -1,4 +1,4 @@
-import type { AiBackendStatus, AiEnrichment, ChatSource, Item } from '../store/types';
+import type { AgentStatus, AiBackendStatus, AiEnrichment, ChatSource, Item } from '../store/types';
 import type { AiProvider } from './aiProvider';
 
 // What backs the UI where there is no data engine: the browser preview and the
@@ -8,6 +8,10 @@ export class MockAiProvider implements AiProvider {
     readonly needsSetup = false;
 
     constructor(private readonly items: () => Item[] | Promise<Item[]>) {}
+
+    async agents(): Promise<AgentStatus[]> {
+        return [];
+    }
 
     async chat(...[messages, , handlers]: Parameters<AiProvider['chat']>): Promise<ChatSource[]> {
         const question = messages[messages.length - 1]?.text ?? '';
@@ -53,6 +57,10 @@ export class MockAiProvider implements AiProvider {
 
     async enrich(): Promise<AiEnrichment> {
         return {};
+    }
+
+    async setAgent(): Promise<AgentStatus> {
+        throw new Error('Agents are connected from the desktop app.');
     }
 
     async setKey(): Promise<void> {}

@@ -1,4 +1,5 @@
 import type {
+    AgentStatus,
     AiBackendStatus,
     AiEnrichField,
     AiEnrichment,
@@ -6,7 +7,11 @@ import type {
     ChatSource,
 } from '../store/types';
 
+export type AgentPart = 'mcp' | 'skill';
+
 export interface AiProvider {
+    /** The command-line agents on this machine, and whether each is connected to the vault. */
+    agents(): Promise<AgentStatus[]>;
     /** Resolves with the items the finished answer cites. Rejects when it fails. */
     chat(
         messages: readonly ChatTurn[],
@@ -25,6 +30,8 @@ export interface AiProvider {
      * the user to Settings for.
      */
     readonly needsSetup: boolean;
+    /** Rejects with a sentence to show when the agent refused. */
+    setAgent(id: string, part: AgentPart, on: boolean): Promise<AgentStatus>;
     /** The key is written and never read back: `status` says only that one is stored. */
     setKey(provider: string, key: string, baseUrl?: string): Promise<void>;
     status(): Promise<AiBackendStatus[]>;
