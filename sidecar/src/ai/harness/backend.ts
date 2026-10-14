@@ -1,8 +1,7 @@
-import { fileURLToPath } from 'node:url';
-
-import type { Harness, McpLaunch } from './types';
+import type { Harness } from './types';
 
 import { type AiBackend, AiError } from '../backend';
+import { engineLaunch } from '../launch';
 import { conversationPrompt } from '../prompts';
 import { claude } from './claude';
 import { codex } from './codex';
@@ -34,7 +33,8 @@ export function harnessBackend(harness: Harness, binary: string, model?: string)
                 harness,
                 binary,
                 {
-                    mcp: selfLaunch(store.vault.root),
+                    // Read-only: a question must never be able to change the vault.
+                    mcp: engineLaunch(store.vault.root, { readOnly: true }),
                     model,
                     prompt: conversationPrompt(messages),
                     system,
@@ -64,25 +64,5 @@ export function harnessBackend(harness: Harness, binary: string, model?: string)
 
             return parsed.data;
         },
-    };
-}
-
-/**
- * How to start this same engine as an MCP server. A compiled build is its own
- * executable; under `bun src/index.ts` the executable is Bun and the entry
- * point has to be named.
- *
- * `Bun.main` is what tells the two apart: a bytecode build keeps the source
- * path in `import.meta.url`, so that alone looks the same in both.
- */
-function selfLaunch(vault: string): McpLaunch {
-    const compiled = Bun.main.includes('$bunfs') || Bun.main.includes('~BUN');
-    const entry = fileURLToPath(new URL('../../index.ts', import.meta.url));
-
-    return {
-        args: compiled ? ['mcp'] : [entry, 'mcp'],
-        command: process.execPath,
-        // Read-only: a question must never be able to change the vault.
-        env: { LORE_MCP_READONLY: '1', LORE_VAULT: vault },
     };
 }
