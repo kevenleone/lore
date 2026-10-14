@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.30.0](https://github.com/kevenleone/lore/compare/v1.29.0...v1.30.0) (2026-10-14)
+
+
+### Features
+
+* **ai:** connect Claude Code and Codex to the vault from a dedicated AI settings pane ([71505d4](https://github.com/kevenleone/lore/commit/71505d40f3dc21d994dd16047981d7739a6ca7ed))
+* **ai:** test the model and each agent's connection from Settings ([688f71e](https://github.com/kevenleone/lore/commit/688f71e9b57d2c432d9bbd255d941972dd77b8a1))
+
+
+### Bug Fixes
+
+* **ai:** capitalise Opencode's name where it is shown ([b424f63](https://github.com/kevenleone/lore/commit/b424f6301d4c0154ac0dd674b0e037ceb7138352))
+* **ai:** count a hand-made lore mcp entry for the open vault as connected ([df1200b](https://github.com/kevenleone/lore/commit/df1200bb1032ad28dc1b989edfddf851880f1192))
+* **ai:** keep the version before every MCP edit in the trash ([852b600](https://github.com/kevenleone/lore/commit/852b600c678f9b165c7b4048df8d65c1b6d4836d))
+* **host:** write exports only where the user picked, and trash only a vault ([0088b7a](https://github.com/kevenleone/lore/commit/0088b7a05d65e5187afe6ca2f9d6f55f31a7e004))
+* **settings:** line a test result's badge up with its message ([aa5f6db](https://github.com/kevenleone/lore/commit/aa5f6db923cc58dc55c241dcc8f5561383e5b836))
+* **settings:** show a connection test's result as a clear pass or fail, and keep settings text unselectable ([cd19a8c](https://github.com/kevenleone/lore/commit/cd19a8c9cd35625f8d860d94cbb44fd3266e0677))
+
+
+### Refactoring
+
+* **sidecar:** share how the engine launches itself as an MCP server ([2f85976](https://github.com/kevenleone/lore/commit/2f859766e10aad6def1f5b76cd69ebc993937646))
+
+
+### Documentation
+
+* point agent setup at Settings → AI ([8f1a6e1](https://github.com/kevenleone/lore/commit/8f1a6e18d6b8c3fca19e12fc410531e91958917a))
+* **skill:** teach lore-docs that sketches are drawn through Lore ([6049300](https://github.com/kevenleone/lore/commit/6049300522d2f9bd3ca296e0b8c827d717b3087a))
+
 ## [1.29.0](https://github.com/kevenleone/lore/compare/v1.28.0...v1.29.0) (2026-10-13)
 
 
