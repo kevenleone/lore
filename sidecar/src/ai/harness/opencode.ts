@@ -76,5 +76,5 @@ export const opencode: Harness = {
             stdin: `${system}\n\n${prompt}`,
         };
     },
-    label: 'opencode',
+    label: 'Opencode',
 };
