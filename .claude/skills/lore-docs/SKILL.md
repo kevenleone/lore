@@ -1,6 +1,6 @@
 ---
 name: lore-docs
-description: Write Markdown files that Lore (the offline-first knowledge base) reads as first-class items — notes, links, tasks, code snippets and images — with the right YAML frontmatter, filename, folder and body conventions. Use whenever asked to create, generate, import or convert notes/docs/tasks "for Lore", "into the vault", or as Lore items, or to write .md files that must show up correctly in a Lore vault.
+description: Write Markdown files that Lore (the offline-first knowledge base) reads as first-class items — notes, links, tasks, code snippets, images and sketches — with the right YAML frontmatter, filename, folder and body conventions. Use whenever asked to create, generate, import or convert notes/docs/tasks "for Lore", "into the vault", or as Lore items, or to write .md files that must show up correctly in a Lore vault.
 ---
 
 # Writing Lore documents
@@ -67,30 +67,30 @@ YAML between `---` fences, as the very first thing in the file. Write keys in
 this order — it is the order Lore writes them back in, so matching it means a
 later edit in Lore produces no diff noise. Omit any key you have no value for.
 
-| Key           | Type / values                                   | Notes                                                                                      |
-| ------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `id`          | string                                          | Optional. Omit it and Lore assigns one. If you set it, it must be unique across the vault. |
-| `title`       | string                                          | Display title. Falls back to the first `#` heading, then the filename.                     |
-| `type`        | `note` \| `link` \| `task` \| `code` \| `image` | Anything else (or missing) means `note`.                                                   |
-| `url`         | string                                          | **Links only.** The page the item points at.                                               |
-| `created`     | ISO 8601 datetime                               | e.g. `2026-09-21T10:12:04.000Z`. Falls back to file mtime.                                 |
-| `updated`     | ISO 8601 datetime                               | Falls back to `created`.                                                                   |
-| `tags`        | list of strings                                 | Lowercase, no `#` (a leading `#` is stripped anyway). Flow style: `[product, research]`.   |
-| `inbox`       | `true`                                          | Flags are flat booleans. **Only write them when true** — omit, never write `false`.        |
-| `today`       | `true`                                          | Shows in Today.                                                                            |
-| `starred`     | `true`                                          |                                                                                            |
-| `done`        | `true`                                          | Tasks: finished.                                                                           |
-| `completed`   | ISO 8601 datetime                               | Only alongside `done: true`.                                                               |
-| `due`         | `YYYY-MM-DD`                                    | A calendar day, no time.                                                                   |
-| `priority`    | `low` \| `high` \| `urgent`                     | Omit for normal — never write `priority: normal`.                                          |
-| `status`      | board column id                                 | Tasks only. Default board: `todo`, `doing`, `done`. Omit = first column.                   |
-| `image`       | URL or `attachments/<file>`                     | Banner/preview image; for `type: image`, the image itself.                                 |
-| `imageCredit` | `{provider: unsplash, name, profileUrl}`        | Only with `image`, only for an Unsplash photo. Otherwise omit.                             |
-| `description` | string                                          | **Links:** the page's own meta description.                                                |
-| `summary`     | string                                          | A one-to-three-sentence summary of the item.                                               |
-| `points`      | list of strings                                 | Key takeaways, shown under the summary.                                                    |
-| `related`     | list of `'[[stem]]'`                            | Links to other items. **Quote each entry** — `[[` is YAML syntax otherwise.                |
-| `comments`    | list of `{body, at?, author?, id?}`             | Notes left on the item. Only `body` is required.                                           |
+| Key           | Type / values                                               | Notes                                                                                      |
+| ------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `id`          | string                                                      | Optional. Omit it and Lore assigns one. If you set it, it must be unique across the vault. |
+| `title`       | string                                                      | Display title. Falls back to the first `#` heading, then the filename.                     |
+| `type`        | `note` \| `link` \| `task` \| `code` \| `image` \| `canvas` | Anything else (or missing) means `note`.                                                   |
+| `url`         | string                                                      | **Links only.** The page the item points at.                                               |
+| `created`     | ISO 8601 datetime                                           | e.g. `2026-09-21T10:12:04.000Z`. Falls back to file mtime.                                 |
+| `updated`     | ISO 8601 datetime                                           | Falls back to `created`.                                                                   |
+| `tags`        | list of strings                                             | Lowercase, no `#` (a leading `#` is stripped anyway). Flow style: `[product, research]`.   |
+| `inbox`       | `true`                                                      | Flags are flat booleans. **Only write them when true** — omit, never write `false`.        |
+| `today`       | `true`                                                      | Shows in Today.                                                                            |
+| `starred`     | `true`                                                      |                                                                                            |
+| `done`        | `true`                                                      | Tasks: finished.                                                                           |
+| `completed`   | ISO 8601 datetime                                           | Only alongside `done: true`.                                                               |
+| `due`         | `YYYY-MM-DD`                                                | A calendar day, no time.                                                                   |
+| `priority`    | `low` \| `high` \| `urgent`                                 | Omit for normal — never write `priority: normal`.                                          |
+| `status`      | board column id                                             | Tasks only. Default board: `todo`, `doing`, `done`. Omit = first column.                   |
+| `image`       | URL or `attachments/<file>`                                 | Banner/preview image; for `type: image`, the image itself.                                 |
+| `imageCredit` | `{provider: unsplash, name, profileUrl}`                    | Only with `image`, only for an Unsplash photo. Otherwise omit.                             |
+| `description` | string                                                      | **Links:** the page's own meta description.                                                |
+| `summary`     | string                                                      | A one-to-three-sentence summary of the item.                                               |
+| `points`      | list of strings                                             | Key takeaways, shown under the summary.                                                    |
+| `related`     | list of `'[[stem]]'`                                        | Links to other items. **Quote each entry** — `[[` is YAML syntax otherwise.                |
+| `comments`    | list of `{body, at?, author?, id?}`                         | Notes left on the item. Only `body` is required.                                           |
 
 Rules that matter:
 
@@ -236,10 +236,18 @@ return debounced;
 `image` holds a URL or a vault-relative `attachments/<file>` path (only if that
 file really exists there). The body is an optional caption or notes.
 
+### `canvas` — a sketch
+
+A freehand drawing, kept in the body as an Excalidraw scene under `## Drawing`,
+with its labels listed under `## Text`. **Do not write or edit a canvas file by
+hand**: a scene that does not parse opens read-only in Lore. Create and draw one
+through the Lore MCP tools instead — `create_item` with `type: canvas`, then
+`add_to_canvas`. Without those tools, say that a sketch has to be drawn in Lore.
+
 ## 6. Checklist before writing a file
 
 - [ ] Frontmatter is the first line of the file, fenced by `---`, valid YAML.
-- [ ] `type` is one of the five values; `url` present iff `type: link`.
+- [ ] `type` is one of the six values; `url` present iff `type: link`; no `canvas` written by hand.
 - [ ] Timestamps are ISO 8601 with `Z`; `due` is `YYYY-MM-DD`.
 - [ ] No `false` flags, no `priority: normal`, no `collectionId`, no `source`.
 - [ ] Every `related` entry is a quoted `'[[stem]]'` matching a real or intended filename.
