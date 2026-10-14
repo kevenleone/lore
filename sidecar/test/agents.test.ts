@@ -134,6 +134,17 @@ describe('agents', () => {
         expect(commands.map((command) => command[2])).toEqual(['remove', 'add']);
     });
 
+    it('counts a hand-made `lore mcp <vault>` for this vault as connected', async () => {
+        const handMade = (args: string[]): string =>
+            JSON.stringify({ mcpServers: { 'lore-agent': { args, command: 'lore-agent' } } });
+
+        await writeFile(join(home, '.claude.json'), handMade(['mcp', vault]));
+        expect((await agents.list(vault))[0].mcp).toBe('on');
+
+        await writeFile(join(home, '.claude.json'), handMade(['mcp', join(vault, 'Other')]));
+        expect((await agents.list(vault))[0].mcp).toBe('stale');
+    });
+
     it('disconnects, leaving the rest of the agent’s config alone', async () => {
         await writeFile(
             join(home, '.claude.json'),
@@ -160,6 +171,10 @@ describe('agents', () => {
 
         expect((await codex.list(vault))[1].mcp).toBe('on');
         expect((await codex.list(join(vault, 'elsewhere')))[1].mcp).toBe('stale');
+    });
+
+    it('tests only a server that is there', async () => {
+        await expect(agents.test('claude')).rejects.toThrow('no “lore-agent” server');
     });
 
     it('passes on what the agent said when it refuses', async () => {
