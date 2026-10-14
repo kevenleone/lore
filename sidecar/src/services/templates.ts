@@ -10,7 +10,7 @@ import type { Template } from '@lore/types';
 
 import { readdir } from 'node:fs/promises';
 
-import { itemTypeOf, parseFile } from './markdown';
+import { itemTypeOf, parseFile } from '../utils/markdown';
 import { isIgnoredFile, TEMPLATES_DIR, type Vault } from './vault';
 
 export async function listTemplates(vault: Vault): Promise<Template[]> {

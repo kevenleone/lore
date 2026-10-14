@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { VaultStore } from '../src/index/store';
-import { bodyWikilinks } from '../src/links';
+import { bodyWikilinks } from '../src/utils/links';
 
 describe('bodyWikilinks', () => {
     it('finds one written mid-sentence', () => {

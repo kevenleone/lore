@@ -4,7 +4,7 @@ import { type AiBackend, AiError } from './backend';
 import { keychain, type SecretStore } from './credentials';
 import { createLocator, type Locate } from './detect';
 import { harnessBackend, HARNESSES } from './harness/backend';
-import { type ApiProvider, sdkBackend } from './sdkBackend';
+import { type ApiProvider, sdkBackend } from './sdk-backend';
 
 interface ApiDefinition {
     /** Absent where no model id is safe to assume; the user names one. */

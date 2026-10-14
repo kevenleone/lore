@@ -22,7 +22,7 @@ import {
 import { constants } from 'node:fs';
 import { copyFile, mkdir, rm, rmdir, stat } from 'node:fs/promises';
 
-import { parseGithubTarget, resolveDocument } from '../github';
+import { parseGithubTarget, resolveDocument } from '../services/github';
 import {
     bodyWikilinks,
     parseWikilink,
@@ -30,10 +30,10 @@ import {
     resolveRelated,
     rewriteRelated,
     serializeRelated,
-} from '../links';
-import { parseFile, serializeFile, toItem } from '../markdown';
-import { newId, uniqueStem } from '../slug';
-import { collectionOf, INDEX_FILE, joinPath, stemOf, TRASH_DIR, Vault } from '../vault';
+} from '../utils/links';
+import { parseFile, serializeFile, toItem } from '../utils/markdown';
+import { newId, uniqueStem } from '../utils/slug';
+import { collectionOf, INDEX_FILE, joinPath, stemOf, TRASH_DIR, Vault } from '../services/vault';
 import { type FileRow, hashContent, openIndex } from './db';
 
 /**

@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { createApp } from '../src/app';
-import { Workspace } from '../src/workspace';
+import { Workspace } from '../src/services/workspace';
 
 const TOKEN = 't';
 let root: string;

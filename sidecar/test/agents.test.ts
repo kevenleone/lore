@@ -8,7 +8,7 @@ import SKILL from '../../.claude/skills/lore-docs/SKILL.md' with { type: 'text' 
 import { type AgentEnvironment, type Agents, createAgents, serverName } from '../src/ai/agents';
 import { engineLaunch } from '../src/ai/launch';
 import { routes } from '../src/routes';
-import { Workspace } from '../src/workspace';
+import { Workspace } from '../src/services/workspace';
 
 let home: string;
 let vault: string;

@@ -11,16 +11,16 @@ import { chatResponse, parseMessages } from './ai/chat';
 import { enrich, itemText, parseWant } from './ai/enrich';
 import { probeModel } from './ai/probe';
 import { type AiService, type BackendSelection, createAiService } from './ai/service';
-import { deleteChat, isThreadId, listChats, parseThread, readChat, writeChat } from './chats';
-import { type DocumentFacts, documentItem, FrontmatterUnreadable, patchDocument } from './document';
-import { gitStatus, initGit } from './git';
-import { parseGithubTarget, resolveDocument } from './github';
-import { fetchLinkMetadata } from './linkMetadata';
-import { listTemplates } from './templates';
-import { searchPhotos, triggerDownload, UnsplashError } from './unsplash';
-import { ATTACHMENTS_DIR, hashColor } from './vault';
-import { exportVault, measureVault } from './vaultSize';
-import { Workspace, WorkspaceNotOpen } from './workspace';
+import { deleteChat, isThreadId, listChats, parseThread, readChat, writeChat } from './services/chats';
+import { type DocumentFacts, documentItem, FrontmatterUnreadable, patchDocument } from './services/document';
+import { gitStatus, initGit } from './services/git';
+import { parseGithubTarget, resolveDocument } from './services/github';
+import { fetchLinkMetadata } from './services/link-metadata';
+import { listTemplates } from './services/templates';
+import { searchPhotos, triggerDownload, UnsplashError } from './services/unsplash';
+import { ATTACHMENTS_DIR, hashColor } from './services/vault';
+import { exportVault, measureVault } from './services/vault-size';
+import { Workspace, WorkspaceNotOpen } from './services/workspace';
 
 interface AiBody extends Partial<BackendSelection> {
     backend?: unknown;

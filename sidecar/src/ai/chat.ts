@@ -3,7 +3,7 @@ import type { ChatSource } from '@lore/types';
 import type { VaultStore } from '../index/store';
 import type { AiBackend, ChatMessage } from './backend';
 
-import { bodyWikilinks, parseWikilink } from '../links';
+import { bodyWikilinks, parseWikilink } from '../utils/links';
 import { ASK_LORE_SYSTEM } from './prompts';
 
 /** The answer as server-sent events: `delta`, `activity`, then `sources` and `done`, or `error`. */
