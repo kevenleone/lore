@@ -19,7 +19,8 @@ import {
     deriveSnippet,
     deriveSubtaskCounts,
 } from '@lore/derive';
-import { mkdir, rm, rmdir, stat } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { copyFile, mkdir, rm, rmdir, stat } from 'node:fs/promises';
 
 import { parseGithubTarget, resolveDocument } from '../github';
 import {
@@ -292,6 +293,41 @@ export class VaultStore {
             unresolved: JSON.parse(row.unresolved) as string[],
             words: body ? body.split(/\s+/).length : 0,
         };
+    }
+
+    /**
+     * Copies an item's file into `.lore/trash/` as it is now, before something
+     * that cannot be told what it is about to destroy changes it. Answers with
+     * the copy's vault-relative path.
+     */
+    async keepCopy(id: string): Promise<null | string> {
+        const row = this.db.query<FileRow, [string]>('SELECT * FROM files WHERE id = ?').get(id);
+
+        if (!row) {
+            return null;
+        }
+
+        await mkdir(this.vault.path(TRASH_DIR), { recursive: true });
+
+        // Two edits in one millisecond must not keep only the later copy.
+        for (let attempt = 0; ; attempt += 1) {
+            const suffix = attempt ? `-${attempt}` : '';
+            const copy = `${TRASH_DIR}/${Date.now()}-${row.stem}${suffix}.md`;
+
+            try {
+                await copyFile(
+                    this.vault.path(row.path),
+                    this.vault.path(copy),
+                    constants.COPYFILE_EXCL,
+                );
+
+                return copy;
+            } catch (error) {
+                if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
+                    throw error;
+                }
+            }
+        }
     }
 
     async listBoards(): Promise<Record<string, BoardConfig>> {

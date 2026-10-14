@@ -114,6 +114,20 @@ function find(store: VaultStore, reference: string): Item {
     return item;
 }
 
+/**
+ * Whatever a model changes, the version before it is kept in the trash: a note
+ * it read may have told it to, and the user is not there to say no.
+ */
+async function keepCopy(store: VaultStore, item: Item): Promise<string> {
+    const copy = await store.keepCopy(item.id);
+
+    if (!copy) {
+        throw new ToolError(`Item "${item.id}" disappeared before it could be changed.`);
+    }
+
+    return copy;
+}
+
 // An agent names the folder, and what it read may have told it which one. Hidden
 // folders hold Lore's own files and the user's git data; `attachments` is not a collection.
 const collection = z
@@ -226,7 +240,7 @@ export const VAULT_TOOLS: readonly VaultTool[] = [
     }),
     defineTool({
         description:
-            'Changes fields of an existing item. Only the fields passed are touched; `body` and `tags` replace the whole value, so read the item first. Retitling does not rename the file.',
+            'Changes fields of an existing item. Only the fields passed are touched; `body` and `tags` replace the whole value, so read the item first. Retitling does not rename the file. The version before the change is kept, and `previousVersion` says where.',
         async handler(store, { id, ...changes }) {
             const item = find(store, id);
             const patch: Partial<Item> = {};
@@ -258,13 +272,18 @@ export const VAULT_TOOLS: readonly VaultTool[] = [
                 patch.title = changes.title;
             }
 
+            if (!Object.keys(patch).length) {
+                return detail(item);
+            }
+
+            const previousVersion = await keepCopy(store, item);
             const updated = await store.updateItem(item.id, patch);
 
             if (!updated) {
                 throw new ToolError(`Item "${id}" disappeared while it was being updated.`);
             }
 
-            return detail(updated);
+            return { ...detail(updated), previousVersion };
         },
         input: {
             body: z.string().optional(),
@@ -309,6 +328,7 @@ export const VAULT_TOOLS: readonly VaultTool[] = [
                 throw failure;
             }
 
+            const previousVersion = await keepCopy(store, item);
             const updated = await store.updateItem(item.id, {
                 body: writeCanvasBody(item.body, { ...scene, elements }),
             });
@@ -317,7 +337,11 @@ export const VAULT_TOOLS: readonly VaultTool[] = [
                 throw new ToolError(`Item "${id}" disappeared while it was being drawn on.`);
             }
 
-            return { ...detail(updated), added: { arrows: arrows.length, shapes: shapes.length } };
+            return {
+                ...detail(updated),
+                added: { arrows: arrows.length, shapes: shapes.length },
+                previousVersion,
+            };
         },
         input: {
             arrows: z

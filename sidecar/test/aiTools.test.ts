@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -141,6 +141,31 @@ describe('vault tools', () => {
     });
 });
 
+describe('undoing what a model changed', () => {
+    const trash = async (): Promise<string[]> => readdir(join(root, '.lore', 'trash'));
+
+    it('keeps the version before every change in the trash', async () => {
+        const result = (await tool('update_item').run(store, {
+            body: 'Gone.',
+            id: 'sourdough-starter',
+        })) as { previousVersion: string };
+
+        await tool('update_item').run(store, { id: 'sourdough-starter', tags: ['bread'] });
+
+        const copies = await trash();
+
+        expect(copies).toHaveLength(2);
+        expect(result.previousVersion).toStartWith('.lore/trash/');
+        expect(await readFile(join(root, result.previousVersion), 'utf8')).toBe(HANDWRITTEN);
+    });
+
+    it('keeps nothing when nothing changes', async () => {
+        await tool('update_item').run(store, { id: 'sourdough-starter' });
+
+        expect(await trash().catch(() => [])).toEqual([]);
+    });
+});
+
 describe('a sketch', () => {
     const SKETCH = `---
 title: System sketch
@@ -238,6 +263,10 @@ excalidraw-plugin: parsed
         });
 
         const after = sceneOf(await readFile(join(root, 'pipeline.md'), 'utf8'));
+        const kept = await readdir(join(root, '.lore', 'trash'));
+
+        expect(kept).toHaveLength(2);
+
         const [box, label, diamond] = after;
 
         expect(label).toEqual(before[1]);
