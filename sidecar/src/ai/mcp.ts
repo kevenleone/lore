@@ -14,6 +14,7 @@ const INSTRUCTIONS = `Lore is a personal knowledge base: a folder of Markdown fi
 - Refer to an item as [[stem]], using the "stem" a tool returned. That is how items link to each other, and Lore renders it as a link.
 - Write through create_item and update_item rather than editing files, so filenames, frontmatter and links stay consistent.
 - update_item replaces "body" and "tags" whole. Read first, then send the full new value.
+- Every change keeps the version before it in .lore/trash/, at the "previousVersion" the tool returns. Tell the user where it is when you change something they did not ask you to.
 - A canvas is a sketch. read_item gives its labels, not its shapes, and add_to_canvas is the only way to draw into one.`;
 
 export function createMcpServer(store: () => VaultStore, access: 'read' | 'write'): McpServer {
