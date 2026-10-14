@@ -46,6 +46,10 @@
     --color-danger: #b4442f;
     --color-danger-tint: var(--danger-tint);
 
+    /* A check that passed. Fixed like danger, for the same reason. */
+    --color-success: #2f8a4f;
+    --color-success-tint: var(--success-tint);
+
     --color-surface: var(--surface);
     --color-surface2: var(--surface2);
     --color-surface3: var(--surface3);

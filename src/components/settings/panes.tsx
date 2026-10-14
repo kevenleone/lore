@@ -4,7 +4,7 @@
 // feature does not exist yet is not shown at all, because a switch that quietly
 // does nothing is worse than a missing one.
 
-import { useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import type { AgentPart } from '../../ai/aiProvider';
 import type { VaultSize } from '../../data/repository';
@@ -49,6 +49,7 @@ import {
 import { useStore } from '../../store/useStore';
 import { themesFor } from '../../theme/themes';
 import { effectiveTheme } from '../../theme/tokens';
+import { Check, Close } from '../common/glyphs';
 import { LoreMark } from '../common/LoreMark';
 import { SettingsIcon } from '../common/settingsGlyphs';
 import {
@@ -866,7 +867,6 @@ function AgentRows({
                     (result) =>
                         `${agent.label}’s “${agent.server}” server started in ${seconds(result.ms)} and offers ${result.detail}.`,
                 )}
-                failed={test.failed}
                 title={vaultTitle}
             >
                 <div className="flex flex-none items-center gap-[10px]">
@@ -970,7 +970,7 @@ function AgentsSection() {
             ))}
             {failure && (
                 <div
-                    className="pb-[13px] text-body leading-[1.5] whitespace-pre-wrap text-danger select-text"
+                    className="pb-[13px] text-body leading-[1.5] whitespace-pre-wrap text-danger"
                     role="alert"
                 >
                     {failure}
@@ -1024,8 +1024,7 @@ const TEXT_FIELD =
     'w-[210px] flex-none rounded-lg border border-border bg-surface px-[9px] py-[6px] text-right font-mono text-body text-text outline-none focus:border-accent';
 
 interface ConnectionTestState {
-    describe(idle: string, running: string, passed: (result: ConnectionTest) => string): string;
-    failed: boolean;
+    describe(idle: string, running: string, passed: (result: ConnectionTest) => string): ReactNode;
     run(work: () => Promise<ConnectionTest>): void;
     running: boolean;
 }
@@ -1323,7 +1322,6 @@ function ModelTestRow({ label }: { label: string }) {
                 `Waiting for ${label} to answer…`,
                 (result) => `${label} answered in ${seconds(result.ms)}: “${result.detail}”`,
             )}
-            failed={test.failed}
             title="Test the connection"
         >
             <PillButton disabled={test.running} onClick={run}>
@@ -1391,6 +1389,31 @@ function privacyNote(backend: AiBackendStatus | undefined): string {
     }
 
     return `Your question, and the notes read to answer it, go to ${backend.label} under your own API key.`;
+}
+
+/** A result is forgotten when `subject` changes, since it was about something else. */
+/** A test's outcome, set apart from the grey text around it so it reads at a glance. */
+function ResultBadge({ children, ok }: { children: ReactNode; ok: boolean }) {
+    return (
+        <span
+            className={cn(
+                'mt-[6px] flex items-start gap-[9px] rounded-lg px-[8px] py-[7px] text-body leading-[1.45] text-text2',
+                ok ? 'bg-success-tint' : 'bg-danger-tint',
+            )}
+            role={ok ? 'status' : 'alert'}
+        >
+            <span
+                className={cn(
+                    'flex flex-none items-center gap-[4px] rounded-7 px-[7px] py-[1px] font-semibold text-white',
+                    ok ? 'bg-success' : 'bg-danger',
+                )}
+            >
+                {ok ? <Check size={11} sw={2.8} /> : <Close size={11} sw={2.6} />}
+                {ok ? 'Works' : 'Failed'}
+            </span>
+            <span className="pt-[1px]">{children}</span>
+        </span>
+    );
 }
 
 function seconds(ms: number): string {
@@ -1462,7 +1485,6 @@ function UnsplashKeyRow() {
     );
 }
 
-/** A result is forgotten when `subject` changes, since it was about something else. */
 function useConnectionTest(subject: string): ConnectionTestState {
     const [running, setRunning] = useState(false);
     const [result, setResult] = useState<ConnectionTest | null>(null);
@@ -1479,11 +1501,12 @@ function useConnectionTest(subject: string): ConnectionTestState {
                 return idle;
             }
 
-            return result.ok
-                ? passed(result)
-                : `Failed after ${seconds(result.ms)}: ${result.detail}`;
+            return (
+                <ResultBadge ok={result.ok}>
+                    {result.ok ? passed(result) : `${result.detail} (${seconds(result.ms)})`}
+                </ResultBadge>
+            );
         },
-        failed: !running && result?.ok === false,
         run(work) {
             if (running) {
                 return;
