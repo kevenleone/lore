@@ -8,11 +8,11 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { VaultStore } from '../src/index/store';
-import { parseWikilink, rewriteRelated } from '../src/utils/links';
-import { parseFile, serializeFile, splitFrontmatter, toItem } from '../src/utils/markdown';
-import { slugify, uniqueStem } from '../src/utils/slug';
-import { collectionOf, hashColor, LORE_DIR, safeJoin, stemOf, Vault } from '../src/services/vault';
+import { VaultStore } from '../../src/index/store';
+import { parseWikilink, rewriteRelated } from '../../src/utils/links';
+import { parseFile, serializeFile, splitFrontmatter, toItem } from '../../src/utils/markdown';
+import { slugify, uniqueStem } from '../../src/utils/slug';
+import { collectionOf, hashColor, LORE_DIR, safeJoin, stemOf, Vault } from '../../src/services/vault';
 
 let root: string;
 let store: VaultStore;

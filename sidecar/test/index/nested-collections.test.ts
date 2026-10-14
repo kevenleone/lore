@@ -9,8 +9,8 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { VaultStore } from '../src/index/store';
-import { COLLECTIONS_FILE } from '../src/services/vault';
+import { VaultStore } from '../../src/index/store';
+import { COLLECTIONS_FILE } from '../../src/services/vault';
 
 let root: string;
 let store: VaultStore;

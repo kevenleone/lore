@@ -5,7 +5,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { VaultStore } from '../src/index/store';
+import { VaultStore } from '../../src/index/store';
 
 let root: string;
 let store: VaultStore;

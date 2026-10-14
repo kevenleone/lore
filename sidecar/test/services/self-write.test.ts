@@ -7,7 +7,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { Workspace } from '../src/services/workspace';
+import { Workspace } from '../../src/services/workspace';
 
 let root: string;
 let workspace: Workspace;

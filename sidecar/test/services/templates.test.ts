@@ -6,8 +6,8 @@ import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { listTemplates } from '../src/services/templates';
-import { TEMPLATES_DIR, Vault } from '../src/services/vault';
+import { listTemplates } from '../../src/services/templates';
+import { TEMPLATES_DIR, Vault } from '../../src/services/vault';
 
 let root: string;
 let vault: Vault;

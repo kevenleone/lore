@@ -7,8 +7,8 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { VaultStore } from '../src/index/store';
-import { bodyWikilinks } from '../src/utils/links';
+import { VaultStore } from '../../src/index/store';
+import { bodyWikilinks } from '../../src/utils/links';
 
 describe('bodyWikilinks', () => {
     it('finds one written mid-sentence', () => {

@@ -3,8 +3,8 @@ import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { ToolError, toolsFor, type VaultTool } from '../src/ai/tools';
-import { VaultStore } from '../src/index/store';
+import { ToolError, toolsFor, type VaultTool } from '../../src/ai/tools';
+import { VaultStore } from '../../src/index/store';
 
 let root: string;
 let store: VaultStore;
