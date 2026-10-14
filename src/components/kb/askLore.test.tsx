@@ -65,7 +65,7 @@ describe('AskLoreChat', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Choose a model' }));
 
-        expect(useStore.getState()).toMatchObject({ settingsOpen: true, settingsPane: 'capture' });
+        expect(useStore.getState()).toMatchObject({ settingsOpen: true, settingsPane: 'ai' });
     });
 
     it('shows what the model is doing, then the answer with its citation as a link', async () => {

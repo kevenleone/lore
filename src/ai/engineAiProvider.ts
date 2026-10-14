@@ -1,5 +1,5 @@
-import type { AiBackendStatus, AiEnrichment, ChatSource } from '../store/types';
-import type { AiProvider } from './aiProvider';
+import type { AgentStatus, AiBackendStatus, AiEnrichment, ChatSource } from '../store/types';
+import type { AgentPart, AiProvider } from './aiProvider';
 
 import { request, send } from '../data/sidecarClient';
 import { readServerEvents } from './sse';
@@ -8,6 +8,10 @@ import { readServerEvents } from './sse';
 // holds a credential: the renderer is not trusted with one.
 export class EngineAiProvider implements AiProvider {
     readonly needsSetup = true;
+
+    agents(): Promise<AgentStatus[]> {
+        return request<AgentStatus[]>('/ai/agents');
+    }
 
     async chat(
         ...[messages, selection, handlers, signal]: Parameters<AiProvider['chat']>
@@ -58,6 +62,13 @@ export class EngineAiProvider implements AiProvider {
             body: JSON.stringify({ ...selection, ...enrichment }),
             method: 'POST',
             signal,
+        });
+    }
+
+    setAgent(id: string, part: AgentPart, on: boolean): Promise<AgentStatus> {
+        return request<AgentStatus>(`/ai/agents/${encodeURIComponent(id)}/${part}`, {
+            body: JSON.stringify({ on }),
+            method: 'POST',
         });
     }
 

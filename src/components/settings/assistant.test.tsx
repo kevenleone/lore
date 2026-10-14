@@ -3,13 +3,13 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { AiBackendStatus } from '../../store/types';
+import type { AgentStatus, AiBackendStatus } from '../../store/types';
 
 import { provideAi } from '../../ai';
 import { FakeAi } from '../../ai/fakeAi';
 import { DEFAULT_PREFS } from '../../store/types';
 import { useStore } from '../../store/useStore';
-import { CapturePane } from './panes';
+import { AiPane } from './panes';
 
 const CLAUDE: AiBackendStatus = {
     available: true,
@@ -49,7 +49,7 @@ async function choose(label: string): Promise<void> {
 
 describe('the assistant settings', () => {
     it('is off by default and says nothing leaves the machine', () => {
-        render(<CapturePane />);
+        render(<AiPane />);
 
         expect(screen.getByRole('button', { name: 'Model' }).textContent).toContain('Off');
         expect(screen.getByText(/nothing leaves this Mac/)).toBeTruthy();
@@ -57,7 +57,7 @@ describe('the assistant settings', () => {
     });
 
     it('offers the agents that are installed and leaves out the ones that are not', async () => {
-        render(<CapturePane />);
+        render(<AiPane />);
         fireEvent.click(screen.getByRole('button', { name: 'Model' }));
 
         expect(await screen.findByRole('option', { name: 'Claude Code' })).toBeTruthy();
@@ -66,7 +66,7 @@ describe('the assistant settings', () => {
     });
 
     it('needs no key for an installed agent', async () => {
-        render(<CapturePane />);
+        render(<AiPane />);
         await choose('Claude Code');
 
         expect(useStore.getState().prefs.aiBackend).toBe('claude-cli');
@@ -75,7 +75,7 @@ describe('the assistant settings', () => {
     });
 
     it('hands a pasted key to the engine and keeps no copy of it', async () => {
-        render(<CapturePane />);
+        render(<AiPane />);
         await choose('Anthropic');
 
         const field = screen.getByLabelText('Anthropic API key') as HTMLInputElement;
@@ -105,7 +105,7 @@ describe('the assistant settings', () => {
                 aiBaseUrl: 'https://gateway.example/v1',
             },
         });
-        render(<CapturePane />);
+        render(<AiPane />);
 
         const field = await screen.findByLabelText('Gateway API key');
 
@@ -119,12 +119,69 @@ describe('the assistant settings', () => {
 
     it('still names a chosen agent that has since been uninstalled', async () => {
         useStore.setState({ prefs: { ...DEFAULT_PREFS, aiBackend: 'codex-cli' } });
-        render(<CapturePane />);
+        render(<AiPane />);
 
         await waitFor(() =>
             expect(screen.getByRole('button', { name: 'Model' }).textContent).toContain(
                 'Codex (not installed)',
             ),
         );
+    });
+});
+
+describe('the agents settings', () => {
+    const CLAUDE_AGENT: AgentStatus = {
+        available: true,
+        id: 'claude',
+        label: 'Claude Code',
+        mcp: 'off',
+        server: 'lore',
+        skill: 'stale',
+    };
+
+    beforeEach(() => {
+        ai.agentList = [
+            CLAUDE_AGENT,
+            { ...CLAUDE_AGENT, available: false, id: 'codex', label: 'Codex' },
+        ];
+    });
+
+    it('offers only the agents that are installed', async () => {
+        render(<AiPane />);
+
+        expect(
+            await screen.findByRole('switch', { name: 'Use this vault in Claude Code' }),
+        ).toBeTruthy();
+        expect(screen.queryByRole('switch', { name: 'Use this vault in Codex' })).toBeNull();
+    });
+
+    it('connects the vault with one switch', async () => {
+        render(<AiPane />);
+        fireEvent.click(
+            await screen.findByRole('switch', { name: 'Use this vault in Claude Code' }),
+        );
+
+        await waitFor(() =>
+            expect(screen.getByText(/reaches this vault through its “lore” server/)).toBeTruthy(),
+        );
+    });
+
+    it('offers to update a skill that is not this version’s', async () => {
+        render(<AiPane />);
+        fireEvent.click(await screen.findByRole('button', { name: 'Update' }));
+
+        await waitFor(() =>
+            expect(screen.getByText(/has the lore-docs skill from this version/)).toBeTruthy(),
+        );
+    });
+
+    it('shows what the agent said when it refused', async () => {
+        ai.agentRefusal = 'config is locked';
+        render(<AiPane />);
+        fireEvent.click(
+            await screen.findByRole('switch', { name: 'Use this vault in Claude Code' }),
+        );
+
+        expect((await screen.findByRole('alert')).textContent).toBe('config is locked');
     });
 });

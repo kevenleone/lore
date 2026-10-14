@@ -1,5 +1,12 @@
-import type { AiBackendStatus, AiEnrichment, ChatSource } from '../store/types';
-import type { AiProvider, AiSelection, ChatHandlers, ChatTurn, EnrichRequest } from './aiProvider';
+import type { AgentStatus, AiBackendStatus, AiEnrichment, ChatSource } from '../store/types';
+import type {
+    AgentPart,
+    AiProvider,
+    AiSelection,
+    ChatHandlers,
+    ChatTurn,
+    EnrichRequest,
+} from './aiProvider';
 
 interface Asked {
     messages: ChatTurn[];
@@ -8,6 +15,8 @@ interface Asked {
 
 /** A provider a test drives by hand: it answers only when told to. */
 export class FakeAi implements AiProvider {
+    agentList: AgentStatus[] = [];
+    agentRefusal: null | string = null;
     asked: Asked[] = [];
     backends: AiBackendStatus[] = [];
     endpoints = new Map<string, string | undefined>();
@@ -22,6 +31,10 @@ export class FakeAi implements AiProvider {
 
     activity(text: string): void {
         this.handlers?.onActivity(text);
+    }
+
+    async agents(): Promise<AgentStatus[]> {
+        return this.agentList;
     }
 
     chat(
@@ -60,6 +73,19 @@ export class FakeAi implements AiProvider {
 
     fail(message: string): void {
         this.reject?.(new Error(message));
+    }
+
+    async setAgent(id: string, part: AgentPart, on: boolean): Promise<AgentStatus> {
+        if (this.agentRefusal) {
+            throw new Error(this.agentRefusal);
+        }
+
+        const index = this.agentList.findIndex((agent) => agent.id === id);
+        const updated = { ...this.agentList[index], [part]: on ? 'on' : 'off' };
+
+        this.agentList[index] = updated;
+
+        return updated;
     }
 
     async setKey(provider: string, key: string, baseUrl?: string): Promise<void> {

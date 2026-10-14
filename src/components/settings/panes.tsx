@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
+import type { AgentPart } from '../../ai/aiProvider';
 import type { VaultSize } from '../../data/repository';
 import type { Appearance } from '../../theme/tokens';
 
@@ -31,6 +32,8 @@ import {
     type Accent,
     ACCENT_NAMES,
     ACCENTS,
+    type AgentSetup,
+    type AgentStatus,
     type AiBackendStatus,
     type BannerPlacement,
     type Density,
@@ -690,6 +693,7 @@ export function LookPane() {
                     value={titleCase(bannerPlacement)}
                 />
             </Row>
+            <UnsplashKeyRow />
 
             <SectionLabel>Density &amp; text</SectionLabel>
             <Row desc="Compact hides the tag row until hover." title="List density">
@@ -808,7 +812,7 @@ const SHORTCUT_GROUPS = [
     },
 ];
 
-export function CapturePane() {
+export function AiPane() {
     return (
         <>
             <p className="mt-0 mb-4 text-body leading-[1.5] text-text3">
@@ -827,15 +831,173 @@ export function CapturePane() {
             <SectionLabel>In the detail pane</SectionLabel>
             <SwitchRow
                 desc="A note can carry a summary, key points and links in its own frontmatter. This is whether they are shown, and whether a note without a summary offers to have one written."
+                last
                 name="detailSections"
                 title="Show a note’s summary and links"
             />
 
-            <SectionLabel>Thumbnails</SectionLabel>
-            <UnsplashKeyRow />
+            <AgentsSection />
         </>
     );
 }
+
+function AgentRows({
+    agent,
+    busy,
+    last,
+    onChange,
+}: {
+    agent: AgentStatus;
+    busy: null | string;
+    last: boolean;
+    onChange: (part: AgentPart, on: boolean) => void;
+}) {
+    const vaultTitle = `Use this vault in ${agent.label}`;
+    const skillTitle = `Lore writing skill for ${agent.label}`;
+
+    return (
+        <>
+            <Row desc={AGENT_MCP_NOTES[agent.mcp](agent)} title={vaultTitle}>
+                <AgentSwitch
+                    busy={busy === `${agent.id}:mcp`}
+                    label={vaultTitle}
+                    onChange={(on) => onChange('mcp', on)}
+                    setup={agent.mcp}
+                />
+            </Row>
+            <Row desc={AGENT_SKILL_NOTES[agent.skill](agent)} last={last} title={skillTitle}>
+                <AgentSwitch
+                    busy={busy === `${agent.id}:skill`}
+                    label={skillTitle}
+                    onChange={(on) => onChange('skill', on)}
+                    setup={agent.skill}
+                />
+            </Row>
+        </>
+    );
+}
+
+/**
+ * Connects the agents installed on this Mac to the vault. The engine runs each
+ * agent's own setup command; all this sends is which agent, and on or off.
+ */
+function AgentsSection() {
+    const [agents, setAgents] = useState<AgentStatus[]>([]);
+    const [busy, setBusy] = useState<null | string>(null);
+    const [failure, setFailure] = useState<null | string>(null);
+
+    useEffect(() => {
+        let live = true;
+
+        getAi()
+            .agents()
+            .then((found) => {
+                if (live) {
+                    setAgents(found);
+                }
+            })
+            .catch(() => undefined);
+
+        return () => {
+            live = false;
+        };
+    }, []);
+
+    const installed = agents.filter((agent) => agent.available);
+
+    if (!agents.length) {
+        return null;
+    }
+
+    const change = async (agent: AgentStatus, part: AgentPart, on: boolean): Promise<void> => {
+        if (busy) {
+            return;
+        }
+
+        setBusy(`${agent.id}:${part}`);
+        setFailure(null);
+
+        try {
+            const updated = await getAi().setAgent(agent.id, part, on);
+
+            setAgents((current) =>
+                current.map((entry) => (entry.id === updated.id ? updated : entry)),
+            );
+        } catch (reason) {
+            setFailure(reason instanceof Error ? reason.message : String(reason));
+        } finally {
+            setBusy(null);
+        }
+    };
+
+    return (
+        <>
+            <SectionLabel>Agents</SectionLabel>
+            <p className="mt-0 mb-1 text-body leading-[1.5] text-text3">
+                {installed.length
+                    ? 'Let an agent on this Mac work in this vault outside Lore: search and read it, create items, draw into sketches, and write files the way Lore expects. Start a new agent session after changing these.'
+                    : `Lore can connect ${agents.map((agent) => agent.label).join(' or ')} to this vault once one is installed on this Mac.`}
+            </p>
+            {installed.map((agent, index) => (
+                <AgentRows
+                    agent={agent}
+                    busy={busy}
+                    key={agent.id}
+                    last={index === installed.length - 1}
+                    onChange={(part, on) => void change(agent, part, on)}
+                />
+            ))}
+            {failure && (
+                <div
+                    className="pb-[13px] text-body leading-[1.5] whitespace-pre-wrap text-danger select-text"
+                    role="alert"
+                >
+                    {failure}
+                </div>
+            )}
+        </>
+    );
+}
+
+function AgentSwitch({
+    busy,
+    label,
+    onChange,
+    setup,
+}: {
+    busy: boolean;
+    label: string;
+    onChange: (on: boolean) => void;
+    setup: AgentSetup;
+}) {
+    return (
+        <div className="flex flex-none items-center gap-[10px]">
+            {setup === 'stale' && (
+                <PillButton disabled={busy} onClick={() => onChange(true)}>
+                    Update
+                </PillButton>
+            )}
+            <Toggle label={label} on={setup !== 'off'} onChange={() => onChange(setup === 'off')} />
+        </div>
+    );
+}
+
+const AGENT_MCP_NOTES: Record<AgentSetup, (agent: AgentStatus) => string> = {
+    off: (agent) =>
+        `Adds a “${agent.server}” server to ${agent.label}, so it can search, read and change this vault.`,
+    on: (agent) =>
+        `${agent.label} reaches this vault through its “${agent.server}” server, and can change it as well as read it.`,
+    stale: (agent) =>
+        `${agent.label}’s “${agent.server}” server points at another vault or an older Lore. Update it to use this one.`,
+};
+
+const AGENT_SKILL_NOTES: Record<AgentSetup, (agent: AgentStatus) => string> = {
+    off: (agent) =>
+        `Installs the lore-docs skill, which teaches ${agent.label} how a Lore file is shaped.`,
+    on: (agent) => `${agent.label} has the lore-docs skill from this version of Lore.`,
+    stale: (agent) =>
+        `${agent.label} has a different lore-docs skill. Update it to the one from this version of Lore.`,
+};
 
 const TEXT_FIELD =
     'w-[210px] flex-none rounded-lg border border-border bg-surface px-[9px] py-[6px] text-right font-mono text-body text-text outline-none focus:border-accent';
@@ -1204,7 +1366,6 @@ function UnsplashKeyRow() {
     return (
         <Row
             desc="Paste a free Access Key from unsplash.com/developers to search photos from the thumbnail menu. Without one, that menu entry is simply not offered."
-            last
             title="Unsplash Access Key"
         >
             <div className="flex w-[210px] flex-none flex-col items-end gap-[6px]">
