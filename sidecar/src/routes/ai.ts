@@ -1,11 +1,12 @@
 import { Elysia } from 'elysia';
 
+import type { AiService, BackendSelection } from '../ai/service';
+import type { Workspace } from '../services/workspace';
+
 import { AgentError, type Agents } from '../ai/agents';
 import { chatResponse, parseMessages } from '../ai/chat';
 import { enrich, itemText, parseWant } from '../ai/enrich';
 import { probeModel } from '../ai/probe';
-import type { AiService, BackendSelection } from '../ai/service';
-import type { Workspace } from '../services/workspace';
 
 interface AiBody extends Partial<BackendSelection> {
     backend?: unknown;

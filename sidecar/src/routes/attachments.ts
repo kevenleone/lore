@@ -1,7 +1,8 @@
 import { Elysia } from 'elysia';
 
-import { ATTACHMENTS_DIR } from '../services/vault';
 import type { Workspace } from '../services/workspace';
+
+import { ATTACHMENTS_DIR } from '../services/vault';
 
 const MIME: Record<string, string> = {
     '.avif': 'image/avif',

@@ -1,5 +1,7 @@
 import { Elysia } from 'elysia';
 
+import type { Workspace } from '../services/workspace';
+
 import {
     deleteChat,
     isThreadId,
@@ -8,7 +10,6 @@ import {
     readChat,
     writeChat,
 } from '../services/chats';
-import type { Workspace } from '../services/workspace';
 
 export function chatRoutes(workspace: Workspace) {
     return new Elysia()

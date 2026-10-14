@@ -1,7 +1,8 @@
 import { Elysia } from 'elysia';
 
-import { listTemplates } from '../services/templates';
 import type { Workspace } from '../services/workspace';
+
+import { listTemplates } from '../services/templates';
 
 export function derivedRoutes(workspace: Workspace) {
     return new Elysia()
