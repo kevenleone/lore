@@ -1396,22 +1396,19 @@ function privacyNote(backend: AiBackendStatus | undefined): string {
 function ResultBadge({ children, ok }: { children: ReactNode; ok: boolean }) {
     return (
         <span
-            className={cn(
-                'mt-[6px] flex items-start gap-[9px] rounded-lg px-[8px] py-[7px] text-body leading-[1.45] text-text2',
-                ok ? 'bg-success-tint' : 'bg-danger-tint',
-            )}
+            className="mt-[5px] flex items-baseline gap-[8px] text-text2"
             role={ok ? 'status' : 'alert'}
         >
             <span
                 className={cn(
-                    'flex flex-none items-center gap-[4px] rounded-7 px-[7px] py-[1px] font-semibold text-white',
+                    'inline-flex flex-none items-center gap-[4px] rounded-7 px-[7px] py-[1px] font-semibold text-white',
                     ok ? 'bg-success' : 'bg-danger',
                 )}
             >
                 {ok ? <Check size={11} sw={2.8} /> : <Close size={11} sw={2.6} />}
                 {ok ? 'Works' : 'Failed'}
             </span>
-            <span className="pt-[1px]">{children}</span>
+            <span>{children}</span>
         </span>
     );
 }

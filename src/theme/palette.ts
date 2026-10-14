@@ -89,9 +89,6 @@ const NEUTRALS: Record<'dark' | 'light', Record<string, string>> = {
 /** Kept in step with `--color-danger` in `tailwind.css`, which is theme-fixed. */
 const DANGER = '#b4442f';
 
-/** Kept in step with `--color-success` in `tailwind.css`. */
-const SUCCESS = '#2f8a4f';
-
 export function buildTokens(seed: ThemeSeed): Record<string, string> {
     const dark = seed.mode === 'dark';
     const tint = (hue: string): string => mix(hue, seed.surface, dark ? 0.18 : 0.12);
@@ -128,7 +125,6 @@ export function buildTokens(seed: ThemeSeed): Record<string, string> {
         '--lane-starter-bg': tint(seed.lanes.starter),
         '--lane-starter-fg': seed.lanes.starter,
         '--sel': alpha(seed.text, dark ? 0.14 : 0.06),
-        '--success-tint': tint(SUCCESS),
         '--surface': seed.surface,
         '--surface-glass': alpha(seed.surface, 0.82),
         '--surface2': seed.surface2,
