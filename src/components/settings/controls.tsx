@@ -169,11 +169,14 @@ export function PillButton({
 export function Row({
     children,
     desc,
+    failed,
     last,
     title,
 }: {
     children?: ReactNode;
     desc?: string;
+    /** `desc` says why something did not work. */
+    failed?: boolean;
     last?: boolean;
     title: string;
 }) {
@@ -186,7 +189,17 @@ export function Row({
         >
             <div className="min-w-0 flex-1">
                 <div className="text-subhead font-semibold">{title}</div>
-                {desc && <div className="mt-[2px] text-body leading-[1.5] text-text3">{desc}</div>}
+                {desc && (
+                    <div
+                        className={cn(
+                            'mt-[2px] text-body leading-[1.5] select-text',
+                            failed ? 'text-danger' : 'text-text3',
+                        )}
+                        role={failed ? 'alert' : undefined}
+                    >
+                        {desc}
+                    </div>
+                )}
             </div>
             {children}
         </div>

@@ -125,6 +125,13 @@ export interface Collection {
     name: string;
 }
 
+/** How a "Test" in the AI settings went: what came back, or why it failed. */
+export interface ConnectionTest {
+    detail: string;
+    ms: number;
+    ok: boolean;
+}
+
 /** The multi-select facets of `Filters` — the ones the bar toggles as chips. */
 export type FilterFacet = 'categories' | 'collectionIds' | 'tags';
 
