@@ -9,6 +9,20 @@ import { searchPath } from '../detect';
 
 const STDERR_TAIL = 400;
 
+// The engine's own bearer token is in its environment, and a tool that runs
+// model-chosen commands must not inherit it.
+export function childEnv(extra: Record<string, string> = {}): Record<string, string> {
+    const env: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(Bun.env)) {
+        if (value !== undefined && !key.startsWith('LORE_')) {
+            env[key] = value;
+        }
+    }
+
+    return { ...env, PATH: searchPath(), ...extra };
+}
+
 export async function* runHarness(
     harness: Harness,
     binary: string,
@@ -61,20 +75,6 @@ export async function* runHarness(
         child.kill();
         await rm(workdir, { force: true, recursive: true });
     }
-}
-
-// The engine's own bearer token is in its environment, and a tool that runs
-// model-chosen commands must not inherit it.
-function childEnv(extra: Record<string, string> = {}): Record<string, string> {
-    const env: Record<string, string> = {};
-
-    for (const [key, value] of Object.entries(Bun.env)) {
-        if (value !== undefined && !key.startsWith('LORE_')) {
-            env[key] = value;
-        }
-    }
-
-    return { ...env, PATH: searchPath(), ...extra };
 }
 
 async function* lines(stream: ReadableStream<Uint8Array>): AsyncGenerator<string> {
