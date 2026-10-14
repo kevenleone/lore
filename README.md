@@ -111,6 +111,13 @@ and Windows, passing a path to the executable works but nothing installs it.
 so Claude Code, Claude Desktop, Cursor, Codex or any other MCP client can search
 it, read it and write to it.
 
+For Claude Code and Codex there is nothing to type: **Settings → AI → Agents**
+connects either one to the open vault, and installs the `lore-docs` skill that
+teaches it how a Lore file is shaped. Lore runs the agent's own `mcp add`, under
+the build's command name (`lore`, `lore-dev`, `lore-agent`), and marks a
+connection that points at another vault or an older Lore so it can be updated.
+For any other client, configure it by hand:
+
 ```sh
 lore mcp                  # this Lore's default vault
 lore mcp ~/Notes          # any other folder
