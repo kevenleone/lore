@@ -3,12 +3,12 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { AiBackend, AiEvent } from '../src/ai/backend';
+import type { AiBackend, AiEvent } from '../../src/ai/backend';
 
-import { AiError } from '../src/ai/backend';
-import { engineLaunch } from '../src/ai/launch';
-import { probeModel, probeServer } from '../src/ai/probe';
-import { VaultStore } from '../src/index/store';
+import { AiError } from '../../src/ai/backend';
+import { engineLaunch } from '../../src/ai/launch';
+import { probeModel, probeServer } from '../../src/ai/probe';
+import { VaultStore } from '../../src/index/store';
 
 let root: string;
 let store: VaultStore;

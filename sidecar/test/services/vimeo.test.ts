@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 
-import { fetchLinkMetadata } from '../src/services/link-metadata';
-import { fetchVimeoMetadata, vimeoVideo } from '../src/services/vimeo';
+import { fetchLinkMetadata } from '../../src/services/link-metadata';
+import { fetchVimeoMetadata, vimeoVideo } from '../../src/services/vimeo';
 
 const realFetch = globalThis.fetch;
 

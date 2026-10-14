@@ -5,15 +5,15 @@ import type { Item } from '@lore/types';
 
 import { describe, expect, it } from 'bun:test';
 
-import { createApp } from '../src/app';
+import { createApp } from '../../src/app';
 import {
     type DocumentFacts,
     documentItem,
     FrontmatterUnreadable,
     patchDocument,
     patchFrontmatter,
-} from '../src/services/document';
-import { splitFrontmatter } from '../src/utils/markdown';
+} from '../../src/services/document';
+import { splitFrontmatter } from '../../src/utils/markdown';
 
 const FACTS: DocumentFacts = {
     created: '2026-01-02T03:04:05.000Z',

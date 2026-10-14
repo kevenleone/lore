@@ -4,11 +4,11 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import SKILL from '../../.claude/skills/lore-docs/SKILL.md' with { type: 'text' };
-import { type AgentEnvironment, type Agents, createAgents, serverName } from '../src/ai/agents';
-import { engineLaunch } from '../src/ai/launch';
-import { routes } from '../src/routes';
-import { Workspace } from '../src/services/workspace';
+import SKILL from '../../../.claude/skills/lore-docs/SKILL.md' with { type: 'text' };
+import { type AgentEnvironment, type Agents, createAgents, serverName } from '../../src/ai/agents';
+import { engineLaunch } from '../../src/ai/launch';
+import { routes } from '../../src/routes';
+import { Workspace } from '../../src/services/workspace';
 
 let home: string;
 let vault: string;

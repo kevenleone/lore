@@ -3,7 +3,7 @@
 
 import { afterEach, describe, expect, it } from 'bun:test';
 
-import { fetchLinkMetadata, normalizeUrl } from '../src/services/link-metadata';
+import { fetchLinkMetadata, normalizeUrl } from '../../src/services/link-metadata';
 
 const realFetch = globalThis.fetch;
 

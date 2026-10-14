@@ -4,7 +4,7 @@
 
 import { afterEach, describe, expect, it } from 'bun:test';
 
-import { searchPhotos, triggerDownload, UnsplashError } from '../src/services/unsplash';
+import { searchPhotos, triggerDownload, UnsplashError } from '../../src/services/unsplash';
 
 const realFetch = globalThis.fetch;
 

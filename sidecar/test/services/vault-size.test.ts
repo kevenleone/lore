@@ -3,8 +3,8 @@ import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { LORE_DIR } from '../src/services/vault';
-import { exportVault, measureVault } from '../src/services/vault-size';
+import { LORE_DIR } from '../../src/services/vault';
+import { exportVault, measureVault } from '../../src/services/vault-size';
 
 let root: string;
 let destination: string;

@@ -5,12 +5,12 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { AiBackend, ChatRequest } from '../src/ai/backend';
+import type { AiBackend, ChatRequest } from '../../src/ai/backend';
 
-import { memorySecrets } from '../src/ai/credentials';
-import { type AiService, createAiService } from '../src/ai/service';
-import { createApp } from '../src/app';
-import { Workspace } from '../src/services/workspace';
+import { memorySecrets } from '../../src/ai/credentials';
+import { type AiService, createAiService } from '../../src/ai/service';
+import { createApp } from '../../src/app';
+import { Workspace } from '../../src/services/workspace';
 
 const TOKEN = 't';
 let root: string;

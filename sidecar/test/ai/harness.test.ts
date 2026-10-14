@@ -6,14 +6,14 @@ import { chmod, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { Harness } from '../src/ai/harness/types';
+import type { Harness } from '../../src/ai/harness/types';
 
-import { AiError, type AiEvent } from '../src/ai/backend';
-import { extractJson } from '../src/ai/harness/backend';
-import { claude } from '../src/ai/harness/claude';
-import { codex } from '../src/ai/harness/codex';
-import { opencode } from '../src/ai/harness/opencode';
-import { runHarness } from '../src/ai/harness/run';
+import { AiError, type AiEvent } from '../../src/ai/backend';
+import { extractJson } from '../../src/ai/harness/backend';
+import { claude } from '../../src/ai/harness/claude';
+import { codex } from '../../src/ai/harness/codex';
+import { opencode } from '../../src/ai/harness/opencode';
+import { runHarness } from '../../src/ai/harness/run';
 
 let dir: string;
 

@@ -3,7 +3,7 @@
 
 import { afterEach, describe, expect, it } from 'bun:test';
 
-import { absolutize, type GithubTarget, parseGithubTarget, resolveDocument } from '../src/services/github';
+import { absolutize, type GithubTarget, parseGithubTarget, resolveDocument } from '../../src/services/github';
 
 const realFetch = globalThis.fetch;
 

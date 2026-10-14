@@ -9,7 +9,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { LORE_DIR, Vault, WORKSPACE_FILE } from '../src/services/vault';
+import { LORE_DIR, Vault, WORKSPACE_FILE } from '../../src/services/vault';
 
 let root: string;
 let vault: Vault;
