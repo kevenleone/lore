@@ -3,7 +3,7 @@
 //
 // Writing `related` back is safe even for a vault edited elsewhere: the sidecar
 // serialises resolved ids to `[[stem]]` and appends every link it could not
-// resolve untouched (see sidecar/src/links.ts).
+// resolve untouched (see sidecar/src/utils/links.ts).
 
 import { useMemo, useState } from 'react';
 

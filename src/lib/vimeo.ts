@@ -1,4 +1,4 @@
-// Mirrors `sidecar/src/vimeo.ts`: the renderer needs the id synchronously to
+// Mirrors `sidecar/src/services/vimeo.ts`: the renderer needs the id synchronously to
 // pick the player, and cannot import from the engine's package.
 
 import { parseStart } from './youtube';

@@ -1,5 +1,5 @@
 // The renderer's half of the Unsplash picker. The search itself runs in the
-// data engine — see `sidecar/src/unsplash.ts` — so this is the request and the
+// data engine — see `sidecar/src/services/unsplash.ts` — so this is the request and the
 // vocabulary the picker speaks.
 
 import type { ImageCredit } from '../store/types';
