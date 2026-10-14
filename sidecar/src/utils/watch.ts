@@ -3,7 +3,7 @@
 
 import { type FSWatcher, watch } from 'node:fs';
 
-import { isIgnoredFile, LORE_DIR } from './vault';
+import { isIgnoredFile, LORE_DIR } from '../services/vault';
 
 const DEBOUNCE_MS = 150;
 

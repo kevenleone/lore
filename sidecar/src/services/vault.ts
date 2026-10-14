@@ -6,7 +6,7 @@ import type { BoardConfig, Collection, SavedSearch } from '@lore/types';
 import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 
-import { slugify } from './slug';
+import { slugify } from '../utils/slug';
 
 export const LORE_DIR = '.lore';
 export const TRASH_DIR = `${LORE_DIR}/trash`;

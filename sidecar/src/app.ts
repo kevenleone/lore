@@ -11,7 +11,7 @@ import type { Config } from './config';
 
 import modes from '../../lore.modes.json';
 import { routes } from './routes';
-import { Workspace } from './workspace';
+import { Workspace } from './services/workspace';
 
 /**
  * Origins allowed to call the sidecar. The webview runs on `tauri://localhost`;

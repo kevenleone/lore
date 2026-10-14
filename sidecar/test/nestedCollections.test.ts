@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { VaultStore } from '../src/index/store';
-import { COLLECTIONS_FILE } from '../src/vault';
+import { COLLECTIONS_FILE } from '../src/services/vault';
 
 let root: string;
 let store: VaultStore;

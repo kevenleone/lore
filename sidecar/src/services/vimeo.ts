@@ -1,4 +1,4 @@
-import type { LinkMetadata } from './linkMetadata';
+import type { LinkMetadata } from './link-metadata';
 
 const TIMEOUT_MS = 5_000;
 const THUMBNAIL_WIDTH = 1280;

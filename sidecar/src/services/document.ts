@@ -9,7 +9,7 @@ import type { Item } from '@lore/types';
 
 import { isMap, isScalar, type Pair, parseDocument, stringify as stringifyYaml } from 'yaml';
 
-import { frontmatterOf, parseFile, toItem } from './markdown';
+import { frontmatterOf, parseFile, toItem } from '../utils/markdown';
 
 export interface DocumentFacts {
     /** ISO 8601, from the file's birth time. */

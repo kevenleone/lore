@@ -3,7 +3,7 @@
 
 import type { CanvasElement } from '@lore/canvas';
 
-import { newId } from '../slug';
+import { newId } from '../utils/slug';
 
 export const SHAPE_KINDS = ['rectangle', 'ellipse', 'diamond', 'text'] as const;
 export const SHAPE_COLORS = ['blue', 'green', 'red', 'yellow', 'violet', 'gray'] as const;

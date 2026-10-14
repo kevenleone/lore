@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 import type { VaultStore } from '../index/store';
 
-import { stemOf } from '../vault';
+import { stemOf } from '../services/vault';
 import { DrawError, drawOnto, SHAPE_COLORS, SHAPE_KINDS } from './draw';
 
 const ITEM_TYPES = ['note', 'canvas', 'code', 'image', 'link', 'task'] as const;

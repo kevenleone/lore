@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { VaultStore } from '../src/index/store';
-import { INDEX_FILE, indexFileFor, LORE_DIR } from '../src/vault';
+import { INDEX_FILE, indexFileFor, LORE_DIR } from '../src/services/vault';
 
 /** Not a real write-ahead log — SQLite discards one whose header does not match. */
 const STALE_WAL = 'left behind by a database that is no longer here';

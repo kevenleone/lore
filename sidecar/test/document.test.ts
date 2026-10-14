@@ -12,8 +12,8 @@ import {
     FrontmatterUnreadable,
     patchDocument,
     patchFrontmatter,
-} from '../src/document';
-import { splitFrontmatter } from '../src/markdown';
+} from '../src/services/document';
+import { splitFrontmatter } from '../src/utils/markdown';
 
 const FACTS: DocumentFacts = {
     created: '2026-01-02T03:04:05.000Z',

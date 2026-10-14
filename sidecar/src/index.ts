@@ -8,7 +8,7 @@
 import { serveMcp } from './ai/mcp';
 import { createApp } from './app';
 import { handshakeLine, loadConfig, watchParent } from './config';
-import { Workspace } from './workspace';
+import { Workspace } from './services/workspace';
 
 async function main(): Promise<void> {
     // stdout belongs to the protocol in this mode, so nothing below may run.

@@ -4,8 +4,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import type { VaultStore } from '../index/store';
 
 import { version } from '../../package.json';
-import { MCP_INDEX_FILE } from '../vault';
-import { Workspace } from '../workspace';
+import { MCP_INDEX_FILE } from '../services/vault';
+import { Workspace } from '../services/workspace';
 import { ToolError, toolsFor } from './tools';
 
 const INSTRUCTIONS = `Lore is a personal knowledge base: a folder of Markdown files, where a file is an item (note, canvas, code, image, link or task) and its folder is its collection.

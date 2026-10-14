@@ -10,7 +10,7 @@ import type { AiBackend, ChatRequest } from '../src/ai/backend';
 import { memorySecrets } from '../src/ai/credentials';
 import { type AiService, createAiService } from '../src/ai/service';
 import { createApp } from '../src/app';
-import { Workspace } from '../src/workspace';
+import { Workspace } from '../src/services/workspace';
 
 const TOKEN = 't';
 let root: string;

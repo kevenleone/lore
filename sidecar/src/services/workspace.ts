@@ -4,9 +4,9 @@
 
 import type { Item } from '@lore/types';
 
-import { hashContent } from './index/db';
-import { VaultStore } from './index/store';
-import { type Watcher, watchVault } from './watch';
+import { hashContent } from '../index/db';
+import { VaultStore } from '../index/store';
+import { type Watcher, watchVault } from '../utils/watch';
 
 type Subscriber = (paths: string[]) => void;
 
