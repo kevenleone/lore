@@ -91,6 +91,10 @@ pub fn hide_capture(app: AppHandle) {
 /// whether the files can be dragged back out.
 #[tauri::command]
 pub fn trash_path(path: String) -> Result<(), String> {
+    let home = std::env::var_os("HOME").map(std::path::PathBuf::from);
+
+    check_trashable(std::path::Path::new(&path), home.as_deref())?;
+
     #[cfg(target_os = "macos")]
     {
         use objc2_foundation::{NSFileManager, NSString, NSURL};
@@ -105,6 +109,31 @@ pub fn trash_path(path: String) -> Result<(), String> {
         let _ = path;
         Err("Lore can only move a vault to the Trash on macOS.".into())
     }
+}
+
+/// The renderer names the folder, so this decides what it may send to the
+/// Trash: a Lore vault, which has `.lore/` in it, and never the home folder or
+/// anything that holds it.
+fn check_trashable(path: &std::path::Path, home: Option<&std::path::Path>) -> Result<(), String> {
+    let refused = || {
+        format!(
+            "Lore only moves a vault folder to the Trash, not {}.",
+            path.display()
+        )
+    };
+    let folder = std::fs::canonicalize(path).map_err(|_| refused())?;
+
+    if !folder.join(".lore").is_dir() || folder.parent().is_none() {
+        return Err(refused());
+    }
+
+    if let Some(home) = home.and_then(|home| std::fs::canonicalize(home).ok()) {
+        if home.starts_with(&folder) {
+            return Err(refused());
+        }
+    }
+
+    Ok(())
 }
 
 /// Settings → General → "Show icon in the menu bar".
@@ -303,4 +332,29 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let _ = &tray;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod trash_tests {
+    use super::check_trashable;
+
+    #[test]
+    fn only_a_vault_below_home_can_be_trashed() {
+        let root = std::env::temp_dir().join(format!("lore-trash-{}", std::process::id()));
+        let home = root.join("home");
+        let vault = home.join("Notes");
+        let plain = home.join("Documents");
+
+        std::fs::create_dir_all(vault.join(".lore")).unwrap();
+        std::fs::create_dir_all(&plain).unwrap();
+        std::fs::create_dir_all(home.join(".lore")).unwrap();
+
+        assert!(check_trashable(&vault, Some(&home)).is_ok());
+        assert!(check_trashable(&plain, Some(&home)).is_err());
+        assert!(check_trashable(&home, Some(&home)).is_err());
+        assert!(check_trashable(&root.join("missing"), Some(&home)).is_err());
+        assert!(check_trashable(std::path::Path::new("/"), Some(&home)).is_err());
+
+        std::fs::remove_dir_all(&root).unwrap();
+    }
 }
