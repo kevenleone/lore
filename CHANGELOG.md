@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.30.1](https://github.com/kevenleone/lore/compare/v1.30.0...v1.30.1) (2026-10-15)
+
+
+### Refactoring
+
+* **sidecar:** group engine modules into services and utils ([6cf517b](https://github.com/kevenleone/lore/commit/6cf517bc89fa64f3ff8246d43abc0957d189fb21))
+* **sidecar:** split routes into one plugin per area ([5eb3658](https://github.com/kevenleone/lore/commit/5eb3658352127eca6dae6e0e229fbdf06a23a322))
+
+
+### Documentation
+
+* point at the engine's new module paths ([010d606](https://github.com/kevenleone/lore/commit/010d6060129bc1686b0bba4c078b43d32a1f32d2))
+
 ## [1.30.0](https://github.com/kevenleone/lore/compare/v1.29.0...v1.30.0) (2026-10-14)
 
 
