@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.32.0](https://github.com/kevenleone/lore/compare/v1.31.0...v1.32.0) (2026-10-26)
+
+
+### Features
+
+* **cli:** add lore vaults and default to the vault in use ([26ffcf9](https://github.com/kevenleone/lore/commit/26ffcf997c4864c0cb50c27f596a0b9701106d06))
+* **sidecar:** remember the vaults the engine opens ([0b7676a](https://github.com/kevenleone/lore/commit/0b7676a56c4f24fca1a33500ae68cc9eddabd76c))
+* **skills:** keep weekly and monthly summaries and link the Jira ticket in log-work ([bb973ad](https://github.com/kevenleone/lore/commit/bb973ada534f6db5b3a0e9de960e49dfa915e74b))
+
+
+### Bug Fixes
+
+* **skills:** make log-work always ask for the vault, offering known ones ([323e886](https://github.com/kevenleone/lore/commit/323e88608db640b622ee964a92190259964f0646))
+
+
+### Documentation
+
+* document lore vaults and how log-work picks a vault ([609b989](https://github.com/kevenleone/lore/commit/609b98930e77422a8ed182fdfb0b1aa2f8f7ebe1))
+
 ## [1.31.0](https://github.com/kevenleone/lore/compare/v1.30.0...v1.31.0) (2026-10-26)
 
 
