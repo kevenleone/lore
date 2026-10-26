@@ -5,15 +5,20 @@
 // `bun build --bytecode` — which is what keeps the shipped binary's startup
 // fast — cannot compile top-level await.
 
-import { serveMcp } from './ai/mcp';
 import { createApp } from './app';
+import { runCli } from './cli';
 import { handshakeLine, loadConfig, watchParent } from './config';
 import { Workspace } from './services/workspace';
 
 async function main(): Promise<void> {
-    // stdout belongs to the protocol in this mode, so nothing below may run.
-    if (process.argv[2] === 'mcp') {
-        await serveMcp();
+    // The host spawns the engine with no arguments; anything else is the `lore`
+    // command, and nothing below may write to stdout, which `mcp` speaks on.
+    if (process.argv.length > 2) {
+        const code = await runCli(process.argv.slice(2));
+
+        if (code !== 0) {
+            process.exit(code);
+        }
 
         return;
     }

@@ -15,23 +15,15 @@ done
 # Lore.app/Contents/Resources/resources/lore
 app="$(cd "$(dirname "$self")/../../.." && pwd)"
 
-# `lore mcp [vault]` serves a vault to an agent over stdio. It runs the engine
-# directly rather than through `open`, which would detach it from the pipe the
-# agent is speaking on, and it works whether or not Lore itself is open.
-if [ "$1" = "mcp" ]; then
-    if [ -n "$2" ]; then
-        if [ ! -d "$2" ]; then
-            echo "$(basename "$0"): $2: not a folder" >&2
-            exit 1
-        fi
-        vault="$(cd "$2" && pwd)"
-    else
-        identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist")"
-        vault="$HOME/Library/Application Support/$identifier/Vault"
-    fi
-
-    LORE_VAULT="$vault" exec "$app/Contents/MacOS/lore-sidecar" mcp
-fi
+# Commands run in the engine, which prints their help and knows the vault. It is
+# run directly rather than through `open`, which would detach `mcp` from the pipe
+# the agent is speaking on, and it works whether or not Lore itself is open.
+case "$1" in
+    help | mcp | skills | doctor | -*)
+        LORE_APP_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist")" \
+            exec "$app/Contents/MacOS/lore-sidecar" "$@"
+        ;;
+esac
 
 if [ $# -eq 0 ]; then
     exec open -a "$app"
@@ -40,6 +32,7 @@ fi
 for argument in "$@"; do
     if [ ! -e "$argument" ]; then
         echo "$(basename "$0"): $argument: no such file or directory" >&2
+        echo "Run \`$(basename "$0") --help\` for usage." >&2
         exit 1
     fi
 done
