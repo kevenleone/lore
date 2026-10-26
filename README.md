@@ -119,14 +119,16 @@ terminal, `lore mcp install` does it for every agent it finds:
 lore mcp install                    # Claude Code and Codex, the default vault
 lore mcp install claude --vault ~/Notes
 lore skills install                 # lore-docs and log-work, for each agent
+lore vaults                         # every vault Lore, an agent or /log-work uses
 lore doctor                         # what is connected, and what to run if not
 lore --help                         # every command; `lore help mcp` for one
 ```
 
 Lore runs the agent's own `mcp add`, under the build's command name (`lore`,
 `lore-dev`, `lore-agent`), and marks a connection that points at another vault
-or an older Lore so it can be updated. Reinstalling without `--vault` keeps the
-vault an agent is already connected to. For any other client, configure it by
+or an older Lore so it can be updated. Without `--vault`, a command uses the vault Lore
+has open (the engine notes each vault it opens in `vaults.json` beside the
+app's data), and a reinstall keeps the vault an agent is already connected to. For any other client, configure it by
 hand:
 
 ```sh
@@ -149,7 +151,7 @@ Code — writes up a coding session as a note: the ticket, the goal, what was
 done, whether it worked, decisions, files, commits and follow-ups, tagged
 `worklog`, the repository, the ticket, the quarter (`log-work:q4`) and the month
 (`log-work:october`). The first time it runs in a repository it asks which vault
-and collection to log to, and remembers the answer in
+— offering the ones `lore vaults` finds — and which collection to log to, and remembers the answer in
 `~/.config/lore/log-work.json`.
 
 | Tool               | What it does                                               |
