@@ -15,9 +15,11 @@ import {
 } from './commands';
 import { cliContext } from './context';
 import { commandHelp, isCommand, overview } from './help';
+import { listVaults, vaultInUse } from './vaults';
 
 interface ParsedArguments {
     help: boolean;
+    json: boolean;
     positionals: string[];
     readOnly: boolean;
     vault: null | string;
@@ -120,6 +122,11 @@ async function dispatch(args: string[], dependencies: CliDependencies): Promise<
                 await vaultFor(parsed, dependencies),
                 subcommand === 'install',
             );
+
+        case 'vaults':
+            rejectExtra(parsed.positionals);
+
+            return listVaults(dependencies, parsed.json);
     }
 }
 
@@ -148,13 +155,21 @@ function isSwitch(value: string | undefined): value is (typeof SWITCHES)[number]
 }
 
 function parseArguments(args: string[]): ParsedArguments {
-    const parsed: ParsedArguments = { help: false, positionals: [], readOnly: false, vault: null };
+    const parsed: ParsedArguments = {
+        help: false,
+        json: false,
+        positionals: [],
+        readOnly: false,
+        vault: null,
+    };
 
     for (let index = 0; index < args.length; index++) {
         const argument = args[index];
 
         if (argument === '-h' || argument === '--help') {
             parsed.help = true;
+        } else if (argument === '--json') {
+            parsed.json = true;
         } else if (argument === '--read-only') {
             parsed.readOnly = true;
         } else if (argument === '--vault') {
@@ -193,7 +208,7 @@ async function serve(parsed: ParsedArguments, dependencies: CliDependencies): Pr
     const named = path ?? parsed.vault;
     const vault =
         named === null
-            ? (dependencies.context.servedVault ?? dependencies.context.defaultVault)
+            ? (dependencies.context.servedVault ?? (await vaultInUse(dependencies.context)))
             : await vaultFor({ vault: named }, dependencies);
 
     await dependencies.serve(vault, parsed.readOnly);
@@ -231,7 +246,7 @@ async function vaultFor(
     { context }: CliDependencies,
 ): Promise<string> {
     if (parsed.vault === null) {
-        return context.defaultVault;
+        return vaultInUse(context);
     }
 
     const vault = resolve(expandHome(parsed.vault));

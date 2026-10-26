@@ -19,7 +19,7 @@ app="$(cd "$(dirname "$self")/../../.." && pwd)"
 # run directly rather than through `open`, which would detach `mcp` from the pipe
 # the agent is speaking on, and it works whether or not Lore itself is open.
 case "$1" in
-    help | mcp | skills | doctor | -*)
+    help | mcp | skills | vaults | doctor | -*)
         LORE_APP_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist")" \
             exec "$app/Contents/MacOS/lore-sidecar" "$@"
         ;;

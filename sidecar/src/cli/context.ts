@@ -7,10 +7,14 @@ import { version } from '../../package.json';
 export interface CliContext {
     defaultVault: string;
     label: null | string;
+    /** Where the log-work skill remembers each repository's vault and collection. */
+    logWorkFile: string;
     mode: ModeName;
     name: string;
     /** Set when an agent starts the server it registered: `lore-sidecar mcp` with the vault in its environment. */
     servedVault: null | string;
+    /** Every vault the app has opened, which only the engine sees; the app keeps its own list in the webview. */
+    vaultsFile: string;
     version: string;
 }
 
@@ -27,13 +31,16 @@ export function cliContext(
 ): CliContext {
     const mode = modeOf(env);
     const { cliName, identifier, label } = modes[mode];
+    const dataDir = appDataDir(identifier, env, platform, home);
 
     return {
-        defaultVault: join(appDataDir(identifier, env, platform, home), 'Vault'),
+        defaultVault: join(dataDir, 'Vault'),
         label,
+        logWorkFile: join(home, '.config', 'lore', 'log-work.json'),
         mode,
         name: cliName,
         servedVault: env.LORE_VAULT || null,
+        vaultsFile: join(dataDir, 'vaults.json'),
         version,
     };
 }
