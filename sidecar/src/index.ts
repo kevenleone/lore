@@ -7,7 +7,9 @@
 
 import { createApp } from './app';
 import { runCli } from './cli';
+import { cliContext } from './cli/context';
 import { handshakeLine, loadConfig, watchParent } from './config';
+import { recordVault } from './services/known-vaults';
 import { Workspace } from './services/workspace';
 
 async function main(): Promise<void> {
@@ -26,6 +28,14 @@ async function main(): Promise<void> {
     const config = loadConfig();
     const workspace = new Workspace();
     const app = createApp(config, workspace);
+    const { vaultsFile } = cliContext();
+
+    // So `lore` can tell agents which vault is in use, which the app keeps in the webview.
+    workspace.onOpen = (root) => {
+        recordVault(vaultsFile, root).catch((error) =>
+            console.error('lore-sidecar: could not record the vault:', error),
+        );
+    };
 
     // The host may already know which vault to open; otherwise the renderer calls
     // POST /workspace/open once it has resolved the path.

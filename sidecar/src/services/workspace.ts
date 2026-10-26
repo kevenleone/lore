@@ -11,6 +11,8 @@ import { type Watcher, watchVault } from '../utils/watch';
 type Subscriber = (paths: string[]) => void;
 
 export class Workspace {
+    /** Told of every vault opened, after it is open. */
+    onOpen: ((root: string) => void) | null = null;
     get current(): VaultStore {
         if (!this.store) {
             throw new WorkspaceNotOpen();
@@ -24,6 +26,7 @@ export class Workspace {
     get path(): null | string {
         return this.store?.vault.root ?? null;
     }
+
     /**
      * Content this process last wrote to each path, so the watcher can recognise
      * its own echo. Keyed by hash rather than by time because a single write
@@ -59,6 +62,7 @@ export class Workspace {
         // costs a needless reconcile and a refresh round-trip back to the UI.
         this.store.onWrite = (rel, text) => this.markSelfWrite(rel, text);
         this.watcher = watchVault(root, (paths) => void this.onFilesChanged(paths));
+        this.onOpen?.(root);
 
         return { itemCount: this.store.listItems().length, path: root };
     }
