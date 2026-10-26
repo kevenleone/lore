@@ -111,16 +111,28 @@ and Windows, passing a path to the executable works but nothing installs it.
 so Claude Code, Claude Desktop, Cursor, Codex or any other MCP client can search
 it, read it and write to it.
 
-For Claude Code and Codex there is nothing to type: **Settings → AI → Agents**
-connects either one to the open vault, and installs the `lore-docs` skill that
-teaches it how a Lore file is shaped. Lore runs the agent's own `mcp add`, under
-the build's command name (`lore`, `lore-dev`, `lore-agent`), and marks a
-connection that points at another vault or an older Lore so it can be updated.
-For any other client, configure it by hand:
+For Claude Code and Codex there are two ways to connect, and they do the same
+thing. **Settings → AI → Agents** connects either one to the open vault; from a
+terminal, `lore mcp install` does it for every agent it finds:
+
+```sh
+lore mcp install                    # Claude Code and Codex, the default vault
+lore mcp install claude --vault ~/Notes
+lore skills install                 # lore-docs and log-work, for each agent
+lore doctor                         # what is connected, and what to run if not
+lore --help                         # every command; `lore help mcp` for one
+```
+
+Lore runs the agent's own `mcp add`, under the build's command name (`lore`,
+`lore-dev`, `lore-agent`), and marks a connection that points at another vault
+or an older Lore so it can be updated. Reinstalling without `--vault` keeps the
+vault an agent is already connected to. For any other client, configure it by
+hand:
 
 ```sh
 lore mcp                  # this Lore's default vault
 lore mcp ~/Notes          # any other folder
+lore mcp ~/Notes --read-only
 ```
 
 ```sh
@@ -130,6 +142,15 @@ claude mcp add lore -- lore mcp ~/Notes
 ```json
 { "mcpServers": { "lore": { "args": ["mcp", "/Users/you/Notes"], "command": "lore" } } }
 ```
+
+Two skills come with it. `lore-docs` teaches an agent how a Lore file is
+shaped, so what it writes shows up correctly. `log-work` — `/log-work` in Claude
+Code — writes up a coding session as a note: the ticket, the goal, what was
+done, whether it worked, decisions, files, commits and follow-ups, tagged
+`worklog`, the repository, the ticket, the quarter (`log-work:q4`) and the month
+(`log-work:october`). The first time it runs in a repository it asks which vault
+and collection to log to, and remembers the answer in
+`~/.config/lore/log-work.json`.
 
 | Tool               | What it does                                               |
 | ------------------ | ---------------------------------------------------------- |
