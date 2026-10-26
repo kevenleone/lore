@@ -171,7 +171,7 @@ describe('the agents settings', () => {
         fireEvent.click(await screen.findByRole('button', { name: 'Update' }));
 
         await waitFor(() =>
-            expect(screen.getByText(/has the lore-docs skill from this version/)).toBeTruthy(),
+            expect(screen.getByText(/has the Lore skills from this version/)).toBeTruthy(),
         );
     });
 
