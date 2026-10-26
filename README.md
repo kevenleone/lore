@@ -147,10 +147,13 @@ claude mcp add lore -- lore mcp ~/Notes
 
 Two skills come with it. `lore-docs` teaches an agent how a Lore file is
 shaped, so what it writes shows up correctly. `log-work` — `/log-work` in Claude
-Code — writes up a coding session as a note: the ticket, the goal, what was
+Code — writes up a coding session as a note — with the Jira ticket as its URL when there
+is one: the ticket, the goal, what was
 done, whether it worked, decisions, files, commits and follow-ups, tagged
 `worklog`, the repository, the ticket, the quarter (`log-work:q4`) and the month
-(`log-work:october`). The first time it runs in a repository it asks which vault
+(`log-work:october`). Each log is also added to a weekly and a monthly summary in
+the same collection (`Weekly summary - 26–30 Oct 2026`, `Monthly summary -
+October 2026`), which group every session of the period by ticket. The first time it runs in a repository it asks which vault
 — offering the ones `lore vaults` finds — and which collection to log to, and remembers the answer in
 `~/.config/lore/log-work.json`.
 
