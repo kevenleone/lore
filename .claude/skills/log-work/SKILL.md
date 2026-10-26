@@ -27,15 +27,25 @@ repository):
 If this repository has an entry and its vault folder still exists, use it and
 go to step 2 without asking.
 
-Otherwise this is the first log for this repository. Ask the user, in one go:
+Otherwise this is the first log for this repository. **Always ask the user
+which vault and collection to use — never choose either for them,** even when
+only one vault turns up. Ask in two steps, because the collections depend on
+the vault:
 
-1. **Which vault.** Offer what you can find: run `lore doctor` (or `lore-dev` /
-   `lore-agent doctor`, whichever is installed) — its first line names the
-   default vault. Any other folder of Markdown is a vault too. Use an absolute
-   path; expand `~`.
-2. **Which collection.** List the vault's top-level folders (skip dot-folders
-   and `attachments/`) and offer them, plus a new one — `Work Logs` is a good
-   default. A collection is just a folder; a new name creates it.
+1. **Which vault.** Run `lore vaults --json` (or `lore-dev` / `lore-agent`,
+   whichever is on PATH). It lists every folder already used as a vault — the
+   one open in Lore, ones opened before, the ones agents are connected to, the
+   ones `/log-work` writes to for other repositories, and Lore's default — with
+   the vault in use first and `sources` saying why each is listed. Offer the
+   ones that `exist`, most likely first, labelled with the path and its
+   sources, plus "another folder" for a path the user types. If your question
+   tool takes a fixed number of options (often two to four), offer the top
+   ones and let "another folder" cover the rest; with a single vault found,
+   still ask, offering it and "another folder". If no `lore` command is
+   installed, ask for the folder's path. Use an absolute path; expand `~`.
+2. **Which collection.** List the chosen vault's top-level folders (skip
+   dot-folders and `attachments/`) and offer them, plus a new one — `Work Logs`
+   is a good default. A collection is just a folder; a new name creates it.
 
 Then save the answer into the file, creating it and `~/.config/lore/` if they do
 not exist. Read the file first and keep every other repository and every key
