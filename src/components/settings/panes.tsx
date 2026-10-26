@@ -856,7 +856,7 @@ function AgentRows({
 }) {
     const vaultTitle = `Use this vault in ${agent.label}`;
     const test = useConnectionTest(agent.mcp);
-    const skillTitle = `Lore writing skill for ${agent.label}`;
+    const skillTitle = `Lore skills for ${agent.label}`;
 
     return (
         <>
@@ -1014,10 +1014,10 @@ const AGENT_MCP_NOTES: Record<AgentSetup, (agent: AgentStatus) => string> = {
 
 const AGENT_SKILL_NOTES: Record<AgentSetup, (agent: AgentStatus) => string> = {
     off: (agent) =>
-        `Installs the lore-docs skill, which teaches ${agent.label} how a Lore file is shaped.`,
-    on: (agent) => `${agent.label} has the lore-docs skill from this version of Lore.`,
+        `Installs the lore-docs and log-work skills, which teach ${agent.label} how a Lore file is shaped and how to log a session's work.`,
+    on: (agent) => `${agent.label} has the Lore skills from this version of Lore.`,
     stale: (agent) =>
-        `${agent.label} has a different lore-docs skill. Update it to the one from this version of Lore.`,
+        `${agent.label} has different or missing Lore skills. Update them to the ones from this version of Lore.`,
 };
 
 const TEXT_FIELD =

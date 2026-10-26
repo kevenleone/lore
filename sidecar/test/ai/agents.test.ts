@@ -4,7 +4,8 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import SKILL from '../../../.claude/skills/lore-docs/SKILL.md' with { type: 'text' };
+import LOG_WORK from '../../../.claude/skills/log-work/SKILL.md' with { type: 'text' };
+import LORE_DOCS from '../../../.claude/skills/lore-docs/SKILL.md' with { type: 'text' };
 import { type AgentEnvironment, type Agents, createAgents, serverName } from '../../src/ai/agents';
 import { engineLaunch } from '../../src/ai/launch';
 import { routes } from '../../src/routes';
@@ -191,17 +192,37 @@ describe('agents', () => {
         expect((await agents.setSkill('claude', vault, true)).mcp).toBe('on');
     });
 
-    it('installs the skill where each agent looks, and updates an old copy', async () => {
+    it('installs every skill where each agent looks, and updates an old copy', async () => {
         expect((await agents.setSkill('claude', vault, true)).skill).toBe('on');
-        expect(await readFile(join(home, '.claude/skills/lore-docs/SKILL.md'), 'utf8')).toBe(SKILL);
+        expect(await readFile(join(home, '.claude/skills/lore-docs/SKILL.md'), 'utf8')).toBe(
+            LORE_DOCS,
+        );
+        expect(await readFile(join(home, '.claude/skills/log-work/SKILL.md'), 'utf8')).toBe(
+            LOG_WORK,
+        );
 
         await writeFile(join(home, '.claude/skills/lore-docs/SKILL.md'), 'an older version');
         expect((await agents.list(vault))[0].skill).toBe('stale');
 
         expect((await agents.setSkill('codex', vault, true)).skill).toBe('on');
-        expect(await readFile(join(home, '.agents/skills/lore-docs/SKILL.md'), 'utf8')).toBe(SKILL);
+        expect(await readFile(join(home, '.agents/skills/log-work/SKILL.md'), 'utf8')).toBe(
+            LOG_WORK,
+        );
 
         expect((await agents.setSkill('codex', vault, false)).skill).toBe('off');
+    });
+
+    it('reads one skill of two as needing an update, and reports each', async () => {
+        await mkdir(join(home, '.claude/skills/lore-docs'), { recursive: true });
+        await writeFile(join(home, '.claude/skills/lore-docs/SKILL.md'), LORE_DOCS);
+
+        expect((await agents.list(vault))[0].skill).toBe('stale');
+        expect((await agents.skills('claude')).map(({ name, setup }) => ({ name, setup }))).toEqual(
+            [
+                { name: 'lore-docs', setup: 'on' },
+                { name: 'log-work', setup: 'off' },
+            ],
+        );
     });
 });
 

@@ -11,14 +11,29 @@ import { basename, dirname, join, resolve } from 'node:path';
 
 import type { McpLaunch } from './harness/types';
 
-import SKILL from '../../../.claude/skills/lore-docs/SKILL.md' with { type: 'text' };
+import LOG_WORK from '../../../.claude/skills/log-work/SKILL.md' with { type: 'text' };
+import LORE_DOCS from '../../../.claude/skills/lore-docs/SKILL.md' with { type: 'text' };
 import modes from '../../../lore.modes.json';
 import { createLocator, type Locate } from './detect';
 import { childEnv } from './harness/run';
 import { engineLaunch } from './launch';
 import { type ProbeResult, probeServer } from './probe';
 
-export const SKILL_NAME = 'lore-docs';
+export interface Skill {
+    name: string;
+    text: string;
+}
+
+export const SKILLS: readonly Skill[] = [
+    { name: 'lore-docs', text: LORE_DOCS },
+    { name: 'log-work', text: LOG_WORK },
+];
+
+export interface SkillStatus {
+    name: string;
+    path: string;
+    setup: AgentSetup;
+}
 
 const RUN_TIMEOUT_MS = 20_000;
 
@@ -31,8 +46,11 @@ export interface AgentEnvironment {
 
 export interface Agents {
     list(vault: string): Promise<AgentStatus[]>;
+    /** The vault the agent's server serves, if it has one. */
+    registeredVault(id: string): Promise<null | string>;
     setMcp(id: string, vault: string, on: boolean): Promise<AgentStatus>;
     setSkill(id: string, vault: string, on: boolean): Promise<AgentStatus>;
+    skills(id: string): Promise<SkillStatus[]>;
     /** Starts the server the agent has registered, the way the agent would. */
     test(id: string): Promise<ProbeResult>;
 }
@@ -104,7 +122,32 @@ const AGENTS: readonly AgentDefinition[] = [
     },
 ];
 
-export function createAgents(environment: AgentEnvironment = systemEnvironment()): Agents {
+export function agentEnvironment(): AgentEnvironment {
+    const env = Bun.env;
+
+    return {
+        env,
+        home: homedir(),
+        locate: createLocator(env),
+        async run(command) {
+            const child = Bun.spawn(command, {
+                env: childEnv(),
+                stderr: 'pipe',
+                stdin: 'ignore',
+                stdout: 'pipe',
+                timeout: RUN_TIMEOUT_MS,
+            });
+            const [stdout, stderr] = await Promise.all([
+                new Response(child.stdout).text(),
+                new Response(child.stderr).text(),
+            ]);
+
+            return { exitCode: await child.exited, output: stderr || stdout };
+        },
+    };
+}
+
+export function createAgents(environment: AgentEnvironment = agentEnvironment()): Agents {
     const name = serverName(environment.env.LORE_MODE);
 
     const status = async (agent: AgentDefinition, vault: string): Promise<AgentStatus> => {
@@ -134,18 +177,38 @@ export function createAgents(environment: AgentEnvironment = systemEnvironment()
         return current ? 'on' : 'stale';
     };
 
-    const skillSetup = async (agent: AgentDefinition): Promise<AgentSetup> => {
-        try {
-            const installed = await readFile(skillFile(agent), 'utf8');
+    const skillStatuses = (agent: AgentDefinition): Promise<SkillStatus[]> =>
+        Promise.all(
+            SKILLS.map(async (skill) => {
+                const path = skillFile(agent, skill);
 
-            return installed === SKILL ? 'on' : 'stale';
-        } catch {
-            return 'off';
+                try {
+                    const installed = await readFile(path, 'utf8');
+
+                    return {
+                        name: skill.name,
+                        path,
+                        setup: installed === skill.text ? 'on' : 'stale',
+                    };
+                } catch {
+                    return { name: skill.name, path, setup: 'off' };
+                }
+            }),
+        );
+
+    // One switch covers every skill, so a partial install reads as needing an update.
+    const skillSetup = async (agent: AgentDefinition): Promise<AgentSetup> => {
+        const setups = (await skillStatuses(agent)).map((skill) => skill.setup);
+
+        if (setups.every((setup) => setup === 'on')) {
+            return 'on';
         }
+
+        return setups.every((setup) => setup === 'off') ? 'off' : 'stale';
     };
 
-    const skillFile = (agent: AgentDefinition): string =>
-        join(agent.skillsDir(environment), SKILL_NAME, 'SKILL.md');
+    const skillFile = (agent: AgentDefinition, skill: Skill): string =>
+        join(agent.skillsDir(environment), skill.name, 'SKILL.md');
 
     const find = (id: string): AgentDefinition => {
         const agent = AGENTS.find((candidate) => candidate.id === id);
@@ -174,6 +237,18 @@ export function createAgents(environment: AgentEnvironment = systemEnvironment()
     return {
         list: (vault) => Promise.all(AGENTS.map((agent) => status(agent, vault))),
 
+        async registeredVault(id) {
+            const launch = await find(id).readServer(environment, name);
+
+            if (!launch) {
+                return null;
+            }
+
+            const [command, path] = launch.args.slice(-2);
+
+            return launch.env.LORE_VAULT ?? (command === 'mcp' && path ? resolve(path) : null);
+        },
+
         async setMcp(id, vault, on) {
             const agent = find(id);
 
@@ -191,19 +266,24 @@ export function createAgents(environment: AgentEnvironment = systemEnvironment()
 
         async setSkill(id, vault, on) {
             const agent = find(id);
-            const file = skillFile(agent);
 
-            if (on) {
-                await mkdir(dirname(file), { recursive: true });
-                await writeFile(file, SKILL);
-            } else {
-                await rm(file, { force: true });
-                // Only if nothing else was put there.
-                await rmdir(dirname(file)).catch(() => undefined);
+            for (const skill of SKILLS) {
+                const file = skillFile(agent, skill);
+
+                if (on) {
+                    await mkdir(dirname(file), { recursive: true });
+                    await writeFile(file, skill.text);
+                } else {
+                    await rm(file, { force: true });
+                    // Only if nothing else was put there.
+                    await rmdir(dirname(file)).catch(() => undefined);
+                }
             }
 
             return status(agent, vault);
         },
+
+        skills: (id) => skillStatuses(find(id)),
 
         async test(id) {
             const agent = find(id);
@@ -271,29 +351,4 @@ function sameLaunch(left: McpLaunch, right: McpLaunch): boolean {
         left.env.LORE_VAULT === right.env.LORE_VAULT &&
         left.env.LORE_MCP_READONLY === right.env.LORE_MCP_READONLY
     );
-}
-
-function systemEnvironment(): AgentEnvironment {
-    const env = Bun.env;
-
-    return {
-        env,
-        home: homedir(),
-        locate: createLocator(env),
-        async run(command) {
-            const child = Bun.spawn(command, {
-                env: childEnv(),
-                stderr: 'pipe',
-                stdin: 'ignore',
-                stdout: 'pipe',
-                timeout: RUN_TIMEOUT_MS,
-            });
-            const [stdout, stderr] = await Promise.all([
-                new Response(child.stdout).text(),
-                new Response(child.stderr).text(),
-            ]);
-
-            return { exitCode: await child.exited, output: stderr || stdout };
-        },
-    };
 }
