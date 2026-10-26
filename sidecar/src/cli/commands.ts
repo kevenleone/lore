@@ -7,6 +7,7 @@ import type { Locate } from '../ai/detect';
 import type { CliContext } from './context';
 
 import { AgentError, type Agents } from '../ai/agents';
+import { vaultInUse } from './vaults';
 
 export interface CliDependencies {
     agents: Agents;
@@ -39,9 +40,9 @@ export async function doctor(dependencies: CliDependencies, vault: string): Prom
     const vaultExists = await isFolder(vault);
     const command = await locate(context.name);
 
-    io.out(`${'vault'.padEnd(LABEL_WIDTH)}${tilde(vault)}`);
+    io.out(`${'vault in use'.padEnd(LABEL_WIDTH)}${tilde(vault)}`);
     io.out(
-        `${''.padEnd(LABEL_WIDTH)}${vaultExists ? '✓ exists' : '· not created yet — Lore makes it on first launch'}`,
+        `${''.padEnd(LABEL_WIDTH)}${vaultExists ? '✓ exists' : '· not created yet — Lore makes it on first launch'}; \`${context.name} vaults\` lists the others`,
     );
     io.out(
         `${'command'.padEnd(LABEL_WIDTH)}${command ? `✓ ${command}` : `· ${context.name} is not on PATH`}`,
@@ -106,12 +107,12 @@ export async function setMcp(
     on: boolean,
 ): Promise<number> {
     const { agents, context, io } = dependencies;
-    const targets = await targetAgents(agents, agentId, vault ?? context.defaultVault);
+    const targets = await targetAgents(agents, agentId, vault ?? (await vaultInUse(context)));
 
     for (const agent of targets) {
         const registered = await agents.registeredVault(agent.id);
         const kept = registered && (await isFolder(registered)) ? registered : null;
-        const target = vault ?? kept ?? context.defaultVault;
+        const target = vault ?? kept ?? (await vaultInUse(context));
         const status = await agents.setMcp(agent.id, target, on);
         const detail = on ? `${status.server} → ${tilde(target)}` : `${status.server} removed`;
 

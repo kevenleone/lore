@@ -9,6 +9,7 @@ import { type AgentEnvironment, createAgents } from '../../src/ai/agents';
 import { runCli } from '../../src/cli';
 import { cliContext } from '../../src/cli/context';
 import { COMMANDS } from '../../src/cli/help';
+import { recordVault } from '../../src/services/known-vaults';
 
 let home: string;
 let vault: string;
@@ -194,6 +195,52 @@ describe('skills', () => {
 
         expect(text).toContain(`✓ lore-docs   ${join(home, '.claude/skills/lore-docs/SKILL.md')}`);
         expect(text).toContain(`✓ log-work    ${join(home, '.claude/skills/log-work/SKILL.md')}`);
+    });
+});
+
+describe('vaults', () => {
+    it('finds every vault in use, the one open in Lore first', async () => {
+        const context = dependencies().context;
+        const notes = join(vault, 'Notes');
+        const logs = join(vault, 'Logs');
+
+        await mkdir(notes);
+        await mkdir(logs);
+        await recordVault(context.vaultsFile, notes);
+        await runCli(['mcp', 'install', '--vault', logs], dependencies());
+        await mkdir(join(home, '.config/lore'), { recursive: true });
+        await writeFile(
+            context.logWorkFile,
+            JSON.stringify({
+                repositories: { '/code/portal-web': { collection: 'X', vault: logs } },
+            }),
+        );
+
+        out = [];
+        expect(await runCli(['vaults', '--json'], dependencies())).toBe(0);
+
+        const { vaults } = JSON.parse(out.join('\n')) as {
+            vaults: { inUse: boolean; path: string; sources: string[] }[];
+        };
+
+        expect(vaults.map(({ inUse, path, sources }) => ({ inUse, path, sources }))).toEqual([
+            { inUse: true, path: notes, sources: ['open in Lore'] },
+            { inUse: false, path: logs, sources: ['Claude Code MCP', 'log-work: portal-web'] },
+            { inUse: false, path: vault, sources: ["Lore's default"] },
+        ]);
+    });
+
+    it('is what a command uses when no vault is named', async () => {
+        const notes = join(vault, 'Notes');
+
+        await mkdir(notes);
+        await recordVault(dependencies().context.vaultsFile, notes);
+
+        await runCli(['mcp', 'install'], dependencies());
+        expect((await claudeServer()).env.LORE_VAULT).toBe(notes);
+
+        await runCli(['mcp'], dependencies());
+        expect(served).toEqual([{ readOnly: false, vault: notes }]);
     });
 });
 

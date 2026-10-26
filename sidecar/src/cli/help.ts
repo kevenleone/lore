@@ -15,7 +15,7 @@ interface Section {
 }
 
 /** The commands the launcher hands to the engine; every other argument is a path to open. */
-export const COMMANDS = ['help', 'mcp', 'skills', 'doctor'] as const;
+export const COMMANDS = ['help', 'mcp', 'skills', 'vaults', 'doctor'] as const;
 
 export type CommandName = (typeof COMMANDS)[number];
 
@@ -123,6 +123,13 @@ function commands(cli: string): Record<CommandName, CommandHelp> {
                 `${cli} skills uninstall [<agent>]`,
             ],
         },
+        vaults: {
+            examples: [[`${cli} vaults --json`, 'the same, for a script or an agent to read']],
+            options: [['--json', 'print JSON instead of a list']],
+            summary:
+                "Lists every folder already used as a vault: the one Lore has open and the ones it opened before, the vault each agent is connected to, the vaults /log-work writes to, and Lore's default. The vault in use comes first; it is what every other command uses when --vault is left out.",
+            usage: [`${cli} vaults [--json]`],
+        },
     };
 }
 
@@ -164,6 +171,7 @@ function sections(cli: string): Section[] {
         },
         {
             rows: [
+                [`${cli} vaults`, 'every vault Lore, an agent or /log-work already uses'],
                 [`${cli} doctor`, 'the vault, the agents found, and what is connected'],
                 [`${cli} help <command>`, 'every option of one command'],
                 [`${cli} -v, --version`, 'the version of this Lore'],
