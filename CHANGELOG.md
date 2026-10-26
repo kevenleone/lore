@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.31.0](https://github.com/kevenleone/lore/compare/v1.30.0...v1.31.0) (2026-10-26)
+
+
+### Features
+
+* **agents:** install every bundled skill, not only lore-docs ([6c6bb51](https://github.com/kevenleone/lore/commit/6c6bb514828124950c40b29338263bef5c432453))
+* **cli:** add help, mcp install, skills and doctor commands ([e3f45a8](https://github.com/kevenleone/lore/commit/e3f45a8a13ffb9b635aae45896505eab55121e9d))
+* **skills:** add log-work to write up a session into the vault ([ed5873a](https://github.com/kevenleone/lore/commit/ed5873a2358f27fe50fd9436427fbd51ba0548d0))
+
+
+### Refactoring
+
+* **sidecar:** group engine modules into services and utils ([6cf517b](https://github.com/kevenleone/lore/commit/6cf517bc89fa64f3ff8246d43abc0957d189fb21))
+* **sidecar:** split routes into one plugin per area ([5eb3658](https://github.com/kevenleone/lore/commit/5eb3658352127eca6dae6e0e229fbdf06a23a322))
+
+
+### Documentation
+
+* document the lore commands and log-work ([f1c1b64](https://github.com/kevenleone/lore/commit/f1c1b64d390312fefd54beb794a3a45a25ff5bfd))
+* point at the engine's new module paths ([010d606](https://github.com/kevenleone/lore/commit/010d6060129bc1686b0bba4c078b43d32a1f32d2))
+
 ## [1.30.0](https://github.com/kevenleone/lore/compare/v1.29.0...v1.30.0) (2026-10-14)
 
 
