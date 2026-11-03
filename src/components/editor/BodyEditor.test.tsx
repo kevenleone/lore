@@ -65,6 +65,34 @@ describe('BodyEditor', () => {
         expect(container.querySelector('[data-unknown-block]')).not.toBeNull();
     });
 
+    it('makes a table editable, cells and all', async () => {
+        const { container, onCommit } = await mount('| **a** | b |\n|---|:-:|\n| `1` | 2 |\n');
+        const table = container.querySelector('.ProseMirror table');
+
+        expect(table).not.toBeNull();
+        expect(container.querySelector('[data-unknown-block]')).toBeNull();
+        expect([...table!.querySelectorAll('th')].map((cell) => cell.textContent)).toEqual([
+            'a',
+            'b',
+        ]);
+        expect(table!.querySelector('td code')?.textContent).toBe('1');
+        expect(onCommit).not.toHaveBeenCalled();
+    });
+
+    it('draws a table it cannot edit, and carries its source unchanged', async () => {
+        // `<br>` is raw HTML the editor would turn into text, so the block is carried.
+        const source = '| a | b |\n|---|---|\n| x<br>y | 2 |';
+        const { container, onCommit } = await mount(`${source}\n`);
+
+        await waitFor(() => expect(container.querySelector('table')).not.toBeNull());
+
+        const carried = container.querySelector('[data-unknown-block]');
+
+        expect(carried?.hasAttribute('data-rendered')).toBe(true);
+        expect(carried?.getAttribute('source')).toBe(source);
+        expect(onCommit).not.toHaveBeenCalled();
+    });
+
     it('does not commit merely because a note was opened', async () => {
         // The design rests on this: opening must not look like an edit, or a
         // vault would fill with diffs from notes nobody touched.

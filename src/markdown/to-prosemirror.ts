@@ -1,5 +1,5 @@
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
-import type { PhrasingContent, RootContent } from 'mdast';
+import type { PhrasingContent, RootContent, Table } from 'mdast';
 
 import type { Block, ParsedBody } from './types';
 
@@ -34,6 +34,8 @@ function blockNode(node: RootContent): null | ProseMirrorNode {
             return listNode(node);
         case 'paragraph':
             return schema.node('paragraph', null, inline(node.children));
+        case 'table':
+            return tableNode(node);
         case 'thematicBreak':
             return schema.node('horizontalRule');
         default:
@@ -138,6 +140,24 @@ function listNode(node: Extract<RootContent, { type: 'list' }>): ProseMirrorNode
 
 function resolveMarks(names: readonly string[]) {
     return names.map((name) => schema.marks[name].create());
+}
+
+function tableNode(node: Table): ProseMirrorNode {
+    const rows = node.children.map((row, rowIndex) =>
+        schema.node(
+            'tableRow',
+            null,
+            row.children.map((cell, cellIndex) =>
+                schema.node(
+                    rowIndex === 0 ? 'tableHeader' : 'tableCell',
+                    { align: node.align?.[cellIndex] ?? null },
+                    [schema.node('paragraph', null, inline(cell.children))],
+                ),
+            ),
+        ),
+    );
+
+    return schema.node('table', null, rows);
 }
 
 function toNode(block: Block): null | ProseMirrorNode {

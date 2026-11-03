@@ -61,6 +61,65 @@ describe('editing one block', () => {
     });
 });
 
+describe('tables', () => {
+    function only(body: string) {
+        const { document, parsed } = open(body);
+
+        return { block: parsed.blocks[0], node: document.child(0) };
+    }
+
+    it.each([
+        ['a plain table', '| a | b |\n|---|---|\n| 1 | 2 |'],
+        ['alignment', '| a | b | c |\n|:--|:-:|--:|\n| 1 | 2 | 3 |'],
+        ['marks and an escaped pipe', '| **a `b`** | c |\n|---|---|\n| `x \\| y` | [l](u) |'],
+        ['a table inside a list item', '- item:\n\n  | a | b |\n  |---|---|\n  | 1 | 2 |'],
+    ])('models %s as editable', (_name, body) => {
+        const { block, node } = only(body);
+
+        expect(block.type).not.toBe('unknown');
+        expect(node.type.name).not.toBe('unknownBlock');
+    });
+
+    it('writes an edited cell back as a valid table', () => {
+        const { node } = only('| a | b |\n|:-:|---|\n| 1 | 2 |');
+        const cell = node.child(1).child(0);
+        const edited = node.replace(
+            node.content.size - node.lastChild!.nodeSize + 2,
+            node.content.size - node.lastChild!.nodeSize + cell.nodeSize,
+            node.type.schema
+                .node('tableCell', cell.attrs, [
+                    node.type.schema.node('paragraph', null, [node.type.schema.text('one')]),
+                ])
+                .slice(0),
+        );
+
+        expect(edited.textContent).toBe('abone2');
+        expect(parse(generateBlock(edited)).blocks[0].node).toMatchObject({
+            align: ['center', null],
+            type: 'table',
+        });
+    });
+
+    it('writes a line break in a cell as <br>, not a row break', () => {
+        const { node } = only('| a |\n|---|\n| 1 |');
+        const schema = node.type.schema;
+        const table = schema.node('table', null, [
+            node.child(0),
+            schema.node('tableRow', null, [
+                schema.node('tableCell', null, [
+                    schema.node('paragraph', null, [
+                        schema.text('x'),
+                        schema.node('hardBreak'),
+                        schema.text('y'),
+                    ]),
+                ]),
+            ]),
+        ]);
+
+        expect(generateBlock(table)).toContain('| x<br>y |');
+    });
+});
+
 describe('schema coverage over the corpus', () => {
     // Not an assertion so much as a census: which real-world constructs end up
     // carried as source rather than modelled. A rise here means the editor is

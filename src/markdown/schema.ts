@@ -2,6 +2,7 @@ import type { Extensions } from '@tiptap/core';
 
 import { getSchema, Node } from '@tiptap/core';
 import { TaskItem, TaskList } from '@tiptap/extension-list';
+import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import { type Schema } from '@tiptap/pm/model';
 import StarterKit from '@tiptap/starter-kit';
 
@@ -36,9 +37,17 @@ const NODE_CLASSES = {
     listItem: 'mt-[3px] leading-[1.65] marker:text-text3',
     orderedList: `${BLOCK_SPACING} list-decimal pl-[22px]`,
     paragraph: `${BLOCK_SPACING} text-title-lg leading-[1.65] text-text2`,
+    table: 'w-full border-collapse text-body-lg',
+    tableCell:
+        'border-b border-border px-3 py-2 text-left align-top [&_p]:text-body-lg [&_p]:text-text2',
+    tableHeader:
+        'border-b border-border bg-surface3 px-3 py-2 text-left align-top font-[620] [&_p]:text-body-lg [&_p]:text-text',
     taskItem: 'flex items-start gap-[8px] leading-[1.65]',
     taskList: `${BLOCK_SPACING} list-none pl-0`,
 } as const;
+
+// A GFM cell holds one line of inline content, so a cell is exactly one paragraph.
+const CELL = { content: 'paragraph' };
 
 export const EXTENSIONS: Extensions = [
     StarterKit.configure({
@@ -61,6 +70,11 @@ export const EXTENSIONS: Extensions = [
     }),
     TaskList.configure({ HTMLAttributes: { class: NODE_CLASSES.taskList } }),
     TaskItem.configure({ HTMLAttributes: { class: NODE_CLASSES.taskItem }, nested: true }),
+    // Not resizable: Markdown has nowhere to keep a column width.
+    Table.configure({ HTMLAttributes: { class: NODE_CLASSES.table }, resizable: false }),
+    TableRow,
+    TableHeader.extend(CELL).configure({ HTMLAttributes: { class: NODE_CLASSES.tableHeader } }),
+    TableCell.extend(CELL).configure({ HTMLAttributes: { class: NODE_CLASSES.tableCell } }),
     UnknownBlock,
 ];
 

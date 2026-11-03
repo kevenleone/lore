@@ -12,8 +12,8 @@ import { Caution, Info, Lightbulb, Message, Warning } from '../common/glyphs';
  *
  * `MarkdownView` cannot serve here — it renders `##` as bold text on purpose,
  * because it exists for comments and card previews. Nor can `BlockEditor`: its
- * schema has no image and no table node, so a README's badges, screenshots and
- * tables would land in `UnknownBlock` and show as raw source. Nothing here can
+ * schema has no image and no table node, so a README's badges and screenshots
+ * would land in `UnknownBlock` and show as raw source. Nothing here can
  * be edited, so none of the round-trip machinery applies either.
  */
 interface DocumentViewProps {
@@ -77,6 +77,29 @@ export function DocumentView({ className, markdown }: DocumentViewProps): React.
             {children.map((node, index) => (
                 <Block key={index} node={node} />
             ))}
+        </div>
+    );
+}
+
+export function Table({ rows }: { rows: readonly TableRow[] }): React.JSX.Element {
+    const [head, ...body] = rows;
+
+    return (
+        <div className={cn(SPACING, 'overflow-x-auto rounded-11 border border-border')}>
+            <table className="w-full border-collapse text-body-lg">
+                {head && (
+                    <thead>
+                        <tr>{head.children.map((cell, index) => cellOf(cell, index, true))}</tr>
+                    </thead>
+                )}
+                <tbody>
+                    {body.map((row, index) => (
+                        <tr key={index}>
+                            {row.children.map((cell, cellIndex) => cellOf(cell, cellIndex, false))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     );
 }
@@ -336,27 +359,4 @@ function listStyle(children: readonly RootContent[]): string {
     );
 
     return checklist ? 'list-none pl-0' : 'list-disc pl-[22px]';
-}
-
-function Table({ rows }: { rows: readonly TableRow[] }): React.JSX.Element {
-    const [head, ...body] = rows;
-
-    return (
-        <div className={cn(SPACING, 'overflow-x-auto rounded-11 border border-border')}>
-            <table className="w-full border-collapse text-body-lg">
-                {head && (
-                    <thead>
-                        <tr>{head.children.map((cell, index) => cellOf(cell, index, true))}</tr>
-                    </thead>
-                )}
-                <tbody>
-                    {body.map((row, index) => (
-                        <tr key={index}>
-                            {row.children.map((cell, cellIndex) => cellOf(cell, cellIndex, false))}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
 }

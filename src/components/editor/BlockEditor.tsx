@@ -7,11 +7,12 @@ import { resolveWikilink } from '../../lib/wikilinks';
 import { applyDocument, diffBlocks } from '../../markdown/apply';
 import { guard } from '../../markdown/fragility';
 import { parse } from '../../markdown/parse';
-import { EXTENSIONS } from '../../markdown/schema';
+import { EXTENSIONS, UnknownBlock } from '../../markdown/schema';
 import { toDocument } from '../../markdown/to-prosemirror';
 import { Wikilink } from '../../markdown/wikilinkDecoration';
 import { useStore } from '../../store/useStore';
 import { LinkBubble } from './LinkBubble';
+import { UnknownBlockWithView } from './UnknownBlockView';
 
 interface BlockEditorProps {
     autoFocus?: boolean;
@@ -65,7 +66,8 @@ export function BlockEditor({
                 },
             },
             extensions: [
-                ...EXTENSIONS,
+                ...EXTENSIONS.filter((extension) => extension !== UnknownBlock),
+                UnknownBlockWithView,
                 Placeholder.configure({ placeholder: placeholder ?? '' }),
                 // Read through the store rather than captured: the editor is
                 // built once, and a note written afterwards must still light up
