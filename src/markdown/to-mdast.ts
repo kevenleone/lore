@@ -48,7 +48,11 @@ function listItems(node: ProseMirrorNode): ListItem[] {
     node.forEach((child) => {
         const checked = child.type.name === 'taskItem' ? !!child.attrs.checked : null;
 
-        items.push({ checked, children: childBlocks(child), spread: false, type: 'listItem' });
+        const children = childBlocks(child);
+        // Written tight, a second paragraph or a table would run into the line above it.
+        const spread = children.some((block, index) => index > 0 && block.type !== 'list');
+
+        items.push({ checked, children, spread, type: 'listItem' });
     });
 
     return items;
@@ -135,7 +139,51 @@ function inline(node: ProseMirrorNode): PhrasingContent[] {
         out.push(built);
     });
 
+    return mergeSiblings(out);
+}
+
+// Marks sit on each text run; unmerged, `**a `b`**` would be written as two `strong`s.
+function mergeSiblings(nodes: readonly PhrasingContent[]): PhrasingContent[] {
+    const out: PhrasingContent[] = [];
+
+    for (const node of nodes) {
+        const previous = out[out.length - 1] as PhrasingContent | undefined;
+
+        if (
+            previous &&
+            'children' in previous &&
+            'children' in node &&
+            sameWrapper(previous, node)
+        ) {
+            previous.children = [
+                ...previous.children,
+                ...node.children,
+            ] as typeof previous.children;
+            continue;
+        }
+
+        out.push('children' in node ? { ...node } : node);
+    }
+
+    for (const node of out) {
+        if ('children' in node) {
+            node.children = mergeSiblings(node.children) as typeof node.children;
+        }
+    }
+
     return out;
+}
+
+function sameWrapper(left: PhrasingContent, right: PhrasingContent): boolean {
+    if (left.type !== right.type) {
+        return false;
+    }
+
+    if (left.type === 'link' && right.type === 'link') {
+        return left.url === right.url && left.title === right.title;
+    }
+
+    return true;
 }
 
 function wrap(
