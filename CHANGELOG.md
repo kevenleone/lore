@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.33.0](https://github.com/kevenleone/lore/compare/v1.32.0...v1.33.0) (2026-11-03)
+
+
+### Features
+
+* **editor:** make Markdown tables editable ([6b45e4d](https://github.com/kevenleone/lore/commit/6b45e4d5461841f77fcea10ac29a32b07da53a78))
+
+
+### Bug Fixes
+
+* **editor:** keep bold around inline code and paragraphs after a sub-list ([f55d281](https://github.com/kevenleone/lore/commit/f55d281dc17f0cbb9b8f2aae1802ba2c28afc058))
+
 ## [1.32.0](https://github.com/kevenleone/lore/compare/v1.31.0...v1.32.0) (2026-10-26)
 
 
