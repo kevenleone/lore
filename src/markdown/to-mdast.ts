@@ -1,5 +1,13 @@
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
-import type { BlockContent, ListItem, PhrasingContent, RootContent } from 'mdast';
+import type {
+    AlignType,
+    BlockContent,
+    ListItem,
+    PhrasingContent,
+    RootContent,
+    Table,
+    TableRow,
+} from 'mdast';
 
 import { gfmToMarkdown } from 'mdast-util-gfm';
 import { toMarkdown } from 'mdast-util-to-markdown';
@@ -26,6 +34,13 @@ export function generateBlock(node: ProseMirrorNode): string {
             strong: '*',
         },
     ).trimEnd();
+}
+
+/** A line break would end the row, so a cell writes one the way GFM tables do. */
+function cellInline(cell: ProseMirrorNode): PhrasingContent[] {
+    return (cell.firstChild ? inline(cell.firstChild) : []).map((child) =>
+        child.type === 'break' ? { type: 'html', value: '<br>' } : child,
+    );
 }
 
 function childBlocks(node: ProseMirrorNode): BlockContent[] {
@@ -58,6 +73,27 @@ function listItems(node: ProseMirrorNode): ListItem[] {
     return items;
 }
 
+function tableOf(node: ProseMirrorNode): Table {
+    const children: TableRow[] = [];
+
+    node.forEach((row) => {
+        const cells: TableRow['children'] = [];
+
+        row.forEach((cell) => {
+            cells.push({ children: cellInline(cell), type: 'tableCell' });
+        });
+        children.push({ children: cells, type: 'tableRow' });
+    });
+
+    const align: AlignType[] = [];
+
+    node.firstChild?.forEach((cell) => {
+        align.push((cell.attrs.align as AlignType | undefined) ?? null);
+    });
+
+    return { align, children, type: 'table' };
+}
+
 function toBlockContent(node: ProseMirrorNode): BlockContent | null {
     switch (node.type.name) {
         case 'blockquote':
@@ -88,6 +124,8 @@ function toBlockContent(node: ProseMirrorNode): BlockContent | null {
             };
         case 'paragraph':
             return { children: inline(node), type: 'paragraph' };
+        case 'table':
+            return tableOf(node);
         case 'taskList':
             return { children: listItems(node), ordered: false, spread: false, type: 'list' };
         default:

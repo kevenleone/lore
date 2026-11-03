@@ -479,7 +479,21 @@
         min-height: inherit;
     }
 
-    .lore-editor .ProseMirror div[data-unknown-block]::before {
+    /* Tiptap's table view builds this wrapper itself, so no class can reach it. */
+    .lore-editor .ProseMirror .tableWrapper {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-11);
+        margin-top: 14px;
+        overflow-x: auto;
+    }
+    .lore-editor .ProseMirror .tableWrapper:first-child {
+        margin-top: 0;
+    }
+    .lore-editor .ProseMirror .selectedCell {
+        background: var(--ac-tint);
+    }
+
+    .lore-editor .ProseMirror div[data-unknown-block]:not([data-rendered])::before {
         content: attr(source);
         display: block;
         font-family: var(--font-mono, ui-monospace, monospace);
