@@ -46,6 +46,7 @@ import {
     Trash,
 } from '../common/glyphs';
 import { Icon } from '../common/Icon';
+import { InlineMarkdown } from '../common/MarkdownView';
 import { useStandalone } from '../document/standalone';
 import { BodyEditor } from '../editor/BodyEditor';
 import { DocumentView } from '../editor/DocumentView';
@@ -715,7 +716,7 @@ export function DetailPane({ chrome, onClose }: DetailPaneProps) {
                                                 title="Click to edit"
                                                 type="button"
                                             >
-                                                {subtask.text}
+                                                <InlineMarkdown markdown={subtask.text} />
                                             </button>
                                         )}
                                         <button
