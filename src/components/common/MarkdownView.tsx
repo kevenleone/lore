@@ -14,6 +14,21 @@ interface MarkdownViewProps {
 /** Draws a run of plain text, for a caller with syntax of its own inside it. */
 type RenderText = (text: string) => React.ReactNode;
 
+/**
+ * One line of Markdown, drawn inline. Links render as styled text, not anchors,
+ * so the line can sit inside a button.
+ */
+export function InlineMarkdown({ markdown }: { markdown: string }): React.JSX.Element {
+    const content = useMemo(() => {
+        const [first, ...rest] = toAst(markdown).children;
+        const isInline = first?.type === 'paragraph' && rest.length === 0;
+
+        return isInline ? inline(first.children, undefined, false) : markdown;
+    }, [markdown]);
+
+    return <>{content}</>;
+}
+
 export function MarkdownView({
     className,
     markdown,
@@ -75,15 +90,19 @@ function Block({
     }
 }
 
-function inline(children: readonly PhrasingContent[], renderText?: RenderText): React.ReactNode[] {
+function inline(
+    children: readonly PhrasingContent[],
+    renderText?: RenderText,
+    linkable = true,
+): React.ReactNode[] {
     return children.map((node, index) => {
         switch (node.type) {
             case 'break':
                 return <br key={index} />;
             case 'delete':
-                return <s key={index}>{inline(node.children, renderText)}</s>;
+                return <s key={index}>{inline(node.children, renderText, linkable)}</s>;
             case 'emphasis':
-                return <em key={index}>{inline(node.children, renderText)}</em>;
+                return <em key={index}>{inline(node.children, renderText, linkable)}</em>;
             case 'inlineCode':
                 return (
                     <code
@@ -94,6 +113,14 @@ function inline(children: readonly PhrasingContent[], renderText?: RenderText): 
                     </code>
                 );
             case 'link':
+                if (!linkable) {
+                    return (
+                        <span className="text-accent underline" key={index}>
+                            {inline(node.children, renderText, linkable)}
+                        </span>
+                    );
+                }
+
                 return (
                     <a
                         className="text-accent underline"
@@ -106,7 +133,7 @@ function inline(children: readonly PhrasingContent[], renderText?: RenderText): 
                     </a>
                 );
             case 'strong':
-                return <strong key={index}>{inline(node.children, renderText)}</strong>;
+                return <strong key={index}>{inline(node.children, renderText, linkable)}</strong>;
             case 'text':
                 return renderText ? (
                     <Fragment key={index}>{renderText(node.value)}</Fragment>
