@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.33.1](https://github.com/kevenleone/lore/compare/v1.33.0...v1.33.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* **tasks:** render Markdown in subtask labels ([bff737c](https://github.com/kevenleone/lore/commit/bff737c0f8b4c1619283f99b14cd93f509ab3a34))
+
 ## [1.33.0](https://github.com/kevenleone/lore/compare/v1.32.0...v1.33.0) (2026-11-03)
 
 
